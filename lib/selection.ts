@@ -5,8 +5,7 @@ import { featuredPlan } from "./plans"
 
 /**
  * Tiny cross-island store (no provider, no deps): the selected plan, toggled
- * add-ons, the lead Sheet request, and the visitor's speed-test result (written
- * by Phase 4, read by the recommender). Client islands share it via
+ * add-ons and the lead Sheet request. Client islands share it via
  * useSyncExternalStore; the server snapshot is the static default.
  */
 export interface SelectionState {
@@ -15,16 +14,6 @@ export interface SelectionState {
   /** Increments each time a CTA asks for the lead Sheet; 0 = never opened. */
   leadRequest: number
   leadOpen: boolean
-  /** Real speed-test result (feeds the recommender). Null until measured. */
-  speedTest: Line | null
-  /** Illustrative demo line, shown with a DEMO DATA tag; never fed to the recommender. */
-  speedDemo: Line | null
-}
-
-export interface Line {
-  downMbps: number
-  upMbps: number
-  pingMs: number
 }
 
 const initial: SelectionState = {
@@ -32,8 +21,6 @@ const initial: SelectionState = {
   addOnIds: [],
   leadRequest: 0,
   leadOpen: false,
-  speedTest: null,
-  speedDemo: null,
 }
 
 let state = initial
@@ -73,6 +60,4 @@ export const selection = {
       leadOpen: true,
     }),
   setLeadOpen: (leadOpen: boolean) => set({ leadOpen }),
-  setSpeedTest: (speedTest: Line | null) => set({ speedTest, speedDemo: null }),
-  setSpeedDemo: (speedDemo: Line | null) => set({ speedDemo }),
 }

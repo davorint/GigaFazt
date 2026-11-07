@@ -17,7 +17,7 @@ import {
   type Use,
   type Wfh,
 } from "@/lib/recommend"
-import { selection, useSelection } from "@/lib/selection"
+import { selection } from "@/lib/selection"
 import { track } from "@/lib/analytics"
 import { PriceTag } from "./PriceTag"
 import { PriceTerms } from "./PriceTerms"
@@ -28,12 +28,10 @@ const TOTAL = 3
 /**
  * "¿Qué plan necesito?" (SPEC §3): three native-input steps (fully keyboard
  * usable), then one recommended plan with a one-line reason from the
- * deterministic scoring in lib/recommend.ts. Factors in a speed-test result
- * when Phase 4 has stored one. Result is announced via aria-live.
+ * deterministic scoring in lib/recommend.ts. Result is announced via aria-live.
  */
 export function PlanRecommender() {
   const t = useTranslations("recommender")
-  const speedTest = useSelection((s) => s.speedTest)
   const [step, setStep] = useState(0)
   const [people, setPeople] = useState<People | null>(null)
   const [uses, setUses] = useState<Use[]>([])
@@ -60,9 +58,6 @@ export function PlanRecommender() {
         people,
         uses,
         wfh,
-        current: speedTest
-          ? { downMbps: speedTest.downMbps, upMbps: speedTest.upMbps }
-          : undefined,
       },
       plans
     )

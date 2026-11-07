@@ -222,45 +222,14 @@
     "regulatory": "Registro ante el IFT/CRT"
   },
   "fiber": {
-    "lead": "Con fibra simétrica subes tan rápido como bajas. Mide tu internet de hoy y compáralo.",
+    "lead": "Con fibra simétrica subes tan rápido como bajas. Míralo en acción.",
     "cta": "Elige tu plan",
-    "speedtest": {
-      "title": "Mide tu conexión actual",
-      "desc": "Una prueba real de tu internet de hoy contra servidores de Cloudflare. Tarda unos 20 segundos.",
-      "start": "Iniciar prueba",
-      "cancel": "Cancelar",
-      "demo": "Ver un ejemplo",
-      "retry": "Repetir prueba",
-      "phase": {
-        "latency": "Midiendo latencia…",
-        "download": "Midiendo bajada…",
-        "upload": "Midiendo subida…"
-      },
-      "progress": "Progreso de la prueba",
-      "failed": "No pudimos completar la prueba. Inténtalo de nuevo o mira un ejemplo.",
-      "cancelled": "Cancelaste la prueba.",
-      "today": "Tu conexión hoy",
-      "withPlan": "Con fibra de {speed}",
-      "down": "Bajada",
-      "up": "Subida",
-      "ping": "Latencia",
-      "uploadGap": "Subida {times}× más rápida",
-      "uploadGapBody": "Lo que hoy subes en una hora, lo subirías en {time}.",
-      "cta": "Quiero {speed}",
-      "demoNote": "Ejemplo ilustrativo: no es tu conexión.",
-      "planNote": "Velocidades máximas del plan.",
-      "announce": "Resultado: {down} Mbps de bajada, {up} Mbps de subida y {ping} ms de latencia.",
-      "alreadyFast": "Tu conexión ya es muy rápida de bajada. Con fibra simétrica la diferencia está en la subida y en una latencia estable."
-    },
     "means": {
-      "title": "Qué significa en tu día a día",
       "upload10": "Subir un video de 10 GB",
       "streams": "Pantallas en 4K al mismo tiempo",
       "backup": "Respaldar 1 TB en la nube",
-      "today": "Hoy",
-      "plan": "Con {speed}",
-      "runTest": "Haz la prueba de arriba para compararlo con tu conexión actual.",
-      "note": "Cálculo ideal a velocidad máxima sostenida · 1 GB = 8,000 Mb · 25 Mbps por pantalla en 4K."
+      "note": "Cálculo ideal a velocidad máxima sostenida · 1 GB = 8,000 Mb · 25 Mbps por pantalla en 4K.",
+      "titlePlan": "Qué significa {speed} en tu día a día"
     },
     "telemetry": {
       "title": "La red en vivo",
@@ -307,6 +276,21 @@
         "body": "El equipo decide cuánta de tu velocidad llega por Wi-Fi a cada cuarto.",
         "value": "Wi-Fi 7 en {wifi7} · Wi-Fi 6 en {wifi6}"
       }
+    },
+    "symmetry": {
+      "title": "Simetría en luz",
+      "desc": "Cada destello es información viajando por la fibra: la bajada hacia tu casa y la subida hacia la red. Cambia de plan y compara una conexión simétrica con una asimétrica.",
+      "modeLegend": "Tipo de conexión",
+      "fiber": "Fibra simétrica",
+      "asym": "Conexión asimétrica",
+      "planLegend": "Velocidad",
+      "down": "Bajada",
+      "up": "Subida",
+      "equal": "Misma velocidad de bajada y de subida.",
+      "asymNote": "Ejemplo ilustrativo: en una conexión asimétrica la subida puede ser {ratio} veces menor que la bajada.",
+      "hint": "Mueve el cursor sobre la fibra",
+      "alt": "Animación de luz dentro de una fibra óptica: la bajada ({down}) viaja en un sentido y la subida ({up}) en el otro.",
+      "viewPlans": "Ver planes"
     }
   },
   "map": {
@@ -359,7 +343,7 @@
     "speed": "Velocidad simétrica de nuestro plan más rápido",
     "km": "Kilómetros de fibra desplegada",
     "pops": "Nodos (POP) en operación",
-    "cta": "Compruébalo: mide tu conexión actual",
+    "cta": "Mira la fibra simétrica en acción",
     "testimonials": "Lo que dicen nuestros clientes",
     "uptime": {
       "title": "Disponibilidad de los últimos {days} días",
@@ -413,7 +397,7 @@
     "items": {
       "speed": {
         "q": "¿La velocidad que anuncian es la que voy a tener?",
-        "a": "La velocidad de cada plan es el máximo que llega a tu casa, igual de bajada que de subida. Conectado por cable obtienes lo más cercano a ese máximo; por Wi-Fi depende de tu dispositivo, la distancia y las paredes. Puedes medir tu conexión actual con la prueba de velocidad de esta página."
+        "a": "La velocidad de cada plan es el máximo que llega a tu casa, igual de bajada que de subida. Conectado por cable obtienes lo más cercano a ese máximo; por Wi-Fi depende de tu dispositivo, la distancia y las paredes."
       },
       "symmetric": {
         "q": "¿Qué significa que sea simétrico?",

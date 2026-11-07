@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
-    "@cloudflare/speedtest": "^1.16.0",
     "@hookform/resolvers": "^7.0.3",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",

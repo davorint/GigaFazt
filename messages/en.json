@@ -222,45 +222,14 @@
     "regulatory": "IFT/CRT registration"
   },
   "fiber": {
-    "lead": "With symmetrical fiber you upload as fast as you download. Measure your internet today and compare.",
+    "lead": "With symmetrical fiber you upload as fast as you download. See it in action.",
     "cta": "Pick your plan",
-    "speedtest": {
-      "title": "Measure your current connection",
-      "desc": "A real test of your internet today, against Cloudflare servers. It takes about 20 seconds.",
-      "start": "Start test",
-      "cancel": "Cancel",
-      "demo": "See an example",
-      "retry": "Run again",
-      "phase": {
-        "latency": "Measuring latency…",
-        "download": "Measuring download…",
-        "upload": "Measuring upload…"
-      },
-      "progress": "Test progress",
-      "failed": "We couldn't finish the test. Try again or see an example.",
-      "cancelled": "You cancelled the test.",
-      "today": "Your connection today",
-      "withPlan": "With {speed} fiber",
-      "down": "Download",
-      "up": "Upload",
-      "ping": "Latency",
-      "uploadGap": "{times}× faster upload",
-      "uploadGapBody": "What takes you an hour to upload today would take {time}.",
-      "cta": "I want {speed}",
-      "demoNote": "Illustrative example: not your connection.",
-      "planNote": "Plan maximum speeds.",
-      "announce": "Result: {down} Mbps download, {up} Mbps upload and {ping} ms latency.",
-      "alreadyFast": "Your download is already very fast. With symmetrical fiber the difference is in upload and stable latency."
-    },
     "means": {
-      "title": "What it means day to day",
       "upload10": "Upload a 10 GB video",
       "streams": "4K screens at once",
       "backup": "Back up 1 TB to the cloud",
-      "today": "Today",
-      "plan": "With {speed}",
-      "runTest": "Run the test above to compare with your current connection.",
-      "note": "Ideal calculation at sustained maximum speed · 1 GB = 8,000 Mb · 25 Mbps per 4K screen."
+      "note": "Ideal calculation at sustained maximum speed · 1 GB = 8,000 Mb · 25 Mbps per 4K screen.",
+      "titlePlan": "What {speed} means day to day"
     },
     "telemetry": {
       "title": "The network, live",
@@ -307,6 +276,21 @@
         "body": "The equipment decides how much of your speed reaches each room over Wi-Fi.",
         "value": "Wi-Fi 7 with {wifi7} · Wi-Fi 6 with {wifi6}"
       }
+    },
+    "symmetry": {
+      "title": "Symmetry in light",
+      "desc": "Each flash is data travelling through the fiber: download toward your home and upload toward the network. Switch plans and compare a symmetrical connection with an asymmetrical one.",
+      "modeLegend": "Connection type",
+      "fiber": "Symmetrical fiber",
+      "asym": "Asymmetrical connection",
+      "planLegend": "Speed",
+      "down": "Download",
+      "up": "Upload",
+      "equal": "The same download and upload speed.",
+      "asymNote": "Illustrative example: on an asymmetrical connection upload can be {ratio} times slower than download.",
+      "hint": "Move your cursor over the fiber",
+      "alt": "Animation of light inside an optical fiber: download ({down}) travels one way and upload ({up}) the other.",
+      "viewPlans": "View plans"
     }
   },
   "map": {
@@ -359,7 +343,7 @@
     "speed": "Top plan speed, symmetrical",
     "km": "Kilometers of fiber deployed",
     "pops": "Nodes (POPs) in operation",
-    "cta": "See for yourself: test your current connection",
+    "cta": "See symmetrical fiber in action",
     "testimonials": "What our clients say",
     "uptime": {
       "title": "Availability over the last {days} days",
@@ -413,7 +397,7 @@
     "items": {
       "speed": {
         "q": "Will I get the advertised speed?",
-        "a": "Each plan's speed is the maximum delivered to your home, the same down and up. Over a cable you get closest to that maximum; over Wi-Fi it depends on your device, distance and walls. You can measure your current connection with the speed test on this page."
+        "a": "Each plan's speed is the maximum delivered to your home, the same down and up. Over a cable you get closest to that maximum; over Wi-Fi it depends on your device, distance and walls."
       },
       "symmetric": {
         "q": "What does symmetrical mean?",

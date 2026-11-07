@@ -1,53 +1,18 @@
 "use client"
 
-import {
-  Component,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react"
+import { useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { useTranslations } from "next-intl"
 import { cn } from "cn"
 import { FiberPoster } from "./FiberPoster"
 import { useReducedMotion } from "@/lib/motion"
+import { SceneBoundary, canUseWebGL } from "./SceneBoundary"
 
 // three.js only loads through this dynamic import, never in the initial bundle.
 const FiberScene = dynamic(
   () => import("./FiberScene").then((m) => m.FiberScene),
   { ssr: false }
 )
-
-function canUseWebGL(): boolean {
-  try {
-    const c = document.createElement("canvas")
-    return !!(
-      window.WebGLRenderingContext &&
-      (c.getContext("webgl2") || c.getContext("webgl"))
-    )
-  } catch {
-    return false
-  }
-}
-
-/** If the WebGL scene throws, swallow it and keep the poster (hard rule #9: the
- *  poster is the text-equivalent static frame anyway). */
-class SceneBoundary extends Component<
-  { onError: () => void; children: ReactNode },
-  { failed: boolean }
-> {
-  state = { failed: false }
-  static getDerivedStateFromError() {
-    return { failed: true }
-  }
-  componentDidCatch() {
-    this.props.onError()
-  }
-  render() {
-    return this.state.failed ? null : this.props.children
-  }
-}
 
 /**
  * Poster → WebGL crossfade layer behind the hero copy. Mounts the scene only

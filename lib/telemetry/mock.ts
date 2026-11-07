@@ -53,8 +53,3 @@ export function createMockTelemetry(hz = 1.5): TelemetrySource {
 
 export const mockTelemetry = createMockTelemetry()
 
-/**
- * Illustrative "today" connection for the speed-test demo fallback (SPEC §4
- * example: 87↓ / 11↑ Mbps · 24 ms). Always rendered with a DEMO DATA tag.
- */
-export const DEMO_LINE = { downMbps: 87, upMbps: 11, pingMs: 24 } as const

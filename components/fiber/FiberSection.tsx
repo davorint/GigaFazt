@@ -1,14 +1,14 @@
 import { useTranslations } from "next-intl"
 import { ArrowRight } from "lucide-react"
-import { SpeedTest } from "./SpeedTest"
+import { SymmetryLight } from "./SymmetryLight"
 import { WhatItMeans } from "./WhatItMeans"
 import { LazyTelemetryPanel } from "./LazyTelemetryPanel"
 import { LazyLatencyPhysics } from "./LazyLatencyPhysics"
 import { DeepDiveCards } from "./DeepDiveCards"
 
 /**
- * Symmetrical Fiber (SPEC §4), the flagship section: real speed test →
- * comparison → plan CTA, "what it means" tiles, simulated live telemetry,
+ * Symmetrical Fiber (SPEC §4), the flagship section: "Simetría en luz"
+ * (interactive three.js, replaced the speed test) → plan CTA, "what it means" tiles, simulated live telemetry,
  * latency physics and deep-dive cards. Heavy widgets are lazy islands.
  */
 export function FiberSection() {
@@ -23,7 +23,7 @@ export function FiberSection() {
       <p className="mt-3 max-w-2xl text-muted-foreground">{t("fiber.lead")}</p>
 
       <div className="mt-12">
-        <SpeedTest />
+        <SymmetryLight />
       </div>
 
       <div className="mt-12">

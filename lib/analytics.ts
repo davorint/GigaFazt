@@ -5,7 +5,6 @@
 export type AnalyticsEvent =
   | "coverage_check_started"
   | "coverage_check_completed"
-  | "speedtest_completed"
   | "recommender_completed"
   | "plan_selected"
   | "addon_toggled"
