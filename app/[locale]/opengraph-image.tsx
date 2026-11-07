@@ -3,6 +3,8 @@ import es from "@/messages/es.json"
 import en from "@/messages/en.json"
 import { routing } from "@/i18n/routing"
 import { STATES } from "@/lib/geo/states"
+import { company } from "@/lib/company"
+import { isPlaceholder } from "@/lib/placeholder"
 
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
@@ -24,7 +26,7 @@ export async function generateImageMetadata({ params }: { params: Promise<{ loca
 
 /**
  * Default OG image per locale. No price on it: hard rule #5 needs fee/term next
- * to any price, which doesn't fit a share card. No brand until COMPANY_NAME.
+ * to any price, which doesn't fit a share card. Brand wordmark once COMPANY_NAME is set.
  */
 export default async function OgImage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -50,6 +52,12 @@ export default async function OgImage({ params }: { params: Promise<{ locale: st
           fontFamily: "sans-serif",
         }}
       >
+        {!isPlaceholder(company.name) && (
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 40, fontSize: 40, fontWeight: 700, letterSpacing: -1 }}>
+            <div style={{ display: "flex", width: 26, height: 26, marginRight: 18, background: "#06b6d4", borderRadius: 5, transform: "rotate(45deg)", boxShadow: "0 0 24px #06b6d4" }} />
+            {company.name}
+          </div>
+        )}
         <div style={{ display: "flex", fontSize: 26, letterSpacing: 6, color: "#06b6d4" }}>
           [ {hero.eyebrow} ]
         </div>

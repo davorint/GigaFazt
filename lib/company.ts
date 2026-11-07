@@ -7,9 +7,9 @@ import { placeholder } from "./placeholder"
  * Re-sync this file when BUSINESS.md is filled in.
  */
 export const company: Company = {
-  name: placeholder("COMPANY_NAME"),
+  name: "GigaFazt", // owner, 2026-11-07
   logo: placeholder("LOGO"),
-  domain: placeholder("DOMAIN"),
+  domain: "gigafazt.com", // owner, 2026-11-07 (enables indexing + canonical URLs)
   whatsapp: "+52 5540947678", // owner, 2026-11-07 (10 digits kept together)
   salesPhone: placeholder("SALES_PHONE"),
   salesEmail: placeholder("SALES_EMAIL"),

@@ -55,6 +55,9 @@ export function pageMeta(
   ogAlt: string
 ) {
   const alternates = alternatesFor(locale, path)
+  // Brand suffix on every title once the name is known ("Planes | GigaFazt").
+  const brand = isPlaceholder(company.name) ? null : company.name
+  if (brand && !title.includes(brand)) title = `${title} | ${brand}`
   const ogLocale = (l: string) => (HREFLANG[l] ?? l).replace("-", "_")
   return {
     title,
@@ -62,6 +65,7 @@ export function pageMeta(
     alternates,
     openGraph: {
       type: "website" as const,
+      ...(brand ? { siteName: brand } : {}),
       title,
       description,
       url: alternates.canonical,
