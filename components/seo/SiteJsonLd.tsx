@@ -18,7 +18,6 @@ function organization() {
     url: SITE_URL,
     ...(isPlaceholder(company.salesPhone) ? {} : { telephone: company.salesPhone }),
     ...(isPlaceholder(company.salesEmail) ? {} : { email: company.salesEmail }),
-    ...(isPlaceholder(company.social) ? {} : { sameAs: company.social.map((s) => s.url) }),
   }
 }
 

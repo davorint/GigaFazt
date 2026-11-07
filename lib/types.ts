@@ -108,5 +108,4 @@ export interface Company {
     /** Office hours, Monday to Friday (24 h clock). */
     officeHours: Maybe<OfficeHours>
   }
-  social: Maybe<{ label: string; url: string }[]>
 }

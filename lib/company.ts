@@ -51,5 +51,4 @@ export const company: Company = {
     moving: placeholder("MOVING_POLICY"),
     officeHours: { open: 8, close: 18 }, // owner, 2026-11-07: Monday to Friday, 8:00 to 18:00
   },
-  social: placeholder("SOCIAL"),
 }

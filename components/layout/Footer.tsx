@@ -61,7 +61,7 @@ function Field({
 
 /**
  * Footer (SPEC §8): status badge · Aviso de Privacidad (LFPDPPP) · Términos ·
- * contact · social. Shared by every page; `base` is
+ * contact. Shared by every page; `base` is
  * the locale home ("/es") so section links work off the home page. Bottom
  * padding on mobile clears the fixed quick-nav bar.
  */
@@ -119,18 +119,6 @@ export function Footer({ base = "" }: { base?: string }) {
             <Field label={tn("whatsapp")} value={company.whatsapp} href={(v) => whatsappHref(v)} event="whatsapp_clicked" display={national} />
             <Field label={t("phone")} value={company.salesPhone} href={telHref} display={national} />
             <Field label={t("email")} value={company.salesEmail} href={(v) => `mailto:${v}`} />
-            <li className="flex flex-wrap items-center gap-2">
-              <span className="text-muted-foreground">{t("social")}</span>
-              {isPlaceholder(company.social) ? (
-                <PlaceholderChip keyName={company.social.key} />
-              ) : (
-                company.social.map((s) => (
-                  <a key={s.url} href={s.url} rel="noopener noreferrer" target="_blank" className={A}>
-                    {s.label}
-                  </a>
-                ))
-              )}
-            </li>
           </ul>
         </div>
 
