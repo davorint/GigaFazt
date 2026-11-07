@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { Menu, MapPin, Layers, MessageCircle } from "lucide-react"
 import { cn } from "cn"
 import { Button } from "@/components/ui/button"
@@ -30,13 +30,23 @@ const LINKS = [
   { key: "soporte", href: "#faq" },
 ] as const
 
+/** Separate pages (not home sections), so the home page stays light. */
+const PAGES = [{ key: "empresas", path: "/empresas" }] as const
+
 const SECTION_IDS = ["hero", "fiber", "plans", "map", "faq"]
 
-/** `base` prefixes the hash links when rendered off the home page (e.g. "/es"). */
-export function Nav({ base = "" }: { base?: string }) {
+/**
+ * `base` prefixes the hash links when rendered off the home page (e.g. "/es").
+ * `current` marks the page link of the page being viewed.
+ */
+export function Nav({ base = "", current }: { base?: string; current?: (typeof PAGES)[number]["key"] }) {
   const t = useTranslations("nav")
+  const locale = useLocale()
   const router = useRouter()
-  const links = LINKS.map((l) => ({ ...l, href: `${base}${l.href}` }))
+  const links = [
+    ...LINKS.map((l) => ({ key: l.key as string, href: `${base}${l.href}`, page: false })),
+    ...PAGES.map((p) => ({ key: p.key as string, href: `/${locale}${p.path}`, page: true })),
+  ]
   const [condensed, setCondensed] = useState(false)
   // Off the home page there is no #hero: show the bottom bar from the start and
   // skip section tracking (its links point back to the home page).
@@ -104,12 +114,13 @@ export function Nav({ base = "" }: { base?: string }) {
 
           <div className="hidden items-center gap-1 md:flex">
             {links.map((link) => {
-              const isActive = active === link.href.split("#")[1]
+              const isPage = link.page && current === link.key
+              const isActive = isPage || (!link.page && active === link.href.split("#")[1])
               return (
                 <a
                   key={link.key}
                   href={link.href}
-                  aria-current={isActive ? "true" : undefined}
+                  aria-current={isPage ? "page" : isActive ? "true" : undefined}
                   className={cn(
                     "rounded-md px-3 py-1.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                     isActive

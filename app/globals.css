@@ -176,6 +176,21 @@
   }
 }
 
+/* /empresas building diagram: light flowing along the fiber (static under
+   reduced motion / paused animations via the global rules). */
+@keyframes biz-flow {
+  to {
+    stroke-dashoffset: -48;
+  }
+}
+.biz-flow {
+  animation: biz-flow 1.6s linear infinite;
+  animation-play-state: paused;
+}
+[data-inview] .biz-flow {
+  animation-play-state: running;
+}
+
 /* MapLibre controls as small dark glass HUD panels (DESIGN "Map direction"). */
 .maplibregl-ctrl-group {
   background: rgb(3 7 18 / 0.75) !important;

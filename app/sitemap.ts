@@ -5,7 +5,7 @@ import { SITE_URL, alternatesFor } from "@/lib/site"
 
 /** Every locale × page, each with its hreflang alternates (SPEC SEO). */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const paths = ["/", "/planes", ...coverageAreas.map((a) => `/cobertura/${a.slug}`)]
+  const paths = ["/", "/planes", "/empresas", ...coverageAreas.map((a) => `/cobertura/${a.slug}`)]
   return paths.flatMap((path) =>
     routing.locales.map((locale) => {
       const { canonical, languages } = alternatesFor(locale, path)
@@ -17,7 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
           ),
         },
         changeFrequency: path === "/" ? "weekly" : "monthly",
-        priority: path === "/" ? 1 : path === "/planes" ? 0.9 : 0.7,
+        priority: path === "/" ? 1 : path === "/planes" ? 0.9 : path === "/empresas" ? 0.8 : 0.7,
       } satisfies MetadataRoute.Sitemap[number]
     })
   )

@@ -16,7 +16,8 @@
     "language": "Language",
     "home": "Home",
     "main": "Main",
-    "quick": "Quick links"
+    "quick": "Quick links",
+    "empresas": "Businesses"
   },
   "status": {
     "operational": "Operational",
@@ -488,5 +489,78 @@
       "name": "Morelos",
       "in": "Morelos"
     }
+  },
+  "business": {
+    "metaTitle": "Fiber for businesses: custom installations",
+    "metaDescription": "Custom fiber optic installations for your business: gigabit speeds in every area, dedicated internet up to {max} Gbps, structured cabling, business Wi-Fi and network equipment.",
+    "eyebrow": "Businesses",
+    "h1": "Gigabit speeds in every area of your business.",
+    "lead": "We design and install a custom fiber network so your offices, floors, warehouses and stores all work at the same speed.",
+    "speed": "Links up to {max} Gbps",
+    "speedQual": "maximum speed of the contracted link",
+    "quote": "Get a quote on WhatsApp",
+    "quoteNote": "Quoted for your space.",
+    "whatsappMessage": "Hi, I would like a quote for a fiber optic installation for my business.",
+    "spacesLabel": "Spaces we connect",
+    "spaces": {
+      "offices": "Offices and headquarters",
+      "warehouses": "Warehouses and plants",
+      "retail": "Stores and restaurants",
+      "buildings": "Buildings and shopping centers"
+    },
+    "diagramCaption": "Fiber reaches every floor and every area",
+    "servicesEyebrow": "Business services",
+    "servicesTitle": "Everything your network needs, from one provider",
+    "servicesLead": "From where the fiber comes in to the last workstation.",
+    "services": {
+      "customInstall": {
+        "title": "Custom fiber installations",
+        "body": "We design the network around your space and operation, and install it end to end."
+      },
+      "everyArea": {
+        "title": "Gigabit in every area",
+        "body": "We run fiber to every floor, office, warehouse or store so every area of your business works at gigabit speed."
+      },
+      "dedicated": {
+        "title": "Dedicated internet",
+        "body": "Bandwidth reserved for your company, not shared, with links up to {max} Gbps."
+      },
+      "cabling": {
+        "title": "Structured cabling",
+        "body": "Tidy fiber and copper cabling to every workstation, with racks and patch panels."
+      },
+      "wifi": {
+        "title": "Business Wi-Fi",
+        "body": "Access points planned to cover your whole space: offices, warehouses, restaurants and stores."
+      },
+      "equipment": {
+        "title": "Network equipment",
+        "body": "We supply and install the switches, firewalls and routers your network needs."
+      }
+    },
+    "stepsEyebrow": "How we work",
+    "stepsTitle": "From idea to a working network",
+    "steps": {
+      "talk": {
+        "title": "Tell us about your space",
+        "body": "Message us on WhatsApp: which areas you want connected and how many people work there."
+      },
+      "design": {
+        "title": "We design your network",
+        "body": "We propose the installation, link and equipment that fit your operation."
+      },
+      "quote": {
+        "title": "A custom quote",
+        "body": "You get a proposal with the scope and price of your project."
+      },
+      "install": {
+        "title": "We install and hand over",
+        "body": "We install the fiber and equipment and hand over a working network."
+      }
+    },
+    "ctaTitle": "Bring fiber to your whole business",
+    "ctaLead": "We serve {states}. Tell us about your project and we will prepare a custom quote.",
+    "smallOffice": "Just need internet for a small store or office?",
+    "plansLink": "View plans"
   }
 }

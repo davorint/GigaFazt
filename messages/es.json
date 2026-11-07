@@ -16,7 +16,8 @@
     "language": "Idioma",
     "home": "Inicio",
     "main": "Principal",
-    "quick": "Accesos rápidos"
+    "quick": "Accesos rápidos",
+    "empresas": "Empresas"
   },
   "status": {
     "operational": "Operativo",
@@ -488,5 +489,78 @@
       "name": "Morelos",
       "in": "Morelos"
     }
+  },
+  "business": {
+    "metaTitle": "Fibra óptica para empresas: instalaciones a la medida",
+    "metaDescription": "Instalaciones de fibra óptica a la medida para tu negocio: velocidad gigabit en todas las áreas, internet dedicado de hasta {max} Gbps, cableado estructurado, Wi-Fi empresarial y equipo de red.",
+    "eyebrow": "Empresas",
+    "h1": "Velocidad gigabit en todas las áreas de tu negocio.",
+    "lead": "Diseñamos e instalamos tu red de fibra óptica a la medida, para que oficinas, pisos, bodegas y locales trabajen a la misma velocidad.",
+    "speed": "Enlaces de hasta {max} Gbps",
+    "speedQual": "velocidad máxima del enlace contratado",
+    "quote": "Cotizar por WhatsApp",
+    "quoteNote": "Cotización a la medida de tu espacio.",
+    "whatsappMessage": "Hola, quiero cotizar una instalación de fibra óptica para mi negocio.",
+    "spacesLabel": "Espacios que conectamos",
+    "spaces": {
+      "offices": "Oficinas y corporativos",
+      "warehouses": "Bodegas y naves",
+      "retail": "Comercios y restaurantes",
+      "buildings": "Edificios y plazas"
+    },
+    "diagramCaption": "La fibra llega a cada piso y a cada área",
+    "servicesEyebrow": "Servicios para empresas",
+    "servicesTitle": "Todo lo que tu red necesita, con un solo proveedor",
+    "servicesLead": "Desde la llegada de la fibra hasta el último puesto de trabajo.",
+    "services": {
+      "customInstall": {
+        "title": "Instalaciones de fibra a la medida",
+        "body": "Diseñamos la red según tu espacio y tu operación, y la instalamos de punta a punta."
+      },
+      "everyArea": {
+        "title": "Gigabit en cada área",
+        "body": "Llevamos la fibra a cada piso, oficina, bodega o local para que todas las áreas de tu negocio trabajen a velocidad gigabit."
+      },
+      "dedicated": {
+        "title": "Internet dedicado",
+        "body": "Ancho de banda exclusivo para tu empresa, no compartido, con enlaces de hasta {max} Gbps."
+      },
+      "cabling": {
+        "title": "Cableado estructurado",
+        "body": "Cableado ordenado de fibra y cobre hasta cada puesto, con racks y paneles de parcheo."
+      },
+      "wifi": {
+        "title": "Wi-Fi empresarial",
+        "body": "Puntos de acceso planeados para cubrir todo tu espacio: oficinas, bodegas, restaurantes y comercios."
+      },
+      "equipment": {
+        "title": "Equipo de red",
+        "body": "Suministramos e instalamos los switches, firewalls y routers que tu red necesita."
+      }
+    },
+    "stepsEyebrow": "Cómo trabajamos",
+    "stepsTitle": "De la idea a tu red funcionando",
+    "steps": {
+      "talk": {
+        "title": "Cuéntanos de tu espacio",
+        "body": "Escríbenos por WhatsApp: qué áreas quieres conectar y cuántas personas trabajan ahí."
+      },
+      "design": {
+        "title": "Diseñamos tu red",
+        "body": "Proponemos la instalación, el enlace y el equipo adecuados para tu operación."
+      },
+      "quote": {
+        "title": "Cotización a la medida",
+        "body": "Recibes una propuesta con el alcance y el precio de tu proyecto."
+      },
+      "install": {
+        "title": "Instalamos y entregamos",
+        "body": "Instalamos la fibra y el equipo, y te entregamos la red funcionando."
+      }
+    },
+    "ctaTitle": "Lleva la fibra a todo tu negocio",
+    "ctaLead": "Damos servicio en {states}. Cuéntanos de tu proyecto y te preparamos una cotización a la medida.",
+    "smallOffice": "¿Solo necesitas internet para un local u oficina pequeña?",
+    "plansLink": "Ver planes"
   }
 }

@@ -92,7 +92,9 @@ async function main() {
               const r = n.getBoundingClientRect()
               return { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: r.height }
             })
-            await page.screenshot({ path: file, fullPage: true, clip: box })
+            // Full-page capture brings every running CSS loop on screen, which can
+            // stall SwiftShader; freeze CSS animations for this fallback only.
+            await page.screenshot({ path: file, fullPage: true, clip: box, animations: "disabled" })
           })
           console.log(`✓ ${id}--${viewport.name}--${motion}.png`)
         } catch (err) {

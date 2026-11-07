@@ -93,6 +93,7 @@ export function Footer({ base = "" }: { base?: string }) {
           <h2 className="eyebrow mb-3">{t("explore")}</h2>
           <ul className="space-y-2 text-sm">
             <li><Link href="/planes" className={A}>{tn("planes")}</Link></li>
+            <li><Link href="/empresas" className={A}>{tn("empresas")}</Link></li>
             <li><a href={`${prefix}#fiber`} className={A}>{tn("fibra")}</a></li>
             <li><a href={`${prefix}#map`} className={A}>{tn("cobertura")}</a></li>
             <li><a href={`${prefix}#faq`} className={A}>{t("faq")}</a></li>
