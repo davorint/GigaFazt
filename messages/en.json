@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "title": "Symmetrical fiber internet for CDMX, Edomex and Morelos",
+    "description": "100% symmetrical fiber internet. Check coverage, pick your plan and sign up. Up to 10 Gbps symmetrical with low latency."
+  },
+  "nav": {
+    "fibra": "Fiber",
+    "planes": "Plans",
+    "cobertura": "Coverage",
+    "soporte": "Support",
+    "verifyCoverage": "Check coverage",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "whatsapp": "WhatsApp",
+    "language": "Language"
+  },
+  "status": {
+    "operational": "Operational",
+    "degraded": "Degraded"
+  },
+  "segment": {
+    "hogar": "Home",
+    "empresa": "Business"
+  },
+  "hero": {
+    "eyebrow": "100% SYMMETRICAL OPTICAL FIBER",
+    "h1": "The physical engine for what's next.",
+    "subhead_hogar": "Upload a 4K video in seconds. The same download and upload speed, with low, stable latency.",
+    "subhead_empresa": "Dedicated connectivity with SLA, static IP and metro-grade latency for your operation.",
+    "priceAnchor": "From <price></price>/mo",
+    "addressLabel": "Your address",
+    "addressPlaceholder": "Street, neighborhood or ZIP code",
+    "checkCoverage": "Check coverage"
+  },
+  "sections": {
+    "hero": "Home",
+    "plans": "Plans",
+    "fiber": "Symmetrical fiber",
+    "map": "Coverage",
+    "proof": "Network & SLA",
+    "install": "Installation",
+    "faq": "FAQ",
+    "cta": "Sign up",
+    "footer": "Footer"
+  },
+  "sectionHeads": {
+    "plans": "Choose your plan",
+    "fiber": "Truly symmetrical fiber",
+    "map": "See if we reach your area",
+    "proof": "The network behind the service",
+    "install": "How installation works",
+    "faq": "Frequently asked questions",
+    "cta": "Ready to sign up?"
+  },
+  "common": {
+    "simulacion": "SIMULATION",
+    "demoData": "DEMO DATA",
+    "placeholder": "TBD",
+    "placeholderTitle": "Pending value in BUSINESS.md",
+    "comingSoon": "Coming soon",
+    "quote": "Get a quote",
+    "contract": "Sign up"
+  }
+}

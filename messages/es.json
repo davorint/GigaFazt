@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "title": "Fibra óptica simétrica para CDMX, Edomex y Morelos",
+    "description": "Internet de fibra óptica 100% simétrica. Verifica cobertura, elige tu plan y contrata. Hasta 10 Gbps simétricos con baja latencia."
+  },
+  "nav": {
+    "fibra": "Fibra",
+    "planes": "Planes",
+    "cobertura": "Cobertura",
+    "soporte": "Soporte",
+    "verifyCoverage": "Verificar cobertura",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "whatsapp": "WhatsApp",
+    "language": "Idioma"
+  },
+  "status": {
+    "operational": "Operativo",
+    "degraded": "Degradado"
+  },
+  "segment": {
+    "hogar": "Hogar",
+    "empresa": "Empresa"
+  },
+  "hero": {
+    "eyebrow": "100% FIBRA ÓPTICA SIMÉTRICA",
+    "h1": "El motor físico de lo que sigue.",
+    "subhead_hogar": "Sube un video 4K en segundos. Misma velocidad de bajada y de subida, con latencia baja y estable.",
+    "subhead_empresa": "Conectividad dedicada con SLA, IP fija y latencia de nivel metropolitano para tu operación.",
+    "priceAnchor": "Desde <price></price>/mes",
+    "addressLabel": "Tu dirección",
+    "addressPlaceholder": "Calle, colonia o código postal",
+    "checkCoverage": "Verificar cobertura"
+  },
+  "sections": {
+    "hero": "Inicio",
+    "plans": "Planes",
+    "fiber": "Fibra simétrica",
+    "map": "Cobertura",
+    "proof": "Red y SLA",
+    "install": "Instalación",
+    "faq": "Preguntas frecuentes",
+    "cta": "Contratar",
+    "footer": "Pie de página"
+  },
+  "sectionHeads": {
+    "plans": "Elige tu plan",
+    "fiber": "Fibra simétrica de verdad",
+    "map": "Mira si llegamos a tu zona",
+    "proof": "La red detrás del servicio",
+    "install": "Así se instala",
+    "faq": "Preguntas frecuentes",
+    "cta": "¿Listo para contratar?"
+  },
+  "common": {
+    "simulacion": "SIMULACIÓN",
+    "demoData": "DEMO DATA",
+    "placeholder": "POR DEFINIR",
+    "placeholderTitle": "Dato pendiente en BUSINESS.md",
+    "comingSoon": "Próximamente",
+    "quote": "Cotizar",
+    "contract": "Contratar"
+  }
+}
