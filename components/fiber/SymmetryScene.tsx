@@ -67,15 +67,15 @@ const vertex = /* glsl */ `
     float f = exp(-dot(d, d) * 1.2) * uPush;
     y += sign(d.y + 1e-3) * f * 0.55;
 
-    float edge = smoothstep(uSpan * 0.5, uSpan * 0.5 - 2.8, abs(x));
+    float edge = smoothstep(uSpan * 0.5, uSpan * 0.5 - 1.6, abs(x));
     // A few bright "packets" give the flow hierarchy.
     float packet = step(0.88, aSeed.z);
     vBoost = 1.0 + packet * 1.6;
-    vAlpha = on * edge * mix(0.7, 1.0, aSeed.z);
+    vAlpha = on * edge * mix(0.85, 1.0, aSeed.z);
 
     // Streak length grows with speed; quad is stretched along x.
     float len = (0.16 + speed * 0.14) * (1.0 + packet * 0.8);
-    float thick = (0.055 + packet * 0.035) * mix(1.0, uGain, 0.5);
+    float thick = (0.07 + packet * 0.04) * mix(1.0, uGain, 0.5);
     vec3 pos = vec3(x + position.x * len, y + position.y * thick, z);
     vUv = uv;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -94,7 +94,7 @@ const fragment = /* glsl */ `
     float across = 1.0 - abs(vUv.y - 0.5) * 2.0;
     float along = uDir > 0.0 ? vUv.x : 1.0 - vUv.x; // bright head, fading tail
     float a = pow(across, 1.3) * pow(along, 1.6) * vAlpha;
-    gl_FragColor = vec4(uColor * (0.9 + along * 1.9) * vBoost * uGain, a);
+    gl_FragColor = vec4(uColor * (1.3 + along * 2.4) * vBoost * uGain, a);
   }
 `
 
@@ -216,7 +216,7 @@ const glassFragment = /* glsl */ `
   varying float vX;
   void main() {
     float fres = pow(1.0 - abs(dot(vNormal, vView)), 3.0);
-    float edge = smoothstep(uSpan * 0.5, uSpan * 0.5 - 2.5, abs(vX));
+    float edge = smoothstep(uSpan * 0.5, uSpan * 0.5 - 1.5, abs(vX));
     // Rim plus a faint body haze so the tube reads as lit glass, not a void.
     gl_FragColor = vec4(uColor, (fres + uFill) * uStrength * edge);
   }
@@ -269,7 +269,7 @@ function Rig({ interactive, children }: { interactive: boolean; children: React.
     const ty = interactive ? state.pointer.x * 0.12 : 0
     // Base pose: angled so the fiber recedes into depth, seen slightly from above.
     g.current.rotation.x += (tx + 0.16 - g.current.rotation.x) * k
-    g.current.rotation.y += (ty - 0.28 - g.current.rotation.y) * k
+    g.current.rotation.y += (ty - 0.2 - g.current.rotation.y) * k
   })
   return <group ref={g}>{children}</group>
 }
@@ -289,7 +289,7 @@ export function SymmetryScene({
 }) {
   const [bloom, setBloom] = useState(true)
   const [lite, setLite] = useState(false)
-  const base = quality === "mobile" ? 450 : 900
+  const base = quality === "mobile" ? 700 : 1400
   const count = lite ? Math.round(base / 2) : base
 
   return (
@@ -297,7 +297,7 @@ export function SymmetryScene({
       className="h-full w-full"
       dpr={[1, quality === "mobile" ? 1.25 : 1.75]}
       gl={{ alpha: true, antialias: false, powerPreference: "high-performance" }}
-      camera={{ position: [0, 0, quality === "mobile" ? 6.6 : 6], fov: 40 }}
+      camera={{ position: [0, 0, quality === "mobile" ? 5.8 : 5.2], fov: 40 }}
       onCreated={({ gl }) => {
         gl.setClearAlpha(0)
         requestAnimationFrame(() => onReady?.())
@@ -310,15 +310,15 @@ export function SymmetryScene({
         }}
       />
       <Rig interactive={interactive}>
-        <Glass radius={RADIUS * 1.06} strength={1.5} fill={0.06} />
-        <Glass radius={RADIUS * 1.2} strength={0.4} />
+        <Glass radius={RADIUS * 1.06} strength={1.8} fill={0.16} />
+        <Glass radius={RADIUS * 1.2} strength={0.6} fill={0.04} />
         <Core />
         <Stream key={`d${count}`} target={down} dir={1} count={count} />
         <Stream key={`u${count}`} target={up} dir={-1} count={count} />
       </Rig>
       {bloom && (
         <EffectComposer>
-          <Bloom luminanceThreshold={0.2} intensity={1.5} radius={0.75} mipmapBlur />
+          <Bloom luminanceThreshold={0.15} intensity={1.9} radius={0.8} mipmapBlur />
         </EffectComposer>
       )}
     </Canvas>

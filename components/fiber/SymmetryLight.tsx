@@ -29,7 +29,7 @@ const MAX_MBPS = Math.max(...plans.map((p) => p.downMbps))
 
 function targets(downMbps: number, mode: Mode): { down: StreamTarget; up: StreamTarget; upMbps: number } {
   const frac = downMbps / MAX_MBPS
-  const density = 0.3 + 0.7 * frac
+  const density = 0.55 + 0.45 * frac
   const speed = 1.4 + 2.6 * frac
   const down = { density, speed, color: CYAN }
   if (mode === "fiber") return { down, up: { density, speed, color: ICE }, upMbps: downMbps }
@@ -171,7 +171,7 @@ export function SymmetryLight() {
       {/* Stage: SVG frame underneath, WebGL crossfades in on top. */}
       <div
         ref={stage}
-        className="relative mt-6 h-[240px] overflow-hidden rounded-lg border border-border bg-background/70 bg-[radial-gradient(ellipse_60%_55%_at_55%_50%,rgb(34_211_238/0.16),transparent_75%)] sm:h-[320px] lg:h-[380px]"
+        className="relative mt-6 h-[240px] overflow-hidden rounded-lg border border-border bg-[#071218] bg-[radial-gradient(ellipse_75%_65%_at_55%_50%,rgb(34_211_238/0.28),rgb(34_211_238/0.06)_60%,transparent_90%)] sm:h-[320px] lg:h-[380px]"
       >
         <SymmetryPoster
           down={down}
