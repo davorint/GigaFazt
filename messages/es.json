@@ -355,7 +355,9 @@
     },
     "latencyValue": "< 1 ms",
     "clientsValue": "+{count}",
-    "clients": "clientes activos en nuestra red"
+    "clients": "clientes activos en nuestra red",
+    "monitorValue": "24 h",
+    "monitor": "personal técnico vigilando nuestra red, servidores y sistemas"
   },
   "install": {
     "lead": "Cuatro pasos, sin vueltas. Tú eliges el plan; nosotros llevamos la fibra hasta tu casa.",
@@ -392,7 +394,7 @@
       "cancellation": "Cancelación",
       "whatsapp": "WhatsApp",
       "phone": "Teléfono",
-      "hours": "Horario de soporte",
+      "hours": "Horario de atención",
       "moving": "Cambio de domicilio"
     },
     "items": {
@@ -420,6 +422,10 @@
         "q": "¿Qué hago si se cae el servicio?",
         "a": "Repórtalo por cualquiera de estos canales y te ayudamos:"
       },
+      "hours": {
+        "q": "¿Cuál es su horario de atención?",
+        "a": "Nuestras oficinas atienden en este horario. Además, nuestro personal técnico vigila la red, los servidores y los sistemas las 24 horas del día."
+      },
       "moving": {
         "q": "¿Qué pasa si me cambio de casa?",
         "a": "Esta es nuestra política de cambio de domicilio:"
@@ -436,7 +442,8 @@
         "q": "¿En dónde dan servicio?",
         "a": "En {states}. Confirmamos la cobertura de tu dirección exacta al contratar."
       }
-    }
+    },
+    "officeHoursValue": "Lunes a viernes, de {open} a {close} h"
   },
   "cta": {
     "eyebrow": "CONTRATAR",

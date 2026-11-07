@@ -355,7 +355,9 @@
     },
     "latencyValue": "< 1 ms",
     "clientsValue": "{count}+",
-    "clients": "active clients on our network"
+    "clients": "active clients on our network",
+    "monitorValue": "24 h",
+    "monitor": "technical staff looking after our network, servers and systems"
   },
   "install": {
     "lead": "Four steps, no runaround. You pick the plan; we bring the fiber to your home.",
@@ -392,7 +394,7 @@
       "cancellation": "Cancellation",
       "whatsapp": "WhatsApp",
       "phone": "Phone",
-      "hours": "Support hours",
+      "hours": "Office hours",
       "moving": "Moving"
     },
     "items": {
@@ -420,6 +422,10 @@
         "q": "What if the service goes down?",
         "a": "Report it through any of these channels and we will help:"
       },
+      "hours": {
+        "q": "What are your office hours?",
+        "a": "Our offices are open during these hours. In addition, our technical staff look after the network, servers and systems 24 hours a day."
+      },
       "moving": {
         "q": "What happens if I move?",
         "a": "This is our moving policy:"
@@ -436,7 +442,8 @@
         "q": "Where do you provide service?",
         "a": "In {states}. We confirm coverage at your exact address when you sign up."
       }
-    }
+    },
+    "officeHoursValue": "Monday to Friday, {open} to {close}"
   },
   "cta": {
     "eyebrow": "SIGN UP",

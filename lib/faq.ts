@@ -1,6 +1,7 @@
 import { company } from "./company"
 import { addOns } from "./plans"
 import { isPlaceholder, type Maybe } from "./placeholder"
+import type { OfficeHours } from "./types"
 
 /**
  * FAQ (SPEC §8). Question/answer copy lives in messages (`faq.items.<id>`);
@@ -8,18 +9,18 @@ import { isPlaceholder, type Maybe } from "./placeholder"
  * unfilled BUSINESS.md value shows as a POR DEFINIR chip, never an invented
  * answer (hard rule #1). Only fully-answered items go into FAQPage JSON-LD.
  */
-export type FaqFactValue = Maybe<string> | Maybe<number> | Maybe<number | null>
+export type FaqFactValue = Maybe<string> | Maybe<number> | Maybe<number | null> | Maybe<OfficeHours>
 
 export interface FaqFact {
   /** Label key under `faq.facts`. */
   label: "installFee" | "installDays" | "term" | "cancellation" | "whatsapp" | "phone" | "hours" | "moving"
   value: FaqFactValue
-  /** "mxn": money (0 = free) · "term": months (null = no minimum term). */
-  format?: "mxn" | "term"
+  /** "mxn": money (0 = free) · "term": months (null = no minimum term) · "hours": office hours. */
+  format?: "mxn" | "term" | "hours"
 }
 
 export interface FaqItem {
-  id: "speed" | "symmetric" | "install" | "contract" | "router" | "support" | "moving" | "business" | "tv" | "coverage"
+  id: "speed" | "symmetric" | "install" | "contract" | "router" | "support" | "hours" | "moving" | "business" | "tv" | "coverage"
   facts: FaqFact[]
 }
 
@@ -48,9 +49,11 @@ export const faqItems: FaqItem[] = [
     facts: [
       { label: "whatsapp", value: company.whatsapp },
       { label: "phone", value: company.salesPhone },
-      { label: "hours", value: policies.supportHours },
+      { label: "hours", value: policies.officeHours, format: "hours" },
     ],
   },
+  // Office hours + 24 h network monitoring (owner, 2026-11-07).
+  { id: "hours", facts: [{ label: "hours", value: policies.officeHours, format: "hours" }] },
   { id: "moving", facts: [{ label: "moving", value: policies.moving }] },
   { id: "symmetric", facts: [] },
   { id: "business", facts: [] },

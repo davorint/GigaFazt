@@ -52,6 +52,12 @@ export interface CoverageResult {
   estLatencyMs?: number
 }
 
+/** Opening and closing hour, 24 h clock (e.g. 8 and 18). */
+export interface OfficeHours {
+  open: number
+  close: number
+}
+
 export interface Company {
   name: Maybe<string>
   logo: Maybe<string>
@@ -71,6 +77,8 @@ export interface Company {
     fiberTypes: Maybe<string>
     certifications: Maybe<string>
     statusProvider: Maybe<string>
+    /** Staff monitor the network, servers and systems 24 hours a day. */
+    monitoring24h: Maybe<boolean>
   }
   terms: {
     installFeeMxn: Maybe<number>
@@ -98,7 +106,8 @@ export interface Company {
   policies: {
     cancellation: Maybe<string>
     moving: Maybe<string>
-    supportHours: Maybe<string>
+    /** Office hours, Monday to Friday (24 h clock). */
+    officeHours: Maybe<OfficeHours>
   }
   social: Maybe<{ label: string; url: string }[]>
 }

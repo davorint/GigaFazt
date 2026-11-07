@@ -26,6 +26,7 @@ export const company: Company = {
     fiberTypes: placeholder("FIBER_TYPES"),
     certifications: placeholder("CERTIFICATIONS"),
     statusProvider: placeholder("STATUS_PROVIDER"),
+    monitoring24h: true, // owner, 2026-11-07: staff look after the network, servers and systems 24 h
   },
   terms: {
     installFeeMxn: 0, // free installation (owner, 2026-11-07)
@@ -49,7 +50,7 @@ export const company: Company = {
   policies: {
     cancellation: placeholder("CANCELLATION_POLICY"),
     moving: placeholder("MOVING_POLICY"),
-    supportHours: placeholder("SUPPORT_HOURS"),
+    officeHours: { open: 8, close: 18 }, // owner, 2026-11-07: Monday to Friday, 8:00 to 18:00
   },
   social: placeholder("SOCIAL"),
 }

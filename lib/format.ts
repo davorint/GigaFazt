@@ -18,6 +18,12 @@ export function speedLabel(mbps: number, maxMbps?: number): string {
     : `${a.value} ${a.unit}–${b.value} ${b.unit}`
 }
 
+/** Clock hour for display: "8:00" / "18:00" in Spanish, "8 AM" / "6 PM" in English. */
+export function hourLabel(hour: number, locale: string): string {
+  if (locale.startsWith("es")) return `${hour}:00`
+  return new Intl.DateTimeFormat("en-US", { hour: "numeric", timeZone: "UTC" }).format(Date.UTC(2020, 0, 1, hour))
+}
+
 export function formatMxn(value: number, locale: string): string {
   return new Intl.NumberFormat(locale === "en" ? "en-US" : "es-MX", {
     maximumFractionDigits: 0,

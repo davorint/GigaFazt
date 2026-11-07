@@ -3,7 +3,7 @@ import { statesInList } from "@/lib/geo/state-names"
 import { formatMxn } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { plansWith } from "@/lib/plans"
-import { speedLabel } from "@/lib/format"
+import { hourLabel, speedLabel } from "@/lib/format"
 
 type T = (key: string, args?: Record<string, string | number>) => string
 
@@ -35,6 +35,9 @@ export function factText(fact: FaqFact, locale: string, t: T): string | null {
   if (isPlaceholder(fact.value)) return null
   if (fact.format === "mxn" && typeof fact.value === "number") {
     return fact.value === 0 ? t("plans.free") : `$${formatMxn(fact.value, locale)} MXN`
+  }
+  if (fact.format === "hours" && typeof fact.value === "object" && fact.value !== null) {
+    return t("faq.officeHoursValue", { open: hourLabel(fact.value.open, locale), close: hourLabel(fact.value.close, locale) })
   }
   if (fact.format === "term") {
     return fact.value === null ? t("plans.noContract") : t("plans.months", { count: Number(fact.value) })
