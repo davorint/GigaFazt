@@ -61,9 +61,9 @@ describe("faq", () => {
   it("only marks items answered when no fact is a placeholder", () => {
     expect(isAnswered({ id: "speed", facts: [] })).toBe(true)
     expect(
-      isAnswered({ id: "staticIp", facts: [{ label: "staticIp", value: placeholder("STATIC_IP") }] })
+      isAnswered({ id: "moving", facts: [{ label: "moving", value: placeholder("MOVING_POLICY") }] })
     ).toBe(false)
-    expect(isAnswered({ id: "staticIp", facts: [{ label: "staticIp", value: "Sí" }] })).toBe(true)
+    expect(isAnswered({ id: "moving", facts: [{ label: "moving", value: "Sí" }] })).toBe(true)
   })
   it("Wi-Fi 7 modem is on the 1 Gbps plan only", () => {
     expect(wifi7Plan?.id).toBe("fibra-1g")

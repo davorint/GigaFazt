@@ -49,7 +49,6 @@ export const company: Company = {
   policies: {
     cancellation: placeholder("CANCELLATION_POLICY"),
     moving: placeholder("MOVING_POLICY"),
-    staticIp: placeholder("STATIC_IP"),
     supportHours: placeholder("SUPPORT_HOURS"),
   },
   social: placeholder("SOCIAL"),

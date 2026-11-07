@@ -98,7 +98,6 @@ export interface Company {
   policies: {
     cancellation: Maybe<string>
     moving: Maybe<string>
-    staticIp: Maybe<string>
     supportHours: Maybe<string>
   }
   social: Maybe<{ label: string; url: string }[]>

@@ -390,7 +390,6 @@
       "installDays": "Tiempo",
       "term": "Plazo",
       "cancellation": "Cancelación",
-      "staticIp": "IP fija",
       "whatsapp": "WhatsApp",
       "phone": "Teléfono",
       "hours": "Horario de soporte",
@@ -416,10 +415,6 @@
       "router": {
         "q": "¿Incluye módem?",
         "a": "Sí. Todos los planes incluyen módem en comodato y sin costo adicional: te lo prestamos mientras tu servicio esté activo. El plan de {wifi7} trae módem Wi-Fi 7 y los de {wifi6}, módem Wi-Fi 6. Para la velocidad máxima de Wi-Fi 7 tus dispositivos deben ser compatibles; los demás también se conectan sin problema."
-      },
-      "staticIp": {
-        "q": "¿Puedo tener IP fija?",
-        "a": "Disponibilidad de IP fija:"
       },
       "support": {
         "q": "¿Qué hago si se cae el servicio?",

@@ -390,7 +390,6 @@
       "installDays": "Time",
       "term": "Term",
       "cancellation": "Cancellation",
-      "staticIp": "Static IP",
       "whatsapp": "WhatsApp",
       "phone": "Phone",
       "hours": "Support hours",
@@ -416,10 +415,6 @@
       "router": {
         "q": "Is a modem included?",
         "a": "Yes. Every plan includes a modem on loan at no extra cost for as long as your service is active: a Wi-Fi 7 modem with {wifi7} and a Wi-Fi 6 modem with {wifi6}. Wi-Fi 7's top speed needs compatible devices; older devices still connect fine."
-      },
-      "staticIp": {
-        "q": "Can I get a static IP?",
-        "a": "Static IP availability:"
       },
       "support": {
         "q": "What if the service goes down?",

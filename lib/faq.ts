@@ -12,14 +12,14 @@ export type FaqFactValue = Maybe<string> | Maybe<number> | Maybe<number | null>
 
 export interface FaqFact {
   /** Label key under `faq.facts`. */
-  label: "installFee" | "installDays" | "term" | "cancellation" | "staticIp" | "whatsapp" | "phone" | "hours" | "moving"
+  label: "installFee" | "installDays" | "term" | "cancellation" | "whatsapp" | "phone" | "hours" | "moving"
   value: FaqFactValue
   /** "mxn": money (0 = free) · "term": months (null = no minimum term). */
   format?: "mxn" | "term"
 }
 
 export interface FaqItem {
-  id: "speed" | "symmetric" | "install" | "contract" | "router" | "staticIp" | "support" | "moving" | "business" | "tv" | "coverage"
+  id: "speed" | "symmetric" | "install" | "contract" | "router" | "support" | "moving" | "business" | "tv" | "coverage"
   facts: FaqFact[]
 }
 
@@ -43,7 +43,6 @@ export const faqItems: FaqItem[] = [
   },
   // Answered from plan data (modem per plan, on loan): see faqEntries.
   { id: "router", facts: [] },
-  { id: "staticIp", facts: [{ label: "staticIp", value: policies.staticIp }] },
   {
     id: "support",
     facts: [
