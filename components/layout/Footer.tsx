@@ -11,6 +11,9 @@ import { isPlaceholder, type Maybe } from "@/lib/placeholder"
 import { telHref, whatsappHref } from "@/lib/contact"
 import { stateName } from "@/lib/geo/state-names"
 
+/** "+52 5540947678" → "5540947678": local visitors read national format; links keep +52. */
+const national = (v: string) => v.replace(/^\+52\s*/, "")
+
 const A = "rounded text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 
 /** Value, external link or chip for a BUSINESS.md field. */
@@ -19,11 +22,17 @@ function Field({
   value,
   href,
   event,
+  showValue = true,
+  display = (v) => v,
 }: {
   label: string
   value: Maybe<string>
   href?: (v: string) => string
   event?: AnalyticsEvent
+  /** Show the value next to the label (contact data); off for legal URLs. */
+  showValue?: boolean
+  /** Visible form of the value (e.g. national phone format). */
+  display?: (v: string) => string
 }) {
   return (
     <li className="flex flex-wrap items-center gap-2">
@@ -34,11 +43,12 @@ function Field({
         </>
       ) : href && event ? (
         <TrackedLink href={href(value)} event={event} props={{ context: "footer" }} className={A}>
-          {label}
+          {label} <span className="whitespace-nowrap font-mono text-foreground">{display(value)}</span>
         </TrackedLink>
       ) : href ? (
         <a href={href(value)} className={A}>
           {label}
+          {showValue && <> <span className="whitespace-nowrap font-mono text-foreground">{display(value)}</span></>}
         </a>
       ) : (
         <span className="text-muted-foreground">
@@ -105,8 +115,8 @@ export function Footer({ base = "" }: { base?: string }) {
         <div>
           <h2 className="eyebrow mb-3">{t("contact")}</h2>
           <ul className="space-y-2 text-sm">
-            <Field label={tn("whatsapp")} value={company.whatsapp} href={(v) => whatsappHref(v)} event="whatsapp_clicked" />
-            <Field label={t("phone")} value={company.salesPhone} href={telHref} />
+            <Field label={tn("whatsapp")} value={company.whatsapp} href={(v) => whatsappHref(v)} event="whatsapp_clicked" display={national} />
+            <Field label={t("phone")} value={company.salesPhone} href={telHref} display={national} />
             <Field label={t("email")} value={company.salesEmail} href={(v) => `mailto:${v}`} />
             <li className="flex flex-wrap items-center gap-2">
               <span className="text-muted-foreground">{t("social")}</span>
@@ -126,8 +136,8 @@ export function Footer({ base = "" }: { base?: string }) {
         <div>
           <h2 className="eyebrow mb-3">{t("legal")}</h2>
           <ul className="space-y-2 text-sm">
-            <Field label={t("privacy")} value={company.legal.privacyUrl} href={(v) => v} />
-            <Field label={t("terms")} value={company.legal.termsUrl} href={(v) => v} />
+            <Field label={t("privacy")} value={company.legal.privacyUrl} href={(v) => v} showValue={false} />
+            <Field label={t("terms")} value={company.legal.termsUrl} href={(v) => v} showValue={false} />
             <Field label={t("regulatory")} value={company.regulatory} />
           </ul>
         </div>

@@ -10,7 +10,7 @@ export const company: Company = {
   name: placeholder("COMPANY_NAME"),
   logo: placeholder("LOGO"),
   domain: placeholder("DOMAIN"),
-  whatsapp: placeholder("WHATSAPP"),
+  whatsapp: "+52 5540947678", // owner, 2026-11-07 (10 digits kept together)
   salesPhone: placeholder("SALES_PHONE"),
   salesEmail: placeholder("SALES_EMAIL"),
   regulatory: placeholder("REGULATORY"),

@@ -75,6 +75,7 @@ describe("faq", () => {
     expect(feeLabel(0, "es", "Gratis")).toBe("Gratis")
     expect(feeLabel(1500, "es", "Gratis")).toBe("$1,500")
     expect(company.network.clients).toBe(600)
+    expect(whatsappHref(company.whatsapp as string)).toBe("https://wa.me/525540947678")
   })
   it("has unique ids and real TV contents", () => {
     expect(new Set(faqItems.map((f) => f.id)).size).toBe(faqItems.length)
