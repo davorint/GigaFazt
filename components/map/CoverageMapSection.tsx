@@ -1,4 +1,6 @@
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
+import { company } from "@/lib/company"
+import { isPlaceholder } from "@/lib/placeholder"
 import { ArrowRight } from "lucide-react"
 import { LazyCoverageMap } from "./LazyCoverageMap"
 import { ClientList } from "./ClientList"
@@ -7,13 +9,14 @@ import { MapLegend } from "./MapLegend"
 /** Coverage Map section (SPEC §5, owner direction: state-level, clients first). */
 export function CoverageMapSection() {
   const t = useTranslations()
+  const locale = useLocale()
   return (
     <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
       <p className="eyebrow mb-3">[ {t("sections.map")} ]</p>
       <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
         {t("sectionHeads.map")}
       </h2>
-      <p className="mt-3 max-w-2xl text-muted-foreground">{t("map.lead")}</p>
+      <p className="mt-3 max-w-2xl text-muted-foreground">{t("map.lead", { count: isPlaceholder(company.network.clients) ? "—" : company.network.clients.toLocaleString(locale) })}</p>
 
       <div className="mt-12">
         <LazyCoverageMap />

@@ -4,7 +4,7 @@ import { placeholder, isPlaceholder, type Maybe } from "./placeholder"
 
 /**
  * Generated from docs/BUSINESS.md. One lineup for everyone (owner, 2026-11-06:
- * no Hogar/Empresa split). Speeds and prices are owner-provided; fees, term,
+ * no Hogar/Empresa split). Speeds, prices, free installation and modems are owner-provided; term,
  * promos and the 200/500 technology are still {{PLACEHOLDER}} and render as
  * visible chips (hard rule #1). Re-sync when BUSINESS.md is filled in.
  */
@@ -14,7 +14,7 @@ export const plans: Plan[] = [
     downMbps: 200,
     upMbps: 200,
     priceMxn: 399,
-    installFeeMxn: placeholder("INSTALL_FEE"),
+    installFeeMxn: 0, // free installation (owner, 2026-11-07)
     contractMonths: placeholder("CONTRACT_TERM"),
     technology: placeholder("fibra-200.technology"),
     includes: ["wifi6Modem"],
@@ -25,7 +25,7 @@ export const plans: Plan[] = [
     downMbps: 500,
     upMbps: 500,
     priceMxn: 499,
-    installFeeMxn: placeholder("INSTALL_FEE"),
+    installFeeMxn: 0, // free installation (owner, 2026-11-07)
     contractMonths: placeholder("CONTRACT_TERM"),
     technology: placeholder("fibra-500.technology"),
     includes: ["wifi6Modem"],
@@ -36,7 +36,7 @@ export const plans: Plan[] = [
     downMbps: 1000,
     upMbps: 1000,
     priceMxn: 599,
-    installFeeMxn: placeholder("INSTALL_FEE"),
+    installFeeMxn: 0, // free installation (owner, 2026-11-07)
     contractMonths: placeholder("CONTRACT_TERM"),
     technology: "GPON",
     includes: ["wifi7Modem"],

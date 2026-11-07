@@ -31,11 +31,12 @@ export function faqEntries(t: T, locale: string): FaqEntry[] {
 }
 
 /** Display string for a resolved fact (callers handle placeholders first). */
-export function factText(fact: FaqFact, locale: string): string | null {
+export function factText(fact: FaqFact, locale: string, free: string): string | null {
   if (isPlaceholder(fact.value)) return null
-  return fact.format === "mxn" && typeof fact.value === "number"
-    ? `$${formatMxn(fact.value, locale)} MXN`
-    : String(fact.value)
+  if (fact.format === "mxn" && typeof fact.value === "number") {
+    return fact.value === 0 ? free : `$${formatMxn(fact.value, locale)} MXN`
+  }
+  return String(fact.value)
 }
 
 /** Speeds that include each modem, as localized lists ("200 Mbps y 500 Mbps"). */

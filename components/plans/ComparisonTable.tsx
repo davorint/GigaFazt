@@ -8,6 +8,7 @@ import { formatMxn, speedLabel } from "@/lib/format"
 import { isPlaceholder, type Maybe } from "@/lib/placeholder"
 import type { Plan } from "@/lib/types"
 import { PriceTag } from "./PriceTag"
+import { feeLabel } from "@/lib/format"
 
 /**
  * ComparisonTable (SPEC §3). Plain semantic table (server-rendered, no JS):
@@ -48,7 +49,7 @@ export function ComparisonTable() {
     {
       key: "installFee",
       label: t("installFee"),
-      cell: (p) => chip(p.installFeeMxn, (x) => `$${formatMxn(x, locale)}`),
+      cell: (p) => chip(p.installFeeMxn, (x) => feeLabel(x, locale, tp("free"))),
     },
     {
       key: "term",

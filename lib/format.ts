@@ -34,3 +34,8 @@ export function formatDate(iso: string, locale: string): string {
     timeZone: "UTC",
   }).format(d)
 }
+
+/** Install fee display: 0 → the localized "free" label, else "$1,234". */
+export function feeLabel(fee: number, locale: string, free: string): string {
+  return fee === 0 ? free : `$${formatMxn(fee, locale)}`
+}

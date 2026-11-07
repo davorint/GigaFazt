@@ -5,6 +5,8 @@ import { alternatesFor, localizedPath } from "./site"
 import { faqItems, isAnswered, tvFaqArgs } from "./faq"
 import { placeholder } from "./placeholder"
 import { plans, wifi7Plan } from "./plans"
+import { feeLabel } from "./format"
+import { company } from "./company"
 
 describe("contact links", () => {
   it("builds a wa.me link with digits only and an encoded message", () => {
@@ -67,6 +69,12 @@ describe("faq", () => {
     expect(wifi7Plan?.id).toBe("fibra-1g")
     expect(plans.filter((p) => Array.isArray(p.includes) && p.includes.includes("wifi7Modem"))).toHaveLength(1)
     expect(plans.filter((p) => Array.isArray(p.includes) && p.includes.includes("wifi6Modem")).map((p) => p.id)).toEqual(["fibra-200", "fibra-500"])
+  })
+  it("installation is free on every plan and shown as the free label", () => {
+    expect(plans.every((p) => p.installFeeMxn === 0)).toBe(true)
+    expect(feeLabel(0, "es", "Gratis")).toBe("Gratis")
+    expect(feeLabel(1500, "es", "Gratis")).toBe("$1,500")
+    expect(company.network.clients).toBe(600)
   })
   it("has unique ids and real TV contents", () => {
     expect(new Set(faqItems.map((f) => f.id)).size).toBe(faqItems.length)

@@ -1,9 +1,10 @@
 import { useLocale, useTranslations } from "next-intl"
 import { cn } from "cn"
 import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
-import { formatDate, formatMxn } from "@/lib/format"
+import { formatDate } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import type { Plan } from "@/lib/types"
+import { feeLabel } from "@/lib/format"
 
 /**
  * The small mono lines that must sit next to every price (hard rule #5):
@@ -37,7 +38,7 @@ export function PriceTerms({
         {isPlaceholder(fee) ? (
           <PlaceholderChip keyName={fee.key} />
         ) : (
-          <span className="text-foreground">${formatMxn(fee, locale)}</span>
+          <span className={fee === 0 ? "font-semibold text-ok" : "text-foreground"}>{feeLabel(fee, locale, t("free"))}</span>
         )}
       </li>
       <li className="flex items-center gap-1.5">

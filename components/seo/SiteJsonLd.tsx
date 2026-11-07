@@ -73,7 +73,7 @@ export async function FaqJsonLd({ locale }: { locale: string }) {
           name: question,
           acceptedAnswer: {
             "@type": "Answer",
-            text: [answer, ...item.facts.map((f) => `${t(`faq.facts.${f.label}`)}: ${factText(f, locale)}`)].join(" "),
+            text: [answer, ...item.facts.map((f) => `${t(`faq.facts.${f.label}`)}: ${factText(f, locale, t("plans.free"))}`)].join(" "),
           },
         })),
       }}

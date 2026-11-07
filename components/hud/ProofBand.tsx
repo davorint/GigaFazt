@@ -19,7 +19,7 @@ export function ProofBand() {
   const t = useTranslations()
   const locale = useLocale()
   const top = formatSpeed(Math.max(...plans.map((p) => p.downMbps)))
-  const { kmFiber, pops } = company.network
+  const { kmFiber, pops, clients } = company.network
 
   const figure = (v: Maybe<number>) =>
     isPlaceholder(v) ? <PlaceholderChip keyName={v.key} className="text-xs" /> : v.toLocaleString(locale)
@@ -39,7 +39,16 @@ export function ProofBand() {
       </h2>
       <p className="mt-3 max-w-2xl text-muted-foreground">{t("proof.lead")}</p>
 
-      <dl className="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border lg:grid-cols-4">
+      {!isPlaceholder(clients) && (
+        <p className="mt-10 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="font-mono text-5xl font-semibold tabular-nums tracking-tight text-fiber sm:text-6xl">
+            {t("proof.clientsValue", { count: clients.toLocaleString(locale) })}
+          </span>
+          <span className="text-lg text-muted-foreground">{t("proof.clients")}</span>
+        </p>
+      )}
+
+      <dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border lg:grid-cols-4">
         {stats.map((s) => (
           <div key={s.label} className="flex flex-col-reverse gap-2 bg-surface px-5 py-6">
             <dt className="text-sm text-muted-foreground">{s.label}</dt>

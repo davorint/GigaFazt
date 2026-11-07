@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react"
 import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
 import { company } from "@/lib/company"
 import { plans } from "@/lib/plans"
-import { formatMxn, speedLabel } from "@/lib/format"
+import { feeLabel, speedLabel } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { ContractButton } from "./ContractButton"
 import { statesInList } from "@/lib/geo/state-names"
@@ -60,7 +60,7 @@ export function InstallSteps() {
                     {isPlaceholder(installFeeMxn) ? (
                       <PlaceholderChip keyName={installFeeMxn.key} />
                     ) : (
-                      `$${formatMxn(installFeeMxn, locale)} MXN`
+                      feeLabel(installFeeMxn, locale, t("plans.free"))
                     )}
                   </dd>
                 </div>

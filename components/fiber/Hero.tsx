@@ -1,11 +1,12 @@
 "use client"
 
 import { useLocale, useTranslations } from "next-intl"
-import { ArrowRight, MapPin, Wifi } from "lucide-react"
+import { ArrowRight, MapPin, Users, Wifi } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
 import { featuredPlan, lowestPrice, wifi7Plan } from "@/lib/plans"
 import { speedLabel } from "@/lib/format"
+import { company } from "@/lib/company"
 import { formatMxn } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { track } from "@/lib/analytics"
@@ -90,6 +91,13 @@ export function Hero() {
             {t("coverageLink")}
           </Button>
         </div>
+
+        {!isPlaceholder(company.network.clients) && (
+          <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
+            <Users className="size-4 text-ok" aria-hidden />
+            {t("clients", { count: company.network.clients.toLocaleString(locale) })}
+          </p>
+        )}
       </div>
     </div>
   )

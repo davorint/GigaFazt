@@ -32,7 +32,8 @@
     "viewPlans": "See plans",
     "coverageLink": "Do we cover your area?",
     "canvasAlt": "A bundle of optical fibers rising from a single point and fanning out, with cyan light pulses travelling along each strand.",
-    "wifi7": "The {speed} plan includes a Wi-Fi 7 modem"
+    "wifi7": "The {speed} plan includes a Wi-Fi 7 modem",
+    "clients": "More than {count} active clients are already online with us."
   },
   "sections": {
     "hero": "Home",
@@ -86,10 +87,11 @@
     "jsonLdName": "Symmetrical fiber internet {speed}",
     "promo": "Promo",
     "include": {
-      "wifi7Modem": "Wi-Fi 7 modem on loan",
-      "wifi6Modem": "Wi-Fi 6 modem on loan"
+      "wifi7Modem": "Wi-Fi 7 modem at no extra cost",
+      "wifi6Modem": "Wi-Fi 6 modem at no extra cost"
     },
-    "wifi7Note": "Modem on loan: it's yours to use while your service is active. Wi-Fi 7: top wireless speed needs compatible devices; older ones still connect."
+    "wifi7Note": "Modem on loan at no extra cost while your service is active. Wi-Fi 7: top wireless speed needs compatible devices; older ones still connect.",
+    "free": "Free"
   },
   "addons": {
     "title": "Build your bundle",
@@ -308,7 +310,7 @@
     }
   },
   "map": {
-    "lead": "We serve Mexico City, the State of Mexico and Morelos. Here you'll see buildings that are already clients plus a few illustrative examples.",
+    "lead": "We serve Mexico City, the State of Mexico and Morelos, with more than {count} active clients. Here are some buildings that are already clients plus a few illustrative examples.",
     "layers": "Layers",
     "layer": {
       "clients": "Clients",
@@ -365,7 +367,9 @@
       "ago": "{days} days ago",
       "today": "Today"
     },
-    "latencyValue": "< 1 ms"
+    "latencyValue": "< 1 ms",
+    "clientsValue": "{count}+",
+    "clients": "active clients on our network"
   },
   "install": {
     "lead": "Four steps, no runaround. You pick the plan; we bring the fiber to your home.",
@@ -425,7 +429,7 @@
       },
       "router": {
         "q": "Is a modem included?",
-        "a": "Yes. Every plan includes a modem on loan for as long as your service is active: a Wi-Fi 7 modem with {wifi7} and a Wi-Fi 6 modem with {wifi6}. Wi-Fi 7's top speed needs compatible devices; older devices still connect fine."
+        "a": "Yes. Every plan includes a modem on loan at no extra cost for as long as your service is active: a Wi-Fi 7 modem with {wifi7} and a Wi-Fi 6 modem with {wifi6}. Wi-Fi 7's top speed needs compatible devices; older devices still connect fine."
       },
       "staticIp": {
         "q": "Can I get a static IP?",

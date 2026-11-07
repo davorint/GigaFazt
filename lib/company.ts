@@ -18,7 +18,8 @@ export const company: Company = {
   network: {
     kmFiber: placeholder("KM_FIBER"),
     pops: placeholder("POPS"),
-    clients: placeholder("CLIENTS"),
+    /** "More than" figure: active clients (owner, 2026-11-07). */
+    clients: 600,
     accessTech: placeholder("ACCESS_TECH"),
     wavelengths: placeholder("WAVELENGTHS"),
     backbone: placeholder("BACKBONE"),
@@ -27,7 +28,7 @@ export const company: Company = {
     statusProvider: placeholder("STATUS_PROVIDER"),
   },
   terms: {
-    installFeeMxn: placeholder("INSTALL_FEE"),
+    installFeeMxn: 0, // free installation (owner, 2026-11-07)
     contractTerm: placeholder("CONTRACT_TERM"),
     installDays: placeholder("INSTALL_DAYS"),
     guarantee: placeholder("GUARANTEE"),
