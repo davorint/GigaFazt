@@ -27,7 +27,7 @@ export default async function PlanesPage({ params }: PageProps<"/[locale]/planes
   return (
     <>
       <Nav base={`/${locale}`} />
-      <main className="pt-8 pb-16 md:pb-0">
+      <main className="pt-8">
         <Section id="plans" aria-label={t("plans")}>
           <PlansSection variant="page" />
         </Section>

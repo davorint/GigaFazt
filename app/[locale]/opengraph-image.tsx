@@ -28,8 +28,9 @@ export async function generateImageMetadata({ params }: { params: Promise<{ loca
  */
 export default async function OgImage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
-  const hero = messagesFor(locale).hero
-  const zones = STATES.map((s) => s.name).join(" · ")
+  const m = messagesFor(locale)
+  const hero = m.hero
+  const zones = STATES.map((s) => m.states[s.slug as keyof typeof m.states].name).join(" · ")
 
   return new ImageResponse(
     (

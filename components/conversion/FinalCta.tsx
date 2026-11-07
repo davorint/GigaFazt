@@ -42,7 +42,7 @@ export function FinalCta() {
         <p className="mx-auto mt-4 max-w-xl text-muted-foreground">{t("lead")}</p>
 
         {plan && (
-          <p className="mt-6 font-mono text-sm" aria-live="polite">
+          <p className="mt-6 font-mono text-sm">
             <span className="text-muted-foreground">{t("selected")} </span>
             <span className="text-fiber">{t("planName", { speed })}</span>
             {extras.length > 0 && <span className="text-muted-foreground"> + {extras.join(", ")}</span>}{" "}

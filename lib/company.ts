@@ -32,6 +32,8 @@ export const company: Company = {
     contractTerm: placeholder("CONTRACT_TERM"),
     installDays: placeholder("INSTALL_DAYS"),
     guarantee: placeholder("GUARANTEE"),
+    noHiddenFees: placeholder("NO_HIDDEN_FEES"),
+    localSupport: placeholder("LOCAL_SUPPORT"),
     showPrices: placeholder("SHOW_PRICES"),
   },
   integrations: {

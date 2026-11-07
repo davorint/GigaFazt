@@ -15,6 +15,8 @@ import { track } from "@/lib/analytics"
 import { onMapFocus, takePendingMapFocus, type MapFocusTarget } from "@/lib/map-focus"
 import { MapHud, type MapTarget } from "./MapHud"
 import { MapLegend } from "./MapLegend"
+import { motionReduced, subscribeMotion } from "@/lib/motion"
+import { stateName } from "@/lib/geo/state-names"
 
 const CYAN = "#06b6d4"
 const AMBER = "#f59e0b"
@@ -32,6 +34,7 @@ type Layer = "clients" | "coverage"
  */
 export default function CoverageMap() {
   const t = useTranslations("map")
+  const ts = useTranslations("states")
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MLMap | null>(null)
   const [hover, setHover] = useState<MapTarget | null>(null)
@@ -58,7 +61,6 @@ export default function CoverageMap() {
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     const mobile = window.matchMedia("(max-width: 767px)").matches
 
     // Worker is copied to /public by scripts/copy-maplibre-worker.mjs.
@@ -209,7 +211,7 @@ export default function CoverageMap() {
       for (const s of STATES) {
         const node = document.createElement("div")
         node.className = "map-state-label pointer-events-none font-mono text-[10px] uppercase tracking-[0.2em] text-white/45"
-        node.textContent = s.name
+        node.textContent = stateName(ts, s.slug)
         labelMarkers.push(new maplibregl.Marker({ element: node }).setLngLat(s.label).addTo(map))
       }
 
@@ -256,7 +258,7 @@ export default function CoverageMap() {
     let last = 0
     let visible = true
     const loop = (now: number) => {
-      if (!visible || document.visibilityState !== "visible") {
+      if (!visible || document.visibilityState !== "visible" || motionReduced()) {
         raf = 0 // truly paused; resumed by the observer / visibilitychange
         return
       }
@@ -270,7 +272,7 @@ export default function CoverageMap() {
       map.setPaintProperty("clients-ping", "circle-stroke-opacity", 0.6 * (1 - p))
     }
     const resume = () => {
-      if (!reduced && !raf && visible && document.visibilityState === "visible") {
+      if (!motionReduced() && !raf && visible && document.visibilityState === "visible") {
         raf = requestAnimationFrame(loop)
       }
     }
@@ -280,6 +282,7 @@ export default function CoverageMap() {
     })
     io.observe(el)
     document.addEventListener("visibilitychange", resume)
+    const unsubscribeMotion = subscribeMotion(resume)
     resume()
 
     // Text list → locate a client or a state on the map.
@@ -287,10 +290,10 @@ export default function CoverageMap() {
       if (target.kind === "client") {
         const c = clients.find((x) => x.id === target.id)
         if (!c) return
-        if (reduced) map.jumpTo({ center: c.lngLat, zoom: 9.5 })
+        if (motionReduced()) map.jumpTo({ center: c.lngLat, zoom: 9.5 })
         else map.flyTo({ center: c.lngLat, zoom: 9.5, speed: 1.4 })
       } else {
-        map.fitBounds(MAP_FIT, { padding: 24, animate: !reduced })
+        map.fitBounds(MAP_FIT, { padding: 24, animate: !motionReduced() })
       }
       pin(target)
       setFocusHud(true)
@@ -305,11 +308,12 @@ export default function CoverageMap() {
       io.disconnect()
       offFocus()
       document.removeEventListener("visibilitychange", resume)
+      unsubscribeMotion()
       labelMarkers.forEach((m) => m.remove())
       map.remove()
       mapRef.current = null
     }
-  }, [pin, setHoverIfChanged, t])
+  }, [pin, setHoverIfChanged, t, ts])
 
   // Layer visibility.
   useEffect(() => {
@@ -346,7 +350,7 @@ export default function CoverageMap() {
   const reset = () => {
     const map = mapRef.current
     if (!map) return
-    map.fitBounds(MAP_FIT, { padding: 24, animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches })
+    map.fitBounds(MAP_FIT, { padding: 24, animate: !motionReduced() })
     pin(null)
   }
 

@@ -3,6 +3,8 @@ import { cn } from "cn"
 import geo from "@/public/geo/states.json"
 import { clients } from "@/lib/clients"
 import type { StateCode } from "@/lib/types"
+import { stateIn } from "@/lib/geo/state-names"
+import { STATES } from "@/lib/geo/states"
 
 type Ring = number[][]
 type Geometry = { type: "Polygon"; coordinates: Ring[] } | { type: "MultiPolygon"; coordinates: Ring[][] }
@@ -20,6 +22,7 @@ const PAD = 16
  */
 export function StateOutline({ state, className }: { state: StateCode; className?: string }) {
   const t = useTranslations("area")
+  const ts = useTranslations("states")
   const polys = (g: Geometry): Ring[][] => (g.type === "Polygon" ? [g.coordinates] : g.coordinates)
   const all = features.flatMap((f) => polys(f.geometry).flat().flat())
   const lngs = all.map((p) => p[0])
@@ -42,7 +45,7 @@ export function StateOutline({ state, className }: { state: StateCode; className
     <svg
       viewBox={`0 0 ${W} ${H}`}
       role="img"
-      aria-label={t("outlineAlt", { state: features.find((f) => f.properties.state === state)?.properties.name ?? state })}
+      aria-label={t("outlineAlt", { state: stateIn(ts, STATES.find((s) => s.code === state)?.slug ?? "") })}
       className={cn("h-auto w-full", className)}
     >
       {features.map((f) => {

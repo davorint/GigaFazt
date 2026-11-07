@@ -29,7 +29,7 @@ export function PlansSection({ variant = "home" }: { variant?: "home" | "page" }
 
       <div className="mt-12 grid gap-6 md:grid-cols-3">
         {plans.map((plan) => (
-          <PlanCard key={plan.id} plan={plan} maxMbps={maxMbps} />
+          <PlanCard key={plan.id} plan={plan} maxMbps={maxMbps} level={variant === "page" ? "h2" : "h3"} />
         ))}
       </div>
       <p className="mt-3 font-mono text-[0.7rem] text-muted-foreground">{t("plans.speedNote")}</p>

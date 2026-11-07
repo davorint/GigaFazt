@@ -3,10 +3,10 @@ import { ArrowRight } from "lucide-react"
 import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
 import { company } from "@/lib/company"
 import { plans } from "@/lib/plans"
-import { STATES } from "@/lib/geo/states"
 import { formatMxn, speedLabel } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { ContractButton } from "./ContractButton"
+import { statesInList } from "@/lib/geo/state-names"
 
 /**
  * How installation works (SPEC §7). The owner removed the address check, so
@@ -17,11 +17,10 @@ export function InstallSteps() {
   const t = useTranslations()
   const locale = useLocale()
   const or = new Intl.ListFormat(locale, { type: "disjunction" })
-  const and = new Intl.ListFormat(locale, { type: "conjunction" })
   const { installDays, installFeeMxn } = company.terms
 
   const steps = [
-    { id: "zone", body: t("install.steps.zone.body", { states: and.format(STATES.map((s) => s.name)) }) },
+    { id: "zone", body: t("install.steps.zone.body", { states: statesInList((k) => t(`states.${k}`), locale) }) },
     { id: "plan", body: t("install.steps.plan.body", { speeds: or.format(plans.map((p) => speedLabel(p.downMbps))) }) },
     { id: "visit", body: t("install.steps.visit.body") },
     { id: "live", body: t("install.steps.live.body") },

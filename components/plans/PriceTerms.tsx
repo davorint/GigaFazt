@@ -52,7 +52,8 @@ export function PriceTerms({
       </li>
       {promo &&
         (isPlaceholder(promo) ? (
-          <li>
+          <li className="flex items-center gap-1.5">
+            <span>{t("promo")}:</span>
             <PlaceholderChip keyName={promo.key} />
           </li>
         ) : (

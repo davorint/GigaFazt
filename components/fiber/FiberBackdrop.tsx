@@ -11,6 +11,7 @@ import dynamic from "next/dynamic"
 import { useTranslations } from "next-intl"
 import { cn } from "cn"
 import { FiberPoster } from "./FiberPoster"
+import { useReducedMotion } from "@/lib/motion"
 
 // three.js only loads through this dynamic import, never in the initial bundle.
 const FiberScene = dynamic(
@@ -58,27 +59,19 @@ class SceneBoundary extends Component<
 export function FiberBackdrop() {
   const t = useTranslations("hero")
   const host = useRef<HTMLDivElement>(null)
-  // Assume reduced until the media query resolves, so SSR/first paint is poster-only.
-  const [reduced, setReduced] = useState(true)
+  // Server snapshot is "reduced", so SSR/first paint is poster-only.
+  const reduced = useReducedMotion()
   const [mobile, setMobile] = useState(false)
   const [mount, setMount] = useState(false)
   const [ready, setReady] = useState(false)
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {
-    const rm = window.matchMedia("(prefers-reduced-motion: reduce)")
     const mb = window.matchMedia("(max-width: 767px)")
-    const sync = () => {
-      setReduced(rm.matches)
-      setMobile(mb.matches)
-    }
+    const sync = () => setMobile(mb.matches)
     sync()
-    rm.addEventListener("change", sync)
     mb.addEventListener("change", sync)
-    return () => {
-      rm.removeEventListener("change", sync)
-      mb.removeEventListener("change", sync)
-    }
+    return () => mb.removeEventListener("change", sync)
   }, [])
 
   useEffect(() => {
@@ -105,6 +98,9 @@ export function FiberBackdrop() {
     return () => {
       io.disconnect()
       if (idleId !== undefined) cancel(idleId)
+      // Motion paused (or failure): drop the scene and show the poster again.
+      setMount(false)
+      setReady(false)
     }
   }, [reduced, failed])
 
@@ -121,7 +117,7 @@ export function FiberBackdrop() {
       </div>
 
       {/* WebGL scene crossfades in once ready; decorative (poster carries the label). */}
-      {mount && !failed && (
+      {mount && !failed && !reduced && (
         <div
           aria-hidden
           className={cn(

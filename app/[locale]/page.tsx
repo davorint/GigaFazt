@@ -33,7 +33,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
   return (
     <>
       <Nav />
-      <main className="pb-16 md:pb-0">
+      <main>
         <Section id="hero" className="border-b-0" aria-label={t("hero")}>
           <Hero />
         </Section>

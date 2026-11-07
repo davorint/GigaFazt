@@ -1,6 +1,7 @@
 "use client"
 
 import { useLayoutEffect, useRef } from "react"
+import { motionReduced } from "@/lib/motion"
 
 const EASE = (t: number) => 1 - Math.pow(1 - t, 3)
 
@@ -32,7 +33,7 @@ export function AnimatedNumber({
     fromRef.current = value
     if (!node || from === value) return
     const el = { set textContent(v: string) { node.nodeValue = v } }
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (motionReduced()) {
       el.textContent = format(value)
       return
     }

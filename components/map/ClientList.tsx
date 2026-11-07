@@ -9,6 +9,7 @@ import { STATES } from "@/lib/geo/states"
 import { scrollToId } from "@/lib/scroll"
 import { requestMapFocus } from "@/lib/map-focus"
 import { track } from "@/lib/analytics"
+import { stateIn, stateName } from "@/lib/geo/state-names"
 
 /**
  * Text equivalent of the map (hard rule #9, SPEC §5): service states and the
@@ -16,6 +17,7 @@ import { track } from "@/lib/analytics"
  */
 export function ClientList() {
   const t = useTranslations("map")
+  const ts = useTranslations("states")
 
   return (
     <div>
@@ -34,7 +36,7 @@ export function ClientList() {
                 }}
                 className="rounded-md text-left font-medium hover:text-fiber focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
-                {s.name}
+                {stateName(ts, s.slug)}
               </button>
               <p className="font-mono text-[0.65rem] uppercase tracking-wider text-ok">{t("legend.zone")}</p>
               <Link
@@ -42,7 +44,7 @@ export function ClientList() {
                 onClick={() => track("map_region_opened", { slug: s.slug })}
                 className="mt-2 inline-flex items-center gap-1 rounded font-mono text-[0.7rem] text-fiber hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
-                {t("statePage", { name: s.name })}
+                {t("statePage", { name: stateIn(ts, s.slug) })}
                 <ArrowRight className="size-3" aria-hidden />
               </Link>
               {list.length > 0 && (

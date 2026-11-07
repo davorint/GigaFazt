@@ -12,6 +12,7 @@ import { selection } from "@/lib/selection"
 import { scrollToId } from "@/lib/scroll"
 import { track } from "@/lib/analytics"
 import type { StateCode } from "@/lib/types"
+import { stateName } from "@/lib/geo/state-names"
 
 export type MapTarget = { kind: "client"; id: string } | { kind: "state"; id: string }
 
@@ -35,6 +36,7 @@ export function MapHud({
 }) {
   const t = useTranslations("map.hud")
   const tm = useTranslations("map")
+  const ts = useTranslations("states")
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export function MapHud({
       ref={ref}
       tabIndex={pinned ? -1 : undefined}
       role={pinned ? "group" : undefined}
-      aria-label={pinned ? (client ? client.name : state.name) : undefined}
+      aria-label={pinned ? (client ? client.name : stateName(ts, state.slug)) : undefined}
       onKeyDown={(e) => {
         if (pinned && e.key === "Escape") onClose()
       }}
@@ -80,7 +82,7 @@ export function MapHud({
         <>
           <p className="mt-2 text-base font-semibold">{client.name}</p>
           <p className="font-mono text-xs text-muted-foreground">
-            {client.area} · {state.name}
+            {client.area} · {stateName(ts, state.slug)}
           </p>
           <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {t("residential")}
@@ -89,7 +91,7 @@ export function MapHud({
         </>
       ) : (
         <>
-          <p className="mt-2 text-base font-semibold">{state.name}</p>
+          <p className="mt-2 text-base font-semibold">{stateName(ts, state.slug)}</p>
           <p className="font-mono text-xs text-muted-foreground">{t("clientsHere", { count: real })}</p>
           {demo > 0 && (
             <p className="mt-1 flex flex-wrap items-center gap-2 font-mono text-xs text-muted-foreground">

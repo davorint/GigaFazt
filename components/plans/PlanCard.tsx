@@ -19,11 +19,13 @@ import { SpeedBars } from "./SpeedBars"
  * Plan card (SPEC §3): speed is the hero number, then the price block with all
  * terms visible, includes, and the "Contratar" CTA that opens the lead Sheet.
  */
-export function PlanCard({ plan, maxMbps }: { plan: Plan; maxMbps: number }) {
+/** `level` keeps the outline valid: h2 when the cards sit directly under the page h1. */
+export function PlanCard({ plan, maxMbps, level = "h3" }: { plan: Plan; maxMbps: number; level?: "h2" | "h3" }) {
   const t = useTranslations("plans")
   const selected = useSelection((s) => s.planId === plan.id)
   const speed = formatSpeed(plan.downMbps)
   const headingId = `plan-${plan.id}`
+  const Heading = level
   const ref = useRef<HTMLElement>(null)
 
   // The featured border animates a gradient angle, which repaints every frame:
@@ -54,12 +56,12 @@ export function PlanCard({ plan, maxMbps }: { plan: Plan; maxMbps: number }) {
         </span>
       )}
 
-      <h3 id={headingId} className="flex items-baseline gap-2 font-mono">
+      <Heading id={headingId} className="flex items-baseline gap-2 font-mono">
         <span className="text-6xl font-semibold tracking-[-0.04em] text-foreground">
           {speed.value}
         </span>
         <span className="text-lg text-muted-foreground">{speed.unit}</span>
-      </h3>
+      </Heading>
       <p className="mt-1 font-mono text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
         {t("symmetric")} · ↓ {formatSpeed(plan.downMbps).value} / ↑ {formatSpeed(plan.upMbps).value} {speed.unit}
       </p>

@@ -1,18 +1,21 @@
 {
   "meta": {
     "title": "Fibra óptica simétrica para CDMX, Edomex y Morelos",
-    "description": "Internet de fibra óptica 100% simétrica en CDMX, Estado de México y Morelos. Misma velocidad de bajada y de subida, desde {min} hasta {max}."
+    "description": "Internet de fibra óptica 100% simétrica en la CDMX, el Estado de México y Morelos. Misma velocidad de bajada y de subida, desde {min} hasta {max}."
   },
   "nav": {
     "fibra": "Fibra",
     "planes": "Planes",
     "cobertura": "Cobertura",
-    "soporte": "Soporte",
+    "soporte": "Ayuda",
     "viewPlans": "Ver planes",
     "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú",
     "whatsapp": "WhatsApp",
-    "language": "Idioma"
+    "language": "Idioma",
+    "home": "Inicio",
+    "main": "Principal",
+    "quick": "Accesos rápidos"
   },
   "status": {
     "operational": "Operativo",
@@ -22,7 +25,7 @@
     "eyebrow": "100% FIBRA ÓPTICA SIMÉTRICA",
     "h1": "Gigabit simétrico por ${price} al mes.",
     "h1NoPrice": "Gigabit simétrico para tu casa o tu negocio.",
-    "subhead": "Sube un video 4K en segundos. Misma velocidad de bajada y de subida, con latencia baja y estable.",
+    "subhead": "Sube un video 4K en segundos. Misma velocidad de bajada y de subida en todos los planes.",
     "from": "Planes desde",
     "perMonth": "/mes",
     "viewPlans": "Ver planes",
@@ -43,7 +46,7 @@
   "sectionHeads": {
     "plans": "Elige tu velocidad",
     "fiber": "Fibra simétrica de verdad",
-    "map": "Ya conectamos a tus vecinos",
+    "map": "Dónde damos servicio",
     "proof": "La red detrás del servicio",
     "install": "Así se instala",
     "faq": "Preguntas frecuentes",
@@ -58,7 +61,7 @@
     "contract": "Contratar"
   },
   "plans": {
-    "lead": "Un solo precio, sin letras chiquitas. Todos los planes son simétricos: subes tan rápido como bajas.",
+    "lead": "Precios claros, con IVA incluido. Todos los planes son simétricos: subes tan rápido como bajas.",
     "popular": "Más popular",
     "symmetric": "Simétrico",
     "down": "Bajada",
@@ -78,7 +81,8 @@
     "compareAll": "Comparar todos los planes",
     "pageTitle": "Planes de internet de fibra óptica",
     "pageLead": "Compara velocidades, precios y lo que incluye cada plan. Todos son 100% simétricos.",
-    "jsonLdName": "Internet de fibra óptica simétrica {speed}"
+    "jsonLdName": "Internet de fibra óptica simétrica {speed}",
+    "promo": "Promoción"
   },
   "addons": {
     "title": "Arma tu paquete",
@@ -113,7 +117,7 @@
     },
     "uses": {
       "legend": "¿Para qué lo usan? Elige todos los que apliquen.",
-      "gaming": "Gaming en línea",
+      "gaming": "Videojuegos en línea",
       "streaming4k": "Streaming en 4K",
       "homeOffice": "Videollamadas y trabajo",
       "creator": "Subir videos o archivos pesados",
@@ -129,9 +133,9 @@
     "reason": {
       "light": "Para navegar, ver series y hacer videollamadas en una casa chica, te sobra.",
       "people": "Con tantas personas conectadas a la vez, nadie se queda esperando.",
-      "creator": "Subes archivos pesados: con subida simétrica terminas en segundos, no en horas.",
-      "wfh": "Para trabajar desde casa sin cortes en videollamadas ni en la VPN.",
-      "uses": "Juegos, 4K y cámaras al mismo tiempo, sin que una cosa frene a la otra.",
+      "creator": "Subes archivos pesados: con subida simétrica terminas en minutos, no en horas.",
+      "wfh": "Para que las videollamadas y la VPN tengan espacio de sobra, aunque todos estén conectados.",
+      "uses": "Videojuegos, 4K y cámaras al mismo tiempo, sin que una cosa frene a la otra.",
       "upgrade": "Lo elegimos para que sea al menos el doble de lo que tienes hoy.",
       "top": "Es nuestro plan más rápido: el mayor salto que podemos darte hoy."
     },
@@ -152,7 +156,7 @@
     "technology": "Tecnología",
     "latency": "Latencia",
     "latencyValue": "< 1 ms*",
-    "latencyNote": "* Latencia edge-to-core dentro de la red metropolitana. Las velocidades son las máximas del plan.",
+    "latencyNote": "* Objetivo de latencia edge-to-core dentro de la red metropolitana. Las velocidades son las máximas del plan.",
     "router": "Equipo incluido",
     "tv": "TV ({channels} canales)",
     "tvValue": "Opcional +${price}/mes",
@@ -179,7 +183,7 @@
     "submit": "Enviar solicitud",
     "sending": "Enviando…",
     "successTitle": "¡Listo! Recibimos tu solicitud.",
-    "successBody": "Te escribimos por WhatsApp en horario hábil para confirmar tu cobertura y agendar la visita.",
+    "successBody": "Te escribimos por WhatsApp para confirmar tu cobertura y agendar la visita.",
     "close": "Cerrar",
     "error": "No pudimos enviar tu solicitud. Revisa tu conexión e inténtalo de nuevo.",
     "honeypot": "No llenes este campo",
@@ -196,7 +200,7 @@
   "footer": {
     "privacy": "Aviso de Privacidad",
     "terms": "Términos y condiciones",
-    "tagline": "Internet de fibra óptica simétrica en Ciudad de México, Estado de México y Morelos.",
+    "tagline": "Internet de fibra óptica simétrica en la Ciudad de México, el Estado de México y Morelos.",
     "explore": "Explora",
     "faq": "Preguntas frecuentes",
     "coverage": "Cobertura",
@@ -241,12 +245,12 @@
     "means": {
       "title": "Qué significa en tu día a día",
       "upload10": "Subir un video de 10 GB",
-      "streams": "Streams 4K al mismo tiempo",
+      "streams": "Pantallas en 4K al mismo tiempo",
       "backup": "Respaldar 1 TB en la nube",
       "today": "Hoy",
       "plan": "Con {speed}",
       "runTest": "Haz la prueba de arriba para compararlo con tu conexión actual.",
-      "note": "Cálculo ideal a velocidad máxima sostenida · 1 GB = 8,000 Mb · 25 Mbps por stream 4K."
+      "note": "Cálculo ideal a velocidad máxima sostenida · 1 GB = 8,000 Mb · 25 Mbps por pantalla en 4K."
     },
     "telemetry": {
       "title": "La red en vivo",
@@ -260,7 +264,7 @@
       "loss": "Pérdida de paquetes",
       "graphAlt": "Gráfica simulada de tráfico de los últimos 60 segundos: bajada {down} Gbps y subida {up} Gbps. La capacidad es simétrica aunque el tráfico típico baje más de lo que sube.",
       "gaugeAlt": "Latencia simulada: p50 {p50} ms, p99 {p99} ms.",
-      "static": "Vista fija: movimiento reducido activado",
+      "static": "Vista fija: animaciones en pausa",
       "p50Unit": "ms p50",
       "p99": "p99"
     },
@@ -295,7 +299,7 @@
     }
   },
   "map": {
-    "lead": "Damos servicio en la Ciudad de México, el Estado de México y Morelos. Aquí están algunos de los edificios que ya navegan con nosotros.",
+    "lead": "Damos servicio en la Ciudad de México, el Estado de México y Morelos. Aquí ves edificios que ya son clientes y algunos ejemplos ilustrativos.",
     "layers": "Capas",
     "layer": {
       "clients": "Clientes",
@@ -338,10 +342,10 @@
     "statePage": "Fibra en {name}"
   },
   "proof": {
-    "lead": "Fibra óptica de punta a punta, con números que puedes revisar.",
-    "latency": "Latencia del borde al núcleo",
-    "latencyNote": "Medida dentro de la red metropolitana, del borde al núcleo. No incluye tu Wi-Fi ni el servidor de destino.",
-    "speed": "Velocidad máxima simétrica del plan",
+    "lead": "Fibra óptica de punta a punta. Publicamos los datos de la red conforme los confirmamos.",
+    "latency": "Latencia objetivo del borde al núcleo",
+    "latencyNote": "Objetivo de diseño dentro de la red metropolitana, del borde al núcleo. No incluye tu Wi-Fi ni el servidor de destino.",
+    "speed": "Velocidad simétrica de nuestro plan más rápido",
     "km": "Kilómetros de fibra desplegada",
     "pops": "Nodos (POP) en operación",
     "cta": "Compruébalo: mide tu conexión actual",
@@ -381,7 +385,7 @@
   },
   "faq": {
     "lead": "Lo que más nos preguntan antes de contratar.",
-    "cta": "¿Listo? Contrata tu plan",
+    "cta": "Contrata tu plan",
     "facts": {
       "installFee": "Costo",
       "installDays": "Tiempo",
@@ -453,7 +457,7 @@
     "whatsappMessage": "Hola, me interesa contratar el plan de {speed} simétrico{extras, select, none {} other { con {extras}}}. ¿Me ayudan?"
   },
   "area": {
-    "outlineAlt": "Mapa de la zona de servicio con {state} resaltado.",
+    "outlineAlt": "Mapa de la zona de servicio que resalta {state}.",
     "metaTitle": "Internet de fibra óptica en {name}",
     "metaDescription": "Internet de fibra óptica simétrica en {name}: planes desde {min} hasta {max}, misma velocidad de bajada y de subida.",
     "home": "Inicio",
@@ -471,6 +475,24 @@
     "serviceName": "Internet de fibra óptica simétrica",
     "serviceType": "Internet de fibra óptica (FTTH)",
     "serviceDescription": "Internet de fibra óptica hasta el hogar con la misma velocidad de bajada y de subida.",
-    "ogAlt": "Fibra óptica simétrica en Ciudad de México, Estado de México y Morelos"
+    "ogAlt": "Fibra óptica simétrica en la Ciudad de México, el Estado de México y Morelos"
+  },
+  "motion": {
+    "pause": "Pausar animaciones",
+    "system": "Animaciones reducidas por tu sistema"
+  },
+  "states": {
+    "cdmx": {
+      "name": "Ciudad de México",
+      "in": "la Ciudad de México"
+    },
+    "estado-de-mexico": {
+      "name": "Estado de México",
+      "in": "el Estado de México"
+    },
+    "morelos": {
+      "name": "Morelos",
+      "in": "Morelos"
+    }
   }
 }

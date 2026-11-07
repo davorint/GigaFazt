@@ -1,6 +1,7 @@
 import { useLocale, useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { StatusBadge } from "@/components/hud/StatusBadge"
+import { MotionToggle } from "@/components/hud/MotionToggle"
 import { TrackedLink } from "@/components/hud/TrackedLink"
 import type { AnalyticsEvent } from "@/lib/analytics"
 import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
@@ -8,6 +9,7 @@ import { company } from "@/lib/company"
 import { STATES } from "@/lib/geo/states"
 import { isPlaceholder, type Maybe } from "@/lib/placeholder"
 import { telHref, whatsappHref } from "@/lib/contact"
+import { stateName } from "@/lib/geo/state-names"
 
 const A = "rounded text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 
@@ -50,16 +52,18 @@ function Field({
 /**
  * Footer (SPEC §8): status badge · Aviso de Privacidad (LFPDPPP) · Términos ·
  * regulatory registration · contact · social. Shared by every page; `base` is
- * the locale home ("/es") so section links work off the home page.
+ * the locale home ("/es") so section links work off the home page. Bottom
+ * padding on mobile clears the fixed quick-nav bar.
  */
 export function Footer({ base = "" }: { base?: string }) {
   const t = useTranslations("footer")
   const tn = useTranslations("nav")
+  const ts = useTranslations("states")
   const locale = useLocale()
   const prefix = base || `/${locale}`
 
   return (
-    <footer id="footer" data-section="footer" className="border-t border-border bg-surface">
+    <footer id="footer" data-section="footer" className="border-t border-border bg-surface pb-16 md:pb-0">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr]">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
@@ -72,6 +76,7 @@ export function Footer({ base = "" }: { base?: string }) {
           </div>
           <p className="max-w-xs text-sm text-muted-foreground">{t("tagline")}</p>
           <StatusBadge />
+          <MotionToggle withLabel />
         </div>
 
         <nav aria-label={t("explore")}>
@@ -90,7 +95,7 @@ export function Footer({ base = "" }: { base?: string }) {
             {STATES.map((s) => (
               <li key={s.slug}>
                 <Link href={`/cobertura/${s.slug}`} className={A}>
-                  {s.name}
+                  {stateName(ts, s.slug)}
                 </Link>
               </li>
             ))}
@@ -100,7 +105,7 @@ export function Footer({ base = "" }: { base?: string }) {
         <div>
           <h2 className="eyebrow mb-3">{t("contact")}</h2>
           <ul className="space-y-2 text-sm">
-            <Field label="WhatsApp" value={company.whatsapp} href={(v) => whatsappHref(v)} event="whatsapp_clicked" />
+            <Field label={tn("whatsapp")} value={company.whatsapp} href={(v) => whatsappHref(v)} event="whatsapp_clicked" />
             <Field label={t("phone")} value={company.salesPhone} href={telHref} />
             <Field label={t("email")} value={company.salesEmail} href={(v) => `mailto:${v}`} />
             <li className="flex flex-wrap items-center gap-2">

@@ -6,6 +6,7 @@ import { isAnswered } from "@/lib/faq"
 import { isPlaceholder } from "@/lib/placeholder"
 import { ORG_ID, SITE_URL, absoluteUrl } from "@/lib/site"
 import { JsonLd } from "./JsonLd"
+import { stateName } from "@/lib/geo/state-names"
 
 /** Organization only once BUSINESS.md has a name (never an invented brand). */
 function organization() {
@@ -36,6 +37,7 @@ export async function ServiceJsonLd({
   states?: typeof STATES
 }) {
   const t = await getTranslations({ locale, namespace: "seo" })
+  const ts = await getTranslations({ locale, namespace: "states" })
   const org = organization()
   const page = absoluteUrl(locale, path)
   const service = {
@@ -48,7 +50,7 @@ export async function ServiceJsonLd({
     description: t("serviceDescription"),
     areaServed: states.map((s) => ({
       "@type": "AdministrativeArea",
-      name: s.name,
+      name: stateName(ts, s.slug),
       containedInPlace: { "@type": "Country", name: "México" },
     })),
     ...(org ? { provider: { "@id": ORG_ID } } : {}),

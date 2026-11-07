@@ -5,7 +5,7 @@ import { placeholder, isPlaceholder, type Maybe } from "./placeholder"
 /**
  * Generated from docs/BUSINESS.md. One lineup for everyone (owner, 2026-11-06:
  * no Hogar/Empresa split). Speeds and prices are owner-provided; fees, term,
- * includes and the 200/500 technology are still {{PLACEHOLDER}} and render as
+ * includes, promos and the 200/500 technology are still {{PLACEHOLDER}} and render as
  * visible chips (hard rule #1). Re-sync when BUSINESS.md is filled in.
  */
 export const plans: Plan[] = [
@@ -18,6 +18,7 @@ export const plans: Plan[] = [
     contractMonths: placeholder("CONTRACT_TERM"),
     technology: placeholder("fibra-200.technology"),
     includes: placeholder("fibra-200.includes"),
+    promo: placeholder("fibra-200.promo"),
   },
   {
     id: "fibra-500",
@@ -28,6 +29,7 @@ export const plans: Plan[] = [
     contractMonths: placeholder("CONTRACT_TERM"),
     technology: placeholder("fibra-500.technology"),
     includes: placeholder("fibra-500.includes"),
+    promo: placeholder("fibra-500.promo"),
   },
   {
     id: "fibra-1g",
@@ -38,6 +40,7 @@ export const plans: Plan[] = [
     contractMonths: placeholder("CONTRACT_TERM"),
     technology: "GPON",
     includes: placeholder("fibra-1g.includes"),
+    promo: placeholder("fibra-1g.promo"),
     highlight: true,
   },
 ]

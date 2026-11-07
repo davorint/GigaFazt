@@ -240,3 +240,11 @@
     transition-duration: 0.001ms !important;
   }
 }
+/* On-page "pause animations" toggle (lib/motion.ts, WCAG 2.2.2): same effect. */
+html[data-motion="off"] *,
+html[data-motion="off"] *::before,
+html[data-motion="off"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}

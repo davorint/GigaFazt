@@ -9,11 +9,13 @@ import { cn } from "cn"
 import { Button } from "@/components/ui/button"
 import { company } from "@/lib/company"
 import { isPlaceholder } from "@/lib/placeholder"
+import { whatsappHref } from "@/lib/contact"
 import { track } from "@/lib/analytics"
 import { scrollToId } from "@/lib/scroll"
 import { Brand } from "./Brand"
 import { StatusBadge } from "./StatusBadge"
 import { LocaleToggle } from "./LocaleToggle"
+import { MotionToggle } from "./MotionToggle"
 import { PlaceholderChip } from "./PlaceholderChip"
 
 // Lazy so Base UI's dialog isn't in the initial bundle (perf budget, hard rule #8).
@@ -79,7 +81,7 @@ export function Nav({ base = "" }: { base?: string }) {
     setMenuOpen(true)
   }
 
-  const whatsappReady = !isPlaceholder(company.whatsapp)
+  const whatsapp = isPlaceholder(company.whatsapp) ? null : company.whatsapp
 
   return (
     <>
@@ -96,9 +98,9 @@ export function Nav({ base = "" }: { base?: string }) {
             "mx-auto flex max-w-7xl items-center justify-between px-4 transition-all duration-200 sm:px-6",
             condensed ? "h-12" : "h-16"
           )}
-          aria-label="Principal"
+          aria-label={t("main")}
         >
-          <Brand />
+          <Brand href={base || "#hero"} />
 
           <div className="hidden items-center gap-1 md:flex">
             {links.map((link) => {
@@ -123,6 +125,7 @@ export function Nav({ base = "" }: { base?: string }) {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <StatusBadge className="hidden sm:inline-flex" />
+            <MotionToggle className="hidden sm:inline-flex" />
             <LocaleToggle className="hidden sm:flex" />
             <Button
               size="sm"
@@ -150,11 +153,14 @@ export function Nav({ base = "" }: { base?: string }) {
       </header>
 
       {menuMounted && (
-        <MobileMenu open={menuOpen} onOpenChange={setMenuOpen} links={links} />
+        <MobileMenu open={menuOpen} onOpenChange={setMenuOpen} links={links} home={base || "#hero"} />
       )}
 
-      {/* Mobile sticky bottom bar, appears after the hero (SPEC §1). */}
-      <div
+      {/* Mobile sticky bottom bar, appears after the hero (SPEC §1). Inert while
+          hidden so its links aren't keyboard-reachable off screen. */}
+      <nav
+        aria-label={t("quick")}
+        inert={!pastHero}
         className={cn(
           "fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-border bg-background/90 backdrop-blur-md transition-transform duration-200 md:hidden",
           pastHero ? "translate-y-0" : "translate-y-full"
@@ -162,23 +168,23 @@ export function Nav({ base = "" }: { base?: string }) {
       >
         <a
           href={`${base}#map`}
-          className="flex flex-col items-center gap-0.5 py-2 text-xs text-muted-foreground"
+          className="flex flex-col items-center gap-0.5 py-2 text-xs focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none text-muted-foreground"
         >
           <MapPin className="size-4" />
           {t("cobertura")}
         </a>
         <a
           href={`${base}#plans`}
-          className="flex flex-col items-center gap-0.5 border-x border-border py-2 text-xs text-muted-foreground"
+          className="flex flex-col items-center gap-0.5 border-x border-border py-2 text-xs focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none text-muted-foreground"
         >
           <Layers className="size-4" />
           {t("planes")}
         </a>
-        {whatsappReady ? (
+        {whatsapp ? (
           <a
-            href={`https://wa.me/${String(company.whatsapp).replace(/\D/g, "")}`}
+            href={whatsappHref(whatsapp)}
             onClick={() => track("whatsapp_clicked", { context: "bottombar" })}
-            className="flex flex-col items-center gap-0.5 py-2 text-xs text-ok"
+            className="flex flex-col items-center gap-0.5 py-2 text-xs focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none text-ok"
           >
             <MessageCircle className="size-4" />
             {t("whatsapp")}
@@ -191,7 +197,7 @@ export function Nav({ base = "" }: { base?: string }) {
             )}
           </span>
         )}
-      </div>
+      </nav>
     </>
   )
 }

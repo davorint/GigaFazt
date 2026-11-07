@@ -4,20 +4,26 @@ import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
 import { company } from "@/lib/company"
 import { isPlaceholder, type Maybe } from "@/lib/placeholder"
 
-/** Trust strip (SPEC §3): no hidden fees · install time · local support · guarantee. */
+/**
+ * Trust strip (SPEC §3): no hidden fees · install time · local support ·
+ * guarantee. The two yes/no claims are owner-confirmed BUSINESS.md fields:
+ * chip until set, hidden if false (hard rule #1).
+ */
 export function TrustStrip() {
   const t = useTranslations("trust")
-  const { installDays, guarantee } = company.terms
+  const { installDays, guarantee, noHiddenFees, localSupport } = company.terms
 
   const value = (v: Maybe<string>) =>
     isPlaceholder(v) ? <PlaceholderChip keyName={v.key} /> : <span className="text-foreground">{v}</span>
 
+  const claim = (v: Maybe<boolean>) => (isPlaceholder(v) ? <PlaceholderChip keyName={v.key} /> : null)
+
   const items = [
-    { icon: BadgeCheck, label: t("noHiddenFees"), extra: null },
+    noHiddenFees !== false && { icon: BadgeCheck, label: t("noHiddenFees"), extra: claim(noHiddenFees) },
     { icon: Clock, label: t("install"), extra: value(installDays) },
-    { icon: Headset, label: t("localSupport"), extra: null },
+    localSupport !== false && { icon: Headset, label: t("localSupport"), extra: claim(localSupport) },
     { icon: ShieldCheck, label: t("guarantee"), extra: value(guarantee) },
-  ]
+  ].filter((i) => i !== false)
 
   return (
     <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">

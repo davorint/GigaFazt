@@ -71,6 +71,9 @@ export interface Company {
     contractTerm: Maybe<string>
     installDays: Maybe<string>
     guarantee: Maybe<string>
+    /** Trust-strip claims: shown only when the owner confirms (true). */
+    noHiddenFees: Maybe<boolean>
+    localSupport: Maybe<boolean>
     showPrices: Maybe<boolean>
   }
   integrations: {

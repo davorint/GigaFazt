@@ -21,6 +21,7 @@ import { clientsByState } from "@/lib/clients"
 import { STATES } from "@/lib/geo/states"
 import { plans, speedRange } from "@/lib/plans"
 import { SITE_URL, absoluteUrl, localizedPath, pageMeta } from "@/lib/site"
+import { stateIn, stateName } from "@/lib/geo/state-names"
 
 /**
  * Only the three service states are prerendered. Unknown slugs hit notFound();
@@ -39,11 +40,12 @@ export async function generateMetadata({
   if (!area) notFound()
   setRequestLocale(locale)
   const t = await getTranslations({ locale, namespace: "area" })
+  const inName = stateIn(await getTranslations({ locale, namespace: "states" }), slug)
   return pageMeta(
     locale,
     `/cobertura/${slug}`,
-    t("metaTitle", { name: area.name }),
-    t("metaDescription", { name: area.name, ...speedRange() }),
+    t("metaTitle", { name: inName }),
+    t("metaDescription", { name: inName, ...speedRange() }),
     (await getTranslations({ locale, namespace: "seo" }))("ogAlt")
   )
 }
@@ -55,6 +57,9 @@ export default async function AreaPage({ params }: PageProps<"/[locale]/cobertur
   if (!area) notFound()
   setRequestLocale(locale)
   const t = await getTranslations()
+  const ts = await getTranslations("states")
+  const name = stateName(ts, slug)
+  const inName = stateIn(ts, slug)
   const state = STATES.find((s) => s.code === area.state)!
   const list = clientsByState(area.state)
   const others = STATES.filter((s) => s.code !== area.state)
@@ -67,15 +72,15 @@ export default async function AreaPage({ params }: PageProps<"/[locale]/cobertur
     itemListElement: [
       { name: t("area.home"), item: absoluteUrl(locale, "/") },
       { name: t("area.coverage"), item: `${SITE_URL}${home}#map` },
-      { name: area.name, item: absoluteUrl(locale, `/cobertura/${slug}`) },
+      { name, item: absoluteUrl(locale, `/cobertura/${slug}`) },
     ].map((b, i) => ({ "@type": "ListItem", position: i + 1, ...b })),
   }
 
   return (
     <>
       <Nav base={home} />
-      <main className="pt-16 pb-16 md:pb-0">
-        <Section id="area" aria-label={area.name}>
+      <main className="pt-16">
+        <Section id="area" aria-label={name}>
           <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2">
             <div>
               <nav aria-label={t("area.breadcrumb")} className="mb-6 font-mono text-xs text-muted-foreground">
@@ -84,7 +89,7 @@ export default async function AreaPage({ params }: PageProps<"/[locale]/cobertur
                   <li aria-hidden>/</li>
                   <li><a href={`${home}#map`} className="rounded hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">{t("area.coverage")}</a></li>
                   <li aria-hidden>/</li>
-                  <li aria-current="page" className="text-foreground">{area.name}</li>
+                  <li aria-current="page" className="text-foreground">{name}</li>
                 </ol>
               </nav>
               <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-ok/30 bg-ok/10 px-3 py-1 font-mono text-xs uppercase tracking-wider text-ok">
@@ -92,9 +97,9 @@ export default async function AreaPage({ params }: PageProps<"/[locale]/cobertur
                 {t("area.available")}
               </p>
               <h1 className="text-4xl font-semibold tracking-[-0.03em] sm:text-6xl">
-                {t("area.h1", { name: area.name })}
+                {t("area.h1", { name: inName })}
               </h1>
-              <p className="mt-5 max-w-xl text-lg text-muted-foreground">{t("area.lead", { name: area.name })}</p>
+              <p className="mt-5 max-w-xl text-lg text-muted-foreground">{t("area.lead", { name: inName })}</p>
               <p className="mt-3 max-w-xl text-sm text-muted-foreground">{t("map.hud.confirm")}</p>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <ContractButton context={`area_${slug}`} />
@@ -130,7 +135,7 @@ export default async function AreaPage({ params }: PageProps<"/[locale]/cobertur
               {list.length > 0 && (
                 <div className="mt-4 border-t border-border pt-4">
                   <h2 className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
-                    {t("area.clients", { name: area.name })}
+                    {t("area.clients", { name: inName })}
                   </h2>
                   <ul className="mt-3 space-y-1.5">
                     {list.map((c) => (
@@ -153,7 +158,7 @@ export default async function AreaPage({ params }: PageProps<"/[locale]/cobertur
           <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
             <p className="eyebrow mb-3">[ {t("sections.plans")} ]</p>
             <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-              {t("area.plansTitle", { name: area.name })}
+              {t("area.plansTitle", { name: inName })}
             </h2>
             <p className="mt-3 max-w-2xl text-muted-foreground">{t("plans.lead")}</p>
             <div className="mt-12 grid gap-6 md:grid-cols-3">
@@ -188,7 +193,7 @@ export default async function AreaPage({ params }: PageProps<"/[locale]/cobertur
                     href={`/cobertura/${s.slug}`}
                     className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
-                    {t("area.h1", { name: s.name })}
+                    {t("area.h1", { name: stateIn(ts, s.slug) })}
                   </Link>
                 </li>
               ))}

@@ -8,6 +8,7 @@ import type { TelemetrySnapshot, TelemetrySource } from "@/lib/telemetry/types"
 import { ThroughputGraph } from "./ThroughputGraph"
 import { LatencyGauge } from "./LatencyGauge"
 import { Sparkline } from "./Sparkline"
+import { useReducedMotion } from "@/lib/motion"
 
 const WINDOW_MS = 60_000
 const BACKFILL = 90 // 60 s at the mock's 1.5 Hz
@@ -23,7 +24,7 @@ export default function TelemetryPanel({ source = mockTelemetry }: { source?: Te
   const t = useTranslations("fiber.telemetry")
   const ref = useRef<HTMLDivElement>(null)
   const [points, setPoints] = useState<TelemetrySnapshot[]>(() => source.history?.(BACKFILL) ?? [])
-  const [reduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+  const reduced = useReducedMotion()
 
   useEffect(() => {
     if (reduced) return

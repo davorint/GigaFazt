@@ -1,18 +1,21 @@
 {
   "meta": {
-    "title": "Symmetrical fiber internet for CDMX, Edomex and Morelos",
-    "description": "100% symmetrical fiber internet in Mexico City, Estado de México and Morelos. The same download and upload speed, from {min} up to {max}."
+    "title": "Symmetrical fiber internet for Mexico City, the State of Mexico and Morelos",
+    "description": "100% symmetrical fiber internet in Mexico City, the State of Mexico and Morelos. The same download and upload speed, from {min} up to {max}."
   },
   "nav": {
     "fibra": "Fiber",
     "planes": "Plans",
     "cobertura": "Coverage",
-    "soporte": "Support",
+    "soporte": "Help",
     "viewPlans": "See plans",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "whatsapp": "WhatsApp",
-    "language": "Language"
+    "language": "Language",
+    "home": "Home",
+    "main": "Main",
+    "quick": "Quick links"
   },
   "status": {
     "operational": "Operational",
@@ -22,7 +25,7 @@
     "eyebrow": "100% SYMMETRICAL FIBER",
     "h1": "Symmetrical gigabit for ${price} a month.",
     "h1NoPrice": "Symmetrical gigabit for your home or business.",
-    "subhead": "Upload a 4K video in seconds. The same download and upload speed, with low, stable latency.",
+    "subhead": "Upload a 4K video in seconds. The same download and upload speed on every plan.",
     "from": "Plans from",
     "perMonth": "/mo",
     "viewPlans": "See plans",
@@ -43,7 +46,7 @@
   "sectionHeads": {
     "plans": "Pick your speed",
     "fiber": "Truly symmetrical fiber",
-    "map": "Already connecting your neighbors",
+    "map": "Where we serve",
     "proof": "The network behind the service",
     "install": "How installation works",
     "faq": "Frequently asked questions",
@@ -58,7 +61,7 @@
     "contract": "Sign up"
   },
   "plans": {
-    "lead": "One price, no fine print. Every plan is symmetrical: you upload as fast as you download.",
+    "lead": "Clear prices with IVA (VAT) included. Every plan is symmetrical: you upload as fast as you download.",
     "popular": "Most popular",
     "symmetric": "Symmetrical",
     "down": "Download",
@@ -78,7 +81,8 @@
     "compareAll": "Compare all plans",
     "pageTitle": "Fiber internet plans",
     "pageLead": "Compare speeds, prices and what each plan includes. All of them are 100% symmetrical.",
-    "jsonLdName": "Symmetrical fiber internet {speed}"
+    "jsonLdName": "Symmetrical fiber internet {speed}",
+    "promo": "Promo"
   },
   "addons": {
     "title": "Build your bundle",
@@ -129,8 +133,8 @@
     "reason": {
       "light": "For browsing, shows and video calls in a small home, it's more than enough.",
       "people": "With this many people online at once, nobody waits.",
-      "creator": "You upload big files: with symmetrical upload you finish in seconds, not hours.",
-      "wfh": "For working from home without dropped video calls or VPN stalls.",
+      "creator": "You upload big files: with symmetrical upload you finish in minutes, not hours.",
+      "wfh": "So video calls and the VPN have room to spare, even with everyone online.",
       "uses": "Gaming, 4K and cameras at the same time, without one slowing the other.",
       "upgrade": "Picked to be at least double what you have today.",
       "top": "It's our fastest plan: the biggest jump we can give you today."
@@ -152,7 +156,7 @@
     "technology": "Technology",
     "latency": "Latency",
     "latencyValue": "< 1 ms*",
-    "latencyNote": "* Edge-to-core latency within the metro network. Speeds are plan maximums.",
+    "latencyNote": "* Target edge-to-core latency within the metro network. Speeds are plan maximums.",
     "router": "Equipment included",
     "tv": "TV ({channels} channels)",
     "tvValue": "Optional +${price}/mo",
@@ -179,7 +183,7 @@
     "submit": "Send request",
     "sending": "Sending…",
     "successTitle": "Done! We got your request.",
-    "successBody": "We'll message you on WhatsApp during business hours to confirm coverage and schedule the visit.",
+    "successBody": "We'll message you on WhatsApp to confirm coverage and schedule the visit.",
     "close": "Close",
     "error": "We couldn't send your request. Check your connection and try again.",
     "honeypot": "Leave this field empty",
@@ -196,7 +200,7 @@
   "footer": {
     "privacy": "Privacy Notice",
     "terms": "Terms and conditions",
-    "tagline": "Symmetrical fiber internet in Mexico City, Estado de México and Morelos.",
+    "tagline": "Symmetrical fiber internet in Mexico City, the State of Mexico and Morelos.",
     "explore": "Explore",
     "faq": "FAQ",
     "coverage": "Coverage",
@@ -241,12 +245,12 @@
     "means": {
       "title": "What it means day to day",
       "upload10": "Upload a 10 GB video",
-      "streams": "4K streams at once",
+      "streams": "4K screens at once",
       "backup": "Back up 1 TB to the cloud",
       "today": "Today",
       "plan": "With {speed}",
       "runTest": "Run the test above to compare with your current connection.",
-      "note": "Ideal calculation at sustained maximum speed · 1 GB = 8,000 Mb · 25 Mbps per 4K stream."
+      "note": "Ideal calculation at sustained maximum speed · 1 GB = 8,000 Mb · 25 Mbps per 4K screen."
     },
     "telemetry": {
       "title": "The network, live",
@@ -260,7 +264,7 @@
       "loss": "Packet loss",
       "graphAlt": "Simulated traffic chart for the last 60 seconds: download {down} Gbps and upload {up} Gbps. Capacity is symmetrical even though typical traffic downloads more than it uploads.",
       "gaugeAlt": "Simulated latency: p50 {p50} ms, p99 {p99} ms.",
-      "static": "Static view: reduced motion is on",
+      "static": "Static view: animations paused",
       "p50Unit": "ms p50",
       "p99": "p99"
     },
@@ -295,7 +299,7 @@
     }
   },
   "map": {
-    "lead": "We serve Mexico City, the State of Mexico and Morelos. Here are some of the buildings already online with us.",
+    "lead": "We serve Mexico City, the State of Mexico and Morelos. Here you'll see buildings that are already clients plus a few illustrative examples.",
     "layers": "Layers",
     "layer": {
       "clients": "Clients",
@@ -323,7 +327,7 @@
     "listTitle": "Clients and service areas",
     "listDesc": "Text version of the map. Pick a client to locate it.",
     "approx": "Locations approximate to neighborhood level.",
-    "mapAlt": "Service area map: Mexico City, State of Mexico and Morelos. Marks {real} client buildings and {demo} illustrative examples, with illustrative lines between CDMX, Toluca and Cuernavaca.",
+    "mapAlt": "Service area map: Mexico City, the State of Mexico and Morelos. Marks {real} client buildings and {demo} illustrative examples, with illustrative lines between CDMX, Toluca and Cuernavaca.",
     "cta": "Live in the area? Sign up and we'll confirm your coverage",
     "attribution": "Boundaries: INEGI / CONABIO via PhantomInsights (MIT)",
     "ui": {
@@ -338,9 +342,9 @@
     "statePage": "Fiber in {name}"
   },
   "proof": {
-    "lead": "Fiber end to end, with numbers you can check.",
-    "latency": "Edge-to-core latency",
-    "latencyNote": "Measured inside the metro network, from edge to core. Excludes your Wi-Fi and the destination server.",
+    "lead": "Fiber optics end to end. We publish network figures as we confirm them.",
+    "latency": "Target edge-to-core latency",
+    "latencyNote": "Design target within the metro network, edge to core. Doesn't include your Wi-Fi or the destination server.",
     "speed": "Top plan speed, symmetrical",
     "km": "Kilometers of fiber deployed",
     "pops": "Nodes (POPs) in operation",
@@ -381,7 +385,7 @@
   },
   "faq": {
     "lead": "What people ask us most before signing up.",
-    "cta": "Ready? Get your plan",
+    "cta": "Get your plan",
     "facts": {
       "installFee": "Cost",
       "installDays": "Time",
@@ -453,7 +457,7 @@
     "whatsappMessage": "Hi, I would like to sign up for the {speed} symmetrical plan{extras, select, none {} other { with {extras}}}. Can you help?"
   },
   "area": {
-    "outlineAlt": "Map of the service area with {state} highlighted.",
+    "outlineAlt": "Service area map highlighting {state}.",
     "metaTitle": "Fiber internet in {name}",
     "metaDescription": "Symmetrical fiber internet in {name}: plans from {min} up to {max}, the same download and upload speed.",
     "home": "Home",
@@ -471,6 +475,24 @@
     "serviceName": "Symmetrical fiber internet",
     "serviceType": "Fiber-to-the-home internet (FTTH)",
     "serviceDescription": "Fiber-to-the-home internet with the same download and upload speed.",
-    "ogAlt": "Symmetrical fiber internet in Mexico City, Estado de México and Morelos"
+    "ogAlt": "Symmetrical fiber internet in Mexico City, the State of Mexico and Morelos"
+  },
+  "motion": {
+    "pause": "Pause animations",
+    "system": "Animations reduced by your system settings"
+  },
+  "states": {
+    "cdmx": {
+      "name": "Mexico City",
+      "in": "Mexico City"
+    },
+    "estado-de-mexico": {
+      "name": "State of Mexico",
+      "in": "the State of Mexico"
+    },
+    "morelos": {
+      "name": "Morelos",
+      "in": "Morelos"
+    }
   }
 }
