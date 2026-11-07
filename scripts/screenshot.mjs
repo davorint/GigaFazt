@@ -75,6 +75,14 @@ async function main() {
         try {
           await el.scrollIntoViewIfNeeded({ timeout: 10000 })
           await page.waitForTimeout(1200)
+          // Lazy maps signal readiness via [data-map-ready]; wait for it if present.
+          if (await el.locator(".maplibregl-map, [data-map]").count()) {
+            await el
+              .locator("[data-map-ready]")
+              .first()
+              .waitFor({ timeout: 10000 })
+              .catch(() => console.warn(`[shot:${id}] map not ready after 10 s`))
+          }
           await el.screenshot({
             path: path.join(outDir, `${id}--${viewport.name}--${motion}.png`),
           })

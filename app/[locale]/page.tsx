@@ -4,6 +4,7 @@ import { Section } from "@/components/layout/Section"
 import { Hero } from "@/components/fiber/Hero"
 import { PlansSection } from "@/components/plans/PlansSection"
 import { FiberSection } from "@/components/fiber/FiberSection"
+import { CoverageMapSection } from "@/components/map/CoverageMapSection"
 import { PlansJsonLd } from "@/components/plans/PlansJsonLd"
 import { StatusBadge } from "@/components/hud/StatusBadge"
 import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
@@ -12,7 +13,7 @@ import { isPlaceholder } from "@/lib/placeholder"
 
 // Section shells in page order (SPEC §3–8). Replaced by real feature
 // components in later phases; `hero` and `footer` are rendered explicitly.
-const SHELLS = ["map", "proof", "install", "cta", "faq"] as const
+const SHELLS = ["proof", "install", "cta", "faq"] as const
 
 export default async function Home({ params }: PageProps<"/[locale]">) {
   const { locale } = await params
@@ -37,6 +38,10 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
 
         <Section id="fiber" aria-label={t("sections.fiber")}>
           <FiberSection />
+        </Section>
+
+        <Section id="map" aria-label={t("sections.map")}>
+          <CoverageMapSection />
         </Section>
 
         {SHELLS.map((id) => (

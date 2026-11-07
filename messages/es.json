@@ -43,7 +43,7 @@
   "sectionHeads": {
     "plans": "Elige tu velocidad",
     "fiber": "Fibra simétrica de verdad",
-    "map": "Mira si llegamos a tu zona",
+    "map": "Ya conectamos a tus vecinos",
     "proof": "La red detrás del servicio",
     "install": "Así se instala",
     "faq": "Preguntas frecuentes",
@@ -283,6 +283,48 @@
         "title": "Equipo en casa",
         "body": "El equipo decide cuánta de tu velocidad llega por Wi-Fi a cada cuarto."
       }
+    }
+  },
+  "map": {
+    "lead": "Damos servicio en la Ciudad de México, el Estado de México y Morelos. Aquí están algunos de los edificios que ya navegan con nosotros.",
+    "layers": "Capas",
+    "layer": {
+      "clients": "Clientes",
+      "coverage": "Zona de servicio"
+    },
+    "legend": {
+      "client": "Cliente conectado",
+      "demo": "Ejemplo ilustrativo",
+      "zone": "Zona de servicio",
+      "corridor": "Trazo ilustrativo · no es la red real"
+    },
+    "reset": "Restablecer vista",
+    "tapToExplore": "Toca para explorar",
+    "close": "Cerrar",
+    "hud": {
+      "client": "Cliente",
+      "residential": "Edificio residencial",
+      "zone": "Zona de servicio",
+      "clientsHere": "{count, plural, =0 {Sin clientes publicados aún} one {# cliente conectado} other {# clientes conectados}}",
+      "confirm": "Confirmamos la cobertura de tu dirección exacta al contratar.",
+      "contract": "Contratar aquí",
+      "viewPlans": "Ver planes",
+      "demoHere": "{count, plural, one {# ejemplo ilustrativo} other {# ejemplos ilustrativos}}"
+    },
+    "listTitle": "Clientes y zonas de servicio",
+    "listDesc": "Versión en texto del mapa. Elige un cliente para ubicarlo.",
+    "approx": "Ubicaciones aproximadas a nivel colonia.",
+    "mapAlt": "Mapa de la zona de servicio: Ciudad de México, Estado de México y Morelos. Marca {real} edificios cliente y {demo} ejemplos ilustrativos, con líneas ilustrativas entre CDMX, Toluca y Cuernavaca.",
+    "cta": "¿Vives en la zona? Contrata y confirmamos tu cobertura",
+    "attribution": "Límites: INEGI / CONABIO vía PhantomInsights (MIT)",
+    "ui": {
+      "map": "Mapa",
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar",
+      "attribution": "Mostrar créditos",
+      "twoFingers": "Usa dos dedos para mover el mapa",
+      "ctrlScroll": "Usa Ctrl + rueda para hacer zoom",
+      "cmdScroll": "Usa ⌘ + rueda para hacer zoom"
     }
   }
 }

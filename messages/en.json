@@ -43,7 +43,7 @@
   "sectionHeads": {
     "plans": "Pick your speed",
     "fiber": "Truly symmetrical fiber",
-    "map": "See if we reach your area",
+    "map": "Already connecting your neighbors",
     "proof": "The network behind the service",
     "install": "How installation works",
     "faq": "Frequently asked questions",
@@ -283,6 +283,48 @@
         "title": "Home equipment",
         "body": "The equipment decides how much of your speed reaches each room over Wi-Fi."
       }
+    }
+  },
+  "map": {
+    "lead": "We serve Mexico City, the State of Mexico and Morelos. Here are some of the buildings already online with us.",
+    "layers": "Layers",
+    "layer": {
+      "clients": "Clients",
+      "coverage": "Service area"
+    },
+    "legend": {
+      "client": "Connected client",
+      "demo": "Illustrative example",
+      "zone": "Service area",
+      "corridor": "Illustrative path · not the actual network"
+    },
+    "reset": "Reset view",
+    "tapToExplore": "Tap to explore",
+    "close": "Close",
+    "hud": {
+      "client": "Client",
+      "residential": "Residential building",
+      "zone": "Service area",
+      "clientsHere": "{count, plural, =0 {No published clients yet} one {# connected client} other {# connected clients}}",
+      "confirm": "We confirm coverage for your exact address when you sign up.",
+      "contract": "Sign up here",
+      "viewPlans": "See plans",
+      "demoHere": "{count, plural, one {# illustrative example} other {# illustrative examples}}"
+    },
+    "listTitle": "Clients and service areas",
+    "listDesc": "Text version of the map. Pick a client to locate it.",
+    "approx": "Locations approximate to neighborhood level.",
+    "mapAlt": "Service area map: Mexico City, State of Mexico and Morelos. Marks {real} client buildings and {demo} illustrative examples, with illustrative lines between CDMX, Toluca and Cuernavaca.",
+    "cta": "Live in the area? Sign up and we'll confirm your coverage",
+    "attribution": "Boundaries: INEGI / CONABIO via PhantomInsights (MIT)",
+    "ui": {
+      "map": "Map",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "attribution": "Show credits",
+      "twoFingers": "Use two fingers to move the map",
+      "ctrlScroll": "Use Ctrl + scroll to zoom",
+      "cmdScroll": "Use ⌘ + scroll to zoom"
     }
   }
 }

@@ -1,4 +1,5 @@
 import type { CoverageArea, StateCode } from "./types"
+import { STATES } from "./geo/states"
 
 export const STATE_NAMES: Record<StateCode, string> = {
   CDMX: "Ciudad de México",
@@ -7,13 +8,17 @@ export const STATE_NAMES: Record<StateCode, string> = {
 }
 
 /**
- * Generated from the Coverage table in docs/BUSINESS.md. Every row there is
- * still a {{PLACEHOLDER}} municipio, so we do NOT invent any area names
- * (hard rule #1, hard rule #6). This list stays empty until BUSINESS.md is
- * filled; the UI shows "POR DEFINIR" where a municipio list would go.
- * Logged in PROGRESS.md "Open questions".
+ * Coverage is defined at state level (owner, 2026-11-06): the service zone is
+ * CDMX, Estado de México and Morelos. Street-level availability is confirmed
+ * per address when a lead comes in (the site never promises a specific
+ * address is covered).
  */
-export const coverageAreas: CoverageArea[] = []
+export const coverageAreas: CoverageArea[] = STATES.map((s) => ({
+  slug: s.slug,
+  name: s.name,
+  state: s.code,
+  status: "available",
+}))
 
 export function areaBySlug(slug: string): CoverageArea | undefined {
   return coverageAreas.find((a) => a.slug === slug)
