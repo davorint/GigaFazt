@@ -12,7 +12,7 @@ export type FaqFactValue = Maybe<string> | Maybe<number>
 
 export interface FaqFact {
   /** Label key under `faq.facts`. */
-  label: "installFee" | "installDays" | "term" | "cancellation" | "router" | "staticIp" | "whatsapp" | "phone" | "hours" | "moving"
+  label: "installFee" | "installDays" | "term" | "cancellation" | "routerOther" | "staticIp" | "whatsapp" | "phone" | "hours" | "moving"
   value: FaqFactValue
   format?: "mxn"
 }
@@ -40,7 +40,8 @@ export const faqItems: FaqItem[] = [
       { label: "cancellation", value: policies.cancellation },
     ],
   },
-  { id: "router", facts: [{ label: "router", value: network.router }] },
+  // 1 Gbps includes a Wi-Fi 7 modem (answer text); network.router = equipment on the other plans.
+  { id: "router", facts: [{ label: "routerOther", value: network.router }] },
   { id: "staticIp", facts: [{ label: "staticIp", value: policies.staticIp }] },
   {
     id: "support",

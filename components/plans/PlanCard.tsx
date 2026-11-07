@@ -84,9 +84,9 @@ export function PlanCard({ plan, maxMbps, level = "h3" }: { plan: Plan; maxMbps:
         ) : (
           <ul className="space-y-1.5 text-sm">
             {plan.includes.map((item) => (
-              <li key={item} className="flex items-start gap-2">
+              <li key={item} className="flex items-start gap-2 font-medium text-foreground">
                 <Check className="mt-0.5 size-4 shrink-0 text-ok" aria-hidden />
-                {item}
+                {t(`include.${item}`)}
               </li>
             ))}
           </ul>

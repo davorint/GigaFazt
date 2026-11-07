@@ -1,10 +1,11 @@
 "use client"
 
 import { useLocale, useTranslations } from "next-intl"
-import { ArrowRight, MapPin } from "lucide-react"
+import { ArrowRight, MapPin, Wifi } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
-import { featuredPlan, lowestPrice } from "@/lib/plans"
+import { featuredPlan, lowestPrice, wifi7Plan } from "@/lib/plans"
+import { speedLabel } from "@/lib/format"
 import { formatMxn } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { track } from "@/lib/analytics"
@@ -41,6 +42,14 @@ export function Hero() {
         <p className="mt-6 max-w-xl text-lg text-muted-foreground">
           {t("subhead")}
         </p>
+
+        {/* Owner-confirmed differentiator: Wi-Fi 7 modem on the 1 Gbps plan. */}
+        {wifi7Plan && (
+          <p className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-fiber/40 bg-fiber/10 px-3 py-1 text-sm text-foreground">
+            <Wifi className="size-4 text-fiber" aria-hidden />
+            {t("wifi7", { speed: speedLabel(wifi7Plan.downMbps) })}
+          </p>
+        )}
 
         {/* Price anchor: the lowest monthly price in the lineup. */}
         <p className="mt-6 flex items-baseline gap-2 font-mono text-muted-foreground">

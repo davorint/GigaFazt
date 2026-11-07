@@ -33,6 +33,9 @@ export async function PlansJsonLd({ locale, path }: { locale: string; path: stri
       "@id": `${page}#offer-${p.id}`,
       name,
       itemOffered: { "@type": "Service", name },
+      ...(isPlaceholder(p.includes)
+        ? {}
+        : { description: p.includes.map((id) => t(`include.${id}`)).join(", ") }),
       ...(isPlaceholder(p.priceMxn)
         ? {}
         : { price: p.priceMxn, priceCurrency: "MXN", priceSpecification: monthly(p.priceMxn) }),

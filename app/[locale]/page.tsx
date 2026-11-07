@@ -16,12 +16,15 @@ import { LeadSheetHost } from "@/components/conversion/LeadSheetHost"
 import { PlansJsonLd } from "@/components/plans/PlansJsonLd"
 import { FaqJsonLd, ServiceJsonLd } from "@/components/seo/SiteJsonLd"
 import { pageMeta } from "@/lib/site"
+import { wifi7Plan } from "@/lib/plans"
+import { speedLabel } from "@/lib/format"
 
 export async function generateMetadata({ params }: PageProps<"/[locale]">): Promise<Metadata> {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: "meta" })
   const ts = await getTranslations({ locale, namespace: "seo" })
-  return pageMeta(locale, "/", t("title"), t("description", speedRange()), ts("ogAlt"))
+  const wifi7 = wifi7Plan ? ` ${t("wifi7", { speed: speedLabel(wifi7Plan.downMbps) })}` : ""
+  return pageMeta(locale, "/", t("title"), t("description", speedRange()) + wifi7, ts("ogAlt"))
 }
 
 /** Home: the ordered list of sections only (SPEC file structure). */

@@ -32,7 +32,7 @@ export function ComparisonTable() {
     {
       key: "router",
       label: t("router"),
-      cell: (p) => chip(p.includes, (x) => x.join(", ")),
+      cell: (p) => chip(p.includes, (x) => x.map((id) => tp(`include.${id}`)).join(", ")),
     },
     {
       key: "tv",

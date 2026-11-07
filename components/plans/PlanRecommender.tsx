@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl"
 import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react"
 import { cn } from "cn"
 import { Button } from "@/components/ui/button"
-import { plans, getPlan } from "@/lib/plans"
+import { plans, getPlan, wifi7Plan } from "@/lib/plans"
 import { speedLabel } from "@/lib/format"
 import {
   PEOPLE,
@@ -104,6 +104,9 @@ export function PlanRecommender() {
               {speedLabel(recommended.downMbps)}
             </p>
             <p className="mt-3 text-base">{t(`reason.${result.reason}`)}</p>
+            {recommended.id === wifi7Plan?.id && (
+              <p className="mt-2 text-sm text-muted-foreground">{t("wifi7")}</p>
+            )}
             <div className="mt-4">
               <PriceTag plan={recommended} size="sm" />
               <PriceTerms plan={recommended} inline className="mt-2" />

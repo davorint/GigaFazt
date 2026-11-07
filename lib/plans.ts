@@ -5,7 +5,7 @@ import { placeholder, isPlaceholder, type Maybe } from "./placeholder"
 /**
  * Generated from docs/BUSINESS.md. One lineup for everyone (owner, 2026-11-06:
  * no Hogar/Empresa split). Speeds and prices are owner-provided; fees, term,
- * includes, promos and the 200/500 technology are still {{PLACEHOLDER}} and render as
+ * 200/500 includes, promos and the 200/500 technology are still {{PLACEHOLDER}} and render as
  * visible chips (hard rule #1). Re-sync when BUSINESS.md is filled in.
  */
 export const plans: Plan[] = [
@@ -39,7 +39,7 @@ export const plans: Plan[] = [
     installFeeMxn: placeholder("INSTALL_FEE"),
     contractMonths: placeholder("CONTRACT_TERM"),
     technology: "GPON",
-    includes: placeholder("fibra-1g.includes"),
+    includes: ["wifi7Modem"],
     promo: placeholder("fibra-1g.promo"),
     highlight: true,
   },
@@ -100,3 +100,8 @@ export function speedRange(): { min: string; max: string } {
 }
 
 export { isPlaceholder }
+
+/** The plan that includes the Wi-Fi 7 modem (owner: 1 Gbps only; no brand, no mesh). */
+export const wifi7Plan: Plan | undefined = plans.find(
+  (p) => !isPlaceholder(p.includes) && p.includes.includes("wifi7Modem")
+)

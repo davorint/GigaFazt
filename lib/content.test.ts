@@ -4,6 +4,7 @@ import { hasUptime, uptimeAverage, uptimeLevel } from "./status"
 import { alternatesFor, localizedPath } from "./site"
 import { faqItems, isAnswered, tvFaqArgs } from "./faq"
 import { placeholder } from "./placeholder"
+import { plans, wifi7Plan } from "./plans"
 
 describe("contact links", () => {
   it("builds a wa.me link with digits only and an encoded message", () => {
@@ -58,9 +59,13 @@ describe("faq", () => {
   it("only marks items answered when no fact is a placeholder", () => {
     expect(isAnswered({ id: "speed", facts: [] })).toBe(true)
     expect(
-      isAnswered({ id: "router", facts: [{ label: "router", value: placeholder("ROUTER") }] })
+      isAnswered({ id: "router", facts: [{ label: "routerOther", value: placeholder("ROUTER") }] })
     ).toBe(false)
-    expect(isAnswered({ id: "router", facts: [{ label: "router", value: "Wi-Fi 6" }] })).toBe(true)
+    expect(isAnswered({ id: "router", facts: [{ label: "routerOther", value: "Wi-Fi 6" }] })).toBe(true)
+  })
+  it("Wi-Fi 7 modem is on the 1 Gbps plan only", () => {
+    expect(wifi7Plan?.id).toBe("fibra-1g")
+    expect(plans.filter((p) => Array.isArray(p.includes) && p.includes.includes("wifi7Modem"))).toHaveLength(1)
   })
   it("has unique ids and real TV contents", () => {
     expect(new Set(faqItems.map((f) => f.id)).size).toBe(faqItems.length)

@@ -1,7 +1,8 @@
 {
   "meta": {
     "title": "Symmetrical fiber internet for Mexico City, the State of Mexico and Morelos",
-    "description": "100% symmetrical fiber internet in Mexico City, the State of Mexico and Morelos. The same download and upload speed, from {min} up to {max}."
+    "description": "100% symmetrical fiber internet in Mexico City, the State of Mexico and Morelos. The same download and upload speed, from {min} up to {max}.",
+    "wifi7": "The {speed} plan includes a Wi-Fi 7 modem."
   },
   "nav": {
     "fibra": "Fiber",
@@ -30,7 +31,8 @@
     "perMonth": "/mo",
     "viewPlans": "See plans",
     "coverageLink": "Do we cover your area?",
-    "canvasAlt": "A bundle of optical fibers rising from a single point and fanning out, with cyan light pulses travelling along each strand."
+    "canvasAlt": "A bundle of optical fibers rising from a single point and fanning out, with cyan light pulses travelling along each strand.",
+    "wifi7": "The {speed} plan includes a Wi-Fi 7 modem"
   },
   "sections": {
     "hero": "Home",
@@ -82,7 +84,11 @@
     "pageTitle": "Fiber internet plans",
     "pageLead": "Compare speeds, prices and what each plan includes. All of them are 100% symmetrical.",
     "jsonLdName": "Symmetrical fiber internet {speed}",
-    "promo": "Promo"
+    "promo": "Promo",
+    "include": {
+      "wifi7Modem": "Wi-Fi 7 modem"
+    },
+    "wifi7Note": "Wi-Fi 7: top wireless speed needs compatible devices; older ones still connect."
   },
   "addons": {
     "title": "Build your bundle",
@@ -139,7 +145,8 @@
       "upgrade": "Picked to be at least double what you have today.",
       "top": "It's our fastest plan: the biggest jump we can give you today."
     },
-    "choose": "Choose this plan"
+    "choose": "Choose this plan",
+    "wifi7": "Includes a Wi-Fi 7 modem: more devices online at once and better Wi-Fi speed."
   },
   "trust": {
     "noHiddenFees": "No hidden fees",
@@ -294,7 +301,8 @@
       },
       "router": {
         "title": "Home equipment",
-        "body": "The equipment decides how much of your speed reaches each room over Wi-Fi."
+        "body": "The equipment decides how much of your speed reaches each room over Wi-Fi.",
+        "wifi7": "Wi-Fi 7 modem included with {speed}"
       }
     }
   },
@@ -391,12 +399,12 @@
       "installDays": "Time",
       "term": "Term",
       "cancellation": "Cancellation",
-      "router": "Equipment",
       "staticIp": "Static IP",
       "whatsapp": "WhatsApp",
       "phone": "Phone",
       "hours": "Support hours",
-      "moving": "Moving"
+      "moving": "Moving",
+      "routerOther": "Equipment on the other plans"
     },
     "items": {
       "speed": {
@@ -416,8 +424,8 @@
         "a": "These are the contract terms:"
       },
       "router": {
-        "q": "Is a router included?",
-        "a": "This is the equipment installed with your plan:"
+        "q": "Is a modem included?",
+        "a": "Yes. The {speed} plan includes a Wi-Fi 7 modem, the latest Wi-Fi generation. Its top speed needs Wi-Fi 7 devices; older devices still connect fine."
       },
       "staticIp": {
         "q": "Can I get a static IP?",

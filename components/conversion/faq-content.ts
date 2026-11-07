@@ -2,6 +2,8 @@ import { faqItems, tvFaqArgs, type FaqFact, type FaqItem } from "@/lib/faq"
 import { statesInList } from "@/lib/geo/state-names"
 import { formatMxn } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
+import { wifi7Plan } from "@/lib/plans"
+import { speedLabel } from "@/lib/format"
 
 type T = (key: string, args?: Record<string, string | number>) => string
 
@@ -19,6 +21,7 @@ export function faqEntries(t: T, locale: string): FaqEntry[] {
     tv: { channels: tv.channels, movies: tv.movies, series: tv.series },
     coverage: { states },
     moving: { states },
+    router: { speed: wifi7Plan ? speedLabel(wifi7Plan.downMbps) : "" },
   }
   return faqItems.map((item) => ({
     item,

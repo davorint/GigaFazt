@@ -7,6 +7,9 @@ export type Technology = "GPON" | "XGS-PON"
  * One lineup for everyone: the owner dropped the Hogar/Empresa split
  * (2026-11-06), so plans carry no segment. Plans are named by their speed.
  */
+/** Owner-confirmed inclusions (2026-11-07: the 1 Gbps plan includes a Wi-Fi 7 modem). */
+export type IncludeId = "wifi7Modem"
+
 export interface Plan {
   id: string
   downMbps: number
@@ -17,7 +20,8 @@ export interface Plan {
   installFeeMxn: Maybe<number>
   contractMonths: Maybe<number | null>
   technology: Maybe<Technology>
-  includes: Maybe<string[]>
+  /** Included equipment/services; labels come from messages (`plans.include.{id}`). */
+  includes: Maybe<IncludeId[]>
   highlight?: boolean
 }
 

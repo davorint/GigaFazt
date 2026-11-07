@@ -7,6 +7,7 @@ import { TrustStrip } from "./TrustStrip"
 import { PlanRecommender } from "./PlanRecommender"
 import { AddOnsPanel } from "./AddOnsPanel"
 import { ComparisonTable } from "./ComparisonTable"
+import { wifi7Plan } from "@/lib/plans"
 
 /**
  * Plans (SPEC §3), the conversion core. `home` links out to /planes for the
@@ -32,7 +33,10 @@ export function PlansSection({ variant = "home" }: { variant?: "home" | "page" }
           <PlanCard key={plan.id} plan={plan} maxMbps={maxMbps} level={variant === "page" ? "h2" : "h3"} />
         ))}
       </div>
-      <p className="mt-3 font-mono text-[0.7rem] text-muted-foreground">{t("plans.speedNote")}</p>
+      <p className="mt-3 font-mono text-[0.7rem] text-muted-foreground">
+        {t("plans.speedNote")}
+        {wifi7Plan && <> {t("plans.wifi7Note")}</>}
+      </p>
 
       <div className="mt-8">
         <TrustStrip />

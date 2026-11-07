@@ -1,7 +1,8 @@
 {
   "meta": {
     "title": "Fibra óptica simétrica para CDMX, Edomex y Morelos",
-    "description": "Internet de fibra óptica 100% simétrica en la CDMX, el Estado de México y Morelos. Misma velocidad de bajada y de subida, desde {min} hasta {max}."
+    "description": "Internet de fibra óptica 100% simétrica en la CDMX, el Estado de México y Morelos. Misma velocidad de bajada y de subida, desde {min} hasta {max}.",
+    "wifi7": "El plan de {speed} incluye módem Wi-Fi 7."
   },
   "nav": {
     "fibra": "Fibra",
@@ -30,7 +31,8 @@
     "perMonth": "/mes",
     "viewPlans": "Ver planes",
     "coverageLink": "¿Llegamos a tu zona?",
-    "canvasAlt": "Haz de fibras ópticas que nace de un solo punto y se abre en abanico, con pulsos de luz cian viajando a lo largo de cada hebra."
+    "canvasAlt": "Haz de fibras ópticas que nace de un solo punto y se abre en abanico, con pulsos de luz cian viajando a lo largo de cada hebra.",
+    "wifi7": "El plan de {speed} incluye módem Wi-Fi 7"
   },
   "sections": {
     "hero": "Inicio",
@@ -82,7 +84,11 @@
     "pageTitle": "Planes de internet de fibra óptica",
     "pageLead": "Compara velocidades, precios y lo que incluye cada plan. Todos son 100% simétricos.",
     "jsonLdName": "Internet de fibra óptica simétrica {speed}",
-    "promo": "Promoción"
+    "promo": "Promoción",
+    "include": {
+      "wifi7Modem": "Módem Wi-Fi 7"
+    },
+    "wifi7Note": "Wi-Fi 7: la velocidad inalámbrica máxima requiere dispositivos compatibles; los demás también se conectan."
   },
   "addons": {
     "title": "Arma tu paquete",
@@ -139,7 +145,8 @@
       "upgrade": "Lo elegimos para que sea al menos el doble de lo que tienes hoy.",
       "top": "Es nuestro plan más rápido: el mayor salto que podemos darte hoy."
     },
-    "choose": "Elegir este plan"
+    "choose": "Elegir este plan",
+    "wifi7": "Incluye módem Wi-Fi 7: más dispositivos conectados a la vez y mejor velocidad por Wi-Fi."
   },
   "trust": {
     "noHiddenFees": "Sin costos ocultos",
@@ -294,7 +301,8 @@
       },
       "router": {
         "title": "Equipo en casa",
-        "body": "El equipo decide cuánta de tu velocidad llega por Wi-Fi a cada cuarto."
+        "body": "El equipo decide cuánta de tu velocidad llega por Wi-Fi a cada cuarto.",
+        "wifi7": "Módem Wi-Fi 7 incluido en {speed}"
       }
     }
   },
@@ -391,12 +399,12 @@
       "installDays": "Tiempo",
       "term": "Plazo",
       "cancellation": "Cancelación",
-      "router": "Equipo",
       "staticIp": "IP fija",
       "whatsapp": "WhatsApp",
       "phone": "Teléfono",
       "hours": "Horario de soporte",
-      "moving": "Cambio de domicilio"
+      "moving": "Cambio de domicilio",
+      "routerOther": "Equipo en los demás planes"
     },
     "items": {
       "speed": {
@@ -416,8 +424,8 @@
         "a": "Estas son las condiciones del contrato:"
       },
       "router": {
-        "q": "¿Incluye router?",
-        "a": "Este es el equipo que se instala con tu plan:"
+        "q": "¿Incluye módem?",
+        "a": "Sí. El plan de {speed} incluye un módem Wi-Fi 7, la generación más reciente de Wi-Fi. Para aprovechar su velocidad máxima, tus dispositivos deben ser compatibles con Wi-Fi 7; los demás también se conectan sin problema."
       },
       "staticIp": {
         "q": "¿Puedo tener IP fija?",
