@@ -50,6 +50,8 @@ const WALL = 1.03
 
 // ---------------------------------------------------------------- beams
 const PATH = /* glsl */ `
+  // Safe pow: D3D (ANGLE) returns NaN for pow(x <= 0, y); bloom smears NaN black.
+  float spow(float x, float y) { return pow(max(x, 1e-6), y); }
   uniform float uDir;
   uniform float uTwist;
   uniform float uRad;
@@ -116,7 +118,7 @@ const beamVertex = /* glsl */ `
     // upload away from it. Bright head, fading tail.
     float x = (s + uDir * uTravel) / uSpacing + aRay.y * 7.0;
     float q = fract(x);
-    float pulse = uDir > 0.0 ? pow(1.0 - q, 7.0) : pow(q, 7.0);
+    float pulse = uDir > 0.0 ? spow(1.0 - q, 7.0) : spow(q, 7.0);
 
     float on = 1.0 - smoothstep(uActive - 0.06, uActive, aRank);
     float d = -mix(mvA.z, mvB.z, end);
@@ -128,7 +130,8 @@ const beamVertex = /* glsl */ `
     vec4 c = end < 0.5 ? cA : cB;
     vec2 sa = cA.xy / cA.w * uRes;
     vec2 sb = cB.xy / cB.w * uRes;
-    vec2 dir = normalize(sb - sa + vec2(1e-5, 0.0));
+    vec2 dv = sb - sa;
+    vec2 dir = dot(dv, dv) > 1e-10 ? normalize(dv) : vec2(1.0, 0.0);
     vec2 nrm = vec2(-dir.y, dir.x);
     float w = uWidth * (1.0 + pulse * 2.4 + glint * 1.2 + hl * 0.8);
     c.xy += nrm * position.y * w / uRes * c.w;
@@ -140,16 +143,19 @@ const beamVertex = /* glsl */ `
 `
 
 const beamFragment = /* glsl */ `
+  float spow(float x, float y) { return pow(max(x, 1e-6), y); }
   uniform vec3 uColor;
   varying float vI;
   varying float vSide;
   void main() {
-    float edge = 1.0 - abs(vSide);
-    float a = pow(edge, 1.4) * vI;
-    if (a < 0.002) discard;
+    // Clamp every pow() base: interpolation can push |vSide| a hair past 1 and
+    // D3D (ANGLE) returns NaN for pow(negative), which bloom then smears black.
+    float edge = clamp(1.0 - abs(vSide), 0.0, 1.0);
+    float a = spow(edge, 1.4) * clamp(vI, 0.0, 8.0);
+    if (!(a > 0.002)) discard; // also drops NaN
     // White-hot core where intensity is high.
     vec3 col = mix(uColor, vec3(1.0), clamp((vI - 1.6) * 0.3, 0.0, 0.45));
-    gl_FragColor = vec4(col * a, 1.0);
+    gl_FragColor = vec4(max(col * a, vec3(0.0)), 1.0);
     #include <colorspace_fragment>
   }
 `
@@ -280,6 +286,7 @@ const wallVertex = /* glsl */ `
   }
 `
 const wallFragment = /* glsl */ `
+  float spow(float x, float y) { return pow(max(x, 1e-6), y); }
   uniform float uTime;
   uniform float uFlow;
   uniform float uL;
@@ -292,7 +299,7 @@ const wallFragment = /* glsl */ `
   void main() {
     float a = atan(vW.y, vW.x);
     float s = -vW.z;
-    float fres = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 4.0);
+    float fres = spow(clamp(1.0 - abs(dot(normalize(vN), normalize(vV))), 0.0, 1.0), 4.0);
     // Caustics: interference bands drifting along the glass.
     float c1 = sin(a * 5.0 + s * 0.9 + uTime * 0.9) * sin(a * 3.0 - s * 0.55 - uTime * 0.6 + 1.3);
     float caust = smoothstep(0.5, 1.0, c1);
@@ -347,6 +354,7 @@ function CoreWall({ up, still, flowSpeed }: { up: StreamTarget; still: boolean; 
 
 // ---------------------------------------------------------------- outside: cladding + end face
 const claddingFragment = /* glsl */ `
+  float spow(float x, float y) { return pow(max(x, 1e-6), y); }
   uniform float uL;
   uniform float uOpacity;
   varying vec3 vW;
@@ -354,7 +362,7 @@ const claddingFragment = /* glsl */ `
   varying vec3 vV;
   void main() {
     float s = -vW.z;
-    float fres = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 3.0);
+    float fres = spow(clamp(1.0 - abs(dot(normalize(vN), normalize(vV))), 0.0, 1.0), 3.0);
     float fade = smoothstep(uL, uL * 0.3, s);
     float a = (0.004 + fres * 0.28) * fade * uOpacity;
     gl_FragColor = vec4(vec3(0.13, 0.83, 0.93) * a, 1.0);
