@@ -219,8 +219,7 @@
     "phone": "Phone",
     "email": "Email",
     "social": "Social",
-    "legal": "Legal",
-    "regulatory": "IFT/CRT registration"
+    "legal": "Legal"
   },
   "fiber": {
     "lead": "With symmetrical fiber you upload as fast as you download. See it in action.",

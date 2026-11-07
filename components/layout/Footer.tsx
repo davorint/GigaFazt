@@ -61,7 +61,7 @@ function Field({
 
 /**
  * Footer (SPEC §8): status badge · Aviso de Privacidad (LFPDPPP) · Términos ·
- * regulatory registration · contact · social. Shared by every page; `base` is
+ * contact · social. Shared by every page; `base` is
  * the locale home ("/es") so section links work off the home page. Bottom
  * padding on mobile clears the fixed quick-nav bar.
  */
@@ -139,7 +139,6 @@ export function Footer({ base = "" }: { base?: string }) {
           <ul className="space-y-2 text-sm">
             <Field label={t("privacy")} value={company.legal.privacyUrl} href={(v) => v} showValue={false} />
             <Field label={t("terms")} value={company.legal.termsUrl} href={(v) => v} showValue={false} />
-            <Field label={t("regulatory")} value={company.regulatory} />
           </ul>
         </div>
       </div>

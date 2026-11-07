@@ -65,7 +65,6 @@ export interface Company {
   whatsapp: Maybe<string>
   salesPhone: Maybe<string>
   salesEmail: Maybe<string>
-  regulatory: Maybe<string>
   yearsOperating: Maybe<number>
   network: {
     kmFiber: Maybe<number>
