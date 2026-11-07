@@ -18,20 +18,15 @@
     "operational": "Operational",
     "degraded": "Degraded"
   },
-  "segment": {
-    "hogar": "Home",
-    "empresa": "Business"
-  },
   "hero": {
-    "eyebrow": "100% SYMMETRICAL OPTICAL FIBER",
-    "h1_hogar": "Symmetrical gigabit for your home.",
-    "h1_empresa": "Dedicated connectivity for your business.",
-    "subhead_hogar": "Upload a 4K video in seconds. The same download and upload speed, with low, stable latency.",
-    "subhead_empresa": "Dedicated connectivity with SLA, static IP and metro-grade latency for your operation.",
-    "from": "From",
+    "eyebrow": "100% SYMMETRICAL FIBER",
+    "h1": "Symmetrical gigabit for ${price} a month.",
+    "h1NoPrice": "Symmetrical gigabit for your home or business.",
+    "subhead": "Upload a 4K video in seconds. The same download and upload speed, with low, stable latency.",
+    "from": "Plans from",
     "perMonth": "/mo",
     "viewPlans": "See plans",
-    "coverageLink": "Do we reach your area?",
+    "coverageLink": "Do we cover your area?",
     "canvasAlt": "A bundle of optical fibers rising from a single point and fanning out, with cyan light pulses travelling along each strand."
   },
   "sections": {
@@ -46,7 +41,7 @@
     "footer": "Footer"
   },
   "sectionHeads": {
-    "plans": "Choose your plan",
+    "plans": "Pick your speed",
     "fiber": "Truly symmetrical fiber",
     "map": "See if we reach your area",
     "proof": "The network behind the service",
@@ -62,5 +57,145 @@
     "comingSoon": "Coming soon",
     "quote": "Get a quote",
     "contract": "Sign up"
+  },
+  "plans": {
+    "lead": "One price, no fine print. Every plan is symmetrical: you upload as fast as you download.",
+    "popular": "Most popular",
+    "symmetric": "Symmetrical",
+    "down": "Download",
+    "up": "Upload",
+    "perMonth": "/mo",
+    "ivaIncluded": "MXN · VAT included",
+    "installFee": "Installation",
+    "term": "Term",
+    "noContract": "No lock-in",
+    "months": "{count, plural, one {# month} other {# months}}",
+    "promoUntil": "Promo {months, plural, one {# month} other {# months}} · ends {date}",
+    "regular": "Regular price",
+    "includes": "Includes",
+    "contract": "Sign up",
+    "contractAria": "Sign up for the {speed} plan",
+    "speedNote": "Plan maximum speeds, wired.",
+    "compareAll": "Compare all plans",
+    "pageTitle": "Fiber internet plans",
+    "pageLead": "Compare speeds, prices and what each plan includes. All of them are 100% symmetrical.",
+    "jsonLdName": "Symmetrical fiber internet {speed}"
+  },
+  "addons": {
+    "title": "Build your bundle",
+    "lead": "Pick a speed and add what you want. The total updates instantly.",
+    "plan": "Speed",
+    "extras": "Extras",
+    "total": "Monthly total",
+    "pending": "plus extras to be confirmed",
+    "cta": "Sign up for this bundle",
+    "plus": "+${price}/mo",
+    "tv": {
+      "name": "TV",
+      "desc": "For the whole family, on every screen.",
+      "channels": "channels",
+      "movies": "movies",
+      "series": "series"
+    }
+  },
+  "recommender": {
+    "title": "Which plan do I need?",
+    "lead": "Three questions and we'll tell you which one fits.",
+    "step": "Step {n} of {total}",
+    "back": "Back",
+    "next": "Next",
+    "seeResult": "See recommendation",
+    "restart": "Start over",
+    "people": {
+      "legend": "How many people connect at home?",
+      "1-2": "1 to 2",
+      "3-5": "3 to 5",
+      "6+": "6 or more"
+    },
+    "uses": {
+      "legend": "What do you use it for? Pick all that apply.",
+      "gaming": "Online gaming",
+      "streaming4k": "4K streaming",
+      "homeOffice": "Video calls and work",
+      "creator": "Uploading videos or large files",
+      "smartHome": "Cameras and smart home"
+    },
+    "wfh": {
+      "legend": "Does anyone work from home?",
+      "no": "No",
+      "one": "One person",
+      "several": "Several people"
+    },
+    "resultEyebrow": "We recommend",
+    "reason": {
+      "light": "For browsing, shows and video calls in a small home, it's more than enough.",
+      "people": "With this many people online at once, nobody waits.",
+      "creator": "You upload big files: with symmetrical upload you finish in seconds, not hours.",
+      "wfh": "For working from home without dropped video calls or VPN stalls.",
+      "uses": "Gaming, 4K and cameras at the same time, without one slowing the other.",
+      "upgrade": "Picked to be at least double what you have today.",
+      "top": "It's our fastest plan: the biggest jump we can give you today."
+    },
+    "choose": "Choose this plan"
+  },
+  "trust": {
+    "noHiddenFees": "No hidden fees",
+    "install": "Installed in",
+    "localSupport": "Local support",
+    "guarantee": "Guarantee"
+  },
+  "compare": {
+    "title": "Compare plans",
+    "caption": "Fiber plan comparison",
+    "feature": "Feature",
+    "download": "Download",
+    "upload": "Upload",
+    "technology": "Technology",
+    "latency": "Latency",
+    "latencyValue": "< 1 ms*",
+    "latencyNote": "* Edge-to-core latency within the metro network. Speeds are plan maximums.",
+    "router": "Equipment included",
+    "tv": "TV ({channels} channels)",
+    "tvValue": "Optional +${price}/mo",
+    "installTime": "Installation time",
+    "installFee": "Installation fee",
+    "term": "Term",
+    "price": "Monthly price"
+  },
+  "lead": {
+    "title": "Sign up",
+    "description": "Leave your details and we'll message you on WhatsApp to schedule the installation.",
+    "summary": "Your bundle",
+    "name": "Full name",
+    "phone": "WhatsApp or phone",
+    "phoneHint": "10 digits",
+    "email": "Email (optional)",
+    "address": "Installation address",
+    "addressHint": "Street, number, neighborhood, municipality and ZIP",
+    "plan": "Plan",
+    "extras": "Extras",
+    "date": "Preferred installation date (optional)",
+    "consent": "I accept the",
+    "privacy": "Privacy Notice",
+    "submit": "Send request",
+    "sending": "Sending…",
+    "successTitle": "Done! We got your request.",
+    "successBody": "We'll message you on WhatsApp during business hours to confirm coverage and schedule the visit.",
+    "close": "Close",
+    "error": "We couldn't send your request. Check your connection and try again.",
+    "honeypot": "Leave this field empty",
+    "errors": {
+      "name": "Enter your name (at least 2 letters).",
+      "phone": "Enter a 10-digit number.",
+      "email": "Check your email.",
+      "address": "Enter your full address.",
+      "plan": "Pick a plan.",
+      "date": "Pick today or a later date.",
+      "consent": "We need your consent to contact you."
+    }
+  },
+  "footer": {
+    "privacy": "Privacy Notice",
+    "terms": "Terms"
   }
 }

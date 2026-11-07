@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
+import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { Menu, MapPin, Layers, MessageCircle } from "lucide-react"
 import { cn } from "cn"
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { company } from "@/lib/company"
 import { isPlaceholder } from "@/lib/placeholder"
 import { track } from "@/lib/analytics"
+import { scrollToId } from "@/lib/scroll"
 import { Brand } from "./Brand"
 import { StatusBadge } from "./StatusBadge"
 import { LocaleToggle } from "./LocaleToggle"
@@ -28,8 +30,11 @@ const LINKS = [
 
 const SECTION_IDS = ["hero", "fiber", "plans", "map", "faq"]
 
-export function Nav() {
+/** `base` prefixes the hash links when rendered off the home page (e.g. "/es"). */
+export function Nav({ base = "" }: { base?: string }) {
   const t = useTranslations("nav")
+  const router = useRouter()
+  const links = LINKS.map((l) => ({ ...l, href: `${base}${l.href}` }))
   const [condensed, setCondensed] = useState(false)
   const [active, setActive] = useState("hero")
   const [pastHero, setPastHero] = useState(false)
@@ -93,8 +98,8 @@ export function Nav() {
           <Brand />
 
           <div className="hidden items-center gap-1 md:flex">
-            {LINKS.map((link) => {
-              const isActive = active === link.href.slice(1)
+            {links.map((link) => {
+              const isActive = active === link.href.split("#")[1]
               return (
                 <a
                   key={link.key}
@@ -121,9 +126,7 @@ export function Nav() {
               className="hidden font-mono text-xs tracking-wider shadow-[0_0_20px_-4px_var(--color-fiber)] sm:inline-flex"
               onClick={() => {
                 track("plan_selected", { context: "nav" })
-                document
-                  .getElementById("plans")
-                  ?.scrollIntoView({ behavior: "smooth" })
+                if (!scrollToId("plans")) router.push(`${base}#plans`)
               }}
             >
               [ {t("viewPlans").toUpperCase()} ]
@@ -144,7 +147,7 @@ export function Nav() {
       </header>
 
       {menuMounted && (
-        <MobileMenu open={menuOpen} onOpenChange={setMenuOpen} links={LINKS} />
+        <MobileMenu open={menuOpen} onOpenChange={setMenuOpen} links={links} />
       )}
 
       {/* Mobile sticky bottom bar, appears after the hero (SPEC §1). */}
@@ -155,14 +158,14 @@ export function Nav() {
         )}
       >
         <a
-          href="#map"
+          href={`${base}#map`}
           className="flex flex-col items-center gap-0.5 py-2 text-xs text-muted-foreground"
         >
           <MapPin className="size-4" />
           {t("cobertura")}
         </a>
         <a
-          href="#plans"
+          href={`${base}#plans`}
           className="flex flex-col items-center gap-0.5 border-x border-border py-2 text-xs text-muted-foreground"
         >
           <Layers className="size-4" />

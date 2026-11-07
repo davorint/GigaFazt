@@ -1,31 +1,29 @@
 "use client"
 
-import { useState } from "react"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { ArrowRight, MapPin } from "lucide-react"
-import { cn } from "cn"
 import { Button } from "@/components/ui/button"
 import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
-import type { Segment } from "@/lib/types"
-import { lowestPrice } from "@/lib/plans"
+import { featuredPlan, lowestPrice } from "@/lib/plans"
+import { formatMxn } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { track } from "@/lib/analytics"
+import { scrollToId } from "@/lib/scroll"
+import { PriceTerms } from "@/components/plans/PriceTerms"
 import { FiberBackdrop } from "./FiberBackdrop"
 
 /**
  * Hero (SPEC §2): the fiber scene behind, an offer-led pitch in front. Leads
- * with the entry gigabit plan and sends visitors to the plans; the segment
- * switcher drives the subhead and price anchor.
+ * with the featured gigabit plan's price and anchors the lineup's lowest price.
+ * One lineup for everyone (owner dropped the Hogar/Empresa split).
  */
 export function Hero() {
   const t = useTranslations("hero")
-  const ts = useTranslations("segment")
-  const [segment, setSegment] = useState<Segment>("hogar")
+  const locale = useLocale()
+  const featuredPrice = featuredPlan.priceMxn
+  const from = lowestPrice()
 
-  const price = lowestPrice(segment)
-
-  const goTo = (id: string) =>
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
+  const goTo = (id: string) => scrollToId(id)
 
   return (
     <div className="relative isolate flex min-h-screen flex-col justify-center overflow-hidden">
@@ -35,60 +33,38 @@ export function Hero() {
         <p className="eyebrow">[ {t("eyebrow")} ]</p>
 
         <h1 className="mt-5 max-w-4xl text-balance text-5xl font-semibold leading-[1.05] tracking-[-0.03em] sm:text-6xl lg:text-7xl">
-          {segment === "hogar" ? t("h1_hogar") : t("h1_empresa")}
+          {isPlaceholder(featuredPrice)
+            ? t("h1NoPrice")
+            : t("h1", { price: formatMxn(featuredPrice, locale) })}
         </h1>
 
-        <div
-          role="group"
-          aria-label="Hogar · Empresa"
-          className="mt-8 inline-flex w-fit rounded-lg border border-border bg-surface/80 p-1 font-mono text-xs backdrop-blur-sm"
-        >
-          {(["hogar", "empresa"] as const).map((s) => (
-            <button
-              key={s}
-              type="button"
-              aria-pressed={segment === s}
-              onClick={() => {
-                setSegment(s)
-                track("segment_switched", { segment: s })
-              }}
-              className={cn(
-                "rounded-md px-4 py-1.5 uppercase tracking-wider transition-colors",
-                segment === s
-                  ? "bg-fiber text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {ts(s)}
-            </button>
-          ))}
-        </div>
-
         <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-          {segment === "hogar" ? t("subhead_hogar") : t("subhead_empresa")}
+          {t("subhead")}
         </p>
 
-        {/* Offer / price anchor: the lowest monthly price for the segment. */}
+        {/* Price anchor: the lowest monthly price in the lineup. */}
         <p className="mt-6 flex items-baseline gap-2 font-mono text-muted-foreground">
           <span className="text-xs uppercase tracking-wider">{t("from")}</span>
-          {isPlaceholder(price) ? (
-            <PlaceholderChip keyName={price.key} />
+          {isPlaceholder(from) ? (
+            <PlaceholderChip keyName={from.key} />
           ) : (
-            <span className="text-3xl font-semibold text-foreground sm:text-4xl">
-              ${price.toLocaleString("es-MX")}
+            <span className="text-2xl font-semibold text-foreground sm:text-3xl">
+              ${formatMxn(from, locale)}
               <span className="ml-1 text-base text-muted-foreground">
                 {t("perMonth")}
               </span>
             </span>
           )}
         </p>
+        {/* Hard rule #5: fee and term next to every price (all plans share them). */}
+        <PriceTerms plan={featuredPlan} inline className="mt-2" />
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Button
             size="lg"
             className="h-11 font-mono text-xs tracking-wider shadow-[0_0_24px_-6px_var(--color-fiber)]"
             onClick={() => {
-              track("plan_selected", { context: "hero" })
+              track("plan_selected", { planId: featuredPlan.id, context: "hero" })
               goTo("plans")
             }}
           >

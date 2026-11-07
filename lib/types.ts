@@ -1,33 +1,32 @@
 import type { Maybe } from "./placeholder"
 
-export type Segment = "hogar" | "empresa"
 export type StateCode = "CDMX" | "MEX" | "MOR"
-export type Technology = "GPON" | "XGS-PON" | "Dedicated"
+export type Technology = "GPON" | "XGS-PON"
 
+/**
+ * One lineup for everyone: the owner dropped the Hogar/Empresa split
+ * (2026-11-06), so plans carry no segment. Plans are named by their speed.
+ */
 export interface Plan {
   id: string
-  segment: Segment
-  name: Maybe<string>
   downMbps: number
   upMbps: number
-  /** For dedicated/range tiers, the top of the range (symmetrical). */
-  maxMbps?: number
-  /** null → "Cotizar" (intentional); Placeholder → price not yet in BUSINESS.md. */
-  priceMxn: Maybe<number | null>
+  /** MXN/month, IVA incl. Placeholder → not yet in BUSINESS.md. */
+  priceMxn: Maybe<number>
   promo?: Maybe<{ priceMxn: number; months: number; endsAt: string }>
-  installFeeMxn: Maybe<number | null>
+  installFeeMxn: Maybe<number>
   contractMonths: Maybe<number | null>
-  technology: Technology
+  technology: Maybe<Technology>
   includes: Maybe<string[]>
-  sla?: Maybe<{ availability: number; mttrHours: number; credits: boolean }>
   highlight?: boolean
 }
 
 export interface AddOn {
   id: string
-  name: Maybe<string>
-  priceMxn: Maybe<number | null>
-  segment: Segment | "all"
+  /** MXN/month on top of the plan, IVA incl. */
+  priceMxn: Maybe<number>
+  /** Countable contents shown on the add-on (labels come from messages). */
+  contents?: { channels: number; movies: number; series: number }
 }
 
 export interface CoverageArea {
@@ -73,12 +72,6 @@ export interface Company {
     installDays: Maybe<string>
     guarantee: Maybe<string>
     showPrices: Maybe<boolean>
-  }
-  sla: {
-    availabilityShared: Maybe<number>
-    availabilityDedicated: Maybe<number>
-    mttrHours: Maybe<number>
-    credits: Maybe<string>
   }
   integrations: {
     geocoder: Maybe<string>

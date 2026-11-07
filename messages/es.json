@@ -18,17 +18,12 @@
     "operational": "Operativo",
     "degraded": "Degradado"
   },
-  "segment": {
-    "hogar": "Hogar",
-    "empresa": "Empresa"
-  },
   "hero": {
     "eyebrow": "100% FIBRA ÓPTICA SIMÉTRICA",
-    "h1_hogar": "Gigabit simétrico para tu hogar.",
-    "h1_empresa": "Conectividad dedicada para tu empresa.",
-    "subhead_hogar": "Sube un video 4K en segundos. Misma velocidad de bajada y de subida, con latencia baja y estable.",
-    "subhead_empresa": "Conectividad dedicada con SLA, IP fija y latencia de nivel metropolitano para tu operación.",
-    "from": "Desde",
+    "h1": "Gigabit simétrico por ${price} al mes.",
+    "h1NoPrice": "Gigabit simétrico para tu casa o tu negocio.",
+    "subhead": "Sube un video 4K en segundos. Misma velocidad de bajada y de subida, con latencia baja y estable.",
+    "from": "Planes desde",
     "perMonth": "/mes",
     "viewPlans": "Ver planes",
     "coverageLink": "¿Llegamos a tu zona?",
@@ -46,7 +41,7 @@
     "footer": "Pie de página"
   },
   "sectionHeads": {
-    "plans": "Elige tu plan",
+    "plans": "Elige tu velocidad",
     "fiber": "Fibra simétrica de verdad",
     "map": "Mira si llegamos a tu zona",
     "proof": "La red detrás del servicio",
@@ -62,5 +57,145 @@
     "comingSoon": "Próximamente",
     "quote": "Cotizar",
     "contract": "Contratar"
+  },
+  "plans": {
+    "lead": "Un solo precio, sin letras chiquitas. Todos los planes son simétricos: subes tan rápido como bajas.",
+    "popular": "Más popular",
+    "symmetric": "Simétrico",
+    "down": "Bajada",
+    "up": "Subida",
+    "perMonth": "/mes",
+    "ivaIncluded": "MXN · IVA incluido",
+    "installFee": "Instalación",
+    "term": "Plazo",
+    "noContract": "Sin plazo forzoso",
+    "months": "{count, plural, one {# mes} other {# meses}}",
+    "promoUntil": "Promo {months, plural, one {# mes} other {# meses}} · termina {date}",
+    "regular": "Precio regular",
+    "includes": "Incluye",
+    "contract": "Contratar",
+    "contractAria": "Contratar el plan de {speed}",
+    "speedNote": "Velocidades máximas del plan, por cable.",
+    "compareAll": "Comparar todos los planes",
+    "pageTitle": "Planes de internet de fibra óptica",
+    "pageLead": "Compara velocidades, precios y lo que incluye cada plan. Todos son 100% simétricos.",
+    "jsonLdName": "Internet de fibra óptica simétrica {speed}"
+  },
+  "addons": {
+    "title": "Arma tu paquete",
+    "lead": "Elige velocidad y agrega lo que quieras. El total se actualiza al instante.",
+    "plan": "Velocidad",
+    "extras": "Extras",
+    "total": "Total mensual",
+    "pending": "más extras por definir",
+    "cta": "Contratar este paquete",
+    "plus": "+${price}/mes",
+    "tv": {
+      "name": "TV",
+      "desc": "Para toda la familia, en todas tus pantallas.",
+      "channels": "canales",
+      "movies": "películas",
+      "series": "series"
+    }
+  },
+  "recommender": {
+    "title": "¿Qué plan necesito?",
+    "lead": "Tres preguntas y te decimos cuál te conviene.",
+    "step": "Paso {n} de {total}",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "seeResult": "Ver recomendación",
+    "restart": "Empezar de nuevo",
+    "people": {
+      "legend": "¿Cuántas personas se conectan en casa?",
+      "1-2": "1 a 2",
+      "3-5": "3 a 5",
+      "6+": "6 o más"
+    },
+    "uses": {
+      "legend": "¿Para qué lo usan? Elige todos los que apliquen.",
+      "gaming": "Gaming en línea",
+      "streaming4k": "Streaming en 4K",
+      "homeOffice": "Videollamadas y trabajo",
+      "creator": "Subir videos o archivos pesados",
+      "smartHome": "Cámaras y casa inteligente"
+    },
+    "wfh": {
+      "legend": "¿Alguien trabaja desde casa?",
+      "no": "No",
+      "one": "Una persona",
+      "several": "Varias personas"
+    },
+    "resultEyebrow": "Te recomendamos",
+    "reason": {
+      "light": "Para navegar, ver series y hacer videollamadas en una casa chica, te sobra.",
+      "people": "Con tantas personas conectadas a la vez, nadie se queda esperando.",
+      "creator": "Subes archivos pesados: con subida simétrica terminas en segundos, no en horas.",
+      "wfh": "Para trabajar desde casa sin cortes en videollamadas ni en la VPN.",
+      "uses": "Juegos, 4K y cámaras al mismo tiempo, sin que una cosa frene a la otra.",
+      "upgrade": "Lo elegimos para que sea al menos el doble de lo que tienes hoy.",
+      "top": "Es nuestro plan más rápido: el mayor salto que podemos darte hoy."
+    },
+    "choose": "Elegir este plan"
+  },
+  "trust": {
+    "noHiddenFees": "Sin costos ocultos",
+    "install": "Instalación en",
+    "localSupport": "Soporte local",
+    "guarantee": "Garantía"
+  },
+  "compare": {
+    "title": "Compara los planes",
+    "caption": "Comparativa de planes de fibra óptica",
+    "feature": "Característica",
+    "download": "Bajada",
+    "upload": "Subida",
+    "technology": "Tecnología",
+    "latency": "Latencia",
+    "latencyValue": "< 1 ms*",
+    "latencyNote": "* Latencia edge-to-core dentro de la red metropolitana. Las velocidades son las máximas del plan.",
+    "router": "Equipo incluido",
+    "tv": "TV ({channels} canales)",
+    "tvValue": "Opcional +${price}/mes",
+    "installTime": "Tiempo de instalación",
+    "installFee": "Costo de instalación",
+    "term": "Plazo",
+    "price": "Precio mensual"
+  },
+  "lead": {
+    "title": "Contrata tu plan",
+    "description": "Déjanos tus datos y te contactamos por WhatsApp para agendar la instalación.",
+    "summary": "Tu paquete",
+    "name": "Nombre completo",
+    "phone": "WhatsApp o teléfono",
+    "phoneHint": "10 dígitos",
+    "email": "Correo (opcional)",
+    "address": "Dirección de instalación",
+    "addressHint": "Calle, número, colonia, municipio y CP",
+    "plan": "Plan",
+    "extras": "Extras",
+    "date": "Fecha preferida de instalación (opcional)",
+    "consent": "Acepto el",
+    "privacy": "Aviso de Privacidad",
+    "submit": "Enviar solicitud",
+    "sending": "Enviando…",
+    "successTitle": "¡Listo! Recibimos tu solicitud.",
+    "successBody": "Te escribimos por WhatsApp en horario hábil para confirmar tu cobertura y agendar la visita.",
+    "close": "Cerrar",
+    "error": "No pudimos enviar tu solicitud. Revisa tu conexión e inténtalo de nuevo.",
+    "honeypot": "No llenes este campo",
+    "errors": {
+      "name": "Escribe tu nombre (mínimo 2 letras).",
+      "phone": "Escribe un número de 10 dígitos.",
+      "email": "Revisa tu correo.",
+      "address": "Escribe tu dirección completa.",
+      "plan": "Elige un plan.",
+      "date": "Elige una fecha de hoy en adelante.",
+      "consent": "Necesitamos tu consentimiento para contactarte."
+    }
+  },
+  "footer": {
+    "privacy": "Aviso de Privacidad",
+    "terms": "Términos"
   }
 }

@@ -2,6 +2,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server"
 import { Nav } from "@/components/hud/Nav"
 import { Section } from "@/components/layout/Section"
 import { Hero } from "@/components/fiber/Hero"
+import { PlansSection } from "@/components/plans/PlansSection"
+import { PlansJsonLd } from "@/components/plans/PlansJsonLd"
 import { StatusBadge } from "@/components/hud/StatusBadge"
 import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
 import { company } from "@/lib/company"
@@ -9,7 +11,7 @@ import { isPlaceholder } from "@/lib/placeholder"
 
 // Section shells in page order (SPEC §3–8). Replaced by real feature
 // components in later phases; `hero` and `footer` are rendered explicitly.
-const SHELLS = ["plans", "fiber", "map", "proof", "install", "cta", "faq"] as const
+const SHELLS = ["fiber", "map", "proof", "install", "cta", "faq"] as const
 
 export default async function Home({ params }: PageProps<"/[locale]">) {
   const { locale } = await params
@@ -26,6 +28,10 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
           aria-label={t("sections.hero")}
         >
           <Hero />
+        </Section>
+
+        <Section id="plans" aria-label={t("sections.plans")}>
+          <PlansSection />
         </Section>
 
         {SHELLS.map((id) => (
@@ -63,10 +69,10 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3 font-mono text-xs text-muted-foreground">
               <StatusBadge />
               <span className="flex items-center gap-2">
-                Aviso de Privacidad <PlaceholderChip keyName="REGULATORY" />
+                {t("footer.privacy")} <PlaceholderChip keyName="REGULATORY" />
               </span>
               <span className="flex items-center gap-2">
-                Términos <PlaceholderChip keyName="DOMAIN" />
+                {t("footer.terms")} <PlaceholderChip keyName="DOMAIN" />
               </span>
               <span className="flex items-center gap-2">
                 {isPlaceholder(company.regulatory) && (
@@ -77,6 +83,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
           </div>
         </footer>
       </main>
+      <PlansJsonLd locale={locale} />
     </>
   )
 }

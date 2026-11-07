@@ -176,6 +176,33 @@
   }
 }
 
+/* Featured plan: slow animated cyan conic border (DESIGN "Plans direction").
+   Static under reduced motion via the global reduce rule. */
+@property --plan-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes plan-border-spin {
+  to {
+    --plan-angle: 360deg;
+  }
+}
+.plan-featured {
+  background:
+    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+    conic-gradient(
+        from var(--plan-angle),
+        rgb(6 182 212 / 0.25) 0deg,
+        var(--color-fiber) 60deg,
+        rgb(6 182 212 / 0.25) 140deg,
+        rgb(6 182 212 / 0.25) 360deg
+      )
+      border-box;
+  animation: plan-border-spin 8s linear infinite;
+  box-shadow: 0 0 40px -16px var(--color-fiber);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

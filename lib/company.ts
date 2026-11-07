@@ -34,12 +34,6 @@ export const company: Company = {
     guarantee: placeholder("GUARANTEE"),
     showPrices: placeholder("SHOW_PRICES"),
   },
-  sla: {
-    availabilityShared: placeholder("SLA_SHARED"),
-    availabilityDedicated: placeholder("SLA_DEDICATED"),
-    mttrHours: placeholder("MTTR"),
-    credits: placeholder("SERVICE_CREDITS"),
-  },
   integrations: {
     geocoder: placeholder("GEOCODER"),
     mapTiles: placeholder("MAP_TILES"),
