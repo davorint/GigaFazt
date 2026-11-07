@@ -324,12 +324,10 @@
     "approx": "Locations approximate to neighborhood level.",
     "mapAlt": "Service area map: Mexico City, the State of Mexico and Morelos. Marks {real} client buildings and {demo} illustrative examples, with illustrative lines between CDMX, Toluca and Cuernavaca.",
     "cta": "Live in the area? Sign up and we'll confirm your coverage",
-    "attribution": "Boundaries: INEGI / CONABIO via PhantomInsights (MIT)",
     "ui": {
       "map": "Map",
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
-      "attribution": "Show credits",
       "twoFingers": "Use two fingers to move the map",
       "ctrlScroll": "Use Ctrl + scroll to zoom",
       "cmdScroll": "Use ⌘ + scroll to zoom"

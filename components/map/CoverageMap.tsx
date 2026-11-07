@@ -80,12 +80,11 @@ export default function CoverageMap() {
       dragRotate: false,
       pitchWithRotate: false,
       scrollZoom: false,
-      attributionControl: { compact: true, customAttribution: t("attribution") },
+      attributionControl: false,
       locale: {
         "Map.Title": t("ui.map"),
         "NavigationControl.ZoomIn": t("ui.zoomIn"),
         "NavigationControl.ZoomOut": t("ui.zoomOut"),
-        "AttributionControl.ToggleAttribution": t("ui.attribution"),
         "CooperativeGesturesHandler.MobileHelpText": t("ui.twoFingers"),
         "CooperativeGesturesHandler.WindowsHelpText": t("ui.ctrlScroll"),
         "CooperativeGesturesHandler.MacHelpText": t("ui.cmdScroll"),
@@ -200,9 +199,6 @@ export default function CoverageMap() {
         }
       }
       map.on("sourcedata", onData)
-
-      // Phones: keep the credits collapsed so they don't cover the map.
-      if (mobile) el.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show")
 
       const early = takePendingMapFocus()
       if (early) focusTarget(early)

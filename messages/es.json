@@ -324,12 +324,10 @@
     "approx": "Ubicaciones aproximadas a nivel colonia.",
     "mapAlt": "Mapa de la zona de servicio: Ciudad de México, Estado de México y Morelos. Marca {real} edificios cliente y {demo} ejemplos ilustrativos, con líneas ilustrativas entre CDMX, Toluca y Cuernavaca.",
     "cta": "¿Vives en la zona? Contrata y confirmamos tu cobertura",
-    "attribution": "Límites: INEGI / CONABIO vía PhantomInsights (MIT)",
     "ui": {
       "map": "Mapa",
       "zoomIn": "Acercar",
       "zoomOut": "Alejar",
-      "attribution": "Mostrar créditos",
       "twoFingers": "Usa dos dedos para mover el mapa",
       "ctrlScroll": "Usa Ctrl + rueda para hacer zoom",
       "cmdScroll": "Usa ⌘ + rueda para hacer zoom"
