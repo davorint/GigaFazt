@@ -4,7 +4,7 @@ import { placeholder, isPlaceholder, type Maybe } from "./placeholder"
 
 /**
  * Generated from docs/BUSINESS.md. One lineup for everyone (owner, 2026-11-06:
- * no Hogar/Empresa split). Speeds, prices, free installation and modems are owner-provided; term,
+ * no Hogar/Empresa split). Speeds, prices, free installation, modems and no minimum term are owner-provided;
  * promos and the 200/500 technology are still {{PLACEHOLDER}} and render as
  * visible chips (hard rule #1). Re-sync when BUSINESS.md is filled in.
  */
@@ -15,7 +15,7 @@ export const plans: Plan[] = [
     upMbps: 200,
     priceMxn: 399,
     installFeeMxn: 0, // free installation (owner, 2026-11-07)
-    contractMonths: placeholder("CONTRACT_TERM"),
+    contractMonths: null, // no minimum term (owner, 2026-11-07)
     technology: placeholder("fibra-200.technology"),
     includes: ["wifi6Modem"],
     promo: placeholder("fibra-200.promo"),
@@ -26,7 +26,7 @@ export const plans: Plan[] = [
     upMbps: 500,
     priceMxn: 499,
     installFeeMxn: 0, // free installation (owner, 2026-11-07)
-    contractMonths: placeholder("CONTRACT_TERM"),
+    contractMonths: null, // no minimum term (owner, 2026-11-07)
     technology: placeholder("fibra-500.technology"),
     includes: ["wifi6Modem"],
     promo: placeholder("fibra-500.promo"),
@@ -37,7 +37,7 @@ export const plans: Plan[] = [
     upMbps: 1000,
     priceMxn: 599,
     installFeeMxn: 0, // free installation (owner, 2026-11-07)
-    contractMonths: placeholder("CONTRACT_TERM"),
+    contractMonths: null, // no minimum term (owner, 2026-11-07)
     technology: "GPON",
     includes: ["wifi7Modem"],
     promo: placeholder("fibra-1g.promo"),

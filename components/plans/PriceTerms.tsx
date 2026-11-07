@@ -41,16 +41,18 @@ export function PriceTerms({
           <span className={fee === 0 ? "font-semibold text-ok" : "text-foreground"}>{feeLabel(fee, locale, t("free"))}</span>
         )}
       </li>
-      <li className="flex items-center gap-1.5">
-        <span>{t("term")}:</span>
-        {isPlaceholder(term) ? (
-          <PlaceholderChip keyName={term.key} />
-        ) : (
-          <span className="text-foreground">
-            {term === null ? t("noContract") : t("months", { count: term })}
-          </span>
-        )}
-      </li>
+      {term === null ? (
+        <li className="font-semibold text-ok">{t("noContract")}</li>
+      ) : (
+        <li className="flex items-center gap-1.5">
+          <span>{t("term")}:</span>
+          {isPlaceholder(term) ? (
+            <PlaceholderChip keyName={term.key} />
+          ) : (
+            <span className="text-foreground">{t("months", { count: term })}</span>
+          )}
+        </li>
+      )}
       {promo &&
         (isPlaceholder(promo) ? (
           <li className="flex items-center gap-1.5">

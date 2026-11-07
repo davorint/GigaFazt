@@ -8,13 +8,14 @@ import { isPlaceholder, type Maybe } from "./placeholder"
  * unfilled BUSINESS.md value shows as a POR DEFINIR chip, never an invented
  * answer (hard rule #1). Only fully-answered items go into FAQPage JSON-LD.
  */
-export type FaqFactValue = Maybe<string> | Maybe<number>
+export type FaqFactValue = Maybe<string> | Maybe<number> | Maybe<number | null>
 
 export interface FaqFact {
   /** Label key under `faq.facts`. */
   label: "installFee" | "installDays" | "term" | "cancellation" | "staticIp" | "whatsapp" | "phone" | "hours" | "moving"
   value: FaqFactValue
-  format?: "mxn"
+  /** "mxn": money (0 = free) · "term": months (null = no minimum term). */
+  format?: "mxn" | "term"
 }
 
 export interface FaqItem {
@@ -36,7 +37,7 @@ export const faqItems: FaqItem[] = [
   {
     id: "contract",
     facts: [
-      { label: "term", value: terms.contractTerm },
+      { label: "term", value: terms.contractTerm, format: "term" },
       { label: "cancellation", value: policies.cancellation },
     ],
   },

@@ -40,7 +40,7 @@ export function Faq() {
                     <div key={f.label} className="flex flex-wrap items-center gap-2">
                       <dt>{t(`faq.facts.${f.label}`)}</dt>
                       <dd className="text-foreground">
-                        {isPlaceholder(f.value) ? <PlaceholderChip keyName={f.value.key} /> : factText(f, locale, t("plans.free"))}
+                        {isPlaceholder(f.value) ? <PlaceholderChip keyName={f.value.key} /> : factText(f, locale, t)}
                       </dd>
                     </div>
                   ))}

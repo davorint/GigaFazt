@@ -31,10 +31,13 @@ export function faqEntries(t: T, locale: string): FaqEntry[] {
 }
 
 /** Display string for a resolved fact (callers handle placeholders first). */
-export function factText(fact: FaqFact, locale: string, free: string): string | null {
+export function factText(fact: FaqFact, locale: string, t: T): string | null {
   if (isPlaceholder(fact.value)) return null
   if (fact.format === "mxn" && typeof fact.value === "number") {
-    return fact.value === 0 ? free : `$${formatMxn(fact.value, locale)} MXN`
+    return fact.value === 0 ? t("plans.free") : `$${formatMxn(fact.value, locale)} MXN`
+  }
+  if (fact.format === "term") {
+    return fact.value === null ? t("plans.noContract") : t("plans.months", { count: Number(fact.value) })
   }
   return String(fact.value)
 }

@@ -29,7 +29,7 @@ export const company: Company = {
   },
   terms: {
     installFeeMxn: 0, // free installation (owner, 2026-11-07)
-    contractTerm: placeholder("CONTRACT_TERM"),
+    contractTerm: null, // no minimum term (owner, 2026-11-07)
     installDays: placeholder("INSTALL_DAYS"),
     guarantee: placeholder("GUARANTEE"),
     noHiddenFees: placeholder("NO_HIDDEN_FEES"),

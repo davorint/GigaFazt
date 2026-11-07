@@ -74,7 +74,8 @@ export interface Company {
   }
   terms: {
     installFeeMxn: Maybe<number>
-    contractTerm: Maybe<string>
+    /** Minimum term in months; null = no minimum term ("sin plazo forzoso"). */
+    contractTerm: Maybe<number | null>
     installDays: Maybe<string>
     guarantee: Maybe<string>
     /** Trust-strip claims: shown only when the owner confirms (true). */
