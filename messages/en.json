@@ -279,8 +279,8 @@
       }
     },
     "symmetry": {
-      "title": "Symmetry in light",
-      "desc": "Each flash is data travelling through the fiber: download toward your home and upload toward the network. Switch plans and compare a symmetrical connection with an asymmetrical one.",
+      "title": "Inside the fiber",
+      "desc": "This is how your internet travels: light inside a strand of glass. Download comes toward your home and upload goes out to the network, through the same strand at the same time.",
       "modeLegend": "Connection type",
       "fiber": "Symmetrical fiber",
       "asym": "Asymmetrical connection",
@@ -289,9 +289,12 @@
       "up": "Upload",
       "equal": "The same download and upload speed.",
       "asymNote": "Illustrative example: on an asymmetrical connection upload can be {ratio} times slower than download.",
-      "hint": "Move your cursor over the fiber",
-      "alt": "Animation of light inside an optical fiber: download ({down}) travels one way and upload ({up}) the other.",
-      "viewPlans": "View plans"
+      "hint": "move your cursor to look around the core",
+      "alt": "Animation inside an optical fiber: cyan beams of light (download, {down}) travel toward you and violet beams (upload, {up}) travel away toward the network, bouncing off the core walls.",
+      "viewPlans": "View plans",
+      "downTo": "toward your home",
+      "upTo": "toward the network",
+      "physics": "Total internal reflection: light bounces off the core walls and never escapes"
     }
   },
   "map": {

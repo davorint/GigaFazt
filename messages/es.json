@@ -279,8 +279,8 @@
       }
     },
     "symmetry": {
-      "title": "Simetría en luz",
-      "desc": "Cada destello es información viajando por la fibra: la bajada hacia tu casa y la subida hacia la red. Cambia de plan y compara una conexión simétrica con una asimétrica.",
+      "title": "Dentro de la fibra",
+      "desc": "Así viaja tu internet: luz dentro de un hilo de vidrio. La bajada llega hacia tu casa y la subida sale hacia la red, por el mismo hilo y al mismo tiempo.",
       "modeLegend": "Tipo de conexión",
       "fiber": "Fibra simétrica",
       "asym": "Conexión asimétrica",
@@ -289,9 +289,12 @@
       "up": "Subida",
       "equal": "Misma velocidad de bajada y de subida.",
       "asymNote": "Ejemplo ilustrativo: en una conexión asimétrica la subida puede ser {ratio} veces menor que la bajada.",
-      "hint": "Mueve el cursor sobre la fibra",
-      "alt": "Animación de luz dentro de una fibra óptica: la bajada ({down}) viaja en un sentido y la subida ({up}) en el otro.",
-      "viewPlans": "Ver planes"
+      "hint": "mueve el cursor para mirar dentro del núcleo",
+      "alt": "Animación del interior de una fibra óptica: haces de luz cian (bajada, {down}) viajan hacia ti y haces violeta (subida, {up}) se alejan hacia la red, rebotando en las paredes del núcleo.",
+      "viewPlans": "Ver planes",
+      "downTo": "hacia tu casa",
+      "upTo": "hacia la red",
+      "physics": "Reflexión interna total: la luz rebota en las paredes del núcleo y no se escapa"
     }
   },
   "map": {

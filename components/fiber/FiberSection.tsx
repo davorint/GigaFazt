@@ -7,25 +7,29 @@ import { LazyLatencyPhysics } from "./LazyLatencyPhysics"
 import { DeepDiveCards } from "./DeepDiveCards"
 
 /**
- * Symmetrical Fiber (SPEC §4), the flagship section: "Simetría en luz"
- * (interactive three.js, replaced the speed test) → plan CTA, "what it means" tiles, simulated live telemetry,
+ * Symmetrical Fiber (SPEC §4), the flagship section: "Dentro de la fibra"
+ * (full-bleed three.js flight into the fiber core) → plan CTA, "what it means" tiles, simulated live telemetry,
  * latency physics and deep-dive cards. Heavy widgets are lazy islands.
  */
 export function FiberSection() {
   const t = useTranslations()
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-      <p className="eyebrow mb-3">[ {t("sections.fiber")} ]</p>
-      <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-        {t("sectionHeads.fiber")}
-      </h2>
-      <p className="mt-3 max-w-2xl text-muted-foreground">{t("fiber.lead")}</p>
+    <div className="py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <p className="eyebrow mb-3">[ {t("sections.fiber")} ]</p>
+        <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
+          {t("sectionHeads.fiber")}
+        </h2>
+        <p className="mt-3 max-w-2xl text-muted-foreground">{t("fiber.lead")}</p>
+      </div>
 
-      <div className="mt-12">
+      {/* Full-bleed: edge to edge, outside the content container. */}
+      <div className="mt-10">
         <SymmetryLight />
       </div>
 
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
       <div className="mt-12">
         <WhatItMeans />
       </div>
@@ -47,6 +51,7 @@ export function FiberSection() {
           {t("fiber.cta")}
           <ArrowRight className="size-4" aria-hidden />
         </a>
+      </div>
       </div>
     </div>
   )
