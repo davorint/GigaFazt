@@ -171,7 +171,7 @@ export function SymmetryLight() {
       {/* Stage: SVG frame underneath, WebGL crossfades in on top. */}
       <div
         ref={stage}
-        className="relative mt-6 h-[240px] overflow-hidden rounded-lg border border-border bg-background/70 sm:h-[320px] lg:h-[380px]"
+        className="relative mt-6 h-[240px] overflow-hidden rounded-lg border border-border bg-background/70 bg-[radial-gradient(ellipse_60%_55%_at_55%_50%,rgb(34_211_238/0.16),transparent_75%)] sm:h-[320px] lg:h-[380px]"
       >
         <SymmetryPoster
           down={down}

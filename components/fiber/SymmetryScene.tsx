@@ -69,13 +69,13 @@ const vertex = /* glsl */ `
 
     float edge = smoothstep(uSpan * 0.5, uSpan * 0.5 - 2.8, abs(x));
     // A few bright "packets" give the flow hierarchy.
-    float packet = step(0.93, aSeed.z);
-    vBoost = 1.0 + packet * 1.4;
-    vAlpha = on * edge * mix(0.35, 0.8, aSeed.z);
+    float packet = step(0.88, aSeed.z);
+    vBoost = 1.0 + packet * 1.6;
+    vAlpha = on * edge * mix(0.7, 1.0, aSeed.z);
 
     // Streak length grows with speed; quad is stretched along x.
     float len = (0.16 + speed * 0.14) * (1.0 + packet * 0.8);
-    float thick = (0.04 + packet * 0.03) * mix(1.0, uGain, 0.5);
+    float thick = (0.055 + packet * 0.035) * mix(1.0, uGain, 0.5);
     vec3 pos = vec3(x + position.x * len, y + position.y * thick, z);
     vUv = uv;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -93,8 +93,8 @@ const fragment = /* glsl */ `
   void main() {
     float across = 1.0 - abs(vUv.y - 0.5) * 2.0;
     float along = uDir > 0.0 ? vUv.x : 1.0 - vUv.x; // bright head, fading tail
-    float a = pow(across, 1.6) * pow(along, 2.2) * vAlpha;
-    gl_FragColor = vec4(uColor * (0.45 + along * 1.1) * vBoost * uGain, a);
+    float a = pow(across, 1.3) * pow(along, 1.6) * vAlpha;
+    gl_FragColor = vec4(uColor * (0.9 + along * 1.9) * vBoost * uGain, a);
   }
 `
 
@@ -210,25 +210,28 @@ const glassFragment = /* glsl */ `
   uniform vec3 uColor;
   uniform float uSpan;
   uniform float uStrength;
+  uniform float uFill;
   varying vec3 vNormal;
   varying vec3 vView;
   varying float vX;
   void main() {
-    float fres = pow(1.0 - abs(dot(vNormal, vView)), 5.0);
+    float fres = pow(1.0 - abs(dot(vNormal, vView)), 3.0);
     float edge = smoothstep(uSpan * 0.5, uSpan * 0.5 - 2.5, abs(vX));
-    gl_FragColor = vec4(uColor, fres * uStrength * edge);
+    // Rim plus a faint body haze so the tube reads as lit glass, not a void.
+    gl_FragColor = vec4(uColor, (fres + uFill) * uStrength * edge);
   }
 `
 
 /** Glass cladding: fresnel rim only (cheap, reads as a glass tube). */
-function Glass({ radius, strength }: { radius: number; strength: number }) {
+function Glass({ radius, strength, fill = 0 }: { radius: number; strength: number; fill?: number }) {
   const uniforms = useMemo(
     () => ({
       uColor: { value: new THREE.Color("#67e8f9") },
       uSpan: { value: SPAN },
       uStrength: { value: strength },
+      uFill: { value: fill },
     }),
-    [strength]
+    [strength, fill]
   )
   return (
     <mesh rotation={[0, 0, Math.PI / 2]}>
@@ -251,7 +254,7 @@ function Core() {
   return (
     <mesh rotation={[0, 0, Math.PI / 2]}>
       <cylinderGeometry args={[0.006, 0.006, SPAN - 3, 8, 1, true]} />
-      <meshBasicMaterial color={CYAN} transparent opacity={0.35} />
+      <meshBasicMaterial color={CYAN} transparent opacity={0.6} />
     </mesh>
   )
 }
@@ -307,15 +310,15 @@ export function SymmetryScene({
         }}
       />
       <Rig interactive={interactive}>
-        <Glass radius={RADIUS * 1.06} strength={0.9} />
-        <Glass radius={RADIUS * 1.2} strength={0.25} />
+        <Glass radius={RADIUS * 1.06} strength={1.5} fill={0.06} />
+        <Glass radius={RADIUS * 1.2} strength={0.4} />
         <Core />
         <Stream key={`d${count}`} target={down} dir={1} count={count} />
         <Stream key={`u${count}`} target={up} dir={-1} count={count} />
       </Rig>
       {bloom && (
         <EffectComposer>
-          <Bloom luminanceThreshold={0.3} intensity={0.95} radius={0.7} mipmapBlur />
+          <Bloom luminanceThreshold={0.2} intensity={1.5} radius={0.75} mipmapBlur />
         </EffectComposer>
       )}
     </Canvas>

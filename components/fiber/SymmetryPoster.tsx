@@ -37,7 +37,7 @@ function Layer({ target, dir }: { target: StreamTarget; dir: 1 | -1 }) {
         const x = 80 + p.x * (W - 160)
         const y = CY - dir * (0.14 + p.lane * 0.76) * R
         const len = 18 + p.len * 26 + target.speed * 10
-        return <rect key={i} x={x - len / 2} y={y - 1.5} width={len} height={3} rx={1.5} fill={`url(#${id})`} />
+        return <rect key={i} x={x - len / 2} y={y - 2} width={len} height={4} rx={2} fill={`url(#${id})`} />
       })}
     </g>
   )
@@ -49,14 +49,14 @@ export function SymmetryPoster({ down, up, className }: { down: StreamTarget; up
       <defs>
         <linearGradient id="sym-glass" gradientUnits="userSpaceOnUse" x1="0" x2={W} y1="0" y2="0">
           <stop offset="0" stopColor="#67e8f9" stopOpacity="0" />
-          <stop offset="0.15" stopColor="#67e8f9" stopOpacity="0.5" />
-          <stop offset="0.85" stopColor="#67e8f9" stopOpacity="0.5" />
+          <stop offset="0.15" stopColor="#67e8f9" stopOpacity="0.8" />
+          <stop offset="0.85" stopColor="#67e8f9" stopOpacity="0.8" />
           <stop offset="1" stopColor="#67e8f9" stopOpacity="0" />
         </linearGradient>
       </defs>
       <line x1="0" x2={W} y1={CY - R * 1.08} y2={CY - R * 1.08} stroke="url(#sym-glass)" strokeWidth="1.5" />
       <line x1="0" x2={W} y1={CY + R * 1.08} y2={CY + R * 1.08} stroke="url(#sym-glass)" strokeWidth="1.5" />
-      <line x1="120" x2={W - 120} y1={CY} y2={CY} stroke="#22d3ee" strokeOpacity="0.3" strokeWidth="1" />
+      <line x1="120" x2={W - 120} y1={CY} y2={CY} stroke="#22d3ee" strokeOpacity="0.55" strokeWidth="1" />
       <Layer target={down} dir={1} />
       <Layer target={up} dir={-1} />
     </svg>
