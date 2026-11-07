@@ -10,7 +10,7 @@ export function BusinessCta() {
   const locale = useLocale()
   return (
     <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-      <div className="hud-brackets relative overflow-hidden rounded-2xl border border-border bg-surface px-6 py-12 text-center sm:px-12">
+      <div className="hud-brackets relative overflow-hidden rounded-2xl surface px-6 py-12 text-center sm:px-12">
         <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-24 mx-auto h-48 max-w-xl rounded-full bg-fiber/15 blur-3xl" />
         <h2 className="mx-auto max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-5xl">{t("business.ctaTitle")}</h2>
         <p className="mx-auto mt-4 max-w-xl text-muted-foreground">

@@ -26,9 +26,9 @@ export function TrustStrip() {
   ].filter((i) => i !== false)
 
   return (
-    <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+    <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/[0.07] shadow-[0_32px_64px_-32px_rgb(0_0_0_/_0.9)] sm:grid-cols-2 lg:grid-cols-4">
       {items.map(({ icon: Icon, label, extra }) => (
-        <li key={label} className="flex items-center gap-3 bg-surface px-5 py-4 text-sm">
+        <li key={label} className="surface-cell flex items-center gap-3 px-5 py-4 text-sm">
           <Icon className="size-4 shrink-0 text-ok" aria-hidden />
           <span className="text-muted-foreground">{label}</span>
           {extra}

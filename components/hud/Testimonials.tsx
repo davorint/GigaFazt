@@ -11,7 +11,7 @@ export function Testimonials() {
       <h3 className="text-lg font-semibold tracking-[-0.02em]">{t("testimonials")}</h3>
       <ul className="mt-5 grid gap-4 md:grid-cols-3">
         {testimonials.map((q) => (
-          <li key={q.name} className="rounded-xl border border-border bg-surface p-5">
+          <li key={q.name} className="rounded-xl surface p-5">
             <blockquote className="text-sm">“{q.quote}”</blockquote>
             <p className="mt-3 font-mono text-xs text-muted-foreground">
               {q.name} · {q.area}

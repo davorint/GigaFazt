@@ -78,6 +78,7 @@
     "months": "{count, plural, one {# mes} other {# meses}}",
     "promoUntil": "Promo {months, plural, one {# mes} other {# meses}} · termina {date}",
     "regular": "Precio regular",
+    "fit": {"fibra-200": "Para 1 o 2 personas: streaming, clases en línea y videollamadas.", "fibra-500": "Para la familia: varias pantallas en 4K y home office al mismo tiempo.", "fibra-1g": "Para casas muy conectadas: videojuegos en línea, creadores de contenido y respaldos en la nube."},
     "includes": "Incluye",
     "contract": "Contratar",
     "contractAria": "Contratar el plan de {speed}",

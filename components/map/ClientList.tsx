@@ -27,7 +27,7 @@ export function ClientList() {
         {STATES.map((s) => {
           const list = clientsByState(s.code)
           return (
-            <li key={s.code} className="rounded-xl border border-border bg-surface p-5">
+            <li key={s.code} className="rounded-xl surface p-5">
               <button
                 type="button"
                 onClick={() => {

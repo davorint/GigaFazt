@@ -58,9 +58,9 @@ export function ProofBand() {
         )}
       </div>
 
-      <dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border lg:grid-cols-4">
+      <dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/[0.07] shadow-[0_32px_64px_-32px_rgb(0_0_0_/_0.9)] lg:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="flex flex-col-reverse gap-2 bg-surface px-5 py-6">
+          <div key={s.label} className="surface-cell flex flex-col-reverse gap-2 px-5 py-6">
             <dt className="text-sm text-muted-foreground">{s.label}</dt>
             <dd className="flex min-h-9 items-center font-mono text-2xl tabular-nums tracking-tight sm:text-3xl">
               {s.value}

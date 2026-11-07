@@ -20,11 +20,11 @@ export function BusinessServices() {
       <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">{t("servicesTitle")}</h2>
       <p className="mt-3 max-w-2xl text-muted-foreground">{t("servicesLead")}</p>
 
-      <ul className="mt-12 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="mt-12 grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/[0.07] shadow-[0_32px_64px_-32px_rgb(0_0_0_/_0.9)] sm:grid-cols-2 lg:grid-cols-3">
         {business.services.map((id) => {
           const Icon = ICONS[id]
           return (
-            <li key={id} className="flex flex-col gap-3 bg-surface p-6">
+            <li key={id} className="surface-cell flex flex-col gap-3 p-6">
               <span className="flex size-10 items-center justify-center rounded-lg border border-fiber/30 bg-fiber/10">
                 <Icon className="size-5 text-fiber" aria-hidden />
               </span>

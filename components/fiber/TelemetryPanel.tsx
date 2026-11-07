@@ -63,7 +63,7 @@ export default function TelemetryPanel({ source = mockTelemetry }: { source?: Te
   const f = (n: number | undefined, d = 1) => (n === undefined ? "—" : n.toFixed(d))
 
   return (
-    <div ref={ref} className="rounded-xl border border-border bg-surface p-6">
+    <div ref={ref} className="rounded-xl surface p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-xl font-semibold tracking-[-0.02em]">{t("title")}</h3>

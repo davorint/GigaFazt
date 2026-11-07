@@ -22,7 +22,7 @@ export function Faq() {
       <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">{t("sectionHeads.faq")}</h2>
       <p className="mt-3 text-muted-foreground">{t("faq.lead")}</p>
 
-      <div className="mt-10 divide-y divide-border rounded-xl border border-border bg-surface">
+      <div className="mt-10 divide-y divide-border rounded-xl surface">
         {entries.map(({ item, question, answer }) => (
           <details key={item.id} id={`faq-${item.id}`} className="group px-5">
             <summary className="flex cursor-pointer list-none items-start justify-between gap-4 rounded-md py-4 font-medium transition-colors hover:text-fiber focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none [&::-webkit-details-marker]:hidden">

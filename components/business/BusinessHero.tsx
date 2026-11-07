@@ -40,7 +40,7 @@ export function BusinessHero() {
         </ul>
       </div>
 
-      <InView className="hud-brackets relative rounded-xl border border-border bg-surface/60 p-4 sm:p-6">
+      <InView className="surface hud-brackets relative rounded-xl p-4 sm:p-6">
         <div aria-hidden className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(ellipse_at_50%_60%,rgb(34_211_238/0.14),transparent_70%)]" />
         <BuildingDiagram className="relative h-auto w-full" />
         <p className="relative mt-3 text-center font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">

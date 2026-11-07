@@ -35,7 +35,7 @@ export function WhatItMeans() {
       </h3>
       <ul className="mt-5 grid gap-4 md:grid-cols-3">
         {tiles.map(({ key, icon: Icon, value }) => (
-          <li key={key} className="rounded-xl border border-border bg-surface p-5">
+          <li key={key} className="rounded-xl surface p-5">
             <Icon className="size-5 text-fiber" aria-hidden />
             <p className="mt-3 text-sm text-muted-foreground">{t(key)}</p>
             <p className="mt-4 font-mono text-3xl tabular-nums text-foreground">{value}</p>

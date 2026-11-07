@@ -15,10 +15,13 @@ export function PriceTerms({
   plan,
   className,
   inline = false,
+  quiet = false,
 }: {
   plan: Pick<Plan, "installFeeMxn" | "contractMonths" | "promo">
   className?: string
   inline?: boolean
+  /** Lower visual weight (plan cards): the speed and price lead, terms follow. */
+  quiet?: boolean
 }) {
   const t = useTranslations("plans")
   const locale = useLocale()
@@ -38,11 +41,11 @@ export function PriceTerms({
         {isPlaceholder(fee) ? (
           <PlaceholderChip keyName={fee.key} />
         ) : (
-          <span className={fee === 0 ? "font-semibold text-ok" : "text-foreground"}>{feeLabel(fee, locale, t("free"))}</span>
+          <span className={fee === 0 ? cn("text-ok", !quiet && "font-semibold") : "text-foreground"}>{feeLabel(fee, locale, t("free"))}</span>
         )}
       </li>
       {term === null ? (
-        <li className="font-semibold text-ok">{t("noContract")}</li>
+        <li className={cn("text-ok", !quiet && "font-semibold")}>{t("noContract")}</li>
       ) : (
         <li className="flex items-center gap-1.5">
           <span>{t("term")}:</span>

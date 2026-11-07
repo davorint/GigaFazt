@@ -27,7 +27,7 @@ export function DeepDiveCards() {
       <h3 className="text-xl font-semibold tracking-[-0.02em]">{t("title")}</h3>
       <ul className="mt-5 grid gap-4 sm:grid-cols-2">
         {cards.map(({ key, icon: Icon, value }) => (
-          <li key={key} className="flex flex-col rounded-xl border border-border bg-surface p-5">
+          <li key={key} className="flex flex-col rounded-xl surface p-5">
             <Icon className="size-5 text-fiber" aria-hidden />
             <p className="mt-3 font-medium">{t(`${key}.title`)}</p>
             <p className="mt-1 flex-1 text-sm text-muted-foreground">{t(`${key}.body`)}</p>

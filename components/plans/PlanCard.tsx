@@ -13,11 +13,13 @@ import { track } from "@/lib/analytics"
 import type { Plan } from "@/lib/types"
 import { PriceTag } from "./PriceTag"
 import { PriceTerms } from "./PriceTerms"
-import { SpeedBars } from "./SpeedBars"
+import { SpeedMeter } from "./SpeedMeter"
+import { PlanLight } from "./PlanLight"
 
 /**
- * Plan card (SPEC §3): speed is the hero number, then the price block with all
- * terms visible, includes, and the "Contratar" CTA that opens the lead Sheet.
+ * Plan card (SPEC §3). Hierarchy: light chamber (tier at a glance) → speed →
+ * who it suits → linear ↓/↑ meter → price with its terms (hard rule #5, set
+ * quietly) → includes → "Contratar" (opens the lead Sheet).
  */
 /** `level` keeps the outline valid: h2 when the cards sit directly under the page h1. */
 export function PlanCard({ plan, maxMbps, level = "h3" }: { plan: Plan; maxMbps: number; level?: "h2" | "h3" }) {
@@ -28,51 +30,59 @@ export function PlanCard({ plan, maxMbps, level = "h3" }: { plan: Plan; maxMbps:
   const Heading = level
   const ref = useRef<HTMLElement>(null)
 
-  // The featured border animates a gradient angle, which repaints every frame:
-  // only run it while the card is on screen (globals.css pauses it otherwise).
+  // The light pulses and the featured border repaint every frame: only run
+  // them while the card is on screen (globals.css pauses them otherwise).
   useEffect(() => {
     const el = ref.current
-    if (!el || !plan.highlight) return
+    if (!el) return
     const io = new IntersectionObserver(([e]) => {
       el.toggleAttribute("data-inview", e.isIntersecting)
     })
     io.observe(el)
     return () => io.disconnect()
-  }, [plan.highlight])
+  }, [])
+  const ratio = plan.downMbps / maxMbps
 
   return (
     <article
       ref={ref}
       aria-labelledby={headingId}
       className={cn(
-        "relative flex flex-col rounded-xl border bg-surface p-6 transition-colors",
-        plan.highlight ? "plan-featured hud-brackets border-transparent" : "border-border",
-        selected && !plan.highlight && "border-fiber/40"
+        "plan-card relative flex flex-col overflow-hidden rounded-2xl transition-transform duration-200",
+        plan.highlight ? "plan-featured hud-brackets border border-transparent md:-translate-y-4" : "surface hover:-translate-y-1",
+        selected && !plan.highlight && "ring-1 ring-fiber/50"
       )}
     >
-      {plan.highlight && (
-        <span className="absolute -top-3 left-6 rounded-full border border-fiber/50 bg-background px-2.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-wider text-fiber">
-          {t("popular")}
-        </span>
-      )}
+      <div className="relative h-28 overflow-hidden border-b border-white/[0.06]">
+        <PlanLight ratio={ratio} />
+        {/* Plain overlay instead of mask-image: no per-frame recomposite of the moving layer. */}
+        <div aria-hidden className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-b from-transparent to-surface" />
+        {plan.highlight && (
+          <span className="absolute top-3 right-4 rounded-full border border-fiber/50 bg-background px-2.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-wider text-fiber">
+            {t("popular")}
+          </span>
+        )}
+      </div>
 
+      <div className="flex flex-1 flex-col px-6 pt-5 pb-6">
       <Heading id={headingId} className="flex items-baseline gap-2 font-mono">
-        <span className="text-6xl font-semibold tracking-[-0.04em] text-foreground">
+        <span className={cn("text-7xl font-semibold tracking-[-0.05em] text-foreground", plan.highlight && "bg-gradient-to-b from-white to-cyan-200 bg-clip-text text-transparent")}>
           {speed.value}
         </span>
-        <span className="text-lg text-muted-foreground">{speed.unit}</span>
+        <span className="text-xl text-muted-foreground">{speed.unit}</span>
       </Heading>
       <p className="mt-1 font-mono text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
         {t("symmetric")} · ↓ {formatSpeed(plan.downMbps).value} / ↑ {formatSpeed(plan.upMbps).value} {speed.unit}
       </p>
+      <p className="mt-3 min-h-10 text-sm leading-snug text-foreground/85">{t(`fit.${plan.id}`)}</p>
 
       <div className="mt-4">
-        <SpeedBars downMbps={plan.downMbps} upMbps={plan.upMbps} maxMbps={maxMbps} />
+        <SpeedMeter downMbps={plan.downMbps} upMbps={plan.upMbps} maxMbps={maxMbps} />
       </div>
 
-      <div className="mt-6 border-t border-border pt-5">
+      <div className="mt-6 border-t border-white/[0.06] pt-5">
         <PriceTag plan={plan} />
-        <PriceTerms plan={plan} className="mt-3" />
+        <PriceTerms plan={plan} inline quiet className="mt-2" />
       </div>
 
       <div className="mt-5 flex-1">
@@ -108,6 +118,7 @@ export function PlanCard({ plan, maxMbps, level = "h3" }: { plan: Plan; maxMbps:
       >
         {t("contract")}
       </Button>
+      </div>
     </article>
   )
 }

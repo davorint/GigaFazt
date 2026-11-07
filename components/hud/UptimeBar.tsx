@@ -35,7 +35,7 @@ export function UptimeBar() {
     new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 3 }).format(v)
 
   return (
-    <figure className="rounded-xl border border-border bg-surface p-5">
+    <figure className="rounded-xl surface p-5">
       <figcaption className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
         <span className="font-medium">{t("title", { days: days.length })}</span>
         <span className="font-mono tabular-nums text-ok">{pct(avg)}</span>

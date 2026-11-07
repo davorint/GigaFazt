@@ -7,6 +7,7 @@ import { routing } from "@/i18n/routing"
 import { SITE_URL, SITE_URL_CONFIGURED, pageMeta } from "@/lib/site"
 import { speedRange } from "@/lib/plans"
 import "../globals.css"
+import { SurfaceLight } from "@/components/layout/SurfaceLight"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -60,6 +61,7 @@ export default async function LocaleLayout({
           className="holo-grid pointer-events-none fixed inset-0 -z-10"
         />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <SurfaceLight />
       </body>
     </html>
   )

@@ -34,9 +34,9 @@ export function InstallSteps() {
       </h2>
       <p className="mt-3 max-w-2xl text-muted-foreground">{t("install.lead")}</p>
 
-      <ol className="mt-12 grid gap-px overflow-hidden rounded-xl border border-border bg-border md:grid-cols-2 lg:grid-cols-4">
+      <ol className="mt-12 grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/[0.07] shadow-[0_32px_64px_-32px_rgb(0_0_0_/_0.9)] md:grid-cols-2 lg:grid-cols-4">
         {steps.map((s, i) => (
-          <li key={s.id} className="flex flex-col gap-3 bg-surface p-6">
+          <li key={s.id} className="surface-cell flex flex-col gap-3 p-6">
             <span className="font-mono text-xs tabular-nums text-fiber" aria-hidden>
               {String(i + 1).padStart(2, "0")}
             </span>

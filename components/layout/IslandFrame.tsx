@@ -6,5 +6,5 @@ import { cn } from "@/lib/utils"
  * breakpoint, measured) so the swap doesn't shift layout.
  */
 export function IslandFrame({ className }: { className: string }) {
-  return <div aria-hidden className={cn("rounded-xl border border-border bg-surface", className)} />
+  return <div aria-hidden className={cn("rounded-xl surface", className)} />
 }

@@ -127,7 +127,7 @@ async function AreaContent({ params }: { params: PageProps<"/[locale]/cobertura/
               </div>
             </div>
 
-            <div className="hud-brackets relative rounded-2xl border border-border bg-surface/60 p-4 sm:p-6">
+            <div className="surface hud-brackets relative rounded-2xl p-4 sm:p-6">
               <StateOutline state={area.state} />
               {list.length > 0 && (
                 <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 font-mono text-[0.65rem] text-muted-foreground">

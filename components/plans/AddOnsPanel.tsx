@@ -30,7 +30,7 @@ export function AddOnsPanel() {
   const money = useCallback((n: number) => `$${formatMxn(n, locale)}`, [locale])
 
   return (
-    <div className="flex h-full flex-col rounded-xl border border-border bg-surface p-6">
+    <div className="flex h-full flex-col rounded-xl surface p-6">
       <h3 className="text-xl font-semibold tracking-[-0.02em]">{t("title")}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{t("lead")}</p>
 
