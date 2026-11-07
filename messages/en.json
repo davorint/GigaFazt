@@ -8,7 +8,7 @@
     "planes": "Plans",
     "cobertura": "Coverage",
     "soporte": "Support",
-    "verifyCoverage": "Check coverage",
+    "viewPlans": "See plans",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "whatsapp": "WhatsApp",
@@ -24,13 +24,15 @@
   },
   "hero": {
     "eyebrow": "100% SYMMETRICAL OPTICAL FIBER",
-    "h1": "The physical engine for what's next.",
+    "h1_hogar": "Symmetrical gigabit for your home.",
+    "h1_empresa": "Dedicated connectivity for your business.",
     "subhead_hogar": "Upload a 4K video in seconds. The same download and upload speed, with low, stable latency.",
     "subhead_empresa": "Dedicated connectivity with SLA, static IP and metro-grade latency for your operation.",
-    "priceAnchor": "From <price></price>/mo",
-    "addressLabel": "Your address",
-    "addressPlaceholder": "Street, neighborhood or ZIP code",
-    "checkCoverage": "Check coverage"
+    "from": "From",
+    "perMonth": "/mo",
+    "viewPlans": "See plans",
+    "coverageLink": "Do we reach your area?",
+    "canvasAlt": "A bundle of optical fibers rising from a single point and fanning out, with cyan light pulses travelling along each strand."
   },
   "sections": {
     "hero": "Home",

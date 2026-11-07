@@ -120,13 +120,13 @@ export function Nav() {
               size="sm"
               className="hidden font-mono text-xs tracking-wider shadow-[0_0_20px_-4px_var(--color-fiber)] sm:inline-flex"
               onClick={() => {
-                track("coverage_check_started", { context: "nav" })
+                track("plan_selected", { context: "nav" })
                 document
-                  .getElementById("hero")
+                  .getElementById("plans")
                   ?.scrollIntoView({ behavior: "smooth" })
               }}
             >
-              [ {t("verifyCoverage").toUpperCase()} ]
+              [ {t("viewPlans").toUpperCase()} ]
             </Button>
 
             <Button

@@ -14,7 +14,8 @@ export const plans: Plan[] = [
     name: placeholder("hogar-1g.name"),
     downMbps: 1000,
     upMbps: 1000,
-    priceMxn: placeholder("hogar-1g.price"),
+    // Owner-provided (chat, 2026-11-06): 1 Gbps entry plan at $599/mes, IVA incl.
+    priceMxn: 599,
     installFeeMxn: placeholder("INSTALL_FEE"),
     contractMonths: placeholder("CONTRACT_TERM"),
     technology: "GPON",

@@ -8,7 +8,7 @@
     "planes": "Planes",
     "cobertura": "Cobertura",
     "soporte": "Soporte",
-    "verifyCoverage": "Verificar cobertura",
+    "viewPlans": "Ver planes",
     "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú",
     "whatsapp": "WhatsApp",
@@ -24,13 +24,15 @@
   },
   "hero": {
     "eyebrow": "100% FIBRA ÓPTICA SIMÉTRICA",
-    "h1": "El motor físico de lo que sigue.",
+    "h1_hogar": "Gigabit simétrico para tu hogar.",
+    "h1_empresa": "Conectividad dedicada para tu empresa.",
     "subhead_hogar": "Sube un video 4K en segundos. Misma velocidad de bajada y de subida, con latencia baja y estable.",
     "subhead_empresa": "Conectividad dedicada con SLA, IP fija y latencia de nivel metropolitano para tu operación.",
-    "priceAnchor": "Desde <price></price>/mes",
-    "addressLabel": "Tu dirección",
-    "addressPlaceholder": "Calle, colonia o código postal",
-    "checkCoverage": "Verificar cobertura"
+    "from": "Desde",
+    "perMonth": "/mes",
+    "viewPlans": "Ver planes",
+    "coverageLink": "¿Llegamos a tu zona?",
+    "canvasAlt": "Haz de fibras ópticas que nace de un solo punto y se abre en abanico, con pulsos de luz cian viajando a lo largo de cada hebra."
   },
   "sections": {
     "hero": "Inicio",

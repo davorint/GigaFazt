@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server"
 import { Nav } from "@/components/hud/Nav"
 import { Section } from "@/components/layout/Section"
-import { HeroShell } from "@/components/sections/HeroShell"
+import { Hero } from "@/components/fiber/Hero"
 import { StatusBadge } from "@/components/hud/StatusBadge"
 import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
 import { company } from "@/lib/company"
@@ -25,7 +25,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
           className="border-b-0"
           aria-label={t("sections.hero")}
         >
-          <HeroShell />
+          <Hero />
         </Section>
 
         {SHELLS.map((id) => (
