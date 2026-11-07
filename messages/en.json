@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Symmetrical fiber internet for CDMX, Edomex and Morelos",
-    "description": "100% symmetrical fiber internet. Check coverage, pick your plan and sign up. Up to 10 Gbps symmetrical with low latency."
+    "description": "100% symmetrical fiber internet in Mexico City, Estado de México and Morelos. The same download and upload speed, from {min} up to {max}."
   },
   "nav": {
     "fibra": "Fiber",
@@ -34,7 +34,7 @@
     "plans": "Plans",
     "fiber": "Symmetrical fiber",
     "map": "Coverage",
-    "proof": "Network & SLA",
+    "proof": "The network",
     "install": "Installation",
     "faq": "FAQ",
     "cta": "Sign up",
@@ -54,7 +54,6 @@
     "demoData": "DEMO DATA",
     "placeholder": "TBD",
     "placeholderTitle": "Pending value in BUSINESS.md",
-    "comingSoon": "Coming soon",
     "quote": "Get a quote",
     "contract": "Sign up"
   },
@@ -196,7 +195,17 @@
   },
   "footer": {
     "privacy": "Privacy Notice",
-    "terms": "Terms"
+    "terms": "Terms and conditions",
+    "tagline": "Symmetrical fiber internet in Mexico City, Estado de México and Morelos.",
+    "explore": "Explore",
+    "faq": "FAQ",
+    "coverage": "Coverage",
+    "contact": "Contact",
+    "phone": "Phone",
+    "email": "Email",
+    "social": "Social",
+    "legal": "Legal",
+    "regulatory": "IFT/CRT registration"
   },
   "fiber": {
     "lead": "With symmetrical fiber you upload as fast as you download. Measure your internet today and compare.",
@@ -325,6 +334,143 @@
       "twoFingers": "Use two fingers to move the map",
       "ctrlScroll": "Use Ctrl + scroll to zoom",
       "cmdScroll": "Use ⌘ + scroll to zoom"
+    },
+    "statePage": "Fiber in {name}"
+  },
+  "proof": {
+    "lead": "Fiber end to end, with numbers you can check.",
+    "latency": "Edge-to-core latency",
+    "latencyNote": "Measured inside the metro network, from edge to core. Excludes your Wi-Fi and the destination server.",
+    "speed": "Top plan speed, symmetrical",
+    "km": "Kilometers of fiber deployed",
+    "pops": "Nodes (POPs) in operation",
+    "cta": "See for yourself: test your current connection",
+    "testimonials": "What our clients say",
+    "uptime": {
+      "title": "Availability over the last {days} days",
+      "summary": "Average availability over the last {days} days: {pct}.",
+      "ago": "{days} days ago",
+      "today": "Today"
+    },
+    "latencyValue": "< 1 ms"
+  },
+  "install": {
+    "lead": "Four steps, no runaround. You pick the plan; we bring the fiber to your home.",
+    "time": "Install time",
+    "fee": "Install fee",
+    "cta": "See plans",
+    "steps": {
+      "zone": {
+        "title": "Check your area",
+        "body": "We serve {states}.",
+        "link": "See the map"
+      },
+      "plan": {
+        "title": "Pick your plan",
+        "body": "{speeds}, all symmetrical. Add TV if you like."
+      },
+      "visit": {
+        "title": "Book the visit",
+        "body": "Leave your details and preferred date. We confirm coverage at your exact address before booking."
+      },
+      "live": {
+        "title": "Get connected",
+        "body": "A technician installs the fiber and leaves your internet up and running."
+      }
     }
+  },
+  "faq": {
+    "lead": "What people ask us most before signing up.",
+    "cta": "Ready? Get your plan",
+    "facts": {
+      "installFee": "Cost",
+      "installDays": "Time",
+      "term": "Term",
+      "cancellation": "Cancellation",
+      "router": "Equipment",
+      "staticIp": "Static IP",
+      "whatsapp": "WhatsApp",
+      "phone": "Phone",
+      "hours": "Support hours",
+      "moving": "Moving"
+    },
+    "items": {
+      "speed": {
+        "q": "Will I get the advertised speed?",
+        "a": "Each plan's speed is the maximum delivered to your home, the same down and up. Over a cable you get closest to that maximum; over Wi-Fi it depends on your device, distance and walls. You can measure your current connection with the speed test on this page."
+      },
+      "symmetric": {
+        "q": "What does symmetrical mean?",
+        "a": "You upload as fast as you download. Video calls, cloud backups, live streams and big files go up as fast as they come down."
+      },
+      "install": {
+        "q": "How much does installation cost and how long does it take?",
+        "a": "A technician brings the fiber to your house or apartment, installs the equipment and leaves everything working."
+      },
+      "contract": {
+        "q": "Is there a minimum term? How do I cancel?",
+        "a": "These are the contract terms:"
+      },
+      "router": {
+        "q": "Is a router included?",
+        "a": "This is the equipment installed with your plan:"
+      },
+      "staticIp": {
+        "q": "Can I get a static IP?",
+        "a": "Static IP availability:"
+      },
+      "support": {
+        "q": "What if the service goes down?",
+        "a": "Report it through any of these channels and we will help:"
+      },
+      "moving": {
+        "q": "What happens if I move?",
+        "a": "This is our moving policy:"
+      },
+      "business": {
+        "q": "Do you have business plans?",
+        "a": "Yes. The same plans work for homes and businesses, and all of them are symmetrical."
+      },
+      "tv": {
+        "q": "What does TV include?",
+        "a": "{channels, number} channels, {movies, number} movies and {series, number} series. Add it to any plan; the price is in the plans section along with its terms."
+      },
+      "coverage": {
+        "q": "Where do you provide service?",
+        "a": "In {states}. We confirm coverage at your exact address when you sign up."
+      }
+    }
+  },
+  "cta": {
+    "eyebrow": "SIGN UP",
+    "title": "Ready for symmetrical internet?",
+    "lead": "Pick your plan, leave your details and we will contact you to book the installation.",
+    "selected": "Selected plan:",
+    "planName": "{speed} symmetrical",
+    "change": "Change",
+    "whatsapp": "Message us on WhatsApp",
+    "call": "Call us",
+    "whatsappMessage": "Hi, I would like to sign up for the {speed} symmetrical plan{extras, select, none {} other { with {extras}}}. Can you help?"
+  },
+  "area": {
+    "outlineAlt": "Map of the service area with {state} highlighted.",
+    "metaTitle": "Fiber internet in {name}",
+    "metaDescription": "Symmetrical fiber internet in {name}: plans from {min} up to {max}, the same download and upload speed.",
+    "home": "Home",
+    "coverage": "Coverage",
+    "breadcrumb": "Breadcrumb",
+    "available": "Available",
+    "h1": "Fiber internet in {name}",
+    "lead": "Fiber to your home in {name}, with the same download and upload speed.",
+    "seeMap": "See on the map",
+    "clients": "Clients in {name}",
+    "plansTitle": "Plans in {name}",
+    "others": "We also serve"
+  },
+  "seo": {
+    "serviceName": "Symmetrical fiber internet",
+    "serviceType": "Fiber-to-the-home internet (FTTH)",
+    "serviceDescription": "Fiber-to-the-home internet with the same download and upload speed.",
+    "ogAlt": "Symmetrical fiber internet in Mexico City, Estado de México and Morelos"
   }
 }

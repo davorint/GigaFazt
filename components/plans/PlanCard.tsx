@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import { useTranslations } from "next-intl"
 import { Check } from "lucide-react"
 import { cn } from "cn"
@@ -23,9 +24,23 @@ export function PlanCard({ plan, maxMbps }: { plan: Plan; maxMbps: number }) {
   const selected = useSelection((s) => s.planId === plan.id)
   const speed = formatSpeed(plan.downMbps)
   const headingId = `plan-${plan.id}`
+  const ref = useRef<HTMLElement>(null)
+
+  // The featured border animates a gradient angle, which repaints every frame:
+  // only run it while the card is on screen (globals.css pauses it otherwise).
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !plan.highlight) return
+    const io = new IntersectionObserver(([e]) => {
+      el.toggleAttribute("data-inview", e.isIntersecting)
+    })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [plan.highlight])
 
   return (
     <article
+      ref={ref}
       aria-labelledby={headingId}
       className={cn(
         "relative flex flex-col rounded-xl border bg-surface p-6 transition-colors",

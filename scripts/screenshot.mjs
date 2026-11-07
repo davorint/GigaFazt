@@ -83,8 +83,16 @@ async function main() {
               .waitFor({ timeout: 10000 })
               .catch(() => console.warn(`[shot:${id}] map not ready after 10 s`))
           }
-          await el.screenshot({
-            path: path.join(outDir, `${id}--${viewport.name}--${motion}.png`),
+          // Fallback: after an element taller than the viewport is captured,
+          // Playwright's "element stable" wait can hang on the next (static,
+          // measured-stable) element. Then capture a full-page clip of its box.
+          const file = path.join(outDir, `${id}--${viewport.name}--${motion}.png`)
+          await el.screenshot({ path: file, timeout: 10000 }).catch(async () => {
+            const box = await el.evaluate((n) => {
+              const r = n.getBoundingClientRect()
+              return { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: r.height }
+            })
+            await page.screenshot({ path: file, fullPage: true, clip: box })
           })
           console.log(`✓ ${id}--${viewport.name}--${motion}.png`)
         } catch (err) {

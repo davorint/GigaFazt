@@ -1,3 +1,4 @@
+import { speedLabel } from "./format"
 import type { AddOn, Plan } from "./types"
 import { placeholder, isPlaceholder, type Maybe } from "./placeholder"
 
@@ -87,6 +88,12 @@ export function monthlyTotal(
     else known += p
   }
   return { known, pending }
+}
+
+/** Slowest and fastest plan as labels ("200 Mbps", "1 Gbps"), for copy. */
+export function speedRange(): { min: string; max: string } {
+  const speeds = plans.map((p) => p.downMbps)
+  return { min: speedLabel(Math.min(...speeds)), max: speedLabel(Math.max(...speeds)) }
 }
 
 export { isPlaceholder }

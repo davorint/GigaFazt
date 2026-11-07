@@ -40,4 +40,15 @@ export const company: Company = {
     crmWebhook: placeholder("CRM_WEBHOOK"),
     analytics: placeholder("ANALYTICS"),
   },
+  legal: {
+    privacyUrl: placeholder("PRIVACY_NOTICE_URL"),
+    termsUrl: placeholder("TERMS_URL"),
+  },
+  policies: {
+    cancellation: placeholder("CANCELLATION_POLICY"),
+    moving: placeholder("MOVING_POLICY"),
+    staticIp: placeholder("STATIC_IP"),
+    supportHours: placeholder("SUPPORT_HOURS"),
+  },
+  social: placeholder("SOCIAL"),
 }

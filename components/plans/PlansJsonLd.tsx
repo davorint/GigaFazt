@@ -3,17 +3,19 @@ import { addOns, plans } from "@/lib/plans"
 import { company } from "@/lib/company"
 import { speedLabel } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
+import { ORG_ID, absoluteUrl } from "@/lib/site"
+import { JsonLd } from "@/components/seo/JsonLd"
 
 /**
  * `Offer` JSON-LD per plan (SPEC §3 ✅). Only concrete BUSINESS.md values are
  * emitted: placeholder prices/fees/seller are omitted, never invented.
  */
-export async function PlansJsonLd({ locale }: { locale: string }) {
+export async function PlansJsonLd({ locale, path }: { locale: string; path: string }) {
+  const page = absoluteUrl(locale, path)
   const t = await getTranslations({ locale, namespace: "plans" })
   const ta = await getTranslations({ locale, namespace: "addons" })
-  const seller = isPlaceholder(company.name)
-    ? undefined
-    : { "@type": "Organization", name: company.name }
+  // Seller references the Organization node emitted by ServiceJsonLd once named.
+  const seller = isPlaceholder(company.name) ? undefined : { "@id": ORG_ID }
 
   const monthly = (price: number) => ({
     "@type": "UnitPriceSpecification",
@@ -28,7 +30,7 @@ export async function PlansJsonLd({ locale }: { locale: string }) {
     const name = t("jsonLdName", { speed: speedLabel(p.downMbps) })
     return {
       "@type": "Offer",
-      "@id": `#offer-${p.id}`,
+      "@id": `${page}#offer-${p.id}`,
       name,
       itemOffered: { "@type": "Service", name },
       ...(isPlaceholder(p.priceMxn)
@@ -44,7 +46,7 @@ export async function PlansJsonLd({ locale }: { locale: string }) {
       : [
           {
             "@type": "Offer",
-            "@id": `#offer-addon-${a.id}`,
+            "@id": `${page}#offer-addon-${a.id}`,
             name: ta(`${a.id as "tv"}.name`),
             price: a.priceMxn,
             priceCurrency: "MXN",
@@ -57,15 +59,10 @@ export async function PlansJsonLd({ locale }: { locale: string }) {
   const data = {
     "@context": "https://schema.org",
     "@type": "OfferCatalog",
+    "@id": `${page}#offers`,
     name: t("pageTitle"),
     itemListElement: [...offers, ...addOnOffers],
   }
 
-  return (
-    <script
-      type="application/ld+json"
-      // JSON-LD must be raw JSON; `<` is escaped so content can't close the tag.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
-    />
-  )
+  return <JsonLd data={data} />
 }

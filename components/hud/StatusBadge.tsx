@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { cn } from "cn"
-
-type Status = "operational" | "degraded" | "unknown"
+import { fetchStatus } from "@/lib/status-client"
+import type { ServiceStatus } from "@/lib/status"
 
 /**
  * Status badge sourced from /api/status. Hidden entirely when status is unknown
@@ -12,16 +12,13 @@ type Status = "operational" | "degraded" | "unknown"
  */
 export function StatusBadge({ className }: { className?: string }) {
   const t = useTranslations("status")
-  const [status, setStatus] = useState<Status>("unknown")
+  const [status, setStatus] = useState<ServiceStatus>("unknown")
 
   useEffect(() => {
     let active = true
-    fetch("/api/status")
-      .then((r) => r.json())
-      .then((d: { status?: Status }) => {
-        if (active && d?.status) setStatus(d.status)
-      })
-      .catch(() => {})
+    fetchStatus().then((d) => {
+      if (active) setStatus(d.status)
+    })
     return () => {
       active = false
     }

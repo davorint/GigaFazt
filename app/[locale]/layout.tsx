@@ -4,6 +4,8 @@ import { NextIntlClientProvider, hasLocale } from "next-intl"
 import { getTranslations, setRequestLocale } from "next-intl/server"
 import { notFound } from "next/navigation"
 import { routing } from "@/i18n/routing"
+import { SITE_URL, SITE_URL_CONFIGURED, pageMeta } from "@/lib/site"
+import { speedRange } from "@/lib/plans"
 import "../globals.css"
 
 const geistSans = Geist({
@@ -29,9 +31,11 @@ export async function generateMetadata({
   if (!hasLocale(routing.locales, locale)) notFound()
   setRequestLocale(locale)
   const t = await getTranslations({ locale, namespace: "meta" })
+  const description = t("description", speedRange())
   return {
-    title: t("title"),
-    description: t("description"),
+    metadataBase: new URL(SITE_URL),
+    ...pageMeta(locale, "/", t("title"), description, (await getTranslations({ locale, namespace: "seo" }))("ogAlt")),
+    ...(SITE_URL_CONFIGURED ? {} : { robots: { index: false, follow: false } }),
   }
 }
 

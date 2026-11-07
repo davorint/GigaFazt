@@ -79,4 +79,17 @@ export interface Company {
     crmWebhook: Maybe<string>
     analytics: Maybe<string>
   }
+  /** Legal pages (LFPDPPP privacy notice, terms). */
+  legal: {
+    privacyUrl: Maybe<string>
+    termsUrl: Maybe<string>
+  }
+  /** Policies answered in the FAQ. */
+  policies: {
+    cancellation: Maybe<string>
+    moving: Maybe<string>
+    staticIp: Maybe<string>
+    supportHours: Maybe<string>
+  }
+  social: Maybe<{ label: string; url: string }[]>
 }

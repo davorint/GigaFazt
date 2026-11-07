@@ -226,6 +226,10 @@
   animation: plan-border-spin 8s linear infinite;
   box-shadow: 0 0 40px -16px var(--color-fiber);
 }
+/* Paused offscreen (PlanCard toggles data-inview): it repaints every frame. */
+.plan-featured:not([data-inview]) {
+  animation-play-state: paused;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -29,6 +29,7 @@ import { PriceTerms } from "@/components/plans/PriceTerms"
 import { addOns, getPlan, monthlyTotal, plans } from "@/lib/plans"
 import { formatMxn, speedLabel } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
+import { company } from "@/lib/company"
 import { leadSchema, todayInMexico, type Lead, type LeadInput } from "@/lib/lead"
 import { selection } from "@/lib/selection"
 import { track } from "@/lib/analytics"
@@ -311,8 +312,22 @@ export function LeadForm({
                   />
                 </FormControl>
                 <span className="flex flex-wrap items-center gap-1.5">
-                  {t("consent")} <span className="font-medium">{t("privacy")}</span>
-                  <PlaceholderChip keyName="PRIVACY_NOTICE_URL" />
+                  {t("consent")}{" "}
+                  {isPlaceholder(company.legal.privacyUrl) ? (
+                    <>
+                      <span className="font-medium">{t("privacy")}</span>
+                      <PlaceholderChip keyName={company.legal.privacyUrl.key} />
+                    </>
+                  ) : (
+                    <a
+                      href={company.legal.privacyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium underline underline-offset-4"
+                    >
+                      {t("privacy")}
+                    </a>
+                  )}
                 </span>
               </label>
               <FormMessage />

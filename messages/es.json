@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Fibra óptica simétrica para CDMX, Edomex y Morelos",
-    "description": "Internet de fibra óptica 100% simétrica. Verifica cobertura, elige tu plan y contrata. Hasta 10 Gbps simétricos con baja latencia."
+    "description": "Internet de fibra óptica 100% simétrica en CDMX, Estado de México y Morelos. Misma velocidad de bajada y de subida, desde {min} hasta {max}."
   },
   "nav": {
     "fibra": "Fibra",
@@ -34,7 +34,7 @@
     "plans": "Planes",
     "fiber": "Fibra simétrica",
     "map": "Cobertura",
-    "proof": "Red y SLA",
+    "proof": "La red",
     "install": "Instalación",
     "faq": "Preguntas frecuentes",
     "cta": "Contratar",
@@ -54,7 +54,6 @@
     "demoData": "DEMO DATA",
     "placeholder": "POR DEFINIR",
     "placeholderTitle": "Dato pendiente en BUSINESS.md",
-    "comingSoon": "Próximamente",
     "quote": "Cotizar",
     "contract": "Contratar"
   },
@@ -196,7 +195,17 @@
   },
   "footer": {
     "privacy": "Aviso de Privacidad",
-    "terms": "Términos"
+    "terms": "Términos y condiciones",
+    "tagline": "Internet de fibra óptica simétrica en Ciudad de México, Estado de México y Morelos.",
+    "explore": "Explora",
+    "faq": "Preguntas frecuentes",
+    "coverage": "Cobertura",
+    "contact": "Contacto",
+    "phone": "Teléfono",
+    "email": "Correo",
+    "social": "Redes",
+    "legal": "Legal",
+    "regulatory": "Registro ante el IFT/CRT"
   },
   "fiber": {
     "lead": "Con fibra simétrica subes tan rápido como bajas. Mide tu internet de hoy y compáralo.",
@@ -325,6 +334,143 @@
       "twoFingers": "Usa dos dedos para mover el mapa",
       "ctrlScroll": "Usa Ctrl + rueda para hacer zoom",
       "cmdScroll": "Usa ⌘ + rueda para hacer zoom"
+    },
+    "statePage": "Fibra en {name}"
+  },
+  "proof": {
+    "lead": "Fibra óptica de punta a punta, con números que puedes revisar.",
+    "latency": "Latencia del borde al núcleo",
+    "latencyNote": "Medida dentro de la red metropolitana, del borde al núcleo. No incluye tu Wi-Fi ni el servidor de destino.",
+    "speed": "Velocidad máxima simétrica del plan",
+    "km": "Kilómetros de fibra desplegada",
+    "pops": "Nodos (POP) en operación",
+    "cta": "Compruébalo: mide tu conexión actual",
+    "testimonials": "Lo que dicen nuestros clientes",
+    "uptime": {
+      "title": "Disponibilidad de los últimos {days} días",
+      "summary": "Disponibilidad promedio de los últimos {days} días: {pct}.",
+      "ago": "Hace {days} días",
+      "today": "Hoy"
+    },
+    "latencyValue": "< 1 ms"
+  },
+  "install": {
+    "lead": "Cuatro pasos, sin vueltas. Tú eliges el plan; nosotros llevamos la fibra hasta tu casa.",
+    "time": "Tiempo de instalación",
+    "fee": "Costo de instalación",
+    "cta": "Ver planes",
+    "steps": {
+      "zone": {
+        "title": "Revisa tu zona",
+        "body": "Damos servicio en {states}.",
+        "link": "Ver el mapa"
+      },
+      "plan": {
+        "title": "Elige tu plan",
+        "body": "{speeds}, todos simétricos. Si quieres, agrega TV."
+      },
+      "visit": {
+        "title": "Agenda la visita",
+        "body": "Déjanos tus datos y la fecha que prefieras. Confirmamos la cobertura de tu dirección exacta antes de agendar."
+      },
+      "live": {
+        "title": "Conéctate",
+        "body": "Un técnico instala la fibra y deja tu internet funcionando."
+      }
     }
+  },
+  "faq": {
+    "lead": "Lo que más nos preguntan antes de contratar.",
+    "cta": "¿Listo? Contrata tu plan",
+    "facts": {
+      "installFee": "Costo",
+      "installDays": "Tiempo",
+      "term": "Plazo",
+      "cancellation": "Cancelación",
+      "router": "Equipo",
+      "staticIp": "IP fija",
+      "whatsapp": "WhatsApp",
+      "phone": "Teléfono",
+      "hours": "Horario de soporte",
+      "moving": "Cambio de domicilio"
+    },
+    "items": {
+      "speed": {
+        "q": "¿La velocidad que anuncian es la que voy a tener?",
+        "a": "La velocidad de cada plan es el máximo que llega a tu casa, igual de bajada que de subida. Conectado por cable obtienes lo más cercano a ese máximo; por Wi-Fi depende de tu dispositivo, la distancia y las paredes. Puedes medir tu conexión actual con la prueba de velocidad de esta página."
+      },
+      "symmetric": {
+        "q": "¿Qué significa que sea simétrico?",
+        "a": "Que subes a la misma velocidad que bajas. Videollamadas, respaldos en la nube, transmisiones en vivo y archivos pesados suben igual de rápido que lo que descargas."
+      },
+      "install": {
+        "q": "¿Cuánto cuesta y cuánto tarda la instalación?",
+        "a": "Un técnico lleva la fibra hasta tu casa o departamento, instala el equipo y deja todo funcionando."
+      },
+      "contract": {
+        "q": "¿Hay plazo forzoso? ¿Cómo cancelo?",
+        "a": "Estas son las condiciones del contrato:"
+      },
+      "router": {
+        "q": "¿Incluye router?",
+        "a": "Este es el equipo que se instala con tu plan:"
+      },
+      "staticIp": {
+        "q": "¿Puedo tener IP fija?",
+        "a": "Disponibilidad de IP fija:"
+      },
+      "support": {
+        "q": "¿Qué hago si se cae el servicio?",
+        "a": "Repórtalo por cualquiera de estos canales y te ayudamos:"
+      },
+      "moving": {
+        "q": "¿Qué pasa si me cambio de casa?",
+        "a": "Esta es nuestra política de cambio de domicilio:"
+      },
+      "business": {
+        "q": "¿Tienen planes para negocio?",
+        "a": "Sí. Los mismos planes sirven para casa y para negocio, y todos son simétricos."
+      },
+      "tv": {
+        "q": "¿Qué incluye la TV?",
+        "a": "{channels, number} canales, {movies, number} películas y {series, number} series. La agregas a cualquier plan; el precio aparece en la sección de planes junto con sus condiciones."
+      },
+      "coverage": {
+        "q": "¿En dónde dan servicio?",
+        "a": "En {states}. Confirmamos la cobertura de tu dirección exacta al contratar."
+      }
+    }
+  },
+  "cta": {
+    "eyebrow": "CONTRATAR",
+    "title": "¿Listo para internet simétrico?",
+    "lead": "Elige tu plan, déjanos tus datos y te contactamos para agendar la instalación.",
+    "selected": "Plan seleccionado:",
+    "planName": "{speed} simétrico",
+    "change": "Cambiar",
+    "whatsapp": "Escríbenos por WhatsApp",
+    "call": "Llámanos",
+    "whatsappMessage": "Hola, me interesa contratar el plan de {speed} simétrico{extras, select, none {} other { con {extras}}}. ¿Me ayudan?"
+  },
+  "area": {
+    "outlineAlt": "Mapa de la zona de servicio con {state} resaltado.",
+    "metaTitle": "Internet de fibra óptica en {name}",
+    "metaDescription": "Internet de fibra óptica simétrica en {name}: planes desde {min} hasta {max}, misma velocidad de bajada y de subida.",
+    "home": "Inicio",
+    "coverage": "Cobertura",
+    "breadcrumb": "Ruta de navegación",
+    "available": "Disponible",
+    "h1": "Internet de fibra óptica en {name}",
+    "lead": "Fibra óptica hasta tu casa en {name}, con la misma velocidad de bajada y de subida.",
+    "seeMap": "Ver en el mapa",
+    "clients": "Clientes en {name}",
+    "plansTitle": "Planes en {name}",
+    "others": "También damos servicio en"
+  },
+  "seo": {
+    "serviceName": "Internet de fibra óptica simétrica",
+    "serviceType": "Internet de fibra óptica (FTTH)",
+    "serviceDescription": "Internet de fibra óptica hasta el hogar con la misma velocidad de bajada y de subida.",
+    "ogAlt": "Fibra óptica simétrica en Ciudad de México, Estado de México y Morelos"
   }
 }

@@ -36,8 +36,10 @@ export function Nav({ base = "" }: { base?: string }) {
   const router = useRouter()
   const links = LINKS.map((l) => ({ ...l, href: `${base}${l.href}` }))
   const [condensed, setCondensed] = useState(false)
-  const [active, setActive] = useState("hero")
-  const [pastHero, setPastHero] = useState(false)
+  // Off the home page there is no #hero: show the bottom bar from the start and
+  // skip section tracking (its links point back to the home page).
+  const [active, setActive] = useState(base ? "" : "hero")
+  const [pastHero, setPastHero] = useState(!!base)
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuMounted, setMenuMounted] = useState(false)
 
@@ -49,6 +51,7 @@ export function Nav({ base = "" }: { base?: string }) {
   }, [])
 
   useEffect(() => {
+    if (base) return
     const sections = SECTION_IDS.map((id) => document.getElementById(id)).filter(
       (el): el is HTMLElement => el !== null
     )
@@ -69,7 +72,7 @@ export function Nav({ base = "" }: { base?: string }) {
     )
     sections.forEach((s) => observer.observe(s))
     return () => observer.disconnect()
-  }, [])
+  }, [base])
 
   const openMenu = () => {
     setMenuMounted(true)

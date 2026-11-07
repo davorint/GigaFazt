@@ -2,7 +2,6 @@ import { useTranslations } from "next-intl"
 import { ArrowRight } from "lucide-react"
 import { Link } from "@/i18n/navigation"
 import { plans } from "@/lib/plans"
-import { LeadSheetHost } from "@/components/conversion/LeadSheetHost"
 import { PlanCard } from "./PlanCard"
 import { TrustStrip } from "./TrustStrip"
 import { PlanRecommender } from "./PlanRecommender"
@@ -61,7 +60,6 @@ export function PlansSection({ variant = "home" }: { variant?: "home" | "page" }
         </div>
       )}
 
-      <LeadSheetHost />
     </div>
   )
 }
