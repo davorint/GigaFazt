@@ -16,4 +16,11 @@ from https://github.com/PhantomInsights/mexico-geojson (MIT license), folder `20
 3. `python -I scripts/build_states.py geo-raw public/geo/states.json`
 
 The script dissolves the municipios of each state into one outline and simplifies it
-(~400 m tolerance). Coverage is defined at state level, so municipio boundaries are not shipped.
+(~400 m tolerance).
+
+## Alcaldía / municipio limits
+
+`public/geo/municipios.json` (≈28 KB gz) holds the inner alcaldía/municipio boundary lines
+(shared edges merged, state outlines cut out, ~150 m simplification). From the same raw files:
+
+`python -I scripts/build_municipios.py geo-raw public/geo/municipios.json`

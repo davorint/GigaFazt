@@ -322,7 +322,7 @@
     "listTitle": "Clients and service areas",
     "listDesc": "Text version of the map. Pick a client to locate it.",
     "approx": "Locations approximate to neighborhood level.",
-    "mapAlt": "Service area map: Mexico City, the State of Mexico and Morelos. Marks {real} client buildings and {demo} illustrative examples, with illustrative lines between CDMX, Toluca and Cuernavaca.",
+    "mapAlt": "Service area map: Mexico City, the State of Mexico and Morelos, with alcaldía and municipality limits. Marks {real} client buildings and {demo} illustrative examples, with illustrative lines between CDMX, Toluca and Cuernavaca.",
     "cta": "Live in the area? Sign up and we'll confirm your coverage",
     "ui": {
       "map": "Map",

@@ -322,7 +322,7 @@
     "listTitle": "Clientes y zonas de servicio",
     "listDesc": "Versión en texto del mapa. Elige un cliente para ubicarlo.",
     "approx": "Ubicaciones aproximadas a nivel colonia.",
-    "mapAlt": "Mapa de la zona de servicio: Ciudad de México, Estado de México y Morelos. Marca {real} edificios cliente y {demo} ejemplos ilustrativos, con líneas ilustrativas entre CDMX, Toluca y Cuernavaca.",
+    "mapAlt": "Mapa de la zona de servicio: Ciudad de México, Estado de México y Morelos, con los límites de alcaldías y municipios. Marca {real} edificios cliente y {demo} ejemplos ilustrativos, con líneas ilustrativas entre CDMX, Toluca y Cuernavaca.",
     "cta": "¿Vives en la zona? Contrata y confirmamos tu cobertura",
     "ui": {
       "map": "Mapa",

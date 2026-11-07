@@ -113,6 +113,19 @@ export default function CoverageMap() {
           "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.2, 0.09],
         },
       })
+      // Alcaldía / municipio limits: thin, faint, under the state outlines.
+      map.addSource("municipios", { type: "geojson", data: "/geo/municipios.json" })
+      map.addLayer({
+        id: "municipios-line",
+        type: "line",
+        source: "municipios",
+        layout: { "line-join": "round" },
+        paint: {
+          "line-color": CYAN,
+          "line-opacity": ["interpolate", ["linear"], ["zoom"], 7, 0.14, 10, 0.3],
+          "line-width": ["interpolate", ["linear"], ["zoom"], 7, 0.4, 11, 0.9],
+        },
+      })
       map.addLayer({
         id: "states-line",
         type: "line",
@@ -320,7 +333,7 @@ export default function CoverageMap() {
       for (const id of ["clients-dot", "clients-ping"]) {
         if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis(layers.includes("clients")))
       }
-      for (const id of ["states-fill", "states-line"]) {
+      for (const id of ["states-fill", "municipios-line", "states-line"]) {
         if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis(layers.includes("coverage")))
       }
       containerRef.current
