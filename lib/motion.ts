@@ -1,17 +1,27 @@
 "use client"
 
 import { useSyncExternalStore } from "react"
-import { MOTION_KEY } from "./motion-init"
 
 /**
  * Effective motion preference: the OS `prefers-reduced-motion` setting OR the
  * on-page "pause animations" toggle (WCAG 2.2.2 Pause, Stop, Hide). The toggle
  * persists in localStorage and is mirrored on `<html data-motion="off">`, which
- * globals.css treats like reduced motion. An inline script in the layout applies
- * the stored choice before first paint.
+ * globals.css treats like reduced motion. The stored choice is applied when this
+ * module first loads (it's in the initial bundle via the Nav), before hydration
+ * and before the hero mounts WebGL. No inline <script>: React warns when it
+ * renders one on the client (layout re-render on locale switch / HMR).
  */
+const MOTION_KEY = "motion"
 const QUERY = "(prefers-reduced-motion: reduce)"
 const EVENT = "motionchange"
+
+if (typeof window !== "undefined") {
+  try {
+    if (localStorage.getItem(MOTION_KEY) === "off") document.documentElement.dataset.motion = "off"
+  } catch {
+    // Storage blocked: default (motion on, unless the OS asks otherwise).
+  }
+}
 
 export function systemReducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia(QUERY).matches

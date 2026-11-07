@@ -7,7 +7,6 @@ import { routing } from "@/i18n/routing"
 import { SITE_URL, SITE_URL_CONFIGURED, pageMeta } from "@/lib/site"
 import { speedRange } from "@/lib/plans"
 import "../globals.css"
-import { MOTION_INIT_SCRIPT } from "@/lib/motion-init"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,16 +48,12 @@ export default async function LocaleLayout({
   setRequestLocale(locale)
 
   return (
-    // suppressHydrationWarning: the pre-paint script may add data-motion.
+    // suppressHydrationWarning: lib/motion.ts may add data-motion before hydration.
     <html
       lang={locale}
       suppressHydrationWarning
       className={`${geistSans.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
     >
-      <head>
-        {/* Applies a stored "pause animations" choice before first paint (lib/motion.ts). */}
-        <script dangerouslySetInnerHTML={{ __html: MOTION_INIT_SCRIPT }} />
-      </head>
       <body className="min-h-full bg-background text-foreground">
         <div
           aria-hidden

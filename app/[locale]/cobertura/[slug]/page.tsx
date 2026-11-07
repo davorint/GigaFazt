@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getTranslations, setRequestLocale } from "next-intl/server"
@@ -51,7 +52,20 @@ export async function generateMetadata({
 }
 
 /** Per-state coverage page (SPEC SEO: "Internet de fibra óptica en {área}"). */
-export default async function AreaPage({ params }: PageProps<"/[locale]/cobertura/[slug]">) {
+/**
+ * Params are read inside <Suspense> so the generic `[slug]` shell (unknown
+ * slugs) stays instant-navigable; the three known states are prerendered in
+ * full, so the empty fallback never shows for them.
+ */
+export default function AreaPage({ params }: PageProps<"/[locale]/cobertura/[slug]">) {
+  return (
+    <Suspense fallback={null}>
+      <AreaContent params={params} />
+    </Suspense>
+  )
+}
+
+async function AreaContent({ params }: { params: PageProps<"/[locale]/cobertura/[slug]">["params"] }) {
   const { locale, slug } = await params
   const area = areaBySlug(slug)
   if (!area) notFound()
