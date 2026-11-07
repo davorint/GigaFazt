@@ -18,7 +18,8 @@ export function CoverageMapSection() {
       </h2>
       <p className="mt-3 max-w-2xl text-muted-foreground">{t("map.lead", { count: isPlaceholder(company.network.clients) ? "—" : company.network.clients.toLocaleString(locale) })}</p>
 
-      <div className="mt-12">
+      {/* Wider than the text column: the tilted map is the section's centerpiece. */}
+      <div className="mt-12 min-[1400px]:-mx-12 min-[1600px]:-mx-24">
         <LazyCoverageMap />
         <MapLegend className="mt-3 md:hidden" />
       </div>

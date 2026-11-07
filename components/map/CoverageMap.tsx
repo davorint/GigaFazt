@@ -23,6 +23,48 @@ const AMBER = "#f59e0b"
 const FPS = 30
 type Layer = "clients" | "coverage"
 
+/** Tilted "holo table" camera. Pitch/bearing are fixed (no rotate gestures). */
+function camera(mobile: boolean) {
+  return {
+    pitch: mobile ? 42 : 50,
+    bearing: mobile ? -6 : -12,
+    padding: mobile ? { top: 40, bottom: 24, left: 8, right: 8 } : { top: 70, bottom: 20, left: 60, right: 60 },
+  }
+}
+
+/**
+ * Fit the three states to the frame. fitBounds sizes for the unpitched
+ * footprint, so the tilted view would leave the states small: nudge the zoom.
+ */
+function fitView(map: MLMap, mobile: boolean, animate: boolean) {
+  const cam = camera(mobile)
+  // Offset lifts the states toward the frame's middle (the tilted far side is
+  // fog) and, on desktop, clears the bottom-left legend.
+  const fit = map.cameraForBounds(MAP_FIT, { ...cam, offset: mobile ? [0, 36] : [70, -60] })
+  if (!fit) return
+  const opts = { ...fit, pitch: cam.pitch, bearing: cam.bearing, zoom: (fit.zoom ?? 8) + (mobile ? -0.35 : 0.4) }
+  if (animate) map.easeTo({ ...opts, duration: 700 })
+  else map.jumpTo(opts)
+}
+
+/** Faint ground grid over the camera bounds; tilts with the map (0.1°, 0.5° majors). */
+function graticule(): GeoJSON.FeatureCollection {
+  const [[w, s], [e, n]] = MAP_BOUNDS
+  const features: GeoJSON.Feature[] = []
+  const step = (from: number, to: number) => {
+    const out: number[] = []
+    for (let i = Math.ceil(from * 10); i <= Math.floor(to * 10); i++) out.push(i)
+    return out
+  }
+  for (const i of step(w, e)) {
+    features.push({ type: "Feature", properties: { major: i % 5 === 0 }, geometry: { type: "LineString", coordinates: [[i / 10, s], [i / 10, n]] } })
+  }
+  for (const i of step(s, n)) {
+    features.push({ type: "Feature", properties: { major: i % 5 === 0 }, geometry: { type: "LineString", coordinates: [[w, i / 10], [e, i / 10]] } })
+  }
+  return { type: "FeatureCollection", features }
+}
+
 /**
  * Coverage map (SPEC §5, owner direction: Radar-style, state-level, clients
  * first). MapLibre with a tile-less dark style: background + our GeoJSON only
@@ -37,6 +79,7 @@ export default function CoverageMap() {
   const ts = useTranslations("states")
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MLMap | null>(null)
+  const beams = useRef(new Map<string, HTMLElement>())
   const [hover, setHover] = useState<MapTarget | null>(null)
   const [pinned, setPinned] = useState<MapTarget | null>(null)
   const [layers, setLayers] = useState<Layer[]>(["clients", "coverage"])
@@ -71,14 +114,25 @@ export default function CoverageMap() {
         version: 8,
         sources: {},
         layers: [{ id: "bg", type: "background", paint: { "background-color": "#030712" } }],
+        // Fog toward the horizon so the tilted far edge dissolves into the page.
+        sky: {
+          "sky-color": "#030712",
+          "horizon-color": "#0b2633",
+          "fog-color": "#030712",
+          "sky-horizon-blend": 0.5,
+          "horizon-fog-blend": 0.6,
+          "fog-ground-blend": 0.35,
+        },
       },
       bounds: MAP_FIT,
-      fitBoundsOptions: { padding: 24 },
+      fitBoundsOptions: camera(mobile),
       maxBounds: MAP_BOUNDS,
       minZoom: 6,
       maxZoom: 11,
+      maxPitch: 60,
       dragRotate: false,
       pitchWithRotate: false,
+      touchPitch: false,
       scrollZoom: false,
       attributionControl: false,
       locale: {
@@ -101,16 +155,52 @@ export default function CoverageMap() {
     }
 
     const labelMarkers: maplibregl.Marker[] = []
+    const beamMarkers: maplibregl.Marker[] = []
+    const beamNodes = beams.current
 
     map.on("load", () => {
+      fitView(map, mobile, false)
+      // Ground grid (replaces the flat CSS grid: this one tilts with the camera).
+      map.addSource("grid", { type: "geojson", data: graticule() })
+      map.addLayer({
+        id: "grid",
+        type: "line",
+        source: "grid",
+        paint: {
+          "line-color": CYAN,
+          "line-opacity": ["case", ["get", "major"], 0.1, 0.045],
+          "line-width": ["case", ["get", "major"], 0.8, 0.5],
+        },
+      })
+
+      // States as raised slabs: offset copies under an opaque top fake the walls
+      // (viewport-anchored, so "down" on screen is always the wall side, and
+      // every line stays registered to the top surface).
       map.addSource("states", { type: "geojson", data: "/geo/states.json", promoteId: "state" })
+      map.addLayer({
+        id: "states-wall-glow",
+        type: "line",
+        source: "states",
+        paint: { "line-color": CYAN, "line-opacity": 0.22, "line-width": 10, "line-blur": 10, "line-translate": [0, 12], "line-translate-anchor": "viewport" },
+      })
+      map.addLayer({
+        id: "states-wall",
+        type: "fill",
+        source: "states",
+        paint: { "fill-color": "#041821", "fill-translate": [0, 10], "fill-translate-anchor": "viewport" },
+      })
+      map.addLayer({
+        id: "states-wall-edge",
+        type: "line",
+        source: "states",
+        paint: { "line-color": CYAN, "line-opacity": 0.35, "line-width": 1, "line-translate": [0, 10], "line-translate-anchor": "viewport" },
+      })
       map.addLayer({
         id: "states-fill",
         type: "fill",
         source: "states",
         paint: {
-          "fill-color": CYAN,
-          "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.2, 0.09],
+          "fill-color": ["case", ["boolean", ["feature-state", "hover"], false], "#0b3344", "#072230"],
         },
       })
       // Alcaldía / municipio limits: thin, faint, under the state outlines.
@@ -122,8 +212,53 @@ export default function CoverageMap() {
         layout: { "line-join": "round" },
         paint: {
           "line-color": CYAN,
-          "line-opacity": ["interpolate", ["linear"], ["zoom"], 7, 0.14, 10, 0.3],
+          "line-opacity": ["interpolate", ["linear"], ["zoom"], 7, 0.16, 10, 0.32],
           "line-width": ["interpolate", ["linear"], ["zoom"], 7, 0.4, 11, 0.9],
+        },
+      })
+
+      map.addSource("clients", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: clients.map((c) => ({
+            type: "Feature",
+            id: c.id,
+            properties: { id: c.id, demo: c.demo },
+            geometry: { type: "Point", coordinates: c.lngLat },
+          })),
+        },
+        promoteId: "id",
+      })
+      // Soft light pooling around client sites (only where clients are).
+      map.addLayer({
+        id: "clients-glow",
+        type: "heatmap",
+        source: "clients",
+        paint: {
+          "heatmap-weight": ["case", ["get", "demo"], 0.5, 1],
+          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 6, 40, 8, 80, 11, 160],
+          "heatmap-intensity": 0.7,
+          "heatmap-opacity": 0.55,
+          "heatmap-color": [
+            "interpolate", ["linear"], ["heatmap-density"],
+            0, "rgba(6,182,212,0)",
+            0.3, "rgba(6,182,212,0.18)",
+            0.7, "rgba(34,211,238,0.38)",
+            1, "rgba(165,243,252,0.55)",
+          ],
+        },
+      })
+
+      map.addLayer({
+        id: "states-glow",
+        type: "line",
+        source: "states",
+        paint: {
+          "line-color": CYAN,
+          "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.55, 0.25],
+          "line-width": 6,
+          "line-blur": 6,
         },
       })
       map.addLayer({
@@ -131,10 +266,9 @@ export default function CoverageMap() {
         type: "line",
         source: "states",
         paint: {
-          "line-color": CYAN,
-          "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.9, 0.45],
-          "line-width": ["case", ["boolean", ["feature-state", "hover"], false], 1.6, 0.8],
-          "line-blur": ["case", ["boolean", ["feature-state", "hover"], false], 1.2, 0],
+          "line-color": ["case", ["boolean", ["feature-state", "hover"], false], "#a5f3fc", CYAN],
+          "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.75],
+          "line-width": ["case", ["boolean", ["feature-state", "hover"], false], 2, 1.2],
         },
       })
 
@@ -155,29 +289,17 @@ export default function CoverageMap() {
         type: "line",
         source: "corridors",
         layout: { "line-cap": "round" },
-        paint: { "line-color": CYAN, "line-opacity": 0.3, "line-width": 1.2, "line-dasharray": [2, 2] },
+        paint: { "line-color": CYAN, "line-opacity": 0.35, "line-width": 1.2, "line-dasharray": [2, 2] },
       })
       map.addLayer({
         id: "corridor-pulse",
         type: "line",
         source: "corridors",
         layout: { "line-cap": "round" },
-        paint: { "line-width": 2.5, "line-gradient": pulseGradient(0.5) },
+        paint: { "line-width": 3, "line-blur": 1, "line-gradient": pulseGradient(0.5) },
       })
 
-      map.addSource("clients", {
-        type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: clients.map((c) => ({
-            type: "Feature",
-            id: c.id,
-            properties: { id: c.id, demo: c.demo },
-            geometry: { type: "Point", coordinates: c.lngLat },
-          })),
-        },
-        promoteId: "id",
-      })
+      // Ground ripples lie flat in perspective under each light column.
       map.addLayer({
         id: "clients-ping",
         type: "circle",
@@ -185,9 +307,11 @@ export default function CoverageMap() {
         paint: {
           "circle-radius": 10,
           "circle-color": "transparent",
-          "circle-stroke-width": 1.2,
+          "circle-stroke-width": 1.4,
           "circle-stroke-color": ["case", ["get", "demo"], AMBER, CYAN],
-          "circle-stroke-opacity": 0.35,
+          "circle-stroke-opacity": 0.4,
+          "circle-pitch-alignment": "map",
+          "circle-pitch-scale": "map",
         },
       })
       map.addLayer({
@@ -196,12 +320,37 @@ export default function CoverageMap() {
         source: "clients",
         paint: {
           "circle-radius": ["case", ["boolean", ["feature-state", "hover"], false], 7, 5],
-          "circle-color": ["case", ["get", "demo"], "transparent", CYAN],
+          "circle-color": ["case", ["get", "demo"], "rgba(245,158,11,0.15)", CYAN],
           "circle-stroke-width": ["case", ["get", "demo"], 1.6, 0],
           "circle-stroke-color": AMBER,
           "circle-blur": 0.15,
+          "circle-pitch-alignment": "map",
         },
       })
+
+      // Light columns: HTML markers (a vertical beam stays vertical on a tilted
+      // map). Visual only; ClientList is the keyboard/screen-reader equivalent.
+      for (const c of clients) {
+        const node = document.createElement("div")
+        node.className = "map-beam"
+        node.setAttribute("aria-hidden", "true")
+        if (c.demo) node.dataset.demo = ""
+        const spark = document.createElement("span")
+        spark.className = "map-beam-spark"
+        node.appendChild(spark)
+        node.addEventListener("mouseenter", () => setHoverIfChanged({ kind: "client", id: c.id }))
+        node.addEventListener("mouseleave", () => setHoverIfChanged(null))
+        node.addEventListener("click", (ev) => {
+          ev.stopPropagation()
+          pin({ kind: "client", id: c.id })
+        })
+        beamNodes.set(c.id, node)
+        beamMarkers.push(
+          new maplibregl.Marker({ element: node, anchor: "bottom", pitchAlignment: "viewport", rotationAlignment: "viewport" })
+            .setLngLat(c.lngLat)
+            .addTo(map)
+        )
+      }
 
       // Signal readiness once the outlines are in (tests/screenshots wait on this;
       // "idle" never fires while the pulse animates).
@@ -233,6 +382,8 @@ export default function CoverageMap() {
         hoverState = hoverClient = null
       }
       map.on("mousemove", (e) => {
+        // Beam markers handle their own hover; their events bubble up to here.
+        if ((e.originalEvent.target as Element | null)?.closest(".map-beam")) return
         const hits = map.queryRenderedFeatures(e.point, { layers: ["clients-dot", "states-fill"].filter((l) => map.getLayer(l) && map.getLayoutProperty(l, "visibility") !== "none") })
         const client = hits.find((f) => f.layer.id === "clients-dot")
         const state = hits.find((f) => f.layer.id === "states-fill")
@@ -287,6 +438,7 @@ export default function CoverageMap() {
     }
     const io = new IntersectionObserver((entries) => {
       visible = entries.some((e) => e.isIntersecting)
+      el.classList.toggle("map-paused", !visible) // CSS beam sparks pause too
       resume()
     })
     io.observe(el)
@@ -302,7 +454,7 @@ export default function CoverageMap() {
         if (motionReduced()) map.jumpTo({ center: c.lngLat, zoom: 9.5 })
         else map.flyTo({ center: c.lngLat, zoom: 9.5, speed: 1.4 })
       } else {
-        map.fitBounds(MAP_FIT, { padding: 24, animate: !motionReduced() })
+        fitView(map, mobile, !motionReduced())
       }
       pin(target)
       setFocusHud(true)
@@ -319,6 +471,8 @@ export default function CoverageMap() {
       document.removeEventListener("visibilitychange", resume)
       unsubscribeMotion()
       labelMarkers.forEach((m) => m.remove())
+      beamMarkers.forEach((m) => m.remove())
+      beamNodes.clear()
       map.remove()
       mapRef.current = null
     }
@@ -330,10 +484,11 @@ export default function CoverageMap() {
     if (!map) return
     const apply = () => {
       const vis = (on: boolean) => (on ? "visible" : "none")
-      for (const id of ["clients-dot", "clients-ping"]) {
+      for (const id of ["clients-dot", "clients-ping", "clients-glow"]) {
         if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis(layers.includes("clients")))
       }
-      for (const id of ["states-fill", "municipios-line", "states-line"]) {
+      beams.current.forEach((n) => (n.style.visibility = layers.includes("clients") ? "" : "hidden"))
+      for (const id of ["states-wall-glow", "states-wall", "states-wall-edge", "states-fill", "municipios-line", "states-glow", "states-line"]) {
         if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis(layers.includes("coverage")))
       }
       containerRef.current
@@ -359,16 +514,25 @@ export default function CoverageMap() {
   const reset = () => {
     const map = mapRef.current
     if (!map) return
-    map.fitBounds(MAP_FIT, { padding: 24, animate: !motionReduced() })
+    fitView(map, window.matchMedia("(max-width: 767px)").matches, !motionReduced())
     pin(null)
   }
 
   const target = pinned ?? hover
+
+  // Light the column of the hovered / pinned client.
+  useEffect(() => {
+    const active = target?.kind === "client" ? target.id : null
+    beams.current.forEach((n, id) => {
+      if (id === active) n.dataset.active = ""
+      else delete n.dataset.active
+    })
+  }, [target])
   const realCount = clients.filter((c) => !c.demo).length
   const demoCount = clients.length - realCount
 
   return (
-    <div className="hud-brackets relative h-[460px] overflow-hidden rounded-xl border border-border bg-background md:h-[580px]">
+    <div className="hud-brackets relative h-[520px] overflow-hidden rounded-2xl border border-border/70 bg-background md:h-[700px]">
       <div
         ref={containerRef}
         data-map
@@ -377,8 +541,11 @@ export default function CoverageMap() {
         // Not absolute: maplibre's CSS forces .maplibregl-map to position:relative.
         className="h-full w-full"
       />
-      {/* Holographic grid over the map, fades at the edges (DESIGN). */}
-      <div aria-hidden className="holo-grid pointer-events-none absolute inset-0 opacity-60" />
+      {/* Soft vignette: the tilted table fades into the page at the edges. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 [background:radial-gradient(120%_90%_at_50%_55%,transparent_55%,var(--color-background)_100%)]"
+      />
 
       <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
         <ToggleGroup
