@@ -197,5 +197,92 @@
   "footer": {
     "privacy": "Aviso de Privacidad",
     "terms": "Términos"
+  },
+  "fiber": {
+    "lead": "Con fibra simétrica subes tan rápido como bajas. Mide tu internet de hoy y compáralo.",
+    "cta": "Elige tu plan",
+    "speedtest": {
+      "title": "Mide tu conexión actual",
+      "desc": "Una prueba real de tu internet de hoy contra servidores de Cloudflare. Tarda unos 20 segundos.",
+      "start": "Iniciar prueba",
+      "cancel": "Cancelar",
+      "demo": "Ver un ejemplo",
+      "retry": "Repetir prueba",
+      "phase": {
+        "latency": "Midiendo latencia…",
+        "download": "Midiendo bajada…",
+        "upload": "Midiendo subida…"
+      },
+      "progress": "Progreso de la prueba",
+      "failed": "No pudimos completar la prueba. Inténtalo de nuevo o mira un ejemplo.",
+      "cancelled": "Cancelaste la prueba.",
+      "today": "Tu conexión hoy",
+      "withPlan": "Con fibra de {speed}",
+      "down": "Bajada",
+      "up": "Subida",
+      "ping": "Latencia",
+      "uploadGap": "Subida {times}× más rápida",
+      "uploadGapBody": "Lo que hoy subes en una hora, lo subirías en {time}.",
+      "cta": "Quiero {speed}",
+      "demoNote": "Ejemplo ilustrativo: no es tu conexión.",
+      "planNote": "Velocidades máximas del plan.",
+      "announce": "Resultado: {down} Mbps de bajada, {up} Mbps de subida y {ping} ms de latencia.",
+      "alreadyFast": "Tu conexión ya es muy rápida de bajada. Con fibra simétrica la diferencia está en la subida y en una latencia estable."
+    },
+    "means": {
+      "title": "Qué significa en tu día a día",
+      "upload10": "Subir un video de 10 GB",
+      "streams": "Streams 4K al mismo tiempo",
+      "backup": "Respaldar 1 TB en la nube",
+      "today": "Hoy",
+      "plan": "Con {speed}",
+      "runTest": "Haz la prueba de arriba para compararlo con tu conexión actual.",
+      "note": "Cálculo ideal a velocidad máxima sostenida · 1 GB = 8,000 Mb · 25 Mbps por stream 4K."
+    },
+    "telemetry": {
+      "title": "La red en vivo",
+      "desc": "Así se ve el monitoreo de una red simétrica. Por ahora son datos simulados, mientras conectamos nuestras métricas reales.",
+      "throughput": "Tráfico agregado",
+      "window": "Últimos 60 s",
+      "down": "Bajada",
+      "up": "Subida",
+      "latency": "Latencia edge-to-core (metro)",
+      "jitter": "Jitter",
+      "loss": "Pérdida de paquetes",
+      "graphAlt": "Gráfica simulada de tráfico de los últimos 60 segundos: bajada {down} Gbps y subida {up} Gbps. La capacidad es simétrica aunque el tráfico típico baje más de lo que sube.",
+      "gaugeAlt": "Latencia simulada: p50 {p50} ms, p99 {p99} ms.",
+      "static": "Vista fija: movimiento reducido activado",
+      "p50Unit": "ms p50",
+      "p99": "p99"
+    },
+    "physics": {
+      "title": "La física de la latencia",
+      "desc": "En fibra, la luz recorre 1 km cada ~5 µs. Mueve la distancia y compárala con el retraso típico de otras tecnologías de acceso.",
+      "distance": "Distancia",
+      "fiber": "Fibra FTTH · propagación + acceso típico",
+      "cable": "Cable coaxial · propagación + acceso típico",
+      "wireless": "Inalámbrico 4G · propagación + acceso típico",
+      "note": "Referencia aproximada. La propagación en fibra es física (≈ 5 µs/km). Los retrasos de acceso típicos (FTTH ~2 ms, cable ~10 ms, 4G ~35 ms) son valores de referencia de la industria y varían según la red.",
+      "propagation": "Propagación en fibra (ida y vuelta)"
+    },
+    "deep": {
+      "title": "Por dentro de la red",
+      "fiberType": {
+        "title": "Tipo de fibra",
+        "body": "El tipo de vidrio define cuánta luz se pierde en cada kilómetro y en cada curva del cable."
+      },
+      "wavelengths": {
+        "title": "Longitudes de onda",
+        "body": "La bajada y la subida viajan en colores de luz distintos por el mismo hilo, sin estorbarse."
+      },
+      "redundancy": {
+        "title": "Redundancia",
+        "body": "Las rutas alternas que mantienen el servicio si se corta un tramo de la red."
+      },
+      "router": {
+        "title": "Equipo en casa",
+        "body": "El equipo decide cuánta de tu velocidad llega por Wi-Fi a cada cuarto."
+      }
+    }
   }
 }

@@ -15,7 +15,16 @@ export interface SelectionState {
   /** Increments each time a CTA asks for the lead Sheet; 0 = never opened. */
   leadRequest: number
   leadOpen: boolean
-  speedTest: { downMbps: number; upMbps: number; pingMs: number } | null
+  /** Real speed-test result (feeds the recommender). Null until measured. */
+  speedTest: Line | null
+  /** Illustrative demo line, shown with a DEMO DATA tag; never fed to the recommender. */
+  speedDemo: Line | null
+}
+
+export interface Line {
+  downMbps: number
+  upMbps: number
+  pingMs: number
 }
 
 const initial: SelectionState = {
@@ -24,6 +33,7 @@ const initial: SelectionState = {
   leadRequest: 0,
   leadOpen: false,
   speedTest: null,
+  speedDemo: null,
 }
 
 let state = initial
@@ -63,5 +73,6 @@ export const selection = {
       leadOpen: true,
     }),
   setLeadOpen: (leadOpen: boolean) => set({ leadOpen }),
-  setSpeedTest: (speedTest: SelectionState["speedTest"]) => set({ speedTest }),
+  setSpeedTest: (speedTest: Line | null) => set({ speedTest, speedDemo: null }),
+  setSpeedDemo: (speedDemo: Line | null) => set({ speedDemo }),
 }

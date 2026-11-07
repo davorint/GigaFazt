@@ -23,4 +23,7 @@ export interface TelemetrySnapshot {
 
 export interface TelemetrySource {
   subscribe(cb: (snapshot: TelemetrySnapshot) => void): () => void
+  /** Optional backfill of the last `count` snapshots (oldest first), e.g. for a
+   *  static frame under reduced motion or to pre-fill a rolling window. */
+  history?(count: number): TelemetrySnapshot[]
 }
