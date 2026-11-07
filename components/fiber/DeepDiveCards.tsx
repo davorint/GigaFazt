@@ -1,10 +1,9 @@
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { Cable, Network, Router, Waves } from "lucide-react"
 import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
 import { company } from "@/lib/company"
 import { isPlaceholder, type Maybe } from "@/lib/placeholder"
-import { wifi7Plan } from "@/lib/plans"
-import { speedLabel } from "@/lib/format"
+import { modemArgs } from "@/components/conversion/faq-content"
 
 /**
  * Deep-dive cards (SPEC §4): fiber type · wavelengths · redundancy · router.
@@ -13,13 +12,14 @@ import { speedLabel } from "@/lib/format"
  */
 export function DeepDiveCards() {
   const t = useTranslations("fiber.deep")
+  const locale = useLocale()
   const n = company.network
 
   const cards: { key: "fiberType" | "wavelengths" | "redundancy" | "router"; icon: typeof Cable; value: Maybe<string> }[] = [
     { key: "fiberType", icon: Cable, value: n.fiberTypes },
     { key: "wavelengths", icon: Waves, value: n.wavelengths },
     { key: "redundancy", icon: Network, value: n.backbone },
-    { key: "router", icon: Router, value: n.router },
+    { key: "router", icon: Router, value: t("router.value", modemArgs(locale)) },
   ]
 
   return (
@@ -32,13 +32,7 @@ export function DeepDiveCards() {
             <p className="mt-3 font-medium">{t(`${key}.title`)}</p>
             <p className="mt-1 flex-1 text-sm text-muted-foreground">{t(`${key}.body`)}</p>
             <div className="mt-4 font-mono text-sm">
-              {key === "router" && wifi7Plan ? (
-                <span className="text-foreground">{t("router.wifi7", { speed: speedLabel(wifi7Plan.downMbps) })}</span>
-              ) : isPlaceholder(value) ? (
-                <PlaceholderChip keyName={value.key} />
-              ) : (
-                value
-              )}
+              {isPlaceholder(value) ? <PlaceholderChip keyName={value.key} /> : <span className="text-foreground">{value}</span>}
             </div>
           </li>
         ))}

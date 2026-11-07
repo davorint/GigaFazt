@@ -7,8 +7,11 @@ export type Technology = "GPON" | "XGS-PON"
  * One lineup for everyone: the owner dropped the Hogar/Empresa split
  * (2026-11-06), so plans carry no segment. Plans are named by their speed.
  */
-/** Owner-confirmed inclusions (2026-11-07: the 1 Gbps plan includes a Wi-Fi 7 modem). */
-export type IncludeId = "wifi7Modem"
+/**
+ * Owner-confirmed inclusions (2026-11-07): 1 Gbps = Wi-Fi 7 modem, 200/500 =
+ * Wi-Fi 6 modem; all on loan (comodato) while the service is active.
+ */
+export type IncludeId = "wifi7Modem" | "wifi6Modem"
 
 export interface Plan {
   id: string
@@ -66,7 +69,6 @@ export interface Company {
     wavelengths: Maybe<string>
     backbone: Maybe<string>
     fiberTypes: Maybe<string>
-    router: Maybe<string>
     certifications: Maybe<string>
     statusProvider: Maybe<string>
   }

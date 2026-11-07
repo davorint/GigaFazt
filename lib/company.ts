@@ -23,7 +23,6 @@ export const company: Company = {
     wavelengths: placeholder("WAVELENGTHS"),
     backbone: placeholder("BACKBONE"),
     fiberTypes: placeholder("FIBER_TYPES"),
-    router: placeholder("ROUTER"),
     certifications: placeholder("CERTIFICATIONS"),
     statusProvider: placeholder("STATUS_PROVIDER"),
   },

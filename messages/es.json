@@ -86,9 +86,10 @@
     "jsonLdName": "Internet de fibra óptica simétrica {speed}",
     "promo": "Promoción",
     "include": {
-      "wifi7Modem": "Módem Wi-Fi 7"
+      "wifi7Modem": "Módem Wi-Fi 7 en comodato",
+      "wifi6Modem": "Módem Wi-Fi 6 en comodato"
     },
-    "wifi7Note": "Wi-Fi 7: la velocidad inalámbrica máxima requiere dispositivos compatibles; los demás también se conectan."
+    "wifi7Note": "Módem en comodato: te lo prestamos mientras tu servicio esté activo. Wi-Fi 7: la velocidad inalámbrica máxima requiere dispositivos compatibles; los demás también se conectan."
   },
   "addons": {
     "title": "Arma tu paquete",
@@ -302,7 +303,7 @@
       "router": {
         "title": "Equipo en casa",
         "body": "El equipo decide cuánta de tu velocidad llega por Wi-Fi a cada cuarto.",
-        "wifi7": "Módem Wi-Fi 7 incluido en {speed}"
+        "value": "Wi-Fi 7 en {wifi7} · Wi-Fi 6 en {wifi6}"
       }
     }
   },
@@ -403,8 +404,7 @@
       "whatsapp": "WhatsApp",
       "phone": "Teléfono",
       "hours": "Horario de soporte",
-      "moving": "Cambio de domicilio",
-      "routerOther": "Equipo en los demás planes"
+      "moving": "Cambio de domicilio"
     },
     "items": {
       "speed": {
@@ -425,7 +425,7 @@
       },
       "router": {
         "q": "¿Incluye módem?",
-        "a": "Sí. El plan de {speed} incluye un módem Wi-Fi 7, la generación más reciente de Wi-Fi. Para aprovechar su velocidad máxima, tus dispositivos deben ser compatibles con Wi-Fi 7; los demás también se conectan sin problema."
+        "a": "Sí. Todos los planes incluyen módem en comodato: te lo prestamos mientras tu servicio esté activo. El plan de {wifi7} trae módem Wi-Fi 7 y los de {wifi6}, módem Wi-Fi 6. Para la velocidad máxima de Wi-Fi 7 tus dispositivos deben ser compatibles; los demás también se conectan sin problema."
       },
       "staticIp": {
         "q": "¿Puedo tener IP fija?",

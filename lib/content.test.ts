@@ -59,13 +59,14 @@ describe("faq", () => {
   it("only marks items answered when no fact is a placeholder", () => {
     expect(isAnswered({ id: "speed", facts: [] })).toBe(true)
     expect(
-      isAnswered({ id: "router", facts: [{ label: "routerOther", value: placeholder("ROUTER") }] })
+      isAnswered({ id: "staticIp", facts: [{ label: "staticIp", value: placeholder("STATIC_IP") }] })
     ).toBe(false)
-    expect(isAnswered({ id: "router", facts: [{ label: "routerOther", value: "Wi-Fi 6" }] })).toBe(true)
+    expect(isAnswered({ id: "staticIp", facts: [{ label: "staticIp", value: "Sí" }] })).toBe(true)
   })
   it("Wi-Fi 7 modem is on the 1 Gbps plan only", () => {
     expect(wifi7Plan?.id).toBe("fibra-1g")
     expect(plans.filter((p) => Array.isArray(p.includes) && p.includes.includes("wifi7Modem"))).toHaveLength(1)
+    expect(plans.filter((p) => Array.isArray(p.includes) && p.includes.includes("wifi6Modem")).map((p) => p.id)).toEqual(["fibra-200", "fibra-500"])
   })
   it("has unique ids and real TV contents", () => {
     expect(new Set(faqItems.map((f) => f.id)).size).toBe(faqItems.length)

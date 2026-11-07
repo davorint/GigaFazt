@@ -86,9 +86,10 @@
     "jsonLdName": "Symmetrical fiber internet {speed}",
     "promo": "Promo",
     "include": {
-      "wifi7Modem": "Wi-Fi 7 modem"
+      "wifi7Modem": "Wi-Fi 7 modem on loan",
+      "wifi6Modem": "Wi-Fi 6 modem on loan"
     },
-    "wifi7Note": "Wi-Fi 7: top wireless speed needs compatible devices; older ones still connect."
+    "wifi7Note": "Modem on loan: it's yours to use while your service is active. Wi-Fi 7: top wireless speed needs compatible devices; older ones still connect."
   },
   "addons": {
     "title": "Build your bundle",
@@ -302,7 +303,7 @@
       "router": {
         "title": "Home equipment",
         "body": "The equipment decides how much of your speed reaches each room over Wi-Fi.",
-        "wifi7": "Wi-Fi 7 modem included with {speed}"
+        "value": "Wi-Fi 7 with {wifi7} · Wi-Fi 6 with {wifi6}"
       }
     }
   },
@@ -403,8 +404,7 @@
       "whatsapp": "WhatsApp",
       "phone": "Phone",
       "hours": "Support hours",
-      "moving": "Moving",
-      "routerOther": "Equipment on the other plans"
+      "moving": "Moving"
     },
     "items": {
       "speed": {
@@ -425,7 +425,7 @@
       },
       "router": {
         "q": "Is a modem included?",
-        "a": "Yes. The {speed} plan includes a Wi-Fi 7 modem, the latest Wi-Fi generation. Its top speed needs Wi-Fi 7 devices; older devices still connect fine."
+        "a": "Yes. Every plan includes a modem on loan for as long as your service is active: a Wi-Fi 7 modem with {wifi7} and a Wi-Fi 6 modem with {wifi6}. Wi-Fi 7's top speed needs compatible devices; older devices still connect fine."
       },
       "staticIp": {
         "q": "Can I get a static IP?",

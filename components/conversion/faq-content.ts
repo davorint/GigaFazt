@@ -2,7 +2,7 @@ import { faqItems, tvFaqArgs, type FaqFact, type FaqItem } from "@/lib/faq"
 import { statesInList } from "@/lib/geo/state-names"
 import { formatMxn } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
-import { wifi7Plan } from "@/lib/plans"
+import { plansWith } from "@/lib/plans"
 import { speedLabel } from "@/lib/format"
 
 type T = (key: string, args?: Record<string, string | number>) => string
@@ -21,7 +21,7 @@ export function faqEntries(t: T, locale: string): FaqEntry[] {
     tv: { channels: tv.channels, movies: tv.movies, series: tv.series },
     coverage: { states },
     moving: { states },
-    router: { speed: wifi7Plan ? speedLabel(wifi7Plan.downMbps) : "" },
+    router: modemArgs(locale),
   }
   return faqItems.map((item) => ({
     item,
@@ -36,4 +36,11 @@ export function factText(fact: FaqFact, locale: string): string | null {
   return fact.format === "mxn" && typeof fact.value === "number"
     ? `$${formatMxn(fact.value, locale)} MXN`
     : String(fact.value)
+}
+
+/** Speeds that include each modem, as localized lists ("200 Mbps y 500 Mbps"). */
+export function modemArgs(locale: string): { wifi7: string; wifi6: string } {
+  const list = (id: "wifi7Modem" | "wifi6Modem") =>
+    new Intl.ListFormat(locale, { type: "conjunction" }).format(plansWith(id).map((p) => speedLabel(p.downMbps)))
+  return { wifi7: list("wifi7Modem"), wifi6: list("wifi6Modem") }
 }
