@@ -15,7 +15,6 @@ export function CoverageMapSection() {
   return (
     <div className="section-pad">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-      <p className="eyebrow mb-3">[ {t("sections.map")} ]</p>
       <RevealHeading className="display-2 max-w-4xl">{t("sectionHeads.map")}</RevealHeading>
       <p className="section-lead reveal">{t("map.lead", { count: isPlaceholder(company.network.clients) ? "—" : formatNumber(company.network.clients, locale, 0) })}</p>
 

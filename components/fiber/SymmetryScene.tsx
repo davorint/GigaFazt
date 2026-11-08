@@ -123,7 +123,9 @@ const beamVertex = /* glsl */ `
     float on = 1.0 - smoothstep(uActive - 0.06, uActive, aRank);
     float d = -mix(mvA.z, mvB.z, end);
     // Far beams converge at the vanishing point: attenuate so it doesn't burn white.
-    float fade = smoothstep(uL * 0.7, 6.0, s) * smoothstep(0.0, 0.6, s) * smoothstep(0.35, 2.8, d);
+    // Near segments project into long streaks across the frame: fade them out so
+    // the core reads as one clean tunnel converging on the vanishing point.
+    float fade = smoothstep(uL * 0.7, 6.0, s) * smoothstep(0.0, 0.6, s) * smoothstep(1.1, 4.6, d);
     vec2 dp = p.xy - uPointer;
     float hl = exp(-dot(dp, dp) * 4.0) * uPointerOn;
 
@@ -138,7 +140,7 @@ const beamVertex = /* glsl */ `
     gl_Position = c;
 
     vSide = position.y;
-    vI = on * fade * (0.16 + pulse * 2.2 + glint * 0.7 + hl * 1.0) * uGain;
+    vI = on * fade * (0.12 + pulse * 1.9 + glint * 0.6 + hl * 1.0) * uGain;
   }
 `
 
@@ -193,7 +195,7 @@ function Beams({
     let seed = dir > 0 ? 11 : 29
     const rand = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646
     for (let r = 0; r < rays; r++) {
-      const kind = r % 5 < 4 ? 0 : 1 // 80% helices (the braid), 20% zig-zags
+      const kind = r % 8 < 7 ? 0 : 1 // ~88% helices (the braid), ~12% zig-zags (they cross the axis: keep them rare)
       const ray = [rand() * Math.PI * 2, rand(), kind, kind === 0 ? 0.5 + rand() * 0.45 : rand()]
       const rank = (r + 0.5) / rays
       for (let i = 0; i < segs; i++) {
@@ -592,7 +594,7 @@ export function SymmetryScene({
   const mobile = quality === "mobile"
   const [fx, setFx] = useState(true)
   const [lite, setLite] = useState(false)
-  const rays = lite || mobile ? 22 : 40
+  const rays = lite || mobile ? 18 : 30
   const ds = lite || mobile ? 0.16 : 0.1
   const pointer = useRef<PointerState>({ x: 9, y: 9, on: 0 })
   const outside = useRef(1)
@@ -626,7 +628,7 @@ export function SymmetryScene({
       {still && <Invalidate down={down} up={up} />}
       {fx && (
         <EffectComposer>
-          <Bloom luminanceThreshold={0.28} luminanceSmoothing={0.35} intensity={0.85} radius={0.72} mipmapBlur />
+          <Bloom luminanceThreshold={0.34} luminanceSmoothing={0.35} intensity={0.6} radius={0.7} mipmapBlur />
           <Vignette offset={0.3} darkness={0.75} />
         </EffectComposer>
       )}

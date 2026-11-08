@@ -25,7 +25,7 @@ export function WhatItMeans() {
 
   return (
     <div>
-      <h3 className="text-xl font-semibold tracking-[-0.02em]">
+      <h3 className="text-2xl font-normal tracking-[-0.03em]">
         {t("titlePlan", { speed: speedLabel(plan.downMbps) })}
       </h3>
       <ul className="mt-5 grid gap-4 md:grid-cols-3">

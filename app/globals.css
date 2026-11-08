@@ -1160,18 +1160,29 @@ html {
    Big, lighter-weight, tightly tracked headlines and much more air between
    sections. Fluid sizes: 48 → 112 px (hero) and 36 → 72 px (sections); the
    hero tops out ~100 px at 1440 so "mes." clears the fiber node. */
+/* Weights (pass E, 2026-11-08): large and light reads premium, so display
+   type steps down as it grows: hero 450, sections 400, statements 300. */
 .display-1 {
   font-size: clamp(3rem, 1.5rem + 5.4vw, 7rem);
-  font-weight: 500;
+  font-weight: 450;
   line-height: 0.95;
   letter-spacing: -0.045em;
   text-wrap: balance;
 }
 .display-2 {
   font-size: clamp(2.25rem, 1.3rem + 3.6vw, 4.5rem);
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1;
   letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+/* Full-width statement: one centered line set huge and light, nothing else
+   competing. Used once per page so it stays an event. */
+.display-statement {
+  font-size: clamp(2.75rem, 0.9rem + 7.6vw, 9rem);
+  font-weight: 300;
+  line-height: 0.95;
+  letter-spacing: -0.055em;
   text-wrap: balance;
 }
 /* Section lead paragraph under a display-2 heading. */

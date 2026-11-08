@@ -50,7 +50,7 @@
   },
   "sectionHeads": {
     "plans": "Elige tu velocidad",
-    "fiber": "Fibra simétrica de verdad",
+    "fiber": "Subes tan rápido como bajas.",
     "map": "Dónde damos servicio",
     "proof": "La red detrás del servicio",
     "install": "Así se instala",
@@ -66,7 +66,7 @@
     "contract": "Contratar"
   },
   "plans": {
-    "lead": "Precios claros, con IVA incluido. Todos los planes son simétricos: subes tan rápido como bajas.",
+    "lead": "Precios claros, con IVA incluido. Todos los planes son simétricos.",
     "popular": "Más popular",
     "symmetric": "Simétrico",
     "down": "Bajada",
@@ -241,7 +241,7 @@
     "legal": "Legal"
   },
   "fiber": {
-    "lead": "Con fibra simétrica subes tan rápido como bajas. Míralo en acción.",
+    "lead": "Bajada y subida a la misma velocidad, por el mismo hilo de vidrio. Míralo en acción.",
     "cta": "Elige tu plan",
     "means": {
       "upload10": "Subir un video de 10 GB",
@@ -336,7 +336,6 @@
       "newest": "Generación más reciente",
       "tableSub": "Todos con la misma configuración que tu módem: 2.4 + 5 GHz y 2 × 2 en cada banda.",
       "spotlight": {
-        "eyebrow": "Incluido en el plan de {speed}",
         "title": "Wi-Fi 7, incluido en tu plan de {speed}",
         "lead": "La generación más reciente de Wi-Fi, sin costo adicional: te prestamos el módem mientras tu servicio esté activo. Más velocidad inalámbrica de la que tu plan necesita.",
         "maxLabel": "de Wi-Fi, máximo teórico",
@@ -410,12 +409,10 @@
       "up": "Subida",
       "equal": "Misma velocidad de bajada y de subida.",
       "asymNote": "Ejemplo ilustrativo: en una conexión asimétrica la subida puede ser {ratio} veces menor que la bajada.",
-      "hint": "mueve el cursor para mirar dentro del núcleo",
       "alt": "Animación del interior de una fibra óptica: haces de luz cian (bajada, {down}) viajan hacia ti y haces violeta (subida, {up}) se alejan hacia la red, rebotando en las paredes del núcleo.",
       "viewPlans": "Ver planes",
       "downTo": "hacia tu casa",
       "upTo": "hacia la red",
-      "physics": "Reflexión interna total: la luz rebota en las paredes del núcleo y no se escapa",
       "story": {
         "c1": {
           "title": "La luz entra al hilo.",
@@ -430,6 +427,12 @@
           "body": "Bajada y subida viajan al mismo tiempo y a la misma velocidad. Eso es fibra simétrica."
         }
       }
+    },
+    "details": {
+      "title": "La red en detalle",
+      "desc": "Monitoreo de tráfico, latencia y la física de la luz en la fibra.",
+      "open": "Ver detalles técnicos",
+      "close": "Ocultar detalles técnicos"
     }
   },
   "map": {
@@ -583,7 +586,6 @@
     "helpBody": "Escríbenos por WhatsApp y resolvemos tus dudas."
   },
   "cta": {
-    "eyebrow": "CONTRATAR",
     "title": "¿Listo para internet simétrico?",
     "lead": "Elige tu plan, déjanos tus datos y te contactamos para agendar la instalación.",
     "selected": "Plan seleccionado:",

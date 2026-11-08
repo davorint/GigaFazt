@@ -45,7 +45,6 @@ export function ModemSpotlight() {
       </div>
 
       <div className="lg:order-1">
-        <p className="eyebrow mb-3">[ {t("eyebrow", { speed })} ]</p>
         <RevealHeading className="display-2">{t("title", { speed })}</RevealHeading>
         <p className="section-lead reveal">{t("lead")}</p>
 

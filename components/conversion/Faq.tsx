@@ -26,7 +26,6 @@ export function Faq() {
   return (
     <div className="mx-auto grid max-w-7xl gap-12 section-pad px-4 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
       <div className="lg:sticky lg:top-28 lg:self-start">
-        <p className="eyebrow mb-3">[ {t("sections.faq")} ]</p>
         <RevealHeading className="display-2">{t("sectionHeads.faq")}</RevealHeading>
         <p className="section-lead max-w-md">{t("faq.lead")}</p>
 

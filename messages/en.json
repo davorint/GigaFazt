@@ -50,7 +50,7 @@
   },
   "sectionHeads": {
     "plans": "Pick your speed",
-    "fiber": "Truly symmetrical fiber",
+    "fiber": "Upload as fast as you download.",
     "map": "Where we serve",
     "proof": "The network behind the service",
     "install": "How installation works",
@@ -66,7 +66,7 @@
     "contract": "Sign up"
   },
   "plans": {
-    "lead": "Clear prices with IVA (VAT) included. Every plan is symmetrical: you upload as fast as you download.",
+    "lead": "Clear prices with IVA (VAT) included. Every plan is symmetrical.",
     "popular": "Most popular",
     "symmetric": "Symmetrical",
     "down": "Download",
@@ -241,7 +241,7 @@
     "legal": "Legal"
   },
   "fiber": {
-    "lead": "With symmetrical fiber you upload as fast as you download. See it in action.",
+    "lead": "Download and upload at the same speed, over the same strand of glass. See it in action.",
     "cta": "Pick your plan",
     "means": {
       "upload10": "Upload a 10 GB video",
@@ -336,7 +336,6 @@
       "newest": "Latest generation",
       "tableSub": "All with the same layout as your modem: 2.4 + 5 GHz and 2 × 2 on each band.",
       "spotlight": {
-        "eyebrow": "Included in the {speed} plan",
         "title": "Wi-Fi 7, included in your {speed} plan",
         "lead": "The latest generation of Wi-Fi at no extra cost: we lend you the modem while your service is active. More wireless speed than your plan needs.",
         "maxLabel": "of Wi-Fi, theoretical maximum",
@@ -410,12 +409,10 @@
       "up": "Upload",
       "equal": "The same download and upload speed.",
       "asymNote": "Illustrative example: on an asymmetrical connection upload can be {ratio} times slower than download.",
-      "hint": "move your cursor to look around the core",
       "alt": "Animation inside an optical fiber: cyan beams of light (download, {down}) travel toward you and violet beams (upload, {up}) travel away toward the network, bouncing off the core walls.",
       "viewPlans": "View plans",
       "downTo": "toward your home",
       "upTo": "toward the network",
-      "physics": "Total internal reflection: light bounces off the core walls and never escapes",
       "story": {
         "c1": {
           "title": "Light enters the strand.",
@@ -430,6 +427,12 @@
           "body": "Download and upload travel at the same time and at the same speed. That's symmetrical fiber."
         }
       }
+    },
+    "details": {
+      "title": "The network in detail",
+      "desc": "Traffic monitoring, latency and the physics of light in fiber.",
+      "open": "See technical details",
+      "close": "Hide technical details"
     }
   },
   "map": {
@@ -583,7 +586,6 @@
     "helpBody": "Message us on WhatsApp and we'll help you out."
   },
   "cta": {
-    "eyebrow": "SIGN UP",
     "title": "Ready for symmetrical internet?",
     "lead": "Pick your plan, leave your details and we will contact you to book the installation.",
     "selected": "Selected plan:",

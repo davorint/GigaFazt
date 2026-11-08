@@ -118,12 +118,12 @@ function ModemPoster({ className }: { className?: string }) {
         </radialGradient>
       </defs>
       {[118, 150, 182].map((rx, i) => (
-        <ellipse key={rx} cx="150" cy="236" rx={rx} ry={rx * 0.17} fill="none" stroke="#67e8f9" strokeOpacity={0.3 - i * 0.08} />
+        <ellipse key={rx} cx="150" cy="236" rx={rx} ry={rx * 0.17} fill="none" stroke="#67e8f9" strokeOpacity={0.16 - i * 0.045} />
       ))}
       <ellipse cx="150" cy="238" rx="118" ry="20" fill="url(#mp-shadow)" />
       {/* Glass plinth with its cyan edge light. */}
       <ellipse cx="150" cy="232" rx="106" ry="17" fill="#0a0d12" />
-      <ellipse cx="150" cy="228" rx="106" ry="17" fill="#11151b" stroke="#67e8f9" strokeOpacity="0.9" strokeWidth="1.2" />
+      <ellipse cx="150" cy="228" rx="106" ry="17" fill="#11151b" stroke="#67e8f9" strokeOpacity="0.5" strokeWidth="0.8" />
       {/* Blade antennas at the back corners. */}
       <rect x="76" y="62" width="9" height="146" rx="3" fill="url(#mp-body)" />
       <rect x="215" y="62" width="9" height="146" rx="3" fill="url(#mp-body)" />

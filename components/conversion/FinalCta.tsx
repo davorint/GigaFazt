@@ -19,7 +19,6 @@ export function FinalCta() {
     <InView className="finale relative isolate flex min-h-[88svh] items-center overflow-hidden">
       <FinaleStrands />
       <div className="mx-auto w-full max-w-7xl section-pad px-4 text-center sm:px-6">
-        <p className="eyebrow mb-4">[ {t("eyebrow")} ]</p>
         <RevealHeading className="display-1 mx-auto max-w-5xl">{t("title")}</RevealHeading>
         <p className="reveal section-lead mx-auto">{t("lead")}</p>
         <FinalCtaActions />

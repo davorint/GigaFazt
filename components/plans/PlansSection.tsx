@@ -22,7 +22,6 @@ export function PlansSection({ variant = "home" }: { variant?: "home" | "page" }
   return (
     <div className="section-pad mx-auto max-w-7xl px-4 sm:px-6">
       <div>
-      <p className="eyebrow mb-3">[ {t("sections.plans")} ]</p>
       <RevealHeading as={Heading} className="display-2 max-w-4xl">
         {variant === "page" ? t("plans.pageTitle") : t("sectionHeads.plans")}
       </RevealHeading>

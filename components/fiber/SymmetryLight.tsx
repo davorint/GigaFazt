@@ -231,7 +231,7 @@ export function SymmetryLight() {
         <div className="pointer-events-none absolute inset-x-0 top-0">
           <div className="mx-auto flex max-w-7xl flex-wrap items-start justify-between gap-4 px-4 pt-8 sm:px-6 sm:pt-10 md:pt-24">
             <div className="max-w-xl">
-              <h3 className="text-2xl font-semibold tracking-[-0.02em] sm:text-3xl">{t("title")}</h3>
+              <h3 className="text-2xl font-normal tracking-[-0.03em] sm:text-3xl">{t("title")}</h3>
               <p className="fiber-story-hide mt-2 text-sm text-muted-foreground sm:text-base">{t("desc")}</p>
             </div>
             <ul aria-hidden className="flex flex-col gap-1.5 font-mono text-[0.65rem] uppercase tracking-wider">
@@ -257,7 +257,7 @@ export function SymmetryLight() {
                   <p className="font-mono text-xs tabular-nums text-muted-foreground">
                     0{i + 1} <span className="opacity-50">/ 03</span>
                   </p>
-                  <p className="mt-3 text-3xl font-semibold leading-tight tracking-[-0.03em] text-white lg:text-4xl">{t(`story.${k}.title`)}</p>
+                  <p className="mt-3 text-3xl font-medium leading-tight tracking-[-0.035em] text-white lg:text-4xl">{t(`story.${k}.title`)}</p>
                   <p className="mt-3 text-base leading-relaxed text-foreground/70">{t(`story.${k}.body`)}</p>
                 </li>
               ))}
@@ -274,11 +274,8 @@ export function SymmetryLight() {
       {/* HUD: below the stage on phones, overlaid as glass on larger screens. */}
       <div className="relative md:absolute md:inset-x-0 md:bottom-0">
         <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 md:pb-8">
-          <div className="rounded-xl border border-border bg-background/75 p-4 backdrop-blur-md sm:p-5">
-            <p aria-hidden className="mb-4 border-b border-border pb-3 font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">
-              {t("physics")}
-              {live && ready && !mobile && !reduced && <span className="text-fiber"> · {t("hint")}</span>}
-            </p>
+          {/* One quiet glass strip (pass E): no header row, lighter frame. */}
+          <div className="rounded-2xl border border-white/[0.07] bg-background/55 p-4 backdrop-blur-md sm:p-6">
             <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
               <div className="flex flex-wrap gap-x-6 gap-y-4">
                 <Segmented<Mode>

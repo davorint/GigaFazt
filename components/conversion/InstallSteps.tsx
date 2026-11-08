@@ -35,7 +35,6 @@ export function InstallSteps() {
   return (
     <div className="section-pad mx-auto max-w-7xl px-4 sm:px-6">
       <div>
-      <p className="eyebrow mb-3">[ {t("sections.install")} ]</p>
       <RevealHeading className="display-2 max-w-4xl">{t("sectionHeads.install")}</RevealHeading>
       <p className="section-lead reveal">{t("install.lead")}</p>
       </div>

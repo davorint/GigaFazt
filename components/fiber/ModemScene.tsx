@@ -103,8 +103,8 @@ function useWhitePlastic(): Mats {
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping
     tex.repeat.set(6, 6)
     const white = new THREE.MeshPhysicalMaterial({
-      color: "#f3f5f8",
-      roughness: 0.62,
+      color: "#f1f3f6",
+      roughness: 0.48,
       roughnessMap: tex,
       clearcoat: 0.55,
       clearcoatRoughness: 0.22,
@@ -432,8 +432,8 @@ function FloorLight({ clockRef, ripples }: { clockRef: React.RefObject<number>; 
   useFrame(() => {
     const t = clockRef.current
     const up = clamp01((t - T.power) / 1.6)
-    halo.current?.color.setRGB(0.6, 2.4, 2.8).multiplyScalar(0.3 + 0.9 * up)
-    if (pool.current) pool.current.opacity = 0.12 + 0.28 * up
+    halo.current?.color.setRGB(0.45, 1.7, 2.0).multiplyScalar(0.25 + 0.75 * up)
+    if (pool.current) pool.current.opacity = 0.07 + 0.15 * up
     rings.current?.children.forEach((c, i) => {
       const m = (c as THREE.Mesh).material as THREE.MeshBasicMaterial
       const p = ripples ? wavePhase(t - T.waves, i) : null
@@ -450,7 +450,7 @@ function FloorLight({ clockRef, ripples }: { clockRef: React.RefObject<number>; 
         <meshBasicMaterial ref={pool} map={poolTex} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
       </mesh>
       <mesh>
-        <torusGeometry args={[HALO_R, 0.0045, 8, 200]} />
+        <torusGeometry args={[HALO_R, 0.0028, 8, 240]} />
         <meshBasicMaterial ref={halo} toneMapped={false} />
       </mesh>
       <group ref={rings}>
@@ -633,23 +633,25 @@ export default function ModemScene({
       dpr={[1, quality === "high" ? 1.75 : 1.25]}
       frameloop={still || !active ? "demand" : "always"}
       camera={{ position: [0, 1.0, 3.25], fov: 30 }}
-      gl={{ antialias: true, powerPreference: "high-performance", toneMappingExposure: 1.05 }}
+      gl={{ antialias: true, powerPreference: "high-performance", toneMappingExposure: 1.12 }}
     >
       {quality === "high" && <PerformanceMonitor onDecline={() => setFx(false)} />}
       <color attach="background" args={[BG]} />
       <fog attach="fog" args={[BG, 3.6, 7.5]} />
 
-      <ambientLight intensity={0.18} />
-      <directionalLight position={[-2.5, 3.8, 2.2]} intensity={1.5} />
+      {/* Pass E: less top light (it flattened the lid to pure white), more side
+          key and rim, so each face of the body reads as its own value. */}
+      <ambientLight intensity={0.12} />
+      <directionalLight position={[-2.8, 2.6, 2.4]} intensity={1.35} />
       <directionalLight position={[2.2, 1.2, 2.8]} intensity={0.35} />
       {/* Spotlight pool on the floor. */}
-      <spotLight position={[0, 5, 0.8]} angle={0.42} penumbra={1} intensity={22} decay={2} color="#eaf8ff" />
+      <spotLight position={[0, 5, 0.8]} angle={0.42} penumbra={1} intensity={14} decay={2} color="#eaf8ff" />
       <Environment resolution={256} frames={1}>
         {/* Overhead softbox, front key strip, cyan rim, white back rim. */}
-        <Lightformer form="rect" intensity={1.5} position={[0, 4, 0.5]} rotation={[Math.PI / 2, 0, 0]} scale={[5, 3, 1]} />
-        <Lightformer form="rect" intensity={1.1} position={[-3, 1.5, 2.6]} rotation={[0, Math.PI / 4, 0]} scale={[1.2, 4, 1]} />
-        <Lightformer form="rect" intensity={2.6} color="#67e8f9" position={[3.2, 0.8, -1.2]} rotation={[0, -Math.PI / 2, 0]} scale={[0.6, 3.5, 1]} />
-        <Lightformer form="rect" intensity={2} position={[0, 1.4, -3.4]} scale={[6, 0.5, 1]} />
+        <Lightformer form="rect" intensity={1.1} position={[0, 4, 0.5]} rotation={[Math.PI / 2, 0, 0]} scale={[5, 3, 1]} />
+        <Lightformer form="rect" intensity={1.5} position={[-3, 1.5, 2.6]} rotation={[0, Math.PI / 4, 0]} scale={[1.2, 4, 1]} />
+        <Lightformer form="rect" intensity={3.2} color="#67e8f9" position={[3.2, 0.8, -1.2]} rotation={[0, -Math.PI / 2, 0]} scale={[0.6, 3.5, 1]} />
+        <Lightformer form="rect" intensity={2.8} position={[0, 1.4, -3.4]} scale={[6, 0.5, 1]} />
       </Environment>
 
       <Rig still={still} interactive={interactive} track={track} clockRef={clockRef} onStage={setStage}>

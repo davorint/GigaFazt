@@ -61,7 +61,6 @@ export function ProofBand() {
     <div className="proof-band relative overflow-hidden section-pad">
       <div className="mx-auto grid max-w-7xl gap-4 px-4 sm:px-6 lg:grid-cols-2 lg:items-end lg:gap-16">
         <div>
-          <p className="eyebrow mb-3">[ {t("sections.proof")} ]</p>
           <RevealHeading className="display-2 max-w-3xl">{t("sectionHeads.proof")}</RevealHeading>
         </div>
         <p className="reveal max-w-md text-lg leading-relaxed text-muted-foreground lg:justify-self-end">{t("proof.lead")}</p>
