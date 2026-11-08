@@ -482,27 +482,14 @@ export default function WifiLab() {
             </span>
             <span className="text-xl text-muted-foreground">{maxText.u}</span>
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">{t("maxLabel")}</p>
+          <p className="mt-1 text-sm text-foreground/90">{t("transferLabel")}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{t("maxLabel")}</p>
           <p className="mt-1 font-mono text-[0.7rem] text-muted-foreground">
             {t("modem.perBand", {
               b24: `${fmt(gen.bandMaxMbps.b24 ?? 0)} Mbps`,
               b5: `${fmt(gen.bandMaxMbps.b5 ?? 0)} Mbps`,
             })}
           </p>
-          {wifi7Plan && (
-            <p
-              className={cn(
-                "mt-3 inline-flex rounded-md border px-2 py-1 font-mono text-xs tabular-nums",
-                gen.kind === "modem"
-                  ? "border-fiber/40 bg-fiber/10 text-fiber"
-                  : gen.maxGbps * 1000 < wifi7Plan.downMbps
-                    ? "border-warn/40 text-warn"
-                    : "border-white/15 text-muted-foreground"
-              )}
-            >
-              {t("vsPlan", { x: fmt((gen.maxGbps * 1000) / wifi7Plan.downMbps), speed: planSpeed })}
-            </p>
-          )}
         </div>
 
         <dl className="relative mt-6 grid gap-4 text-sm">

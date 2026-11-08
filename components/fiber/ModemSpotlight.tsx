@@ -56,7 +56,6 @@ export function ModemSpotlight() {
           </p>
           <p className="pb-2 text-sm leading-snug text-muted-foreground">
             {t("maxLabel")}
-            <span className="block font-mono text-fiber tabular-nums">{t("vsPlan", { x: fmt((PLAN_MODEM.maxGbps * 1000) / plan.downMbps), speed })}</span>
           </p>
         </div>
 

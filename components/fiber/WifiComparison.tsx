@@ -9,8 +9,8 @@ import { formatNumber, speedLabel } from "@/lib/format"
  * A home modem from each generation side by side, all with the plan modem's
  * layout (2.4 + 5 GHz, 2 × 2 per band; lib/wifi.ts), so the comparison is like
  * for like and the plan's Wi-Fi 7 modem leads it. Server-rendered (zero JS,
- * readable by search engines and assistive tech). Each speed has a bar on one
- * scale with a marker at the plan's speed, and its multiple of the plan.
+ * readable by search engines and assistive tech). Each speed (Wi-Fi transfer
+ * between devices, theoretical) has a bar on one scale.
  */
 export function WifiComparison() {
   const t = useTranslations("fiber.wifi")
@@ -18,7 +18,6 @@ export function WifiComparison() {
   const fmt = (n: number) => formatNumber(n, locale)
   const cols = lineup(!!wifi7Plan)
   const speed = wifi7Plan ? speedLabel(wifi7Plan.downMbps) : ""
-  const planGbps = wifi7Plan ? wifi7Plan.downMbps / 1000 : null
   const top = Math.max(...cols.map((g) => g.maxGbps))
   const lit = (g: Generation) => g.kind === "modem"
   const max = (g: Generation) => (g.maxGbps < 1 ? `${fmt(g.maxGbps * 1000)} Mbps` : `${fmt(g.maxGbps)} Gbps`)
@@ -96,13 +95,8 @@ export function WifiComparison() {
           <tr>
             <th scope="col" className="sticky left-0 z-10 bg-surface p-5 align-bottom font-mono text-[0.65rem] font-normal uppercase tracking-wider text-muted-foreground">
               {t("generation")}
+              <span className="mt-3 block font-sans text-sm normal-case leading-snug tracking-normal text-foreground">{t("transferLabel")}</span>
               <span className="mt-1 block normal-case tracking-normal">{t("maxLabel")}</span>
-              {planGbps && (
-                <span className="mt-3 flex items-center gap-2 normal-case tracking-normal">
-                  <span aria-hidden className="h-3 border-l border-dashed border-white/70" />
-                  {t("planMarker", { speed })}
-                </span>
-              )}
             </th>
             {cols.map((g) => (
               <th
@@ -133,21 +127,13 @@ export function WifiComparison() {
                 >
                   {max(g)}
                 </span>
-                {/* One scale for every column; the dashed tick is the plan's speed. */}
+                {/* One scale for every column. */}
                 <span aria-hidden className="relative mt-3 block h-1.5 w-full rounded-full bg-white/[0.07]">
                   <span
                     className={cn("block h-full rounded-full", lit(g) ? "bg-fiber shadow-[0_0_12px_var(--color-fiber)]" : "bg-white/35")}
                     style={{ width: `${(g.maxGbps / top) * 100}%` }}
                   />
-                  {planGbps && (
-                    <span className="absolute -top-1 -bottom-1 border-l border-dashed border-white/70" style={{ left: `${(planGbps / top) * 100}%` }} />
-                  )}
                 </span>
-                {planGbps && (
-                  <span className={cn("mt-2 block font-mono text-xs tabular-nums", lit(g) ? "text-fiber" : g.maxGbps < planGbps ? "text-warn" : "text-muted-foreground")}>
-                    {t("vsPlan", { x: fmt(g.maxGbps / planGbps), speed })}
-                  </span>
-                )}
               </th>
             ))}
           </tr>
