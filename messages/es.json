@@ -861,7 +861,58 @@
     "quoteChannel": "por WhatsApp",
     "seePackages": "Ver paquetes",
     "buildingAlt": "Ilustración de un edificio de cuatro niveles: la fibra entra desde la calle, sube por un montante y se ramifica a cada área; los pisos se iluminan uno por uno.",
-    "buildingCaption": "Ilustración"
+    "buildingCaption": "Ilustración",
+    "story": {
+      "label": "Recorrido de la fibra en tu edificio",
+      "entry": {
+        "title": "Llega la fibra.",
+        "body": "Un enlace simétrico de hasta {max} Gbps* desde nuestra red hasta la acometida de tu edificio. En Internet dedicado, con ruta de respaldo opcional."
+      },
+      "riser": {
+        "title": "Sube por el edificio.",
+        "body": "Un montante de fibra lleva la conexión de la planta baja al último piso."
+      },
+      "floors": {
+        "title": "Se reparte en cada piso.",
+        "body": "Cada nivel se ramifica a sus áreas: oficinas, bodegas, locales o salas de juntas."
+      },
+      "inside": {
+        "title": "Y por dentro, hasta {to}GbE.",
+        "body": "Entre áreas, pisos y edificios, tu propia red de fibra de {from}GbE a {to}GbE."
+      }
+    },
+    "noc": {
+      "title": "Así se ve un enlace dedicado.",
+      "lead": "Monitoreo activo las 24 horas y, si contratas la ruta de respaldo, un segundo camino para tu tráfico. Prueba qué pasa cuando se corta el enlace principal.",
+      "example": "Ejemplo: enlace de {gbps} Gbps a un edificio de 4 niveles",
+      "network": "Red GigaFazt",
+      "building": "Tu edificio",
+      "primary": "Ruta principal",
+      "backup": "Ruta de respaldo",
+      "status": {
+        "primary": "En ruta principal",
+        "detect": "Corte detectado",
+        "backup": "En ruta de respaldo"
+      },
+      "down": "Bajada",
+      "up": "Subida",
+      "contracted": "Líneas punteadas: enlace contratado de {gbps} Gbps, 1:1",
+      "graphLabel": "Tráfico del enlace en el último medio minuto, bajada arriba y subida abajo (simulación)",
+      "floors": "Tráfico por piso",
+      "floor": "N{n}",
+      "latency": "Latencia",
+      "log": "Eventos",
+      "events": {
+        "start": "Monitoreo activo",
+        "cut": "Enlace principal sin señal",
+        "backup": "Tráfico en la ruta de respaldo",
+        "restored": "Enlace principal restablecido",
+        "back": "Tráfico de vuelta en la ruta principal"
+      },
+      "cut": "Simular corte del enlace principal",
+      "restore": "Restablecer enlace principal",
+      "note": "Simulación ilustrativa. La ruta de respaldo es opcional en Internet dedicado y el tiempo de conmutación depende del diseño de cada enlace."
+    }
   },
   "privacy": {
     "metaTitle": "Aviso de Privacidad",

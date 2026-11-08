@@ -5,6 +5,7 @@ import dynamic from "next/dynamic"
 import { cn } from "cn"
 import { useReducedMotion } from "@/lib/motion"
 import { SceneBoundary, canUseWebGL } from "@/components/fiber/SceneBoundary"
+import { storyEnabled } from "@/lib/biz-story"
 
 const BuildingScene = dynamic(() => import("./BuildingScene"), { ssr: false })
 
@@ -47,6 +48,21 @@ export function BuildingShowcase({
   const [webgl] = useState(() => typeof window !== "undefined" && canUseWebGL())
   const [interactive] = useState(() => typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches)
   const [quality] = useState(pickQuality)
+  // Scroll story (lib/biz-story): the scene follows the hero's story wrapper while it is on.
+  const storyEl = useRef<HTMLElement | null>(null)
+  const [story, setStory] = useState(false)
+
+  useEffect(() => {
+    storyEl.current = box.current?.closest<HTMLElement>("[data-biz-story]") ?? null
+    const update = () => setStory(storyEnabled())
+    update()
+    window.addEventListener("resize", update)
+    window.addEventListener("motionchange", update)
+    return () => {
+      window.removeEventListener("resize", update)
+      window.removeEventListener("motionchange", update)
+    }
+  }, [])
 
   useEffect(() => {
     const el = box.current
@@ -82,6 +98,7 @@ export function BuildingShowcase({
                 interactive={interactive && !reduced}
                 active={active}
                 quality={quality}
+                storyEl={story ? storyEl : undefined}
                 onReady={() => setReady(true)}
               />
             </SceneBoundary>

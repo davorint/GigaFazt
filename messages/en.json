@@ -861,7 +861,58 @@
     "quoteChannel": "on WhatsApp",
     "seePackages": "See packages",
     "buildingAlt": "Illustration of a four-level building: fiber comes in from the street, climbs a riser and branches out to every area; the floors light up one by one.",
-    "buildingCaption": "Illustration"
+    "buildingCaption": "Illustration",
+    "story": {
+      "label": "How fiber runs through your building",
+      "entry": {
+        "title": "Fiber arrives.",
+        "body": "A symmetrical link up to {max} Gbps* from our network to your building's service entrance. On Internet dedicado, with an optional backup route."
+      },
+      "riser": {
+        "title": "It climbs the building.",
+        "body": "A fiber riser carries the connection from the ground floor to the top."
+      },
+      "floors": {
+        "title": "It reaches every floor.",
+        "body": "Each level branches out to its areas: offices, warehouses, stores or meeting rooms."
+      },
+      "inside": {
+        "title": "And inside, up to {to}GbE.",
+        "body": "Between areas, floors and buildings, your own fiber network from {from}GbE to {to}GbE."
+      }
+    },
+    "noc": {
+      "title": "What a dedicated link looks like.",
+      "lead": "Active monitoring around the clock and, if you add the backup route, a second path for your traffic. See what happens when the primary link is cut.",
+      "example": "Example: a {gbps} Gbps link to a 4-level building",
+      "network": "Our network",
+      "building": "Your building",
+      "primary": "Primary route",
+      "backup": "Backup route",
+      "status": {
+        "primary": "On primary route",
+        "detect": "Cut detected",
+        "backup": "On backup route"
+      },
+      "down": "Download",
+      "up": "Upload",
+      "contracted": "Dotted lines: contracted {gbps} Gbps link, 1:1",
+      "graphLabel": "Link traffic over the last half minute, download above and upload below (simulation)",
+      "floors": "Traffic per floor",
+      "floor": "L{n}",
+      "latency": "Latency",
+      "log": "Events",
+      "events": {
+        "start": "Monitoring active",
+        "cut": "Primary link lost signal",
+        "backup": "Traffic on the backup route",
+        "restored": "Primary link restored",
+        "back": "Traffic back on the primary route"
+      },
+      "cut": "Simulate a primary link cut",
+      "restore": "Restore primary link",
+      "note": "Illustrative simulation. The backup route is optional on Internet dedicado, and switchover time depends on each link's design."
+    }
   },
   "privacy": {
     "metaTitle": "Privacy Notice",

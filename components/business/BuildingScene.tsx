@@ -5,6 +5,7 @@ import * as THREE from "three"
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { Grid, PerformanceMonitor } from "@react-three/drei"
 import { Bloom, EffectComposer } from "@react-three/postprocessing"
+import { storyPosition, storyProgress } from "@/lib/biz-story"
 
 /**
  * /empresas hero object (owner, 2026-11-08: "super expensive, hyper high
@@ -47,8 +48,46 @@ const clamp01 = (x: number) => Math.min(1, Math.max(0, x))
 const easeOut = (x: number) => 1 - Math.pow(1 - clamp01(x), 3)
 const levelOn = (t: number, i: number) => easeOut((t - (T.level0 + i * T.levelGap)) / T.ramp)
 
-function setGlow(m: THREE.MeshBasicMaterial, base: THREE.Color, k: number) {
+// ── Scroll story (lib/biz-story): keys 0 (hero) … 4 (inside the top floor) ──
+/** Camera per key: group turn, distance, height, look-at height. */
+const CAM = [
+  { rot: -0.62, dist: 7.0, h: 3.3, look: 0.35 },
+  { rot: -1.25, dist: 5.8, h: 0.9, look: -0.8 },
+  { rot: -0.2, dist: 6.0, h: 1.4, look: 0.55 },
+  { rot: 0.3, dist: 7.4, h: 3.8, look: 0.35 },
+  { rot: 0.62, dist: 2.3, h: 4.3, look: 1.2 },
+]
+/** Focus per key (1 = normal glow): what each chapter is about stays lit, the rest dims. */
+const FOCUS = {
+  entry: [1, 1.4, 0.6, 0.45, 0.3],
+  backup: [0, 1, 0.15, 0, 0],
+  riser: [1, 0.35, 1.5, 0.7, 0.4],
+}
+const levelFocus = (k: number, i: number) => (k === 0 || k === 3 ? 1 : k === 1 ? 0.18 : k === 2 ? 0.3 : i === LEVELS.length - 1 ? 1.35 : 0.15)
+
+/** Between which keys f (0–4) sits, and the eased blend (holds near each key so the copy can be read). */
+function keyBlend(f: number) {
+  const a = Math.min(CAM.length - 2, Math.floor(f))
+  const u = f - a
+  const x = clamp01((u - 0.2) / 0.6)
+  return { a, b: a + 1, t: x * x * (3 - 2 * x) }
+}
+const mix = (x: number, y: number, t: number) => x + (y - x) * t
+const atKeys = (vals: number[], f: number) => {
+  const { a, b, t } = keyBlend(f)
+  return mix(vals[a], vals[b], t)
+}
+function levelWeight(f: number, i: number) {
+  const { a, b, t } = keyBlend(f)
+  // Going from "the riser" to "every floor", the floors light up one after another.
+  const ti = a === 2 ? clamp01(t * 1.8 - i * 0.27) : t
+  return mix(levelFocus(a, i), levelFocus(b, i), ti)
+}
+
+/** Sets an unlit material's glow (colour × k, above 1 blooms) and, optionally, its opacity. */
+function setGlow(m: THREE.MeshBasicMaterial, base: THREE.Color, k: number, opacity?: number) {
   m.color.copy(base).multiplyScalar(k)
+  if (opacity !== undefined) m.opacity = opacity
 }
 
 type LevelMats = { branch: THREE.MeshBasicMaterial; node: THREE.MeshBasicMaterial; plate: THREE.MeshBasicMaterial; edge: THREE.LineBasicMaterial }
@@ -77,9 +116,12 @@ function Bar({ a, b, material, r = 0.012 }: { a: [number, number, number]; b: [n
   )
 }
 
-function Building({ still, interactive, clockRef }: { still: boolean; interactive: boolean; clockRef: React.RefObject<number> }) {
+function Building({ still, interactive, clockRef, posRef }: { still: boolean; interactive: boolean; clockRef: React.RefObject<number>; posRef: React.RefObject<number> }) {
   const mats = useLevelMats()
   const riserMat = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false }), [])
+  const entryMat = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false }), [])
+  const backupMat = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false, transparent: true }), [])
+  const backup = useRef<THREE.Group>(null)
   const packetMat = useMemo(() => new THREE.MeshBasicMaterial({ color: WHITE.clone().multiplyScalar(4), toneMapped: false }), [])
   const plateGeo = useMemo(() => new THREE.BoxGeometry(W, 0.018, D), [])
   const edgeGeo = useMemo(() => new THREE.EdgesGeometry(plateGeo), [plateGeo])
@@ -94,6 +136,7 @@ function Building({ still, interactive, clockRef }: { still: boolean; interactiv
   useFrame((_, dt) => {
     const t = clockRef.current
     const step = Math.min(dt, 0.1)
+    const f = posRef.current
 
     // Street entry, then the riser drawing itself upward.
     const e = still ? 1 : easeOut((t - T.entry) / 0.6)
@@ -103,16 +146,21 @@ function Building({ still, interactive, clockRef }: { still: boolean; interactiv
     }
     const r = still ? 1 : easeOut((t - T.riser) / 0.9)
     if (riser.current) riser.current.scale.y = Math.max(0.001, r)
-    setGlow(riserMat, VIOLET, 0.6 + 1.6 * r)
+    setGlow(riserMat, VIOLET, (0.6 + 1.6 * r) * atKeys(FOCUS.riser, f))
+    setGlow(entryMat, VIOLET, (0.6 + 1.6 * e) * atKeys(FOCUS.entry, f))
+    const wb = atKeys(FOCUS.backup, f)
+    setGlow(backupMat, LILAC, 1.6 * wb, Math.min(1, wb))
+    if (backup.current) backup.current.visible = wb > 0.01
 
     // Floors light up one by one, then breathe gently.
     LEVELS.forEach((_, i) => {
       const on = still ? 1 : levelOn(t, i)
       const breathe = still ? 1 : 1 + 0.12 * Math.sin(t * 1.3 - i * 0.9)
-      setGlow(mats[i].branch, LILAC, (0.12 + 1.4 * on) * breathe)
-      setGlow(mats[i].node, WHITE, (0.15 + 1.9 * on) * breathe)
-      mats[i].plate.opacity = 0.02 + 0.045 * on
-      mats[i].edge.opacity = 0.14 + 0.36 * on
+      const w = levelWeight(f, i)
+      setGlow(mats[i].branch, LILAC, (0.12 + 1.4 * on) * breathe * w)
+      setGlow(mats[i].node, WHITE, (0.15 + 1.9 * on) * breathe * w)
+      mats[i].plate.opacity = (0.02 + 0.045 * on) * Math.min(1, 0.3 + 0.7 * w)
+      mats[i].edge.opacity = (0.14 + 0.36 * on) * Math.min(1.2, 0.4 + 0.6 * w)
     })
 
     // Packets: two climb the riser; one runs a branch per lit floor.
@@ -136,7 +184,8 @@ function Building({ still, interactive, clockRef }: { still: boolean; interactiv
 
     const g = turn.current
     if (g) {
-      const target = still ? -0.62 : -0.62 + Math.sin(t * 0.16) * 0.14 + (interactive ? pointer.x * 0.2 : 0)
+      const base = atKeys(CAM.map((c) => c.rot), f)
+      const target = still ? base : base + Math.sin(t * 0.16) * 0.14 * (1 - Math.min(1, f)) + (interactive ? pointer.x * 0.2 : 0)
       g.rotation.y = still ? target : g.rotation.y + (target - g.rotation.y) * (1 - Math.exp(-step * 2))
     }
   })
@@ -171,10 +220,18 @@ function Building({ still, interactive, clockRef }: { still: boolean; interactiv
       ))}
 
       {/* Street → service entrance (grows toward the building), then the riser. */}
-      <mesh ref={entry} position={[0, ENTRY_Y, STREET_Z / 2]} material={riserMat}>
+      <mesh ref={entry} position={[0, ENTRY_Y, STREET_Z / 2]} material={entryMat}>
         <boxGeometry args={[0.03, 0.03, STREET_Z]} />
       </mesh>
       <mesh ref={riser} position={[0, ENTRY_Y, 0]} geometry={riserGeo} material={riserMat} />
+      {/* Optional backup route (story chapter 1 only): a dashed second entry from the other side. */}
+      <group ref={backup} visible={false}>
+        {Array.from({ length: 12 }, (_, k) => (
+          <mesh key={k} position={[-0.2 - k * 0.24, ENTRY_Y, 0]} material={backupMat}>
+            <boxGeometry args={[0.13, 0.022, 0.022]} />
+          </mesh>
+        ))}
+      </group>
 
       {[0, 1].map((k) => (
         <mesh key={`r${k}`} ref={(m) => { riserPackets.current[k] = m }} material={packetMat} visible={false}>
@@ -191,16 +248,34 @@ function Building({ still, interactive, clockRef }: { still: boolean; interactiv
 }
 
 /** Camera: eases in from wide during the intro; pulls back on narrow boxes. */
-function Rig({ still, interactive, clockRef }: { still: boolean; interactive: boolean; clockRef: React.RefObject<number> }) {
+function Rig({
+  still,
+  interactive,
+  clockRef,
+  posRef,
+  storyEl,
+}: {
+  still: boolean
+  interactive: boolean
+  clockRef: React.RefObject<number>
+  posRef: React.RefObject<number>
+  storyEl?: React.RefObject<HTMLElement | null>
+}) {
   const { pointer, invalidate } = useThree()
   const settle = useRef(0)
   useFrame(({ camera, size }, dt) => {
     clockRef.current = still ? 99 : clockRef.current + Math.min(dt, 0.5)
+    // Story position follows the scroll with a little inertia.
+    const el = storyEl?.current
+    const goal = el && !still ? storyPosition(storyProgress(el)) : 0
+    posRef.current = still ? 0 : posRef.current + (goal - posRef.current) * (1 - Math.exp(-Math.min(dt, 0.1) * 5))
+    const f = posRef.current
     const fit = Math.max(1, 1.05 / (size.width / size.height))
     const e = still ? 1 : easeOut(clockRef.current / T.intro)
-    const dist = (8.6 - 1.6 * e) * fit
-    camera.position.set(0, 3.3 + 0.9 * (1 - e) + (interactive && !still ? pointer.y * 0.15 : 0), dist)
-    camera.lookAt(0, 0.35, 0)
+    const dist = (atKeys(CAM.map((c) => c.dist), f) + 1.6 * (1 - e)) * fit
+    const h = atKeys(CAM.map((c) => c.h), f)
+    camera.position.set(0, h + 0.9 * (1 - e) + (interactive && !still ? pointer.y * 0.15 : 0), dist)
+    camera.lookAt(0, atKeys(CAM.map((c) => c.look), f), 0)
     if (still && settle.current < 2) {
       settle.current++
       invalidate()
@@ -224,6 +299,7 @@ export default function BuildingScene({
   interactive,
   active,
   quality = "high",
+  storyEl,
   onReady,
 }: {
   still: boolean
@@ -231,10 +307,13 @@ export default function BuildingScene({
   /** On screen: animate; off screen: hold the last frame. */
   active: boolean
   quality?: "high" | "low"
+  /** The scroll-story wrapper while the story is on (lib/biz-story); camera and focus follow it. */
+  storyEl?: React.RefObject<HTMLElement | null>
   onReady?: () => void
 }) {
   const [fx, setFx] = useState(quality === "high")
   const clockRef = useRef(0)
+  const posRef = useRef(0)
 
   return (
     <Canvas
@@ -246,8 +325,8 @@ export default function BuildingScene({
       {quality === "high" && <PerformanceMonitor onDecline={() => setFx(false)} />}
       <color attach="background" args={[BG]} />
       <fog attach="fog" args={[BG, 7, 14]} />
-      <Rig still={still} interactive={interactive} clockRef={clockRef} />
-      <Building still={still} interactive={interactive} clockRef={clockRef} />
+      <Rig still={still} interactive={interactive} clockRef={clockRef} posRef={posRef} storyEl={storyEl} />
+      <Building still={still} interactive={interactive} clockRef={clockRef} posRef={posRef} />
       <Grid
         position={[0, -0.9 + ENTRY_Y - 0.02, 0]}
         args={[16, 16]}

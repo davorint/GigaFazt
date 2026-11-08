@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer"
 import { BusinessHero } from "@/components/business/BusinessHero"
 import { BusinessTiers } from "@/components/business/BusinessTiers"
 import { BusinessNetworks } from "@/components/business/BusinessNetworks"
+import { BusinessNoc } from "@/components/business/BusinessNoc"
 import { BusinessSteps } from "@/components/business/BusinessSteps"
 import { BusinessCta } from "@/components/business/BusinessCta"
 import { business } from "@/lib/business"
@@ -48,6 +49,9 @@ export default async function EmpresasPage({ params }: PageProps<"/[locale]/empr
         </Section>
         <Section id="business-internet" aria-label={t("chapters.internet.title")}>
           <BusinessTiers />
+        </Section>
+        <Section id="business-noc" aria-label={t("noc.title")}>
+          <BusinessNoc />
         </Section>
         <Section id="business-networks" aria-label={t("chapters.fiber.title")}>
           <BusinessNetworks />
