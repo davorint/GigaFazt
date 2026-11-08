@@ -118,25 +118,18 @@ export function getGeneration(id: Generation["id"]): Generation {
   return GENERATIONS.find((g) => g.id === id) ?? GENERATIONS[GENERATIONS.length - 1]
 }
 
-/** Shortest burst share the wave lab draws, so even the slowest band stays visible. */
-export const MIN_BURST_FILL = 0.1
+/** Lowest data-ring density the wave lab draws, so the slowest generation still shows one. */
+export const MIN_DATA_DENSITY = 0.1
 
 /**
- * How densely each band's waves carry data in the lab, 0–1: the band's PHY
- * rate in this generation over the fastest rate any compared generation
- * reaches on that band. Every compared modem is dual band and walls slow all
- * generations alike, so range is the same; what changes between generations
- * is how much data each wave carries, drawn as denser wave trains. Bands the
- * generation doesn't use are 0.
+ * How densely the wave lab draws data rings for a generation, 0–1: its total
+ * Wi-Fi PHY rate over the fastest compared generation's. Every compared modem
+ * is dual band and walls slow all generations alike, so range is the same;
+ * what changes is how much data the waves carry, drawn as more rings.
  */
-export function burstFill(gen: Generation, compared: readonly Generation[]): Record<BandId, number> {
-  const fill = { b24: 0, b5: 0, b6: 0 } as Record<BandId, number>
-  for (const b of gen.bands) {
-    const top = Math.max(...compared.map((g) => g.bandMaxMbps[b] ?? 0))
-    const mine = gen.bandMaxMbps[b] ?? 0
-    fill[b] = top > 0 ? Math.min(1, Math.max(MIN_BURST_FILL, mine / top)) : 1
-  }
-  return fill
+export function dataDensity(gen: Generation, compared: readonly Generation[]): number {
+  const top = Math.max(...compared.map((g) => g.maxGbps))
+  return top > 0 ? Math.min(1, Math.max(MIN_DATA_DENSITY, gen.maxGbps / top)) : 1
 }
 
 // ── The apartment (meters; x → right, y → down) ────────────────────────────

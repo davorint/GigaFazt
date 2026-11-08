@@ -32,8 +32,18 @@ const MAX_STEPS_PER_FRAME = 4
 /** Steps run before the first animated frame, so the field isn't empty. */
 const WARM_STEPS = 360
 const STILL_STEPS = 900
-/** One data-burst cycle, in simulation steps (~2.5 s at STEPS_PER_SECOND). */
-const BURST_STEPS = 100
+/**
+ * Data rings: thin, crisp, near-white rings travelling out from the modem at
+ * the wave speed, drawn over the (soft, band-colored) field. Spacing is
+ * RING_CELLS / density (lib/wifi dataDensity: the generation's total Wi-Fi
+ * rate vs the fastest compared), so Wi-Fi 7 shows ~6× Wi-Fi 4's rings. They
+ * fade with the local signal energy, so walls dim them like the field and
+ * range reads the same for every generation. An overlay, not physics: gating
+ * the source instead was invisible (wall echoes filled every room alike), and
+ * rings near the carrier's wavelength blended into its fringes.
+ */
+const RING_CELLS = 30 // ~1 m apart at the fastest rate
+const RING_SIGMA = 1.3 // ring half-width, cells: crisp, unlike the carrier fringes
 
 const VERT = /* glsl */ `
 varying vec2 vUv;
@@ -43,7 +53,6 @@ void main() {
 }`
 
 const SIM_FRAG = /* glsl */ `
-#define BURST_STEPS ${BURST_STEPS.toFixed(1)}
 uniform sampler2D uCur;
 uniform sampler2D uPrev;
 uniform sampler2D uMask;
@@ -51,7 +60,6 @@ uniform vec2 uTexel;
 uniform vec2 uSrc;
 uniform vec3 uOmega;
 uniform vec3 uActive;
-uniform vec3 uFill;
 uniform float uTime;
 uniform float uC2;
 uniform float uDampScale;
@@ -73,28 +81,27 @@ void main() {
   // Bands the selected generation doesn't use fade out.
   n *= mix(vec3(0.95), vec3(1.0), uActive);
   // Soft source: a small Gaussian at the modem, one frequency per band.
-  // Data bursts: each band transmits for uFill of every burst period (its
-  // PHY rate in this generation vs the fastest compared, lib/wifi burstFill),
-  // so faster generations send denser wave trains over the same range.
   vec2 d = (vUv - uSrc) / uTexel;
   float g = exp(-dot(d, d) / 4.0);
-  float ph = fract(uTime / BURST_STEPS);
-  vec3 env = smoothstep(vec3(0.0), vec3(0.05), vec3(ph))
-           * (vec3(1.0) - smoothstep(uFill - 0.05, uFill, vec3(ph)));
-  env = mix(env, vec3(1.0), step(vec3(0.995), uFill));
-  n += uActive * env * sin(uOmega * uTime) * g * uAmp;
+  n += uActive * sin(uOmega * uTime) * g * uAmp;
   // NaN / blow-up guard (NaN fails every comparison).
   bvec3 ok = lessThan(abs(n), vec3(6.0));
   n = vec3(ok.x ? n.x : 0.0, ok.y ? n.y : 0.0, ok.z ? n.z : 0.0);
-  // Coverage glow per unit of airtime, so sparse bursts don't read as less range.
-  float e = mix(c.a, dot(n * n, uActive / max(uFill, vec3(0.1))), 0.02);
+  float e = mix(c.a, dot(n * n, uActive), 0.02);
   if (!(e >= 0.0 && e < 100.0)) e = 0.0;
   gl_FragColor = vec4(n, e);
 }`
 
 const VIEW_FRAG = /* glsl */ `
+#define RING_CELLS ${RING_CELLS.toFixed(1)}
+#define RING_SIGMA ${RING_SIGMA.toFixed(1)}
+#define WAVE_C ${SIM_C.toFixed(3)}
 uniform sampler2D uState;
 uniform vec3 uActive;
+uniform float uDensity;
+uniform vec2 uSrc;
+uniform vec2 uTexel;
+uniform float uTime;
 uniform vec3 uCol0;
 uniform vec3 uCol1;
 uniform vec3 uCol2;
@@ -111,6 +118,13 @@ void main() {
   vec3 tint = (uCol0 * uActive.x + uCol1 * uActive.y + uCol2 * uActive.z) / bands;
   float heat = log(1.0 + max(s.a, 0.0) * 80.0);
   col += tint * heat * 0.06;
+  // Data rings (see RING_CELLS), faded by the local signal energy.
+  float r = length((vUv - uSrc) / uTexel);
+  float spacing = RING_CELLS / max(uDensity, 0.05);
+  float dd = (fract((r - uTime * WAVE_C) / spacing) - 0.5) * spacing;
+  float ring = exp(-dd * dd / (2.0 * RING_SIGMA * RING_SIGMA));
+  float reach = smoothstep(0.15, 1.6, heat) * smoothstep(3.0, 9.0, r);
+  col += vec3(0.82, 0.96, 1.0) * ring * reach * 0.85;
   // Outside the apartment the field is shown dimmer.
   float inside = step(uApt.x, vUv.x) * step(vUv.x, uApt.z) * step(uApt.y, vUv.y) * step(vUv.y, uApt.w);
   col *= mix(0.35, 1.0, inside);
@@ -121,22 +135,22 @@ void main() {
 
 export default function WifiWaves({
   active,
-  fill,
+  density,
   router,
   still,
   onReady,
   onError,
 }: {
   active: Record<BandId, boolean>
-  /** 0–1 per band: share of each burst period spent transmitting (lib/wifi burstFill). */
-  fill: Record<BandId, number>
+  /** 0–1: data-ring density (lib/wifi dataDensity). */
+  density: number
   router: Pt
   still: boolean
   onReady?: () => void
   onError?: () => void
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const api = useRef<{ setInputs: (a: Record<BandId, boolean>, f: Record<BandId, number>, r: Pt) => void; settle: () => void } | null>(null)
+  const api = useRef<{ setInputs: (a: Record<BandId, boolean>, density: number, r: Pt) => void; settle: () => void } | null>(null)
   const stillRef = useRef(still)
   const readyCb = useRef(onReady)
   const errorCb = useRef(onError)
@@ -196,7 +210,6 @@ export default function WifiWaves({
         uSrc: { value: new THREE.Vector2(0.5, 0.5) },
         uOmega: { value: new THREE.Vector3(bandOmega("b24"), bandOmega("b5"), bandOmega("b6")) },
         uActive: { value: new THREE.Vector3() },
-        uFill: { value: new THREE.Vector3(1, 1, 1) },
         uTime: { value: 0 },
         uC2: { value: SIM_C * SIM_C },
         uDampScale: { value: DAMP_SCALE },
@@ -213,6 +226,10 @@ export default function WifiWaves({
       uniforms: {
         uState: { value: cur.texture },
         uActive: { value: new THREE.Vector3() },
+        uDensity: { value: 1 },
+        uSrc: { value: new THREE.Vector2(0.5, 0.5) },
+        uTexel: { value: new THREE.Vector2(1 / SIM_W, 1 / SIM_H) },
+        uTime: { value: 0 },
         uCol0: { value: color("b24") },
         uCol1: { value: color("b5") },
         uCol2: { value: color("b6") },
@@ -239,6 +256,7 @@ export default function WifiWaves({
     let first = true
     const draw = () => {
       viewMat.uniforms.uState.value = cur.texture
+      viewMat.uniforms.uTime.value = simMat.uniforms.uTime.value
       quad.material = viewMat
       renderer.setRenderTarget(null)
       renderer.render(scene, camera)
@@ -289,12 +307,13 @@ export default function WifiWaves({
     }
 
     api.current = {
-      setInputs(a, f, r) {
+      setInputs(a, density, r) {
         const v = new THREE.Vector3(+a.b24, +a.b5, +a.b6)
         simMat.uniforms.uActive.value.copy(v)
-        simMat.uniforms.uFill.value.set(f.b24, f.b5, f.b6)
         viewMat.uniforms.uActive.value.copy(v)
+        viewMat.uniforms.uDensity.value = density
         simMat.uniforms.uSrc.value.set(...toUv(r))
+        viewMat.uniforms.uSrc.value.set(...toUv(r))
       },
       settle() {
         if (stillRef.current) settle()
@@ -328,9 +347,9 @@ export default function WifiWaves({
   // first inputs reach the simulation too.
   useEffect(() => {
     stillRef.current = still
-    api.current?.setInputs(active, fill, router)
+    api.current?.setInputs(active, density, router)
     api.current?.settle()
-  }, [active, fill, router, still])
+  }, [active, density, router, still])
 
   return <canvas ref={canvasRef} aria-hidden className="absolute inset-0 block h-full w-full" />
 }

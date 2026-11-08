@@ -4,7 +4,7 @@ import {
   GENERATIONS,
   ROUTER_START,
   WALL_LOSS_DB,
-  burstFill,
+  dataDensity,
   clampRouter,
   getGeneration,
   lineup,
@@ -115,25 +115,18 @@ describe("simulation medium", () => {
   })
 })
 
-describe("burstFill (wave lab data density per generation)", () => {
-  it("differs between every pair of generations on at least one band", () => {
-    const fills = GENERATIONS.map((g) => burstFill(g, GENERATIONS))
-    for (let i = 0; i < fills.length; i++)
-      for (let j = i + 1; j < fills.length; j++) expect(fills[i]).not.toEqual(fills[j])
+describe("dataDensity (wave lab data rings per generation)", () => {
+  it("rises strictly with each generation and tops out at 1", () => {
+    const d = GENERATIONS.map((g) => dataDensity(g, GENERATIONS))
+    for (let i = 1; i < d.length; i++) expect(d[i]).toBeGreaterThan(d[i - 1])
+    expect(d.at(-1)).toBe(1)
+    expect(d[0]).toBeGreaterThanOrEqual(0.1)
   })
-  it("rises with each generation, tops out at 1 and never drops below the floor", () => {
-    const fills = GENERATIONS.map((g) => burstFill(g, GENERATIONS))
-    for (const b of ["b24", "b5"] as const) {
-      const v = fills.map((f) => f[b])
-      expect([...v].sort((x, y) => x - y)).toEqual(v)
-      expect(v.at(-1)).toBe(1)
-      expect(Math.min(...v)).toBeGreaterThanOrEqual(0.1)
-    }
-    expect(fills.every((f) => f.b6 === 0)).toBe(true)
+  it("shows Wi-Fi 7 with several times Wi-Fi 4's rings", () => {
+    const d4 = dataDensity(getGeneration("wifi4"), GENERATIONS)
+    expect(1 / d4).toBeGreaterThan(5)
   })
-  it("treats the plan's modem against the page's lineup", () => {
-    const compared = lineup(true)
-    const modem = getGeneration("modem")
-    expect(burstFill(modem, compared).b5).toBe(1)
+  it("rates the plan's modem against the page's lineup", () => {
+    expect(dataDensity(getGeneration("modem"), lineup(true))).toBe(1)
   })
 })
