@@ -22,6 +22,7 @@ import {
   ROOMS,
   ROUTER_START,
   WALLS,
+  WALL_LOSS_DB,
   WALL_THICKNESS_M,
   clampRouter,
   PLAN_MODEM,
@@ -38,6 +39,7 @@ import {
   type Quality,
 } from "@/lib/wifi"
 import { DOMAIN } from "@/lib/wifi-sim"
+import { WALL_MEDIUM } from "@/lib/wifi-walls"
 import { SceneBoundary, canUseWebGL } from "./SceneBoundary"
 
 const WifiWaves = dynamic(() => import("./WifiWaves"), { ssr: false })
@@ -56,6 +58,9 @@ const WALL_STYLE: Record<MaterialId, { stroke: string; dash?: string }> = {
 }
 const STEP_M = 0.25
 const MAX_BITS = Math.log2(Math.max(...GENERATIONS.map((g) => g.qam)))
+const ALL_BANDS: Record<BandId, boolean> = { b24: true, b5: true, b6: true }
+/** Share of the energy a concrete wall reflects in the simulation, % (fitted to ITU-R P.2040). */
+const CONCRETE_REFLECT_PCT = Math.round(10 ** (WALL_MEDIUM.concrete.b24.r / 10) * 100)
 
 /** Meters → % of the stage (the stage is exactly the simulated domain). */
 const pctX = (x: number) => ((x - DOMAIN.x0) / DOMAIN.w) * 100
@@ -65,8 +70,10 @@ const pctY = (y: number) => ((y - DOMAIN.y0) / DOMAIN.h) * 100
  * "Así viaja el Wi-Fi por tu depa": a simulated apartment where Wi-Fi waves
  * leave the modem and lose strength through concrete, brick and drywall
  * (WifiWaves, GPU), a blueprint overlay (walls, rooms, devices, links), a
- * draggable modem (pointer, tap-to-place, arrow keys) and a generation
- * switcher (4 → 7) with each standard's figures. Device readouts come from the
+ * draggable modem (pointer, tap-to-place, arrow keys), a band view (both
+ * bands, or one alone: each band reflects and loses differently at the same
+ * wall, with the loss shown in the legend) and a generation switcher (4 → 7)
+ * with each standard's figures. Device readouts come from the
  * illustrative link model in lib/wifi.ts. Everything simulated is tagged
  * SIMULACIÓN (hard rule #2); the visible readouts and the live summary are the
  * text equivalent of the canvas (hard rule #9). Lazy (LazyWifiLab).
@@ -78,6 +85,9 @@ export default function WifiLab() {
   // The plan's real modem first (what the customer gets); the standards compare.
   const [genId, setGenId] = useState<Generation["id"]>(wifi7Plan ? "modem" : "wifi7")
   const [router, setRouter] = useState<Pt>(ROUTER_START)
+  // Band view: null = every band, or one band on its own to compare how each meets the walls.
+  const [solo, setSolo] = useState<BandId | null>(null)
+  const show = useMemo(() => (solo ? ({ b24: false, b5: false, b6: false, [solo]: true } as Record<BandId, boolean>) : ALL_BANDS), [solo])
   // Client-only component (next/dynamic, ssr: false), so this runs in the browser.
   const [webgl, setWebgl] = useState(() => canUseWebGL())
   const [ready, setReady] = useState(false)
@@ -153,202 +163,216 @@ export default function WifiLab() {
     <div ref={root} className="wifi-lab grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
       {/* ── Stage ─────────────────────────────────────────────────────── */}
       <div className="min-w-0">
-        <div
-          ref={stage}
-          className="relative isolate w-full touch-pan-y overflow-hidden rounded-2xl border border-white/10 bg-[#03060f] shadow-[0_40px_80px_-40px_rgb(0_0_0/0.9),0_0_80px_-30px_rgb(6_182_212/0.35)]"
-          style={{ aspectRatio: `${DOMAIN.w} / ${DOMAIN.h}` }}
-          // Tap / click on the plan places the modem (click, not pointerdown, so
-          // a finger scrolling the page over the plan never moves it).
-          onClick={(e) => {
-            if (e.target === e.currentTarget || (e.target as Element).closest("svg")) place(toMeters(e))
-          }}
-        >
-          {/* Fallback light while the simulation loads or without WebGL. */}
+        <div className="relative">
+          {/* Band view: every band, or one alone (the waves keep running either way). Over the stage from sm, above it on phones. */}
           <div
-            aria-hidden
-            className={cn("absolute inset-0 transition-opacity duration-700", ready ? "opacity-0" : "opacity-100")}
-            style={{
-              background: `radial-gradient(circle at ${pctX(router.x)}% ${pctY(router.y)}%, rgb(34 211 238 / 0.28), rgb(167 139 250 / 0.08) 22%, transparent 45%)`,
-            }}
-          />
-          {webgl && (
-            <div aria-hidden className={cn("absolute inset-0 transition-opacity duration-700", ready ? "opacity-100" : "opacity-0")}>
-              <SceneBoundary onError={() => setWebgl(false)}>
-                <WifiWaves
-                  active={active}
-                  density={density}
-                  router={router}
-                  still={reduced}
-                  onReady={() => setReady(true)}
-                  onError={() => setWebgl(false)}
-                />
-              </SceneBoundary>
-            </div>
-          )}
-
-          {/* Blueprint overlay: the accessible picture of the plan. */}
-          <svg
-            role="img"
-            aria-label={t("planAlt")}
-            viewBox={`${DOMAIN.x0} ${DOMAIN.y0} ${DOMAIN.w} ${DOMAIN.h}`}
-            className="absolute inset-0 h-full w-full cursor-crosshair"
+            role="group"
+            aria-label={t("bandView.label")}
+            className="mb-2 ml-auto flex w-fit items-center gap-1 rounded-full border border-white/10 bg-[#03060f]/70 p-0.5 backdrop-blur-sm sm:absolute sm:top-2.5 sm:right-2.5 sm:z-20 sm:mb-0"
           >
-            <defs>
-              <filter id="wl-glow" x="-10%" y="-10%" width="120%" height="120%">
-                <feGaussianBlur stdDeviation="0.07" />
-              </filter>
-              <pattern id="wl-grid" width="0.5" height="0.5" patternUnits="userSpaceOnUse">
-                <path d="M0.5 0H0V0.5" fill="none" stroke="rgb(148 163 184 / 0.07)" strokeWidth="0.012" />
-              </pattern>
-            </defs>
-            <rect x={0} y={0} width={APT.w} height={APT.h} fill="url(#wl-grid)" />
-
-            {/* Ruler along the bottom edge (meters) */}
-            <g className="fill-slate-400/60 font-mono max-sm:hidden" fontSize="0.15">
-              {Array.from({ length: APT.w + 1 }, (_, i) => (
-                <g key={`x${i}`}>
-                  <line x1={i} x2={i} y1={APT.h + 0.08} y2={APT.h + 0.2} stroke="rgb(148 163 184 / 0.4)" strokeWidth="0.012" />
-                  {i % 2 === 0 && (
-                    <text x={i} y={APT.h + 0.4} textAnchor="middle">
-                      {i === APT.w ? `${i} m` : i}
-                    </text>
-                  )}
-                </g>
-              ))}
-            </g>
-
-            {/* Room names */}
-            <g className="fill-slate-300/55 font-mono uppercase max-sm:[font-size:0.3px]" fontSize="0.17" letterSpacing="0.03">
-              {ROOMS.map((r) => (
-                <text key={r.id} x={r.x + 0.24} y={r.y + 0.42}>
-                  {t(`rooms.${r.id}`)}
-                </text>
-              ))}
-            </g>
-
-            {/* Links modem → devices, one line per band in use */}
-            <g>
-              {links.map(({ id, at, link }) => {
-                const dx = at.x - router.x
-                const dy = at.y - router.y
-                const len = Math.hypot(dx, dy) || 1
-                const nx = -dy / len
-                const ny = dx / len
-                return link.bands.map((b, i) => {
-                  const off = (i - (link.bands.length - 1) / 2) * 0.075
-                  return (
-                    <line
-                      key={`${id}-${b}`}
-                      className="wifi-link"
-                      x1={router.x + nx * off}
-                      y1={router.y + ny * off}
-                      x2={at.x + nx * off}
-                      y2={at.y + ny * off}
-                      stroke={BANDS[b].color}
-                      strokeWidth="0.028"
-                      strokeDasharray="0.16 0.2"
-                      strokeLinecap="round"
-                      opacity={link.quality === "weak" ? 0.3 : 0.85}
-                    />
-                  )
-                })
-              })}
-            </g>
-
-            {/* Walls: glow + core, styled by material */}
-            <g filter="url(#wl-glow)" opacity="0.28">
-              {WALLS.map((w, i) => (
-                <line key={`g${i}`} x1={w.a.x} y1={w.a.y} x2={w.b.x} y2={w.b.y} stroke="#67e8f9" strokeWidth={WALL_THICKNESS_M[w.m] * 1.3} />
-              ))}
-            </g>
-            <g>
-              {WALLS.map((w, i) => (
-                <line
-                  key={`w${i}`}
-                  x1={w.a.x}
-                  y1={w.a.y}
-                  x2={w.b.x}
-                  y2={w.b.y}
-                  stroke={WALL_STYLE[w.m].stroke}
-                  strokeDasharray={WALL_STYLE[w.m].dash}
-                  strokeWidth={WALL_THICKNESS_M[w.m]}
-                  strokeLinecap="square"
-                />
-              ))}
-            </g>
-
-            {/* Devices */}
-            <g>
-              {links.map(({ id, at, link }) => (
-                <g key={id}>
-                  <circle cx={at.x} cy={at.y} r="0.26" fill="none" stroke="rgb(255 255 255 / 0.18)" strokeWidth="0.015" />
-                  <circle cx={at.x} cy={at.y} r="0.11" className={cn("fill-current", QUALITY_CLASS[link.quality])} />
-                  <text x={at.x} y={at.y + 0.5} textAnchor="middle" fontSize="0.17" className="fill-white/80 font-sans max-sm:[font-size:0.3px]">
-                    {t(`devices.${id}`)}
-                  </text>
-                </g>
-              ))}
-            </g>
-          </svg>
-
-          {/* The modem: a real button (focus, keyboard), dragged with pointer capture. */}
-          <button
-            type="button"
-            aria-label={t("routerAria")}
-            className="group absolute z-10 grid size-11 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none place-items-center rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:cursor-grabbing"
-            style={{ left: `${pctX(router.x)}%`, top: `${pctY(router.y)}%` }}
-            onKeyDown={onKey}
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => {
-              e.stopPropagation()
-              e.currentTarget.setPointerCapture(e.pointerId)
-              dragging.current = true
-            }}
-            onPointerMove={(e) => {
-              if (dragging.current) setRouter(toMeters(e))
-            }}
-            onPointerUp={(e) => {
-              if (!dragging.current) return
-              dragging.current = false
-              place(toMeters(e))
-            }}
-            onPointerCancel={() => {
-              dragging.current = false
-            }}
-          >
-            <span aria-hidden className="wifi-router-ping absolute inset-1 rounded-full border border-cyan-200/70" />
-            <span aria-hidden className="wifi-router-ping absolute inset-1 rounded-full border border-cyan-200/50 [animation-delay:-1.1s]" />
-            <span
-              aria-hidden
-              className="relative size-4 rounded-full bg-white shadow-[0_0_0_3px_rgb(6_182_212/0.55),0_0_22px_6px_rgb(34_211_238/0.8)] transition-transform group-hover:scale-110"
-            />
-          </button>
-
-          {/* HUD */}
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-2.5 sm:p-3.5">
-            <span className="hidden items-center gap-2 font-mono text-[0.6rem] uppercase tracking-[0.18em] text-slate-300/70 sm:flex">
-              <span className="size-1.5 animate-pulse rounded-full bg-fiber shadow-[0_0_8px_var(--color-fiber)]" />
-              {t("hud")} · {nameOf(gen)}
-            </span>
-            <span className="ml-auto flex items-center gap-1.5">
-              {shownBands.map((b) => (
-                <span
-                  key={b}
+            {[null, ...shownBands].map((b) => {
+              const on = solo === b
+              return (
+                <button
+                  key={b ?? "all"}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setSolo(b)}
                   className={cn(
-                    "rounded-full border px-1.5 py-0.5 font-mono text-[0.55rem] tracking-wider transition-opacity sm:text-[0.6rem]",
-                    active[b] ? "opacity-100" : "opacity-25"
+                    "min-h-7 rounded-full px-2.5 font-mono text-[0.6rem] tracking-wider transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-[0.65rem]",
+                    on ? "bg-white/[0.12] text-white" : "text-slate-400 hover:text-slate-200"
                   )}
-                  style={{ borderColor: `${BANDS[b].color}66`, color: BANDS[b].color }}
+                  style={b && (on || !solo) ? { color: BANDS[b].color } : undefined}
                 >
-                  {BANDS[b].label}
-                </span>
-              ))}
-            </span>
+                  {b ? BANDS[b].label : t("bandView.all")}
+                </button>
+              )
+            })}
           </div>
-          {/* Corner marks */}
-          {["top-1.5 left-1.5 border-t border-l", "top-1.5 right-1.5 border-t border-r", "bottom-1.5 left-1.5 border-b border-l", "bottom-1.5 right-1.5 border-b border-r"].map((c) => (
-            <span key={c} aria-hidden className={cn("pointer-events-none absolute size-3 border-cyan-200/40", c)} />
-          ))}
+          <div
+            ref={stage}
+            className="relative isolate w-full touch-pan-y overflow-hidden rounded-2xl border border-white/10 bg-[#03060f] shadow-[0_40px_80px_-40px_rgb(0_0_0/0.9),0_0_80px_-30px_rgb(6_182_212/0.35)]"
+            style={{ aspectRatio: `${DOMAIN.w} / ${DOMAIN.h}` }}
+            // Tap / click on the plan places the modem (click, not pointerdown, so
+            // a finger scrolling the page over the plan never moves it).
+            onClick={(e) => {
+              if (e.target === e.currentTarget || (e.target as Element).closest("svg")) place(toMeters(e))
+            }}
+          >
+            {/* Fallback light while the simulation loads or without WebGL. */}
+            <div
+              aria-hidden
+              className={cn("absolute inset-0 transition-opacity duration-700", ready ? "opacity-0" : "opacity-100")}
+              style={{
+                background: `radial-gradient(circle at ${pctX(router.x)}% ${pctY(router.y)}%, rgb(34 211 238 / 0.28), rgb(167 139 250 / 0.08) 22%, transparent 45%)`,
+              }}
+            />
+            {webgl && (
+              <div aria-hidden className={cn("absolute inset-0 transition-opacity duration-700", ready ? "opacity-100" : "opacity-0")}>
+                <SceneBoundary onError={() => setWebgl(false)}>
+                  <WifiWaves
+                    active={active}
+                    show={show}
+                    density={density}
+                    router={router}
+                    still={reduced}
+                    onReady={() => setReady(true)}
+                    onError={() => setWebgl(false)}
+                  />
+                </SceneBoundary>
+              </div>
+            )}
+
+            {/* Blueprint overlay: the accessible picture of the plan. */}
+            <svg
+              role="img"
+              aria-label={t("planAlt")}
+              viewBox={`${DOMAIN.x0} ${DOMAIN.y0} ${DOMAIN.w} ${DOMAIN.h}`}
+              className="absolute inset-0 h-full w-full cursor-crosshair"
+            >
+              <defs>
+                <filter id="wl-glow" x="-10%" y="-10%" width="120%" height="120%">
+                  <feGaussianBlur stdDeviation="0.07" />
+                </filter>
+                <pattern id="wl-grid" width="0.5" height="0.5" patternUnits="userSpaceOnUse">
+                  <path d="M0.5 0H0V0.5" fill="none" stroke="rgb(148 163 184 / 0.07)" strokeWidth="0.012" />
+                </pattern>
+              </defs>
+              <rect x={0} y={0} width={APT.w} height={APT.h} fill="url(#wl-grid)" />
+
+              {/* Ruler along the bottom edge (meters) */}
+              <g className="fill-slate-400/60 font-mono max-sm:hidden" fontSize="0.15">
+                {Array.from({ length: APT.w + 1 }, (_, i) => (
+                  <g key={`x${i}`}>
+                    <line x1={i} x2={i} y1={APT.h + 0.08} y2={APT.h + 0.2} stroke="rgb(148 163 184 / 0.4)" strokeWidth="0.012" />
+                    {i % 2 === 0 && (
+                      <text x={i} y={APT.h + 0.4} textAnchor="middle">
+                        {i === APT.w ? `${i} m` : i}
+                      </text>
+                    )}
+                  </g>
+                ))}
+              </g>
+
+              {/* Room names */}
+              <g className="fill-slate-300/55 font-mono uppercase max-sm:[font-size:0.3px]" fontSize="0.17" letterSpacing="0.03">
+                {ROOMS.map((r) => (
+                  <text key={r.id} x={r.x + 0.24} y={r.y + 0.42}>
+                    {t(`rooms.${r.id}`)}
+                  </text>
+                ))}
+              </g>
+
+              {/* Links modem → devices, one line per band in use */}
+              <g>
+                {links.map(({ id, at, link }) => {
+                  const dx = at.x - router.x
+                  const dy = at.y - router.y
+                  const len = Math.hypot(dx, dy) || 1
+                  const nx = -dy / len
+                  const ny = dx / len
+                  return link.bands.map((b, i) => {
+                    const off = (i - (link.bands.length - 1) / 2) * 0.075
+                    return (
+                      <line
+                        key={`${id}-${b}`}
+                        className="wifi-link"
+                        x1={router.x + nx * off}
+                        y1={router.y + ny * off}
+                        x2={at.x + nx * off}
+                        y2={at.y + ny * off}
+                        stroke={BANDS[b].color}
+                        strokeWidth="0.028"
+                        strokeDasharray="0.16 0.2"
+                        strokeLinecap="round"
+                        opacity={link.quality === "weak" ? 0.3 : 0.85}
+                      />
+                    )
+                  })
+                })}
+              </g>
+
+              {/* Walls: glow + core, styled by material */}
+              <g filter="url(#wl-glow)" opacity="0.28">
+                {WALLS.map((w, i) => (
+                  <line key={`g${i}`} x1={w.a.x} y1={w.a.y} x2={w.b.x} y2={w.b.y} stroke="#67e8f9" strokeWidth={WALL_THICKNESS_M[w.m] * 1.3} />
+                ))}
+              </g>
+              <g>
+                {WALLS.map((w, i) => (
+                  <line
+                    key={`w${i}`}
+                    x1={w.a.x}
+                    y1={w.a.y}
+                    x2={w.b.x}
+                    y2={w.b.y}
+                    stroke={WALL_STYLE[w.m].stroke}
+                    strokeDasharray={WALL_STYLE[w.m].dash}
+                    strokeWidth={WALL_THICKNESS_M[w.m]}
+                    strokeLinecap="square"
+                  />
+                ))}
+              </g>
+
+              {/* Devices */}
+              <g>
+                {links.map(({ id, at, link }) => (
+                  <g key={id}>
+                    <circle cx={at.x} cy={at.y} r="0.26" fill="none" stroke="rgb(255 255 255 / 0.18)" strokeWidth="0.015" />
+                    <circle cx={at.x} cy={at.y} r="0.11" className={cn("fill-current", QUALITY_CLASS[link.quality])} />
+                    <text x={at.x} y={at.y + 0.5} textAnchor="middle" fontSize="0.17" className="fill-white/80 font-sans max-sm:[font-size:0.3px]">
+                      {t(`devices.${id}`)}
+                    </text>
+                  </g>
+                ))}
+              </g>
+            </svg>
+
+            {/* The modem: a real button (focus, keyboard), dragged with pointer capture. */}
+            <button
+              type="button"
+              aria-label={t("routerAria")}
+              className="group absolute z-10 grid size-11 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none place-items-center rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:cursor-grabbing"
+              style={{ left: `${pctX(router.x)}%`, top: `${pctY(router.y)}%` }}
+              onKeyDown={onKey}
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => {
+                e.stopPropagation()
+                e.currentTarget.setPointerCapture(e.pointerId)
+                dragging.current = true
+              }}
+              onPointerMove={(e) => {
+                if (dragging.current) setRouter(toMeters(e))
+              }}
+              onPointerUp={(e) => {
+                if (!dragging.current) return
+                dragging.current = false
+                place(toMeters(e))
+              }}
+              onPointerCancel={() => {
+                dragging.current = false
+              }}
+            >
+              <span aria-hidden className="wifi-router-ping absolute inset-1 rounded-full border border-cyan-200/70" />
+              <span aria-hidden className="wifi-router-ping absolute inset-1 rounded-full border border-cyan-200/50 [animation-delay:-1.1s]" />
+              <span
+                aria-hidden
+                className="relative size-4 rounded-full bg-white shadow-[0_0_0_3px_rgb(6_182_212/0.55),0_0_22px_6px_rgb(34_211_238/0.8)] transition-transform group-hover:scale-110"
+              />
+            </button>
+
+            {/* HUD */}
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-2.5 sm:p-3.5">
+              <span className="hidden items-center gap-2 font-mono text-[0.6rem] uppercase tracking-[0.18em] text-slate-300/70 sm:flex">
+                <span className="size-1.5 animate-pulse rounded-full bg-fiber shadow-[0_0_8px_var(--color-fiber)]" />
+                {t("hud")} · {nameOf(gen)}
+              </span>
+            </div>
+            {/* Corner marks */}
+            {["top-1.5 left-1.5 border-t border-l", "top-1.5 right-1.5 border-t border-r", "bottom-1.5 left-1.5 border-b border-l", "bottom-1.5 right-1.5 border-b border-r"].map((c) => (
+              <span key={c} aria-hidden className={cn("pointer-events-none absolute size-3 border-cyan-200/40", c)} />
+            ))}
+          </div>
         </div>
 
         {/* Under the stage: SIMULACIÓN tag + wall legend */}
@@ -360,6 +384,7 @@ export default function WifiLab() {
                 <line x1="0" y1="3" x2="20" y2="3" stroke={WALL_STYLE[m].stroke} strokeWidth={m === "concrete" ? 4 : m === "brick" ? 3 : 2} strokeDasharray={m === "drywall" ? "3 2" : undefined} />
               </svg>
               {t(`materials.${m}`)}
+              {solo && <span className="tabular-nums text-foreground/80">−{WALL_LOSS_DB[m][solo]} dB</span>}
             </span>
           ))}
           <span className="inline-flex items-center gap-1.5">
@@ -373,6 +398,9 @@ export default function WifiLab() {
             {t("dragHint")}
           </span>
         </div>
+        <p className="mt-2 max-w-prose text-xs leading-relaxed text-muted-foreground">
+          {t("bandView.note", { pct: CONCRETE_REFLECT_PCT })}
+        </p>
 
         {/* Devices */}
         <h4 className="mt-6 font-mono text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">{t("devicesTitle")}</h4>

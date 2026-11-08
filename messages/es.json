@@ -351,7 +351,12 @@
           "speed": "{gbps} Gbps · máx. teórico"
         }
       },
-      "burstHint": "Anillos blancos: datos. Más anillos = más datos por segundo, mismo alcance"
+      "burstHint": "Anillos blancos: datos. Más anillos = más datos por segundo, mismo alcance",
+      "bandView": {
+        "label": "Bandas en la simulación",
+        "all": "Ambas",
+        "note": "Cada banda choca distinto con los muros: 5 GHz pierde más señal al cruzarlos y 2.4 GHz rodea mejor puertas y esquinas. En ambas, un muro de concreto refleja cerca del {pct} % de la energía. Elige una banda arriba para verla sola."
+      }
     },
     "telemetry": {
       "title": "La red en vivo",

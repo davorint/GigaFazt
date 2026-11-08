@@ -351,7 +351,12 @@
           "speed": "{gbps} Gbps · theoretical max"
         }
       },
-      "burstHint": "White rings: data. More rings = more data per second, same reach"
+      "burstHint": "White rings: data. More rings = more data per second, same reach",
+      "bandView": {
+        "label": "Bands in the simulation",
+        "all": "Both",
+        "note": "Each band meets the walls differently: 5 GHz loses more signal crossing them, and 2.4 GHz bends better around doors and corners. On both, a concrete wall reflects about {pct}% of the energy. Pick a band above to see it alone."
+      }
     },
     "telemetry": {
       "title": "The network, live",

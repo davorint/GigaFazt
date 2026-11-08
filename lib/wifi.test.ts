@@ -14,8 +14,11 @@ import {
   signalDbm,
   wallsCrossed,
 } from "./wifi"
-import { SIM_H, SIM_W, buildMask, wallDamping, WAVELENGTH_CELLS, CELL_M, SIM_C, WALL_SPEED } from "./wifi-sim"
-import { WALL_THICKNESS_M } from "./wifi"
+import { MATERIAL_IDS, BAND_IDS } from "./wifi"
+import { SIM_H, SIM_W, buildMedium, WAVELENGTH_CELLS, WALL_CELLS, SIM_C, dampByte, zByte } from "./wifi-sim"
+import { WALL_MEDIUM } from "./wifi-walls"
+import { replicaWall } from "./wifi-replica"
+import { slabDb, wallReflectionTable } from "./wall-physics"
 
 describe("wifi generations (dual-band 2 × 2 home modems)", () => {
   it("are ordered and only Wi-Fi 7 has MLO", () => {
@@ -101,17 +104,63 @@ describe("simulation medium", () => {
     expect(Math.min(...Object.values(WAVELENGTH_CELLS))).toBeGreaterThanOrEqual(8)
     expect(SIM_C).toBeLessThanOrEqual(Math.SQRT1_2)
   })
-  it("wall damping reproduces the reference loss over one crossing", () => {
-    const steps = WALL_THICKNESS_M.concrete / CELL_M / (SIM_C * WALL_SPEED)
-    const amp = Math.pow(1 - wallDamping("concrete", "b5"), steps)
-    expect(-20 * Math.log10(amp)).toBeCloseTo(WALL_LOSS_DB.concrete.b5, 5)
+  it("walls are whole cells, at least two thick", () => {
+    for (const m of MATERIAL_IDS) expect(WALL_CELLS[m]).toBeGreaterThanOrEqual(2)
   })
-  it("builds a full RGBA mask with walls slower than air", () => {
-    const m = buildMask()
-    expect(m).toHaveLength(SIM_W * SIM_H * 4)
-    const speeds = new Set<number>()
-    for (let i = 3; i < m.length; i += 4) speeds.add(m[i])
-    expect([...speeds].sort((a, b) => a - b)).toEqual([Math.round(WALL_SPEED * 255), 255])
+  it("builds full RGBA damping and impedance textures with every wall type in them", () => {
+    const { damp, imp } = buildMedium()
+    expect(damp).toHaveLength(SIM_W * SIM_H * 4)
+    expect(imp).toHaveLength(SIM_W * SIM_H * 4)
+    const ks = new Set<number>()
+    for (let i = 1; i < damp.length; i += 4) ks.add(damp[i])
+    for (const m of MATERIAL_IDS) expect(ks.has(dampByte(WALL_MEDIUM[m].b5.k))).toBe(true)
+    const zs = new Set<number>()
+    for (let i = 0; i < imp.length; i += 4) zs.add(imp[i])
+    expect(zs.has(0)).toBe(true) // air
+    expect(zs.has(zByte(WALL_MEDIUM.concrete.b24.z))).toBe(true)
+  })
+})
+
+describe("wall physics (ITU-R P.2040)", () => {
+  it("15 cm of concrete loses about what the reference table says, more at higher bands", () => {
+    const c = [2.44, 5.5, 6.5].map((f) => -slabDb([{ m: "concrete", t: 0.15 }], f).t)
+    expect(Math.abs(c[0] - WALL_LOSS_DB.concrete.b24)).toBeLessThan(1.5)
+    expect(Math.abs(c[1] - WALL_LOSS_DB.concrete.b5)).toBeLessThan(1.5)
+    expect(c[2]).toBeGreaterThan(c[1])
+  })
+  it("a concrete wall reflects about 16 % of the power in every band", () => {
+    const r = wallReflectionTable().concrete
+    for (const b of BAND_IDS) expect(r[b]).toBeGreaterThan(-9)
+    for (const b of BAND_IDS) expect(r[b]).toBeLessThan(-7)
+  })
+})
+
+describe("wall calibration (lib/wifi-walls, generated)", () => {
+  it("every wall loses more at higher bands", () => {
+    for (const m of MATERIAL_IDS) {
+      const t = BAND_IDS.map((b) => WALL_MEDIUM[m][b].t)
+      expect(t[1]).toBeGreaterThan(t[0])
+      expect(t[2]).toBeGreaterThan(t[1])
+    }
+  })
+  it("matches the reference loss and, within the grid's reach, the ITU reflection", () => {
+    const r = wallReflectionTable()
+    for (const m of MATERIAL_IDS)
+      for (const b of BAND_IDS) {
+        const w = WALL_MEDIUM[m][b]
+        expect(Math.abs(w.t - WALL_LOSS_DB[m][b])).toBeLessThan(0.5)
+        // Loss alone already reflects some on a coarse grid: never less than the target.
+        if (w.z > 1.01) expect(Math.abs(w.r - r[m][b])).toBeLessThan(0.5)
+        else expect(w.r).toBeGreaterThanOrEqual(r[m][b] - 0.5)
+      }
+  })
+  it("the stored figures are what the simulation does (1D replica of the shader)", () => {
+    for (const [m, b] of [["concrete", "b5"], ["drywall", "b24"]] as const) {
+      const w = WALL_MEDIUM[m][b]
+      const got = replicaWall(WAVELENGTH_CELLS[b], WALL_CELLS[m], w.z, w.k)
+      expect(got.t).toBeCloseTo(w.t, 1)
+      expect(got.r).toBeCloseTo(w.r, 1)
+    }
   })
 })
 

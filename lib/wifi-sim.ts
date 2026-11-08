@@ -1,4 +1,5 @@
-import { APT, BAND_IDS, WALLS, WALL_LOSS_DB, WALL_THICKNESS_M, type BandId, type MaterialId, type Pt } from "./wifi"
+import { APT, BAND_IDS, WALLS, WALL_THICKNESS_M, type BandId, type MaterialId, type Pt } from "./wifi"
+import { WALL_MEDIUM } from "./wifi-walls"
 
 /**
  * Grid and medium for the Wi-Fi wave simulation (components/fiber/WifiWaves):
@@ -7,10 +8,14 @@ import { APT, BAND_IDS, WALLS, WALL_LOSS_DB, WALL_THICKNESS_M, type BandId, type
  * outer edge is a sponge layer, so waves leave instead of bouncing back.
  *
  * Illustrative, not an RF solver: real wavelengths (12.5 / 6 / 5 cm) are
- * scaled up together (same ratios) so the grid can resolve them; wall damping
- * is calibrated so one crossing costs roughly WALL_LOSS_DB; air damping and a
- * mild wall speed change (weak reflections) keep the rings readable. Tuned
- * against a NumPy replica of the shader.
+ * scaled up together (same ratios) so the grid can resolve them. Each wall
+ * type has, per band, a wave impedance (how much it reflects) and a
+ * conductive loss (how much it absorbs), fitted so one head-on crossing in the
+ * simulation reflects and transmits like the real wall: transmission loss =
+ * WALL_LOSS_DB, reflection = ITU-R P.2040 (lib/wall-physics). That's why the
+ * bands behave differently at the same wall. The fit lives in lib/wifi-walls
+ * (scripts/calibrate-walls.ts, checked by lib/wifi.test.ts against the 1D
+ * replica in lib/wifi-replica).
  */
 
 export const MARGIN_M = 0.6
@@ -21,10 +26,10 @@ export const CELL_M = DOMAIN.w / SIM_W
 
 /** Wave speed in cells per step (2D stability needs ≤ 1/√2). */
 export const SIM_C = 0.5
-/** Wave speed factor inside walls (partial reflection at each face). */
-export const WALL_SPEED = 0.85
-/** Mask bytes encode damping 0..DAMP_SCALE per step. */
+/** Damping bytes encode a per-step loss of 0..DAMP_SCALE. */
 export const DAMP_SCALE = 0.3
+/** Impedance bytes encode 1..Z_MAX (relative to air). */
+export const Z_MAX = 3
 
 const AIR_DAMP = 0.006
 const SPONGE_CELLS = 18
@@ -33,15 +38,21 @@ const SPONGE_MAX = 0.12
 /** Wavelength in cells: 2.4 GHz → 22 cells, the others scaled by frequency. */
 export const WAVELENGTH_CELLS: Record<BandId, number> = { b24: 22, b5: 22 * (2.4 / 5), b6: 22 * (2.4 / 6) }
 
+/** Each wall type's thickness on the grid, whole cells. */
+export const WALL_CELLS: Record<MaterialId, number> = {
+  concrete: Math.round(WALL_THICKNESS_M.concrete / CELL_M),
+  brick: Math.round(WALL_THICKNESS_M.brick / CELL_M),
+  drywall: Math.round(WALL_THICKNESS_M.drywall / CELL_M),
+}
+
 export function bandOmega(b: BandId): number {
   return (2 * Math.PI * SIM_C) / WAVELENGTH_CELLS[b]
 }
 
-/** Per-step damping inside a wall so one crossing loses ~WALL_LOSS_DB. */
-export function wallDamping(m: MaterialId, b: BandId): number {
-  const steps = WALL_THICKNESS_M[m] / CELL_M / (SIM_C * WALL_SPEED)
-  return 1 - Math.pow(10, -WALL_LOSS_DB[m][b] / 20 / steps)
-}
+export const dampByte = (k: number) => Math.round(Math.min(Math.max(k / DAMP_SCALE, 0), 1) * 255)
+export const dampOf = (byte: number) => (byte / 255) * DAMP_SCALE
+export const zByte = (z: number) => Math.round(Math.min(Math.max((z - 1) / (Z_MAX - 1), 0), 1) * 255)
+export const zOf = (byte: number) => 1 + (byte / 255) * (Z_MAX - 1)
 
 /** Meters → texture uv (y flipped: uv 0 is the bottom row). */
 export function toUv(p: Pt): [number, number] {
@@ -56,34 +67,36 @@ function distToSegment(p: Pt, a: Pt, b: Pt): number {
 }
 
 /**
- * The medium, RGBA bytes row by row from the bottom (WebGL texture order):
- * R/G/B = per-step damping for 2.4/5/6 GHz (÷ DAMP_SCALE), A = wave speed factor.
+ * The medium as two RGBA byte textures, rows from the bottom (WebGL order),
+ * R/G/B = 2.4/5/6 GHz: `damp` = per-step loss (÷ DAMP_SCALE; air, sponge and
+ * walls), `imp` = wave impedance (1 = air … Z_MAX). Walls are exactly
+ * WALL_CELLS thick, as calibrated.
  */
-export function buildMask(): Uint8Array {
-  const out = new Uint8Array(SIM_W * SIM_H * 4)
-  const wallK = Object.fromEntries(
-    WALLS.map((wl, i) => [i, BAND_IDS.map((b) => wallDamping(wl.m, b))])
-  ) as Record<number, number[]>
-
+export function buildMedium(): { damp: Uint8Array; imp: Uint8Array } {
+  const damp = new Uint8Array(SIM_W * SIM_H * 4)
+  const imp = new Uint8Array(SIM_W * SIM_H * 4)
   for (let j = 0; j < SIM_H; j++) {
     for (let i = 0; i < SIM_W; i++) {
       const p = { x: DOMAIN.x0 + (i + 0.5) * CELL_M, y: DOMAIN.y0 + (SIM_H - 1 - j + 0.5) * CELL_M }
       const edge = Math.min(i, j, SIM_W - 1 - i, SIM_H - 1 - j)
       const sponge = edge < SPONGE_CELLS ? SPONGE_MAX * (1 - edge / SPONGE_CELLS) ** 2 : 0
-      let k = [AIR_DAMP + sponge, AIR_DAMP + sponge, AIR_DAMP + sponge]
-      let speed = 1
-
-      WALLS.forEach((wl, wi) => {
-        if (distToSegment(p, wl.a, wl.b) <= WALL_THICKNESS_M[wl.m] / 2) {
-          k = k.map((v, bi) => Math.max(v, wallK[wi][bi]))
-          speed = WALL_SPEED
+      let k = BAND_IDS.map(() => AIR_DAMP + sponge)
+      let z = BAND_IDS.map(() => 1)
+      for (const wl of WALLS) {
+        // Strict: an interval WALL_CELLS wide holds exactly that many cell centers.
+        if (distToSegment(p, wl.a, wl.b) < (WALL_CELLS[wl.m] * CELL_M) / 2 - 1e-9) {
+          const med = WALL_MEDIUM[wl.m]
+          k = BAND_IDS.map((b) => med[b].k)
+          z = BAND_IDS.map((b) => med[b].z)
         }
-      })
-
+      }
       const o = (j * SIM_W + i) * 4
-      for (let c = 0; c < 3; c++) out[o + c] = Math.round(Math.min(k[c] / DAMP_SCALE, 1) * 255)
-      out[o + 3] = Math.round(speed * 255)
+      for (let c = 0; c < 3; c++) {
+        damp[o + c] = dampByte(k[c])
+        imp[o + c] = zByte(z[c])
+      }
+      damp[o + 3] = imp[o + 3] = 255
     }
   }
-  return out
+  return { damp, imp }
 }

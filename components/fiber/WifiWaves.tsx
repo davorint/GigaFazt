@@ -3,14 +3,16 @@
 import { useEffect, useRef } from "react"
 import * as THREE from "three"
 import { APT, BANDS, type BandId, type Pt } from "@/lib/wifi"
-import { DAMP_SCALE, SIM_C, SIM_H, SIM_W, bandOmega, buildMask, toUv } from "@/lib/wifi-sim"
+import { DAMP_SCALE, SIM_C, SIM_H, SIM_W, Z_MAX, bandOmega, buildMedium, toUv } from "@/lib/wifi-sim"
 
 /**
  * GPU wave simulation for "Así viaja el Wi-Fi por tu depa" (lib/wifi-sim.ts):
  * a 2D wave equation stepped in a fragment shader (leapfrog, three ping-pong
  * half-float targets), R/G/B = 2.4/5/6 GHz fields, A = a slow energy average
- * for the coverage glow. Walls come from a mask texture (per-band damping +
- * slower wave speed, so they also reflect). Loaded only via next/dynamic from
+ * for the coverage glow. Walls come from two medium textures: per band, a
+ * wave impedance (how much a wall reflects) and a conductive loss (how much
+ * it absorbs), fitted to real walls (lib/wifi-sim). `show` hides bands from
+ * the picture (and the glow) without stopping them. Loaded only via next/dynamic from
  * WifiLab (three.js stays out of the initial bundle). Decorative: WifiLab
  * carries the text equivalent.
  *
@@ -55,29 +57,37 @@ void main() {
 const SIM_FRAG = /* glsl */ `
 uniform sampler2D uCur;
 uniform sampler2D uPrev;
-uniform sampler2D uMask;
+uniform sampler2D uDamp;
+uniform sampler2D uImp;
 uniform vec2 uTexel;
 uniform vec2 uSrc;
 uniform vec3 uOmega;
 uniform vec3 uActive;
+uniform vec3 uEnergy;
 uniform float uTime;
 uniform float uC2;
 uniform float uDampScale;
+uniform float uZSpan;
 uniform float uAmp;
 varying vec2 vUv;
+
+vec3 zAt(vec2 uv) { return 1.0 + texture2D(uImp, uv).rgb * uZSpan; }
+// One neighbor's pull: face impedance (harmonic mean) times the difference.
+vec3 pull(vec2 off, vec3 u, vec3 z) {
+  vec3 zn = zAt(vUv + off);
+  return 2.0 * z * zn / (z + zn) * (texture2D(uCur, vUv + off).rgb - u);
+}
 
 void main() {
   vec4 c = texture2D(uCur, vUv);
   vec3 p = texture2D(uPrev, vUv).rgb;
-  vec4 m = texture2D(uMask, vUv);
-  vec3 lap = texture2D(uCur, vUv + vec2(uTexel.x, 0.0)).rgb
-           + texture2D(uCur, vUv - vec2(uTexel.x, 0.0)).rgb
-           + texture2D(uCur, vUv + vec2(0.0, uTexel.y)).rgb
-           + texture2D(uCur, vUv - vec2(0.0, uTexel.y)).rgb
-           - 4.0 * c.rgb;
-  float s = m.a;
-  vec3 n = 2.0 * c.rgb - p + uC2 * s * s * lap;
-  n *= vec3(1.0) - m.rgb * uDampScale;
+  vec3 k = texture2D(uDamp, vUv).rgb * uDampScale;
+  vec3 z = zAt(vUv);
+  // Wave equation with per-band impedance (reflection at walls, same speed)
+  // and conductive loss (absorption): lib/wifi-replica is the 1D copy.
+  vec3 lap = (pull(vec2(uTexel.x, 0.0), c.rgb, z) + pull(vec2(-uTexel.x, 0.0), c.rgb, z)
+            + pull(vec2(0.0, uTexel.y), c.rgb, z) + pull(vec2(0.0, -uTexel.y), c.rgb, z)) / z;
+  vec3 n = (2.0 * c.rgb - (vec3(1.0) - k) * p + uC2 * lap) / (vec3(1.0) + k);
   // Bands the selected generation doesn't use fade out.
   n *= mix(vec3(0.95), vec3(1.0), uActive);
   // Soft source: a small Gaussian at the modem, one frequency per band.
@@ -87,7 +97,7 @@ void main() {
   // NaN / blow-up guard (NaN fails every comparison).
   bvec3 ok = lessThan(abs(n), vec3(6.0));
   n = vec3(ok.x ? n.x : 0.0, ok.y ? n.y : 0.0, ok.z ? n.z : 0.0);
-  float e = mix(c.a, dot(n * n, uActive), 0.02);
+  float e = mix(c.a, dot(n * n, uEnergy), 0.02);
   if (!(e >= 0.0 && e < 100.0)) e = 0.0;
   gl_FragColor = vec4(n, e);
 }`
@@ -135,6 +145,7 @@ void main() {
 
 export default function WifiWaves({
   active,
+  show,
   density,
   router,
   still,
@@ -142,6 +153,8 @@ export default function WifiWaves({
   onError,
 }: {
   active: Record<BandId, boolean>
+  /** Bands drawn (all by default); hidden ones keep running, just unseen. */
+  show: Record<BandId, boolean>
   /** 0–1: data-ring density (lib/wifi dataDensity). */
   density: number
   router: Pt
@@ -150,7 +163,10 @@ export default function WifiWaves({
   onError?: () => void
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const api = useRef<{ setInputs: (a: Record<BandId, boolean>, density: number, r: Pt) => void; settle: () => void } | null>(null)
+  const api = useRef<{
+    setInputs: (a: Record<BandId, boolean>, show: Record<BandId, boolean>, density: number, r: Pt) => void
+    settle: () => void
+  } | null>(null)
   const stillRef = useRef(still)
   const readyCb = useRef(onReady)
   const errorCb = useRef(onError)
@@ -194,9 +210,13 @@ export default function WifiWaves({
     }
     renderer.setRenderTarget(null)
 
-    const mask = new THREE.DataTexture(buildMask(), SIM_W, SIM_H, THREE.RGBAFormat, THREE.UnsignedByteType)
-    mask.minFilter = mask.magFilter = THREE.NearestFilter
-    mask.needsUpdate = true
+    const medium = buildMedium()
+    const [dampTex, impTex] = [medium.damp, medium.imp].map((data) => {
+      const tex = new THREE.DataTexture(data, SIM_W, SIM_H, THREE.RGBAFormat, THREE.UnsignedByteType)
+      tex.minFilter = tex.magFilter = THREE.NearestFilter
+      tex.needsUpdate = true
+      return tex
+    })
 
     const color = (b: BandId) => new THREE.Color(BANDS[b].color)
     const simMat = new THREE.ShaderMaterial({
@@ -205,14 +225,17 @@ export default function WifiWaves({
       uniforms: {
         uCur: { value: cur.texture },
         uPrev: { value: prev.texture },
-        uMask: { value: mask },
+        uDamp: { value: dampTex },
+        uImp: { value: impTex },
         uTexel: { value: new THREE.Vector2(1 / SIM_W, 1 / SIM_H) },
         uSrc: { value: new THREE.Vector2(0.5, 0.5) },
         uOmega: { value: new THREE.Vector3(bandOmega("b24"), bandOmega("b5"), bandOmega("b6")) },
         uActive: { value: new THREE.Vector3() },
+        uEnergy: { value: new THREE.Vector3() },
         uTime: { value: 0 },
         uC2: { value: SIM_C * SIM_C },
         uDampScale: { value: DAMP_SCALE },
+        uZSpan: { value: Z_MAX - 1 },
         uAmp: { value: 0.32 },
       },
       depthTest: false,
@@ -307,10 +330,12 @@ export default function WifiWaves({
     }
 
     api.current = {
-      setInputs(a, density, r) {
-        const v = new THREE.Vector3(+a.b24, +a.b5, +a.b6)
-        simMat.uniforms.uActive.value.copy(v)
-        viewMat.uniforms.uActive.value.copy(v)
+      setInputs(a, show, density, r) {
+        const on = new THREE.Vector3(+a.b24, +a.b5, +a.b6)
+        const seen = new THREE.Vector3(+(a.b24 && show.b24), +(a.b5 && show.b5), +(a.b6 && show.b6))
+        simMat.uniforms.uActive.value.copy(on)
+        simMat.uniforms.uEnergy.value.copy(seen)
+        viewMat.uniforms.uActive.value.copy(seen)
         viewMat.uniforms.uDensity.value = density
         simMat.uniforms.uSrc.value.set(...toUv(r))
         viewMat.uniforms.uSrc.value.set(...toUv(r))
@@ -335,7 +360,8 @@ export default function WifiWaves({
       document.removeEventListener("visibilitychange", kick)
       api.current = null
       for (const rt of [prev, cur, next]) rt.dispose()
-      mask.dispose()
+      dampTex.dispose()
+      impTex.dispose()
       simMat.dispose()
       viewMat.dispose()
       quad.geometry.dispose()
@@ -347,9 +373,9 @@ export default function WifiWaves({
   // first inputs reach the simulation too.
   useEffect(() => {
     stillRef.current = still
-    api.current?.setInputs(active, density, router)
+    api.current?.setInputs(active, show, density, router)
     api.current?.settle()
-  }, [active, density, router, still])
+  }, [active, show, density, router, still])
 
   return <canvas ref={canvasRef} aria-hidden className="absolute inset-0 block h-full w-full" />
 }
