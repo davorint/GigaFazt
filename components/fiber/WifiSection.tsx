@@ -1,0 +1,45 @@
+import { useTranslations } from "next-intl"
+import { WALL_LOSS_DB, type MaterialId } from "@/lib/wifi"
+import { LazyWifiLab } from "./LazyWifiLab"
+import { WifiComparison } from "./WifiComparison"
+
+/**
+ * "Así viaja el Wi-Fi por tu depa" (inside the Fiber section, before "Qué
+ * significa"): the simulated apartment lab (lazy island), the one-line insight
+ * (walls slow every generation; generations differ in what they do with the
+ * signal), the server-rendered comparison table and the qualifying note.
+ */
+export function WifiSection() {
+  const t = useTranslations("fiber.wifi")
+  const range = (m: MaterialId) => {
+    const v = Object.values(WALL_LOSS_DB[m])
+    return `${Math.min(...v)}–${Math.max(...v)}`
+  }
+
+  return (
+    <div>
+      <div className="reveal max-w-2xl">
+        <p className="eyebrow mb-3">[ {t("eyebrow")} ]</p>
+        <h3 className="text-2xl font-semibold tracking-[-0.02em] sm:text-3xl">{t("title")}</h3>
+        <p className="mt-3 text-muted-foreground">{t("lead")}</p>
+      </div>
+
+      <div className="mt-8">
+        <LazyWifiLab />
+      </div>
+
+      <p className="reveal mt-12 max-w-3xl border-l-2 border-fiber/70 pl-5 text-lg leading-relaxed text-foreground/90 sm:text-xl">
+        {t("insight")}
+      </p>
+
+      <div className="reveal mt-10">
+        <h4 className="mb-4 text-lg font-semibold tracking-[-0.02em]">{t("tableTitle")}</h4>
+        <WifiComparison />
+      </div>
+
+      <p className="mt-3 max-w-4xl font-mono text-[0.7rem] leading-relaxed text-muted-foreground">
+        {t("note", { concrete: range("concrete"), brick: range("brick"), drywall: range("drywall") })}
+      </p>
+    </div>
+  )
+}

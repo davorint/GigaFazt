@@ -246,6 +246,73 @@
       "note": "Ideal calculation at sustained maximum speed · 1 GB = 8,000 Mb · 25 Mbps per 4K screen.",
       "titlePlan": "What {speed} means day to day"
     },
+    "wifi": {
+      "eyebrow": "Wi-Fi 7",
+      "title": "How Wi-Fi travels through your home",
+      "lead": "A simulation of the waves leaving the modem and how walls slow them down. Drag the modem and compare generations.",
+      "insight": "Walls slow every generation down the same way. What changes is what each one does with the signal that gets through: wider channels, more data in every wave and, with Wi-Fi 7, several bands at the same time.",
+      "hud": "2D wave simulation",
+      "generation": "Generation",
+      "maxLabel": "Theoretical maximum of the standard",
+      "bands": "Bands",
+      "channel": "Widest channel",
+      "modulation": "Modulation",
+      "bits": "{n} bits per symbol",
+      "streams": "Simultaneous streams",
+      "ieee": "IEEE standard",
+      "year": "Year",
+      "tech": "What's new",
+      "devicesTitle": "Signal at each device",
+      "mlo": "at once (MLO)",
+      "notAvailable": "not available",
+      "quality": {
+        "excellent": "Excellent",
+        "good": "Good",
+        "fair": "Fair",
+        "weak": "Weak"
+      },
+      "routerAria": "Modem. Drag it, tap the floor plan or use the arrow keys to move it.",
+      "dragHint": "Drag the modem or tap the plan",
+      "routerIn": "The modem is in: {room}.",
+      "deviceStatus": "{device}: {quality} signal over {bands}.",
+      "planAlt": "Simulated floor plan of an apartment with a living-dining room, open kitchen, main bedroom, study, second bedroom and bathroom. Concrete outer walls, brick between rooms and drywall between the study and the second bedroom. Waves leave the modem and weaken at every wall, more so on the higher bands.",
+      "rooms": {
+        "living": "Living-dining",
+        "kitchen": "Kitchen",
+        "master": "Main bedroom",
+        "study": "Study",
+        "bedroom2": "Bedroom 2",
+        "bath": "Bathroom"
+      },
+      "devices": {
+        "tv": "4K TV",
+        "laptop": "Laptop",
+        "console": "Console",
+        "phone": "Phone",
+        "speaker": "Smart speaker"
+      },
+      "materials": {
+        "concrete": "Concrete",
+        "brick": "Brick",
+        "drywall": "Drywall"
+      },
+      "techs": {
+        "mimo": "Several antennas transmit at once",
+        "muMimo": "Serves several devices at once, downstream",
+        "ofdma": "Splits each channel among many devices",
+        "twt": "Your devices save battery",
+        "band6": "6 GHz band: new, less crowded channels",
+        "mlo": "One device uses several bands at the same time",
+        "ch320": "320 MHz channels: twice as wide",
+        "qam4096": "4096-QAM: 20% more data in every wave"
+      },
+      "tableCaption": "Wi-Fi generations: theoretical maximum of each standard",
+      "tableTitle": "Five generations, side by side",
+      "inPlan": "Included in {speed}",
+      "cta": "The Wi-Fi 7 modem comes with the {speed} plan.",
+      "ctaButton": "Get {speed}",
+      "note": "Illustrative simulation: wavelengths at relative scale and approximate loss per wall by band (concrete {concrete} dB, brick {brick} dB, drywall {drywall} dB). Each generation's figures are the standard's theoretical maximum; your real speed is limited by your plan, the modem and your devices. It simulates the standard, not a specific modem."
+    },
     "telemetry": {
       "title": "The network, live",
       "desc": "This is what monitoring a symmetrical network looks like. For now it's simulated data while we connect our real metrics.",

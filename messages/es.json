@@ -246,6 +246,73 @@
       "note": "Cálculo ideal a velocidad máxima sostenida · 1 GB = 8,000 Mb · 25 Mbps por pantalla en 4K.",
       "titlePlan": "Qué significa {speed} en tu día a día"
     },
+    "wifi": {
+      "eyebrow": "Wi-Fi 7",
+      "title": "Así viaja el Wi-Fi por tu depa",
+      "lead": "Una simulación de las ondas que salen del módem y de cómo las frenan los muros. Arrastra el módem y compara generaciones.",
+      "insight": "Los muros frenan igual a todas las generaciones. Lo que cambia es lo que cada una hace con la señal que llega: canales más anchos, más datos en cada onda y, con Wi-Fi 7, varias bandas al mismo tiempo.",
+      "hud": "Simulación de ondas 2D",
+      "generation": "Generación",
+      "maxLabel": "Máximo teórico del estándar",
+      "bands": "Bandas",
+      "channel": "Canal máximo",
+      "modulation": "Modulación",
+      "bits": "{n} bits por símbolo",
+      "streams": "Flujos simultáneos",
+      "ieee": "Estándar IEEE",
+      "year": "Año",
+      "tech": "Lo nuevo",
+      "devicesTitle": "Señal en cada equipo",
+      "mlo": "a la vez (MLO)",
+      "notAvailable": "no disponible",
+      "quality": {
+        "excellent": "Excelente",
+        "good": "Buena",
+        "fair": "Regular",
+        "weak": "Débil"
+      },
+      "routerAria": "Módem. Arrástralo, toca el plano o usa las flechas del teclado para moverlo.",
+      "dragHint": "Arrastra el módem o toca el plano",
+      "routerIn": "El módem está en: {room}.",
+      "deviceStatus": "{device}: señal {quality} por {bands}.",
+      "planAlt": "Plano simulado de un departamento con sala-comedor, cocina abierta, recámara principal, estudio, recámara 2 y baño. Muros de concreto en el perímetro, de tabique entre cuartos y de tablaroca entre el estudio y la recámara 2. Las ondas salen del módem y se debilitan al cruzar cada muro, más en las bandas altas.",
+      "rooms": {
+        "living": "Sala-comedor",
+        "kitchen": "Cocina",
+        "master": "Recámara principal",
+        "study": "Estudio",
+        "bedroom2": "Recámara 2",
+        "bath": "Baño"
+      },
+      "devices": {
+        "tv": "Pantalla 4K",
+        "laptop": "Laptop",
+        "console": "Consola",
+        "phone": "Celular",
+        "speaker": "Bocina inteligente"
+      },
+      "materials": {
+        "concrete": "Concreto",
+        "brick": "Tabique",
+        "drywall": "Tablaroca"
+      },
+      "techs": {
+        "mimo": "Varias antenas transmiten a la vez",
+        "muMimo": "Atiende a varios equipos a la vez, de bajada",
+        "ofdma": "Reparte cada canal entre muchos equipos",
+        "twt": "Tus equipos ahorran batería",
+        "band6": "Banda de 6 GHz: canales nuevos y menos saturados",
+        "mlo": "Un mismo equipo usa varias bandas al mismo tiempo",
+        "ch320": "Canales de 320 MHz: el doble de ancho",
+        "qam4096": "4096-QAM: 20% más datos en cada onda"
+      },
+      "tableCaption": "Generaciones de Wi-Fi: máximos teóricos de cada estándar",
+      "tableTitle": "Cinco generaciones, lado a lado",
+      "inPlan": "Incluido en {speed}",
+      "cta": "El módem Wi-Fi 7 viene con el plan de {speed}.",
+      "ctaButton": "Contratar {speed}",
+      "note": "Simulación ilustrativa: longitudes de onda a escala relativa y pérdida aproximada por muro según la banda (concreto {concrete} dB, tabique {brick} dB, tablaroca {drywall} dB). Las cifras de cada generación son máximos teóricos del estándar; tu velocidad real la limitan tu plan, el módem y tus dispositivos. Se simula el estándar, no un módem en particular."
+    },
     "telemetry": {
       "title": "La red en vivo",
       "desc": "Así se ve el monitoreo de una red simétrica. Por ahora son datos simulados, mientras conectamos nuestras métricas reales.",

@@ -690,6 +690,31 @@ section[data-section="faq"]::before {
   }
 }
 
+/* Wi-Fi lab (WifiLab): link dashes flow modem → device and the modem pings.
+   Paused while the lab is offscreen (data-inview), frozen for screenshots;
+   the global reduce / data-motion rules stop them under reduced motion. */
+@keyframes wifi-link-flow {
+  to { stroke-dashoffset: -0.72; }
+}
+.wifi-link {
+  animation: wifi-link-flow 1.2s linear infinite;
+}
+@keyframes wifi-router-ping {
+  0% { transform: scale(0.5); opacity: 0.9; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.wifi-router-ping {
+  animation: wifi-router-ping 2.2s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
+.wifi-lab:not([data-inview]) .wifi-link,
+.wifi-lab:not([data-inview]) .wifi-router-ping {
+  animation-play-state: paused;
+}
+html[data-shot] .wifi-link,
+html[data-shot] .wifi-router-ping {
+  animation: none;
+}
+
 /* ── Scroll reveal ──────────────────────────────────────────────────────────
    CSS scroll-driven (no JS): `.reveal` rises into place as it enters the
    viewport; direct children of `.reveal-stagger` follow one after another.
