@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/Footer"
 import { Hero } from "@/components/fiber/Hero"
 import { PlansSection } from "@/components/plans/PlansSection"
 import { FiberSection } from "@/components/fiber/FiberSection"
+import { WifiSection } from "@/components/fiber/WifiSection"
 import { CoverageMapSection } from "@/components/map/CoverageMapSection"
 import { ProofBand } from "@/components/hud/ProofBand"
 import { InstallSteps } from "@/components/conversion/InstallSteps"
@@ -45,6 +46,9 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
         </Section>
         <Section id="fiber" aria-label={t("fiber")}>
           <FiberSection />
+        </Section>
+        <Section id="wifi" aria-label={t("wifi")}>
+          <WifiSection />
         </Section>
         <Section id="map" aria-label={t("map")}>
           <CoverageMapSection />

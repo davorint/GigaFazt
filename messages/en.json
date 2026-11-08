@@ -6,6 +6,7 @@
   },
   "nav": {
     "fibra": "Fiber",
+    "wifi": "Wi-Fi",
     "planes": "Plans",
     "cobertura": "Coverage",
     "soporte": "Help",
@@ -31,12 +32,15 @@
     "viewPlans": "See plans",
     "coverageLink": "Do we cover your area?",
     "canvasAlt": "A bundle of optical fibers rising from a single point and fanning out, with cyan light pulses travelling along each strand.",
-    "clients": "More than {count} active clients are already online with us."
+    "clients": "More than {count} active clients are already online with us.",
+    "stripLabel": "All plans",
+    "stripSee": "See this plan"
   },
   "sections": {
     "hero": "Home",
     "plans": "Plans",
     "fiber": "Symmetrical fiber",
+    "wifi": "Wi-Fi at home",
     "map": "Coverage",
     "proof": "The network",
     "install": "Installation",

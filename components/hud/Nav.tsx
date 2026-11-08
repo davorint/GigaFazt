@@ -25,6 +25,7 @@ const MobileMenu = dynamic(() =>
 
 const LINKS = [
   { key: "fibra", href: "#fiber" },
+  { key: "wifi", href: "#wifi" },
   { key: "planes", href: "#plans" },
   { key: "cobertura", href: "#map" },
   { key: "soporte", href: "#faq" },
@@ -33,7 +34,7 @@ const LINKS = [
 /** Separate pages (not home sections), so the home page stays light. */
 const PAGES = [{ key: "empresas", path: "/empresas" }] as const
 
-const SECTION_IDS = ["hero", "fiber", "plans", "map", "faq"]
+const SECTION_IDS = ["hero", "plans", "fiber", "wifi", "map", "faq"]
 
 /**
  * `base` prefixes the hash links when rendered off the home page (e.g. "/es").

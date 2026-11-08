@@ -6,6 +6,7 @@
   },
   "nav": {
     "fibra": "Fibra",
+    "wifi": "Wi-Fi",
     "planes": "Planes",
     "cobertura": "Cobertura",
     "soporte": "Ayuda",
@@ -31,12 +32,15 @@
     "viewPlans": "Ver planes",
     "coverageLink": "¿Llegamos a tu zona?",
     "canvasAlt": "Haz de fibras ópticas que nace de un solo punto y se abre en abanico, con pulsos de luz cian viajando a lo largo de cada hebra.",
-    "clients": "Más de {count} clientes activos ya navegan con nosotros."
+    "clients": "Más de {count} clientes activos ya navegan con nosotros.",
+    "stripLabel": "Todos los planes",
+    "stripSee": "Ver este plan"
   },
   "sections": {
     "hero": "Inicio",
     "plans": "Planes",
     "fiber": "Fibra simétrica",
+    "wifi": "Wi-Fi en casa",
     "map": "Cobertura",
     "proof": "La red",
     "install": "Instalación",

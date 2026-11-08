@@ -6,8 +6,8 @@ import { LazyWifiLab } from "./LazyWifiLab"
 import { WifiComparison } from "./WifiComparison"
 
 /**
- * "Así viaja el Wi-Fi por tu depa" (inside the Fiber section, before "Qué
- * significa"): the simulated apartment lab (lazy island), the one-line insight
+ * "Así viaja el Wi-Fi por tu depa", its own home section (#wifi) right after
+ * Fiber: the simulated apartment lab (lazy island), the one-line insight
  * (walls slow every generation; generations differ in what they do with the
  * signal), the server-rendered comparison table and the qualifying note.
  */
@@ -19,10 +19,10 @@ export function WifiSection() {
   }
 
   return (
-    <div>
+    <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
       <div className="reveal max-w-2xl">
         <p className="eyebrow mb-3">[ {t("eyebrow")} ]</p>
-        <h3 className="text-2xl font-semibold tracking-[-0.02em] sm:text-3xl">{t("title")}</h3>
+        <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">{t("title")}</h2>
         <p className="mt-3 text-muted-foreground">{t("lead")}</p>
       </div>
 
@@ -35,7 +35,7 @@ export function WifiSection() {
       </p>
 
       <div className="reveal mt-10">
-        <h4 className="mb-4 text-lg font-semibold tracking-[-0.02em]">{t("tableTitle")}</h4>
+        <h3 className="mb-4 text-lg font-semibold tracking-[-0.02em]">{t("tableTitle")}</h3>
         <WifiComparison />
       </div>
 

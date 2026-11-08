@@ -2,15 +2,14 @@ import { useTranslations } from "next-intl"
 import { ArrowRight } from "lucide-react"
 import { SymmetryLight } from "./SymmetryLight"
 import { WhatItMeans } from "./WhatItMeans"
-import { WifiSection } from "./WifiSection"
 import { LazyTelemetryPanel } from "./LazyTelemetryPanel"
 import { LazyLatencyPhysics } from "./LazyLatencyPhysics"
 import { DeepDiveCards, deepDiveReady } from "./DeepDiveCards"
 
 /**
  * Symmetrical Fiber (SPEC §4), the flagship section: "Dentro de la fibra"
- * (full-bleed three.js flight into the fiber core) → plan CTA, the Wi-Fi
- * apartment lab + generations table, "what it means" tiles, simulated live telemetry,
+ * (full-bleed three.js flight into the fiber core), "what it means" tiles,
+ * simulated live telemetry,
  * latency physics and deep-dive cards. Heavy widgets are lazy islands.
  */
 export function FiberSection() {
@@ -32,10 +31,6 @@ export function FiberSection() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-      <div className="mt-20">
-        <WifiSection />
-      </div>
-
       <div className="reveal mt-20">
         <WhatItMeans />
       </div>

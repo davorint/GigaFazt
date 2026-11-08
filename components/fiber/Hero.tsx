@@ -1,16 +1,14 @@
-"use client"
-
+import { Fragment } from "react"
 import { useLocale, useTranslations } from "next-intl"
-import { ArrowRight, MapPin, Users } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Users } from "lucide-react"
 import { featuredPlan } from "@/lib/plans"
 import { company } from "@/lib/company"
 import { formatMxn } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
-import { track } from "@/lib/analytics"
-import { scrollToId } from "@/lib/scroll"
 import { PriceTerms } from "@/components/plans/PriceTerms"
 import { FiberBackdrop } from "./FiberBackdrop"
+import { HeroPlanStrip } from "./HeroPlanStrip"
+import { HeroActions } from "./HeroActions"
 
 /**
  * Hero (SPEC §2): the fiber scene behind, an offer-led pitch in front. One
@@ -18,6 +16,51 @@ import { FiberBackdrop } from "./FiberBackdrop"
  * the pitch (hard rule #5); the lineup's other prices live in Plans and the
  * Wi-Fi 7 modem in the 1 Gbps plan card. One lineup for everyone.
  */
+/** Staggered entrance delay (ms) for the blocks under the headline. */
+const rise = (ms: number) => ({ "--d": `${ms}ms` }) as React.CSSProperties
+
+/**
+ * Splits the headline into words that rise in one by one (globals.css
+ * .hero-word). A rich chunk (the price in the brand gradient) stays one unit,
+ * and punctuation glued to a unit stays with it so it can't wrap alone.
+ */
+function riseWords(node: React.ReactNode): React.ReactNode {
+  const parts = Array.isArray(node) ? node : [node]
+  const units: React.ReactNode[][] = []
+  let open = false // the last unit can still take glued text
+  for (const part of parts) {
+    if (typeof part !== "string") {
+      if (open) units[units.length - 1].push(part)
+      else units.push([part])
+      open = true
+      continue
+    }
+    for (const tok of part.split(/(\s+)/)) {
+      if (!tok) continue
+      if (/^\s+$/.test(tok)) {
+        units.push([" "])
+        open = false
+      } else if (open) units[units.length - 1].push(tok)
+      else {
+        units.push([tok])
+        open = true
+      }
+    }
+  }
+  let i = 0
+  return units.map((u, k) =>
+    u.length === 1 && u[0] === " " ? (
+      " "
+    ) : (
+      <span key={k} className="hero-word" style={{ "--i": i++ } as React.CSSProperties}>
+        {u.map((x, j) => (
+          <Fragment key={j}>{x}</Fragment>
+        ))}
+      </span>
+    )
+  )
+}
+
 const H1_CLASS =
   "block text-balance text-5xl font-semibold leading-[1.02] tracking-[-0.035em] sm:text-6xl lg:text-[5.5rem]"
 
@@ -26,21 +69,22 @@ export function Hero() {
   const locale = useLocale()
   const featuredPrice = featuredPlan.priceMxn
 
-  const goTo = (id: string) => scrollToId(id)
   const headline = (brand: boolean) =>
-    isPlaceholder(featuredPrice)
-      ? t("h1NoPrice")
-      : t.rich("h1", {
-          price: formatMxn(featuredPrice, locale),
-          hl: (chunks) => <span className={brand ? "text-brand" : undefined}>{chunks}</span>,
-        })
+    riseWords(
+      isPlaceholder(featuredPrice)
+        ? t("h1NoPrice")
+        : t.rich("h1", {
+            price: formatMxn(featuredPrice, locale),
+            hl: (chunks) => <span className={brand ? "text-brand" : undefined}>{chunks}</span>,
+          })
+    )
 
   return (
-    <div className="relative isolate flex min-h-screen flex-col justify-center overflow-hidden">
+    <div className="relative isolate flex min-h-screen flex-col overflow-hidden">
       <FiberBackdrop />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col justify-center px-4 pt-24 pb-16 sm:px-6">
-        <p className="eyebrow">[ {t("eyebrow")} ]</p>
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-4 pt-24 pb-12 sm:px-6">
+        <p className="eyebrow hero-rise" style={rise(0)}>[ {t("eyebrow")} ]</p>
 
         {/* The headline plus an aria-hidden copy on top that carries a band of
             light sweeping right → left, from the node (globals.css .hero-sweep:
@@ -52,44 +96,29 @@ export function Hero() {
           </span>
         </div>
 
-        <p className="mt-6 max-w-xl text-lg text-muted-foreground">
+        <p className="hero-rise mt-6 max-w-xl text-lg text-muted-foreground" style={rise(520)}>
           {t("subhead")}
         </p>
 
         {/* Hard rule #5: the H1 price's fee and term right under the pitch (the
             promo chip waits in Plans until BUSINESS.md sets it). */}
-        <PriceTerms plan={featuredPlan} inline hidePendingPromo className="mt-5" />
+        <div className="hero-rise" style={rise(620)}>
+          <PriceTerms plan={featuredPlan} inline hidePendingPromo className="mt-5" />
+        </div>
 
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          <Button
-            size="lg"
-            className="h-11 font-mono text-xs tracking-wider shadow-[0_0_24px_-6px_var(--color-fiber)]"
-            onClick={() => {
-              track("plan_selected", { planId: featuredPlan.id, context: "hero" })
-              goTo("plans")
-            }}
-          >
-            {t("viewPlans").toUpperCase()}
-            <ArrowRight />
-          </Button>
-          <Button
-            variant="ghost"
-            size="lg"
-            className="h-11 gap-1.5 font-mono text-xs tracking-wider text-muted-foreground"
-            onClick={() => goTo("map")}
-          >
-            <MapPin />
-            {t("coverageLink")}
-          </Button>
+        <div className="hero-rise mt-8 flex flex-wrap items-center gap-3" style={rise(720)}>
+          <HeroActions viewPlans={t("viewPlans")} coverageLink={t("coverageLink")} />
         </div>
 
         {!isPlaceholder(company.network.clients) && (
-          <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
+          <p className="hero-rise mt-6 flex items-center gap-2 text-sm text-muted-foreground" style={rise(820)}>
             <Users className="size-4 text-ok" aria-hidden />
             {t("clients", { count: company.network.clients.toLocaleString(locale) })}
           </p>
         )}
       </div>
+
+      <HeroPlanStrip className="hero-rise" style={rise(920)} />
     </div>
   )
 }

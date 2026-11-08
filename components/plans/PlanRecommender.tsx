@@ -36,7 +36,7 @@ import {
   type Wfh,
 } from "@/lib/recommend"
 import { selection } from "@/lib/selection"
-import { motionReduced } from "@/lib/motion"
+import { showPlanCard } from "@/lib/scroll"
 import { track } from "@/lib/analytics"
 import { PriceTag } from "./PriceTag"
 import { PriceTerms } from "./PriceTerms"
@@ -47,17 +47,6 @@ const TOTAL = 3
 const PEOPLE_ICONS: Record<People, typeof User> = { "1-2": User, "3-5": Users, "6+": UsersRound }
 const USE_ICONS: Record<Use, typeof User> = { gaming: Gamepad2, streaming4k: Tv, homeOffice: Video, creator: Upload, smartHome: Cctv }
 const WFH_ICONS: Record<Wfh, typeof User> = { no: House, one: Laptop, several: Briefcase }
-
-/** Scroll to the recommended plan card and flash it (plans/PlanCard `data-plan`). */
-function showPlanCard(id: string) {
-  const card = document.querySelector<HTMLElement>(`[data-plan="${id}"]`)
-  if (!card) return
-  card.scrollIntoView({ behavior: motionReduced() ? "auto" : "smooth", block: "center" })
-  card.classList.remove("plan-flash")
-  void card.offsetWidth // restart the animation
-  card.classList.add("plan-flash")
-  window.setTimeout(() => card.classList.remove("plan-flash"), 2400)
-}
 
 /**
  * "¿Qué plan necesito?" (SPEC §3): three native-input steps (fully keyboard

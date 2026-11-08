@@ -12,7 +12,7 @@ import { formatMxn, speedLabel } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { selection, useSelection } from "@/lib/selection"
 import { track } from "@/lib/analytics"
-import { AnimatedNumber } from "./AnimatedNumber"
+import { RollingNumber } from "./RollingNumber"
 import { PriceTerms } from "./PriceTerms"
 
 /**
@@ -151,9 +151,8 @@ export function AddOnsPanel() {
             {t("total")}
           </span>
           <span className="flex items-baseline gap-2 font-mono">
-            <AnimatedNumber
-              value={total.known}
-              format={money}
+            <RollingNumber
+              text={money(total.known)}
               className="text-4xl font-semibold tracking-[-0.03em] text-foreground sm:text-5xl"
             />
             <span className="text-sm text-muted-foreground">{tp("perMonth")}</span>

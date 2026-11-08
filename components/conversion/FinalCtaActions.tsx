@@ -6,6 +6,7 @@ import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
 import { PriceTerms } from "@/components/plans/PriceTerms"
 import { company } from "@/lib/company"
 import { getAddOn, getPlan, monthlyTotal } from "@/lib/plans"
+import { RollingNumber } from "@/components/plans/RollingNumber"
 import { formatMxn, speedLabel } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { useSelection } from "@/lib/selection"
@@ -54,9 +55,8 @@ export function FinalCtaActions() {
               {extras.length > 0 && <span className="text-muted-foreground"> + {extras.join(", ")}</span>}
             </p>
             <p className="flex items-baseline gap-1.5 font-mono">
-              <span className="text-3xl font-semibold tabular-nums text-foreground">
-                ${formatMxn(total.known, locale)}
-              </span>
+              <RollingNumber text={`$${formatMxn(total.known, locale)}`} className="text-3xl font-semibold text-foreground" />
+              <span className="sr-only">${formatMxn(total.known, locale)}</span>
               <span className="text-sm text-muted-foreground">{tp("perMonth")}</span>
               {total.pending && <PlaceholderChip keyName="addon.price" />}
             </p>

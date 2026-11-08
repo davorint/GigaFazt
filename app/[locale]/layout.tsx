@@ -8,6 +8,7 @@ import { SITE_URL, SITE_URL_CONFIGURED, pageMeta } from "@/lib/site"
 import { speedRange } from "@/lib/plans"
 import "../globals.css"
 import { SurfaceLight } from "@/components/layout/SurfaceLight"
+import { SmoothScroll } from "@/components/layout/SmoothScroll"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,6 +59,7 @@ export default async function LocaleLayout({
       <body className="min-h-full bg-background text-foreground">
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
         <SurfaceLight />
+        <SmoothScroll />
       </body>
     </html>
   )
