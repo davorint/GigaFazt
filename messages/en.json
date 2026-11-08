@@ -312,7 +312,7 @@
     }
   },
   "map": {
-    "lead": "We serve the Mexico City metro area and Cuernavaca, Tepoztlán and Amatlán in Morelos. We have more than {count} active clients, mostly in the west of the city. Here are some buildings that are already clients plus a few illustrative examples.",
+    "lead": "We serve the Mexico City metro area and Cuernavaca, Morelos. We have more than {count} active clients, mostly in the west of the city. Here are some buildings that are already clients plus a few illustrative examples.",
     "layers": "Layers",
     "layer": {
       "clients": "Clients",

@@ -312,7 +312,7 @@
     }
   },
   "map": {
-    "lead": "Damos servicio en la zona metropolitana de la Ciudad de México y en Cuernavaca, Tepoztlán y Amatlán, en Morelos. Tenemos más de {count} clientes activos, sobre todo en el poniente de la ciudad. Aquí ves algunos edificios que ya son clientes y algunos ejemplos ilustrativos.",
+    "lead": "Damos servicio en la zona metropolitana de la Ciudad de México y en Cuernavaca, Morelos. Tenemos más de {count} clientes activos, sobre todo en el poniente de la ciudad. Aquí ves algunos edificios que ya son clientes y algunos ejemplos ilustrativos.",
     "layers": "Capas",
     "layer": {
       "clients": "Clientes",
