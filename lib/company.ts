@@ -27,6 +27,19 @@ export const company: Company = {
     statusProvider: placeholder("STATUS_PROVIDER"),
     monitoring24h: true, // owner, 2026-11-07: staff look after the network, servers and systems 24 h
   },
+  // 1 Gbps plan's Wi-Fi 7 modem (owner, 2026-11-08). Model kept internal (see
+  // BUSINESS.md); specs from the manufacturer's product page and datasheet:
+  // dual band, 2×2 per band, 160 MHz, 4096-QAM, OFDMA, MLO, 688 + 2882 Mbps.
+  equipment: {
+    wifi7Modem: {
+      bands: ["b24", "b5"],
+      streamsPerBand: 2,
+      maxChannelMhz: 160,
+      qam: 4096,
+      mlo: true,
+      bandMaxMbps: { b24: 688, b5: 2882 },
+    },
+  },
   terms: {
     installFeeMxn: 0, // free installation (owner, 2026-11-07)
     contractTerm: null, // no minimum term (owner, 2026-11-07)

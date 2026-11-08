@@ -79,6 +79,18 @@ export interface Company {
     /** Staff monitor the network, servers and systems 24 hours a day. */
     monitoring24h: Maybe<boolean>
   }
+  /** Customer equipment specs (shown without brand or model, owner 2026-11-07). */
+  equipment: {
+    wifi7Modem: {
+      bands: ("b24" | "b5" | "b6")[]
+      streamsPerBand: number
+      maxChannelMhz: number
+      qam: number
+      mlo: boolean
+      /** Theoretical max PHY rate per band, Mbps. */
+      bandMaxMbps: Partial<Record<"b24" | "b5" | "b6", number>>
+    }
+  }
   terms: {
     installFeeMxn: Maybe<number>
     /** Minimum term in months; null = no minimum term ("sin plazo forzoso"). */

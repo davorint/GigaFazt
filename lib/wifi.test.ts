@@ -18,13 +18,25 @@ import { WALL_THICKNESS_M } from "./wifi"
 
 describe("wifi generations", () => {
   it("are ordered and only Wi-Fi 7 has MLO", () => {
-    const years = GENERATIONS.map((g) => g.year)
+    const years = GENERATIONS.map((g) => g.year ?? 0)
     expect([...years].sort((a, b) => a - b)).toEqual(years)
     expect(GENERATIONS.filter((g) => g.mlo).map((g) => g.id)).toEqual(["wifi7"])
   })
   it("theoretical maxima match streams × channel × modulation growth", () => {
     expect(getGeneration("wifi7").maxGbps).toBeGreaterThan(getGeneration("wifi6").maxGbps * 4)
     expect(getGeneration("wifi6e").maxGbps).toBe(getGeneration("wifi6").maxGbps)
+  })
+})
+
+describe("plan modem profile", () => {
+  it("is dual band (no 6 GHz) with MLO across 2.4 + 5 GHz", () => {
+    const modem = getGeneration("modem")
+    expect(modem.bands).toEqual(["b24", "b5"])
+    expect(modem.maxChannelMhz).toBe(160)
+    expect(modem.streams).toBe(4)
+    expect(modem.maxGbps).toBeCloseTo(3.57, 2)
+    const near = { x: ROUTER_START.x + 1, y: ROUTER_START.y + 1 }
+    expect(linkFor(modem, ROUTER_START, near).bands).toEqual(["b24", "b5"])
   })
 })
 

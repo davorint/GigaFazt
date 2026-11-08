@@ -306,12 +306,22 @@
         "ch320": "Canales de 320 MHz: el doble de ancho",
         "qam4096": "4096-QAM: 20% más datos en cada onda"
       },
-      "tableCaption": "Generaciones de Wi-Fi: máximos teóricos de cada estándar",
-      "tableTitle": "Cinco generaciones, lado a lado",
+      "modem": {
+        "option": "Tu módem",
+        "optionSub": "incluido en {speed}",
+        "name": "Módem del plan de {speed}",
+        "spec": "Wi-Fi 7 · doble banda",
+        "maxLabel": "Máximo teórico del módem, sumando sus dos bandas",
+        "perBand": "{b24} en 2.4 GHz + {b5} en 5 GHz",
+        "streamsPerBand": "{n} × {n} en cada banda",
+        "notApplicable": "no aplica"
+      },
+      "tableCaption": "Generaciones de Wi-Fi y el módem del plan: máximos teóricos",
+      "tableTitle": "Cinco generaciones y tu módem, lado a lado",
       "inPlan": "Incluido en {speed}",
       "cta": "El módem Wi-Fi 7 viene con el plan de {speed}.",
       "ctaButton": "Contratar {speed}",
-      "note": "Simulación ilustrativa: longitudes de onda a escala relativa y pérdida aproximada por muro según la banda (concreto {concrete} dB, tabique {brick} dB, tablaroca {drywall} dB). Las cifras de cada generación son máximos teóricos del estándar; tu velocidad real la limitan tu plan, el módem y tus dispositivos. Se simula el estándar, no un módem en particular."
+      "note": "Simulación ilustrativa: longitudes de onda a escala relativa y pérdida aproximada por muro según la banda (concreto {concrete} dB, tabique {brick} dB, tablaroca {drywall} dB). Las cifras de cada generación son máximos teóricos del estándar; tu velocidad real la limitan tu plan, el módem y tus dispositivos. «Tu módem» usa las especificaciones del módem Wi-Fi 7 del plan de {speed}: {bands}, {streams} × {streams} en cada banda, canales de hasta {channel} MHz y MLO. Las demás opciones simulan cada estándar."
     },
     "telemetry": {
       "title": "La red en vivo",

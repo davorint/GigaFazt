@@ -1,5 +1,7 @@
 import { useTranslations } from "next-intl"
-import { WALL_LOSS_DB, type MaterialId } from "@/lib/wifi"
+import { BANDS, PLAN_MODEM, WALL_LOSS_DB, type MaterialId } from "@/lib/wifi"
+import { wifi7Plan } from "@/lib/plans"
+import { speedLabel } from "@/lib/format"
 import { LazyWifiLab } from "./LazyWifiLab"
 import { WifiComparison } from "./WifiComparison"
 
@@ -38,7 +40,15 @@ export function WifiSection() {
       </div>
 
       <p className="mt-3 max-w-4xl font-mono text-[0.7rem] leading-relaxed text-muted-foreground">
-        {t("note", { concrete: range("concrete"), brick: range("brick"), drywall: range("drywall") })}
+        {t("note", {
+          concrete: range("concrete"),
+          brick: range("brick"),
+          drywall: range("drywall"),
+          speed: wifi7Plan ? speedLabel(wifi7Plan.downMbps) : "",
+          bands: PLAN_MODEM.bands.map((b) => BANDS[b].label).join(" + "),
+          streams: PLAN_MODEM.streams / PLAN_MODEM.bands.length,
+          channel: PLAN_MODEM.maxChannelMhz,
+        })}
       </p>
     </div>
   )
