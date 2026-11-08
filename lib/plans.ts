@@ -13,7 +13,7 @@ export const plans: Plan[] = [
     id: "fibra-200",
     downMbps: 200,
     upMbps: 200,
-    priceMxn: 399,
+    priceMxn: 395,
     installFeeMxn: 0, // free installation (owner, 2026-11-07)
     contractMonths: null, // no minimum term (owner, 2026-11-07)
     technology: placeholder("fibra-200.technology"),
@@ -24,7 +24,7 @@ export const plans: Plan[] = [
     id: "fibra-500",
     downMbps: 500,
     upMbps: 500,
-    priceMxn: 499,
+    priceMxn: 495,
     installFeeMxn: 0, // free installation (owner, 2026-11-07)
     contractMonths: null, // no minimum term (owner, 2026-11-07)
     technology: placeholder("fibra-500.technology"),
@@ -35,7 +35,7 @@ export const plans: Plan[] = [
     id: "fibra-1g",
     downMbps: 1000,
     upMbps: 1000,
-    priceMxn: 599,
+    priceMxn: 595,
     installFeeMxn: 0, // free installation (owner, 2026-11-07)
     contractMonths: null, // no minimum term (owner, 2026-11-07)
     technology: "GPON",
