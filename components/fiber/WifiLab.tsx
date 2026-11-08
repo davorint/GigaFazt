@@ -254,8 +254,16 @@ export default function WifiLab() {
                 ))}
               </g>
 
-              {/* Room names */}
-              <g className="fill-slate-300/55 font-mono uppercase max-sm:[font-size:0.3px]" fontSize="0.17" letterSpacing="0.03">
+              {/* Room names: orange with a dark halo, readable over the waves */}
+              <g
+                className="fill-orange-300 font-mono font-semibold uppercase max-sm:[font-size:0.27px]"
+                fontSize="0.17"
+                letterSpacing="0.03"
+                stroke="#03060f"
+                strokeWidth="0.06"
+                strokeLinejoin="round"
+                paintOrder="stroke"
+              >
                 {ROOMS.map((r) => (
                   <text key={r.id} x={r.x + 0.24} y={r.y + 0.42}>
                     {t(`rooms.${r.id}`)}
@@ -355,10 +363,18 @@ export default function WifiLab() {
             >
               <span aria-hidden className="wifi-router-ping absolute inset-1 rounded-full border border-cyan-200/70" />
               <span aria-hidden className="wifi-router-ping absolute inset-1 rounded-full border border-cyan-200/50 [animation-delay:-1.1s]" />
-              <span
+              {/* A small modem: body, two antennas, status LEDs */}
+              <svg
                 aria-hidden
-                className="relative size-4 rounded-full bg-white shadow-[0_0_0_3px_rgb(6_182_212/0.55),0_0_22px_6px_rgb(34_211_238/0.8)] transition-transform group-hover:scale-110"
-              />
+                viewBox="0 0 32 24"
+                className="relative w-9 drop-shadow-[0_0_10px_rgb(34_211_238/0.85)] transition-transform group-hover:scale-110"
+              >
+                <path d="M9 12 6.5 2.5M23 12l2.5-9.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+                <rect x="3" y="11" width="26" height="10" rx="3" fill="#fff" stroke="#0891b2" strokeWidth="1.2" />
+                <circle cx="9" cy="16" r="1.4" fill="#06b6d4" />
+                <circle cx="13.5" cy="16" r="1.4" fill="#06b6d4" />
+                <circle cx="18" cy="16" r="1.4" fill="#22c55e" />
+              </svg>
             </button>
 
             {/* HUD */}
