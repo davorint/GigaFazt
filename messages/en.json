@@ -650,14 +650,27 @@
   },
   "business": {
     "metaTitle": "Fiber for businesses: custom installations",
-    "metaDescription": "Custom fiber optic installations for your business: gigabit speeds in every area, dedicated internet up to {max} Gbps, an internal fiber network up to {lanMax} Gbps, enterprise internet, business internet, structured cabling, business Wi-Fi and network equipment.",
+    "metaDescription": "Custom fiber optic installations for your business: gigabit speeds in every area, dedicated internet up to {max} Gbps, an internal fiber network up to {lanMax}GbE, enterprise internet, business internet, structured cabling, business Wi-Fi and network equipment.",
     "eyebrow": "Businesses",
-    "h1": "Gigabit speeds in every area of your business.",
-    "lead": "We design and install a custom fiber network so your offices, floors, warehouses and stores all work at the same speed.",
+    "h1": "Internet and fiber optic networks for your company.",
+    "lead": "Two services, one provider: the internet that connects your company to the world and the fiber network that connects it inside.",
     "speed": "Links up to {max} Gbps",
     "speedQual": "maximum speed of the contracted link",
     "quote": "Get a quote on WhatsApp",
     "quoteNote": "Quoted for your space.",
+    "chapters": {
+      "label": "Business services",
+      "internet": {
+        "kicker": "Internet provider",
+        "title": "Business internet",
+        "body": "Symmetrical links up to {max} Gbps, in three packages based on the availability you need."
+      },
+      "fiber": {
+        "kicker": "Deployment and cabling",
+        "title": "Fiber optic networks",
+        "body": "We deploy and wire your whole company with fiber: an internal network from {from}GbE up to {to}GbE (Gigabit Ethernet)."
+      }
+    },
     "whatsappMessage": "Hi, I would like a quote for a fiber optic installation for my business.",
     "spacesLabel": "Spaces we connect",
     "spaces": {
@@ -666,7 +679,7 @@
       "retail": "Stores and restaurants",
       "buildings": "Buildings and shopping centers"
     },
-    "servicesEyebrow": "Business services",
+    "servicesEyebrow": "Network services",
     "servicesTitle": "Everything your network needs, from one provider",
     "servicesLead": "From where the fiber comes in to the last workstation.",
     "services": {
@@ -676,7 +689,7 @@
       },
       "fiberLan": {
         "title": "Fiber optic internal network",
-        "body": "We wire your whole company with optical fiber so you get an internal network from {from} up to {to} Gbps."
+        "body": "We wire your whole company with optical fiber so you get an internal network from {from}GbE up to {to}GbE (Gigabit Ethernet)."
       },
       "everyArea": {
         "title": "Gigabit in every area",
@@ -697,7 +710,7 @@
     },
     "lan": {
       "eyebrow": "Internal fiber network",
-      "title": "Your company connected inside, up to {to} Gbps.",
+      "title": "Your company connected inside, up to {to}GbE.",
       "lead": "With an internal fiber optic network, every area works as if it were on the same machine.",
       "items": {
         "storage": {
@@ -710,7 +723,7 @@
         },
         "sharing": {
           "title": "Files and videos shared instantly",
-          "body": "A {gb} GB file moves between machines in about {tFrom} seconds at {from} Gbps and in about {tTo} second at {to} Gbps (theoretical network speed)."
+          "body": "A {gb} GB file moves between machines in about {tFrom} seconds on {from}GbE and in about {tTo} seconds on {to}GbE (theoretical network speed)."
         },
         "sharedHardware": {
           "title": "Less spent on duplicate hardware",
@@ -718,7 +731,7 @@
         },
         "futureProof": {
           "title": "Ready for the future, no rewiring",
-          "body": "The same fiber goes from {from} to {to} Gbps by changing only the equipment at each end. Your cabling doesn't become obsolete."
+          "body": "The same fiber goes from {from}GbE to {to}GbE by changing only the equipment at each end. Your cabling doesn't become obsolete."
         },
         "backups": {
           "title": "Automatic central backups",
@@ -799,6 +812,23 @@
       "whatsappMessage": "Hi, I'd like a quote for {tier} for my business.",
       "note": "We don't publish prices: we quote each package based on the size and usage of your business."
     },
+    "fiber": {
+      "eyebrow": "Fiber optic deployment and cabling",
+      "title": "Your whole company, wired with optical fiber.",
+      "lead": "We design, deploy and install your company's fiber network, from the street entry to the last workstation.",
+      "figureNote": "An internal network from {from}GbE to {to}GbE (Gigabit Ethernet) between areas, floors and buildings, on your own fiber.",
+      "scale": "Internal network",
+      "range": "{from}GbE – {to}GbE",
+      "stats": {
+        "lan": "Internal network",
+        "lanValue": "{from}GbE – {to}GbE",
+        "reach": "Reach",
+        "reachValue": "Fiber to every area",
+        "project": "Project",
+        "projectValue": "End-to-end design and installation"
+      },
+      "whatsappMessage": "Hi, I'd like a quote for a fiber optic network for my company."
+    },
     "stepsEyebrow": "How we work",
     "stepsTitle": "From idea to a working network",
     "steps": {
@@ -823,17 +853,6 @@
     "ctaLead": "We serve {area}. Tell us about your project and we will prepare a custom quote.",
     "smallOffice": "Just need internet for a small store or office?",
     "plansLink": "View plans",
-    "jump": "See services",
-    "spec": {
-      "link": "Link",
-      "linkValue": "Up to {max} Gbps",
-      "reach": "Reach",
-      "reachValue": "Fiber in every area",
-      "project": "Project",
-      "projectValue": "Custom design and installation",
-      "quote": "Quote",
-      "quoteValue": "Per project, on WhatsApp"
-    },
     "capacityEyebrow": "Capacity",
     "capacityTitle": "The speed you need, in any package.",
     "capacityBody": "Symmetrical links up to {max} Gbps on dedicated, enterprise or business internet.",
@@ -848,6 +867,8 @@
       "node": "Connected area"
     },
     "unit": "Gbps",
+    "unitLan": "GbE",
+    "unitLanLong": "Gigabit Ethernet",
     "capacityRange": "0 – {max} Gbps"
   },
   "privacy": {

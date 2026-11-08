@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl"
 import { Briefcase, Building, Store, Warehouse } from "lucide-react"
 import { business } from "@/lib/business"
 import { InView } from "@/components/layout/InView"
+import { ChapterMark } from "./ChapterMark"
 
 const SPACE_ICONS = { offices: Briefcase, warehouses: Warehouse, retail: Store, buildings: Building } as const
 
@@ -19,7 +20,8 @@ export function BusinessCapacity() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32">
-      <div className="reveal grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-end">
+      <ChapterMark n={1} title={t("chapters.internet.title")} />
+      <div className="reveal mt-14 grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-end">
         <div>
           <p className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.25em] text-zinc-400">
             <span aria-hidden className="h-px w-8 bg-[var(--biz-accent)]" />

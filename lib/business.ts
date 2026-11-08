@@ -11,7 +11,7 @@ export const business = {
   /** Top link speed the page may mention ("hasta 10 Gbps"). */
   maxLinkGbps: 10,
   /** Internal (LAN) fiber network we can build, Gbps (owner, 2026-11-08). */
-  internalNetworkGbps: { from: 10, to: 800 },
+  internalNetworkGbps: { from: 10, to: 400 },
   /** What the internal fiber network makes possible (owner, 2026-11-08). */
   lanBenefits: [
     "storage",

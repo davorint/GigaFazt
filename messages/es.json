@@ -650,14 +650,27 @@
   },
   "business": {
     "metaTitle": "Fibra óptica para empresas: instalaciones a la medida",
-    "metaDescription": "Instalaciones de fibra óptica a la medida para tu negocio: velocidad gigabit en todas las áreas, internet dedicado de hasta {max} Gbps, red interna de fibra de hasta {lanMax} Gbps, internet empresarial, internet para negocios, cableado estructurado, Wi-Fi empresarial y equipo de red.",
+    "metaDescription": "Instalaciones de fibra óptica a la medida para tu negocio: velocidad gigabit en todas las áreas, internet dedicado de hasta {max} Gbps, red interna de fibra de hasta {lanMax}GbE, internet empresarial, internet para negocios, cableado estructurado, Wi-Fi empresarial y equipo de red.",
     "eyebrow": "Empresas",
-    "h1": "Velocidad gigabit en todas las áreas de tu negocio.",
-    "lead": "Diseñamos e instalamos tu red de fibra óptica a la medida, para que oficinas, pisos, bodegas y locales trabajen a la misma velocidad.",
+    "h1": "Internet y redes de fibra óptica para tu empresa.",
+    "lead": "Dos servicios, un solo proveedor: el internet que conecta tu empresa con el mundo y la red de fibra que la conecta por dentro.",
     "speed": "Enlaces de hasta {max} Gbps",
     "speedQual": "velocidad máxima del enlace contratado",
     "quote": "Cotizar por WhatsApp",
     "quoteNote": "Cotización a la medida de tu espacio.",
+    "chapters": {
+      "label": "Servicios para empresas",
+      "internet": {
+        "kicker": "Proveedor de internet",
+        "title": "Internet para empresas",
+        "body": "Enlaces simétricos de hasta {max} Gbps, en tres paquetes según la disponibilidad que necesites."
+      },
+      "fiber": {
+        "kicker": "Despliegue y cableado",
+        "title": "Redes de fibra óptica",
+        "body": "Desplegamos y cableamos con fibra toda tu empresa: una red interna de {from}GbE hasta {to}GbE (Gigabit Ethernet)."
+      }
+    },
     "whatsappMessage": "Hola, quiero cotizar una instalación de fibra óptica para mi negocio.",
     "spacesLabel": "Espacios que conectamos",
     "spaces": {
@@ -666,7 +679,7 @@
       "retail": "Comercios y restaurantes",
       "buildings": "Edificios y plazas"
     },
-    "servicesEyebrow": "Servicios para empresas",
+    "servicesEyebrow": "Servicios de redes",
     "servicesTitle": "Todo lo que tu red necesita, con un solo proveedor",
     "servicesLead": "Desde la llegada de la fibra hasta el último puesto de trabajo.",
     "services": {
@@ -676,7 +689,7 @@
       },
       "fiberLan": {
         "title": "Red interna de fibra óptica",
-        "body": "Cableamos con fibra óptica toda tu empresa para que tengas una red interna de {from} hasta {to} Gbps."
+        "body": "Cableamos con fibra óptica toda tu empresa para que tengas una red interna de {from}GbE hasta {to}GbE (Gigabit Ethernet)."
       },
       "everyArea": {
         "title": "Gigabit en cada área",
@@ -697,7 +710,7 @@
     },
     "lan": {
       "eyebrow": "Red interna de fibra",
-      "title": "Tu empresa conectada por dentro, hasta {to} Gbps.",
+      "title": "Tu empresa conectada por dentro, hasta {to}GbE.",
       "lead": "Con una red interna de fibra óptica, todas las áreas trabajan como si estuvieran en el mismo equipo.",
       "items": {
         "storage": {
@@ -710,7 +723,7 @@
         },
         "sharing": {
           "title": "Archivos y videos compartidos al instante",
-          "body": "Un archivo de {gb} GB pasa de un equipo a otro en unos {tFrom} segundos a {from} Gbps y en cerca de {tTo} segundo a {to} Gbps (velocidad teórica de la red)."
+          "body": "Un archivo de {gb} GB pasa de un equipo a otro en unos {tFrom} segundos en {from}GbE y en unos {tTo} segundos en {to}GbE (velocidad teórica de la red)."
         },
         "sharedHardware": {
           "title": "Menos gasto en equipo duplicado",
@@ -718,7 +731,7 @@
         },
         "futureProof": {
           "title": "Lista para el futuro, sin recablear",
-          "body": "La misma fibra pasa de {from} a {to} Gbps cambiando solo el equipo de cada extremo. Tu cableado no se vuelve obsoleto."
+          "body": "La misma fibra pasa de {from}GbE a {to}GbE cambiando solo el equipo de cada extremo. Tu cableado no se vuelve obsoleto."
         },
         "backups": {
           "title": "Respaldos automáticos centralizados",
@@ -799,6 +812,23 @@
       "whatsappMessage": "Hola, quiero cotizar {tier} para mi negocio.",
       "note": "No publicamos precios: cotizamos cada paquete según el tamaño y el uso de tu negocio."
     },
+    "fiber": {
+      "eyebrow": "Despliegue y cableado de fibra óptica",
+      "title": "Toda tu empresa, cableada con fibra óptica.",
+      "lead": "Diseñamos, desplegamos e instalamos la red de fibra de tu empresa, desde la acometida hasta el último puesto de trabajo.",
+      "figureNote": "Red interna de {from}GbE a {to}GbE (Gigabit Ethernet) entre áreas, pisos y edificios, sobre tu propia fibra.",
+      "scale": "Red interna",
+      "range": "{from}GbE – {to}GbE",
+      "stats": {
+        "lan": "Red interna",
+        "lanValue": "{from}GbE – {to}GbE",
+        "reach": "Alcance",
+        "reachValue": "Fibra hasta cada área",
+        "project": "Proyecto",
+        "projectValue": "Diseño e instalación de punta a punta"
+      },
+      "whatsappMessage": "Hola, quiero cotizar una red de fibra óptica para mi empresa."
+    },
     "stepsEyebrow": "Cómo trabajamos",
     "stepsTitle": "De la idea a tu red funcionando",
     "steps": {
@@ -823,17 +853,6 @@
     "ctaLead": "Damos servicio en {area}. Cuéntanos de tu proyecto y te preparamos una cotización a la medida.",
     "smallOffice": "¿Solo necesitas internet para un local u oficina pequeña?",
     "plansLink": "Ver planes",
-    "jump": "Ver servicios",
-    "spec": {
-      "link": "Enlace",
-      "linkValue": "Hasta {max} Gbps",
-      "reach": "Alcance",
-      "reachValue": "Fibra en cada área",
-      "project": "Proyecto",
-      "projectValue": "Diseño e instalación a la medida",
-      "quote": "Cotización",
-      "quoteValue": "Por proyecto, por WhatsApp"
-    },
     "capacityEyebrow": "Capacidad",
     "capacityTitle": "La velocidad que necesites, en cualquier paquete.",
     "capacityBody": "Enlaces simétricos de hasta {max} Gbps en internet dedicado, empresarial o para negocios.",
@@ -848,6 +867,8 @@
       "node": "Área conectada"
     },
     "unit": "Gbps",
+    "unitLan": "GbE",
+    "unitLanLong": "Gigabit Ethernet",
     "capacityRange": "0 – {max} Gbps"
   },
   "privacy": {
