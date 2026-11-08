@@ -650,7 +650,7 @@
   },
   "business": {
     "metaTitle": "Fibra óptica para empresas: instalaciones a la medida",
-    "metaDescription": "Instalaciones de fibra óptica a la medida para tu negocio: velocidad gigabit en todas las áreas, internet dedicado de hasta {max} Gbps, cableado estructurado, Wi-Fi empresarial y equipo de red.",
+    "metaDescription": "Instalaciones de fibra óptica a la medida para tu negocio: velocidad gigabit en todas las áreas, internet dedicado de hasta {max} Gbps, internet empresarial, internet para negocios, cableado estructurado, Wi-Fi empresarial y equipo de red.",
     "eyebrow": "Empresas",
     "h1": "Velocidad gigabit en todas las áreas de tu negocio.",
     "lead": "Diseñamos e instalamos tu red de fibra óptica a la medida, para que oficinas, pisos, bodegas y locales trabajen a la misma velocidad.",
@@ -678,10 +678,6 @@
         "title": "Gigabit en cada área",
         "body": "Llevamos la fibra a cada piso, oficina, bodega o local para que todas las áreas de tu negocio trabajen a velocidad gigabit."
       },
-      "dedicated": {
-        "title": "Internet dedicado",
-        "body": "Ancho de banda exclusivo para tu empresa, no compartido, con enlaces de hasta {max} Gbps."
-      },
       "cabling": {
         "title": "Cableado estructurado",
         "body": "Cableado ordenado de fibra y cobre hasta cada puesto, con racks y paneles de parcheo."
@@ -694,6 +690,45 @@
         "title": "Equipo de red",
         "body": "Suministramos e instalamos los switches, firewalls y routers que tu red necesita."
       }
+    },
+    "tiers": {
+      "eyebrow": "Internet para empresas",
+      "title": "Misma velocidad, distinta disponibilidad.",
+      "lead": "Contrata la velocidad que necesites en cualquier paquete. Lo que cambia es qué tan garantizado está tu enlace.",
+      "speedLabel": "Velocidad",
+      "speedValue": "La que necesites",
+      "uptimeLabel": "Disponibilidad (SLA)",
+      "uptimeValue": "{pct} % mensual",
+      "bandwidthLabel": "Ancho de banda garantizado",
+      "bandwidth": {
+        "full": "100 %, exclusivo para tu empresa (1:1)",
+        "minimum": "Te garantizamos un mínimo",
+        "shared": "Compartido, al mejor esfuerzo"
+      },
+      "supportLabel": "Soporte",
+      "support": {
+        "monitored247": "24/7 con monitoreo activo",
+        "chat247": "24/7 por teléfono y WhatsApp",
+        "businessHours": "En horario de oficina"
+      },
+      "extraLabel": "Opcional",
+      "backupRoute": "Ruta de respaldo",
+      "items": {
+        "dedicated": {
+          "name": "Internet dedicado",
+          "tagline": "Para operaciones que no pueden detenerse."
+        },
+        "enterprise": {
+          "name": "Internet empresarial",
+          "tagline": "Para empresas que trabajan conectadas todo el día."
+        },
+        "businessInternet": {
+          "name": "Internet para negocios",
+          "tagline": "Fibra simétrica para el día a día de tu negocio."
+        }
+      },
+      "whatsappMessage": "Hola, quiero cotizar {tier} para mi negocio.",
+      "note": "No publicamos precios: cotizamos cada paquete según el tamaño y el uso de tu negocio."
     },
     "stepsEyebrow": "Cómo trabajamos",
     "stepsTitle": "De la idea a tu red funcionando",
@@ -731,7 +766,8 @@
       "quoteValue": "Por proyecto, por WhatsApp"
     },
     "capacityEyebrow": "Capacidad",
-    "capacityTitle": "Un enlace dedicado, solo para tu empresa.",
+    "capacityTitle": "La velocidad que necesites, en cualquier paquete.",
+    "capacityBody": "Enlaces simétricos de hasta {max} Gbps en internet dedicado, empresarial o para negocios.",
     "capacityScale": "Escala del enlace",
     "spacesTitle": "Para cualquier espacio de trabajo",
     "phase": "Fase",

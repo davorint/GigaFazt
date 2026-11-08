@@ -5,6 +5,7 @@ import { Section } from "@/components/layout/Section"
 import { Footer } from "@/components/layout/Footer"
 import { BusinessHero } from "@/components/business/BusinessHero"
 import { BusinessCapacity } from "@/components/business/BusinessCapacity"
+import { BusinessTiers } from "@/components/business/BusinessTiers"
 import { BusinessServices } from "@/components/business/BusinessServices"
 import { BusinessSteps } from "@/components/business/BusinessSteps"
 import { BusinessCta } from "@/components/business/BusinessCta"
@@ -23,8 +24,9 @@ export async function generateMetadata({
 }
 
 /**
- * Businesses (owner, 2026-11-07): custom fiber installations, gigabit in every
- * area, dedicated internet, cabling, Wi-Fi and network equipment. Its own page
+ * Businesses (owner, 2026-11-07/08): internet packages (dedicado, empresarial,
+ * negocios; any speed, they differ by availability), custom fiber
+ * installations, gigabit in every area, cabling, Wi-Fi and network equipment. Its own page
  * so the home page stays light; all server-rendered (no extra client JS).
  * Its own visual language (`.biz`): graphite, white type, violet accent,
  * hairlines and a blueprint grid instead of the consumer pages' cyan glow.
@@ -45,6 +47,9 @@ export default async function EmpresasPage({ params }: PageProps<"/[locale]/empr
         </Section>
         <Section id="business-capacity" aria-label={t("capacityEyebrow")}>
           <BusinessCapacity />
+        </Section>
+        <Section id="business-internet" aria-label={t("tiers.eyebrow")}>
+          <BusinessTiers />
         </Section>
         <Section id="business-services" aria-label={t("servicesEyebrow")}>
           <BusinessServices />

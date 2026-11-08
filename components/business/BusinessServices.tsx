@@ -1,11 +1,10 @@
 import { useTranslations } from "next-intl"
-import { Building2, Cable, DraftingCompass, Gauge, Router, Wifi } from "lucide-react"
+import { Building2, Cable, DraftingCompass, Router, Wifi } from "lucide-react"
 import { business } from "@/lib/business"
 
 const ICONS = {
   customInstall: DraftingCompass,
   everyArea: Building2,
-  dedicated: Gauge,
   cabling: Cable,
   wifi: Wifi,
   equipment: Router,

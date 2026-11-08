@@ -650,7 +650,7 @@
   },
   "business": {
     "metaTitle": "Fiber for businesses: custom installations",
-    "metaDescription": "Custom fiber optic installations for your business: gigabit speeds in every area, dedicated internet up to {max} Gbps, structured cabling, business Wi-Fi and network equipment.",
+    "metaDescription": "Custom fiber optic installations for your business: gigabit speeds in every area, dedicated internet up to {max} Gbps, enterprise internet, business internet, structured cabling, business Wi-Fi and network equipment.",
     "eyebrow": "Businesses",
     "h1": "Gigabit speeds in every area of your business.",
     "lead": "We design and install a custom fiber network so your offices, floors, warehouses and stores all work at the same speed.",
@@ -678,10 +678,6 @@
         "title": "Gigabit in every area",
         "body": "We run fiber to every floor, office, warehouse or store so every area of your business works at gigabit speed."
       },
-      "dedicated": {
-        "title": "Dedicated internet",
-        "body": "Bandwidth reserved for your company, not shared, with links up to {max} Gbps."
-      },
       "cabling": {
         "title": "Structured cabling",
         "body": "Tidy fiber and copper cabling to every workstation, with racks and patch panels."
@@ -694,6 +690,45 @@
         "title": "Network equipment",
         "body": "We supply and install the switches, firewalls and routers your network needs."
       }
+    },
+    "tiers": {
+      "eyebrow": "Internet for businesses",
+      "title": "Same speed, different availability.",
+      "lead": "Get the speed you need in any package. What changes is how guaranteed your link is.",
+      "speedLabel": "Speed",
+      "speedValue": "Whatever you need",
+      "uptimeLabel": "Availability (SLA)",
+      "uptimeValue": "{pct}% monthly",
+      "bandwidthLabel": "Guaranteed bandwidth",
+      "bandwidth": {
+        "full": "100%, reserved for your company (1:1)",
+        "minimum": "A guaranteed minimum",
+        "shared": "Shared, best effort"
+      },
+      "supportLabel": "Support",
+      "support": {
+        "monitored247": "24/7 with active monitoring",
+        "chat247": "24/7 by phone and WhatsApp",
+        "businessHours": "Business hours"
+      },
+      "extraLabel": "Optional",
+      "backupRoute": "Backup route",
+      "items": {
+        "dedicated": {
+          "name": "Dedicated internet",
+          "tagline": "For operations that can't stop."
+        },
+        "enterprise": {
+          "name": "Enterprise internet",
+          "tagline": "For companies that work online all day."
+        },
+        "businessInternet": {
+          "name": "Business internet",
+          "tagline": "Symmetrical fiber for your business's day-to-day."
+        }
+      },
+      "whatsappMessage": "Hi, I'd like a quote for {tier} for my business.",
+      "note": "We don't publish prices: we quote each package based on the size and usage of your business."
     },
     "stepsEyebrow": "How we work",
     "stepsTitle": "From idea to a working network",
@@ -731,7 +766,8 @@
       "quoteValue": "Per project, on WhatsApp"
     },
     "capacityEyebrow": "Capacity",
-    "capacityTitle": "A dedicated link, just for your business.",
+    "capacityTitle": "The speed you need, in any package.",
+    "capacityBody": "Symmetrical links up to {max} Gbps on dedicated, enterprise or business internet.",
     "capacityScale": "Link scale",
     "spacesTitle": "For any workspace",
     "phase": "Phase",

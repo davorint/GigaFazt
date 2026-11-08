@@ -9,7 +9,8 @@ const SPACE_ICONS = { offices: Briefcase, warehouses: Warehouse, retail: Store, 
  * Capacity: the dedicated-link ceiling as one display figure over a precision
  * ruler (0 → max, fills once on first view), then the spaces we connect.
  * Only owner-confirmed facts: "hasta {max} Gbps", qualified as the contracted
- * link's maximum; no tiers, SLA or prices.
+ * link's maximum, in any package (the packages differ by availability:
+ * BusinessTiers); no prices.
  */
 export function BusinessCapacity() {
   const t = useTranslations("business")
@@ -27,7 +28,7 @@ export function BusinessCapacity() {
           <h2 className="mt-5 max-w-xl text-3xl font-semibold tracking-[-0.03em] text-white sm:text-5xl">
             {t("capacityTitle")}
           </h2>
-          <p className="mt-5 max-w-lg text-zinc-400">{t("services.dedicated.body", { max })}</p>
+          <p className="mt-5 max-w-lg text-zinc-400">{t("capacityBody", { max })}</p>
         </div>
         <p className="flex items-baseline gap-4 font-mono lg:justify-self-end">
           <span className="biz-display text-[clamp(6rem,16vw,13rem)] leading-[0.8] font-semibold tracking-[-0.07em]">{max}</span>

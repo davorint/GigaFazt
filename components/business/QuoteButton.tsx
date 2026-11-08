@@ -7,8 +7,8 @@ import { company } from "@/lib/company"
 import { isPlaceholder } from "@/lib/placeholder"
 import { whatsappHref } from "@/lib/contact"
 
-/** "Cotizar por WhatsApp": business quotes go straight to a chat (no prices online). White, sharp: the /empresas primary action. */
-export function QuoteButton({ context, className }: { context: string; className?: string }) {
+/** "Cotizar por WhatsApp": business quotes go straight to a chat (no prices online), optionally with a specific opening message. White, sharp: the /empresas primary action. */
+export function QuoteButton({ context, message, className }: { context: string; message?: string; className?: string }) {
   const t = useTranslations("business")
   const base =
     "inline-flex min-h-12 items-center justify-center gap-2 rounded-[3px] px-6 py-3 font-mono text-xs uppercase tracking-[0.18em]"
@@ -23,7 +23,7 @@ export function QuoteButton({ context, className }: { context: string; className
   }
   return (
     <TrackedLink
-      href={whatsappHref(company.whatsapp, t("whatsappMessage"))}
+      href={whatsappHref(company.whatsapp, message ?? t("whatsappMessage"))}
       target="_blank"
       rel="noopener noreferrer"
       event="whatsapp_clicked"
