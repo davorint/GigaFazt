@@ -71,7 +71,7 @@ export function InstallSteps() {
             <h3 className="mt-2 text-lg font-semibold">{t(`install.steps.${s.id}.title`)}</h3>
             <p className="text-sm text-muted-foreground">{s.body}</p>
             {s.id === "zone" && (
-              <a href="#map" className="mt-auto inline-flex items-center gap-1 self-start rounded text-sm text-fiber hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+              <a href="#map" className="mt-auto inline-flex items-center gap-1 self-start rounded text-sm text-foreground/80 underline decoration-white/25 underline-offset-4 transition-colors hover:text-foreground hover:decoration-white/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
                 {t("install.steps.zone.link")}
                 <ArrowRight className="size-3.5" aria-hidden />
               </a>
@@ -102,7 +102,7 @@ export function InstallSteps() {
         <ContractButton context="install" />
         <a
           href="#plans"
-          className="inline-flex items-center gap-2 rounded-md px-3 py-2 font-mono text-xs uppercase tracking-wider text-fiber hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground/75 transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           {t("install.cta")}
           <ArrowRight className="size-4" aria-hidden />

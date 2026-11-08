@@ -1,6 +1,7 @@
 "use client"
 
 import { useTranslations } from "next-intl"
+import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { selection, useSelection } from "@/lib/selection"
 import { track } from "@/lib/analytics"
@@ -23,13 +24,14 @@ export function ContractButton({
   return (
     <Button
       size="lg"
-      className={className ?? "font-mono text-xs tracking-wider shadow-[0_0_20px_-4px_var(--color-fiber)]"}
+      className={className}
       onClick={() => {
         track("plan_selected", { context, planId: planId ?? current })
         selection.openLead(planId)
       }}
     >
-      [ {t("contract").toUpperCase()} ]
+      {t("contract")}
+      <ArrowRight aria-hidden />
     </Button>
   )
 }

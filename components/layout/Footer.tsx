@@ -77,7 +77,7 @@ export function Footer({ base = "" }: { base?: string }) {
   const prefix = base || `/${locale}`
 
   return (
-    <footer id="footer" data-section="footer" className="relative overflow-hidden border-t border-border bg-background pb-16 [background-image:radial-gradient(55%_45%_at_50%_100%,rgb(6_182_212/0.10),transparent_70%),radial-gradient(35%_30%_at_85%_100%,rgb(167_139_250/0.08),transparent_70%)] md:pb-0">
+    <footer id="footer" data-section="footer" className="relative overflow-hidden border-t border-border bg-background pb-16 [background-image:radial-gradient(55%_45%_at_50%_100%,rgb(6_182_212/0.05),transparent_70%),radial-gradient(35%_30%_at_85%_100%,rgb(167_139_250/0.04),transparent_70%)] md:pb-0">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr]">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
@@ -138,7 +138,7 @@ export function Footer({ base = "" }: { base?: string }) {
           the name is already in the brand block above. */}
       {!isPlaceholder(company.name) && (
         <div aria-hidden className="pointer-events-none relative mx-auto max-w-7xl select-none px-4 sm:px-6">
-          <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-fiber/40 to-transparent sm:inset-x-6" />
+          <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent sm:inset-x-6" />
           <p className="footer-wordmark -mb-[0.16em] pt-6 text-center text-[clamp(4.5rem,18.5vw,17rem)] leading-[0.8] font-semibold tracking-[-0.055em]">
             {company.name}
           </p>

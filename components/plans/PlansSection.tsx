@@ -67,7 +67,7 @@ export function PlansSection({ variant = "home" }: { variant?: "home" | "page" }
         <div className="mt-10 flex justify-center">
           <Link
             href="/planes"
-            className="inline-flex items-center gap-2 rounded-md px-3 py-2 font-mono text-xs uppercase tracking-wider text-fiber hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground/75 transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             {t("plans.compareAll")}
             <ArrowRight className="size-4" aria-hidden />

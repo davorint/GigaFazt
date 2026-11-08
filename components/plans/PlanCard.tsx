@@ -128,10 +128,7 @@ export function PlanCard({ plan, maxMbps, level = "h3" }: { plan: Plan; maxMbps:
       <Button
         size="lg"
         variant={plan.highlight ? "default" : "outline"}
-        className={cn(
-          "mt-6 h-11 w-full font-mono text-xs uppercase tracking-wider",
-          plan.highlight && "shadow-[0_0_24px_-6px_var(--color-fiber)]"
-        )}
+        className="mt-6 w-full"
         aria-label={t("contractAria", { speed: speedLabel(plan.downMbps) })}
         onClick={() => {
           track("plan_selected", { planId: plan.id, context: "card" })

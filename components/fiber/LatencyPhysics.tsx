@@ -17,7 +17,8 @@ const SCALE_MS = WIRELESS_MS + fiberRttMs(MAX_KM)
  * (~5 µs/km, round trip) vs the typical extra delay of cable and 4G access.
  * No animation: bars resize instantly. Lazy-loaded by LazyLatencyPhysics.
  */
-export default function LatencyPhysics() {
+/** `bare`: no card of its own (it closes the "La red en vivo" panel). */
+export default function LatencyPhysics({ bare = false }: { bare?: boolean }) {
   const t = useTranslations("fiber.physics")
   const [km, setKm] = useState(50)
   const fiber = fiberRttMs(km)
@@ -29,7 +30,7 @@ export default function LatencyPhysics() {
   ] as const
 
   return (
-    <div className="rounded-xl surface p-6">
+    <div className={bare ? undefined : "rounded-xl surface p-6"}>
       <h3 className="text-xl font-semibold tracking-[-0.02em]">{t("title")}</h3>
       <p className="mt-1 max-w-xl text-sm text-muted-foreground">{t("desc")}</p>
 

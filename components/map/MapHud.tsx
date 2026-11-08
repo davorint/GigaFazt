@@ -109,7 +109,7 @@ export function MapHud({
           <div className="mt-3 flex flex-wrap gap-2">
             <Button
               size="sm"
-              className="font-mono text-xs uppercase tracking-wider"
+              className=""
               onClick={() => {
                 track("plan_selected", { context: "map", state: state.code })
                 selection.openLead()
@@ -117,7 +117,7 @@ export function MapHud({
             >
               {t("contract")}
             </Button>
-            <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => scrollToId("plans")}>
+            <Button variant="outline" size="sm" onClick={() => scrollToId("plans")}>
               {t("viewPlans")}
             </Button>
           </div>

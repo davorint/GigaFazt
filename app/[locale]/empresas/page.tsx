@@ -10,6 +10,7 @@ import { BusinessSteps } from "@/components/business/BusinessSteps"
 import { BusinessCta } from "@/components/business/BusinessCta"
 import { business } from "@/lib/business"
 import { pageMeta } from "@/lib/site"
+import { PageTransition } from "@/components/layout/PageTransition"
 
 export async function generateMetadata({
   params,
@@ -37,6 +38,7 @@ export default async function EmpresasPage({ params }: PageProps<"/[locale]/empr
     <>
       <Nav base={`/${locale}`} current="empresas" />
       {/* .biz: the page's own enterprise look (globals.css), unlike the consumer pages. */}
+      <PageTransition>
       <main className="biz">
         <Section id="business" aria-label={t("eyebrow")}>
           <BusinessHero />
@@ -54,6 +56,7 @@ export default async function EmpresasPage({ params }: PageProps<"/[locale]/empr
           <BusinessCta />
         </Section>
       </main>
+      </PageTransition>
       <Footer base={`/${locale}`} />
     </>
   )

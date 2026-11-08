@@ -19,6 +19,7 @@ import { FaqJsonLd, ServiceJsonLd } from "@/components/seo/SiteJsonLd"
 import { pageMeta } from "@/lib/site"
 import { wifi7Plan } from "@/lib/plans"
 import { speedLabel } from "@/lib/format"
+import { PageTransition } from "@/components/layout/PageTransition"
 
 export async function generateMetadata({ params }: PageProps<"/[locale]">): Promise<Metadata> {
   const { locale } = await params
@@ -37,6 +38,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
   return (
     <>
       <Nav />
+      <PageTransition>
       <main>
         <Section id="hero" className="border-b-0" aria-label={t("hero")}>
           <Hero />
@@ -66,6 +68,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
           <FinalCta />
         </Section>
       </main>
+      </PageTransition>
       <Footer />
       <LeadSheetHost />
       <PlansJsonLd locale={locale} path="/" />

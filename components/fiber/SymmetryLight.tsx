@@ -95,6 +95,8 @@ export function SymmetryLight() {
   const { down, up, upMbps } = useMemo(() => targets(plan.downMbps, mode), [plan.downMbps, mode])
 
   const stage = useRef<HTMLDivElement>(null)
+  const wrap = useRef<HTMLDivElement>(null)
+  const bar = useRef<HTMLSpanElement>(null)
   const progress = useRef<Progress>({ value: 0 })
   const reduced = useReducedMotion()
   const [mobile, setMobile] = useState(false)
@@ -110,17 +112,37 @@ export function SymmetryLight() {
     return () => mq.removeEventListener("change", sync)
   }, [])
 
-  // Scroll progress: 0 while the stage's top is at the bottom of the viewport,
-  // 1 once it reaches the top. Read by the scene every frame (no re-renders).
+  // Scroll progress, read by the scene every frame (no re-renders).
+  // Story mode (desktop, motion allowed; CSS .fiber-story makes the wrapper
+  // tall and pins the stage): the camera flies in from the moment the stage
+  // enters until halfway through the pin, and the pin is split into three
+  // chapters (data-chapter on the wrapper, crossfaded by CSS). Otherwise:
+  // 0 while the stage's top is at the bottom of the viewport, 1 at the top.
   useEffect(() => {
     const el = stage.current
-    if (!el) return
+    const box = wrap.current
+    if (!el || !box) return
     let raf = 0
+    let chapter = -1
     const update = () => {
       raf = 0
-      const r = el.getBoundingClientRect()
       const vh = window.innerHeight || 1
-      progress.current.value = Math.min(1, Math.max(0, 1 - r.top / (vh * 0.85)))
+      const pin = box.offsetHeight - el.offsetHeight
+      const clamp = (v: number) => Math.min(1, Math.max(0, v))
+      if (pin > 40) {
+        const top = box.getBoundingClientRect().top
+        const q = clamp(-top / pin)
+        progress.current.value = clamp((vh - top) / (vh + pin * 0.5))
+        const c = q < 1 / 3 ? 0 : q < 2 / 3 ? 1 : 2
+        if (c !== chapter) {
+          chapter = c
+          box.dataset.chapter = String(c)
+        }
+        if (bar.current) bar.current.style.transform = `scaleX(${q})`
+      } else {
+        const r = el.getBoundingClientRect()
+        progress.current.value = clamp(1 - r.top / (vh * 0.85))
+      }
     }
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update)
@@ -169,7 +191,8 @@ export function SymmetryLight() {
   const upLabel = speedLabel(upMbps)
 
   return (
-    <div className="relative">
+    <div ref={wrap} data-chapter="0" className="fiber-story relative">
+      <div className="fiber-story-pin">
       {/* Stage: full-bleed. SVG frame underneath, WebGL crossfades in on top. */}
       <div
         ref={stage}
@@ -206,10 +229,10 @@ export function SymmetryLight() {
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-background via-background/70 to-transparent" />
 
         <div className="pointer-events-none absolute inset-x-0 top-0">
-          <div className="mx-auto flex max-w-7xl flex-wrap items-start justify-between gap-4 px-4 pt-8 sm:px-6 sm:pt-10">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-start justify-between gap-4 px-4 pt-8 sm:px-6 sm:pt-10 md:pt-24">
             <div className="max-w-xl">
               <h3 className="text-2xl font-semibold tracking-[-0.02em] sm:text-3xl">{t("title")}</h3>
-              <p className="mt-2 text-sm text-muted-foreground sm:text-base">{t("desc")}</p>
+              <p className="fiber-story-hide mt-2 text-sm text-muted-foreground sm:text-base">{t("desc")}</p>
             </div>
             <ul aria-hidden className="flex flex-col gap-1.5 font-mono text-[0.65rem] uppercase tracking-wider">
               <li className="flex items-center gap-2 text-[#67e8f9]">
@@ -221,6 +244,27 @@ export function SymmetryLight() {
                 {t("up")} · {t("upTo")}
               </li>
             </ul>
+          </div>
+        </div>
+
+        {/* Story chapters (desktop, motion allowed): one at a time while pinned. */}
+        <div aria-hidden className="fiber-story-only pointer-events-none absolute inset-0 bg-[radial-gradient(42%_48%_at_18%_46%,rgb(2_4_9/0.82),rgb(2_4_9/0.45)_55%,transparent_80%)]" />
+        <div className="fiber-story-only pointer-events-none absolute inset-x-0 top-1/2 -translate-y-[70%]">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <ol className="relative max-w-md">
+              {(["c1", "c2", "c3"] as const).map((k, i) => (
+                <li key={k} data-step={i} className="fiber-chapter">
+                  <p className="font-mono text-xs tabular-nums text-muted-foreground">
+                    0{i + 1} <span className="opacity-50">/ 03</span>
+                  </p>
+                  <p className="mt-3 text-3xl font-semibold leading-tight tracking-[-0.03em] text-white lg:text-4xl">{t(`story.${k}.title`)}</p>
+                  <p className="mt-3 text-base leading-relaxed text-foreground/70">{t(`story.${k}.body`)}</p>
+                </li>
+              ))}
+            </ol>
+            <span aria-hidden className="mt-6 block h-px w-40 bg-white/10">
+              <span ref={bar} className="block h-full origin-left scale-x-0 bg-white/70" />
+            </span>
           </div>
         </div>
 
@@ -283,7 +327,7 @@ export function SymmetryLight() {
                 <ContractButton context="symmetry" planId={plan.id} />
                 <a
                   href="#plans"
-                  className="inline-flex items-center gap-2 rounded-md px-3 py-2 font-mono text-xs uppercase tracking-wider text-fiber hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground/75 transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   {t("viewPlans")}
                   <ArrowRight className="size-4" aria-hidden />
@@ -292,6 +336,7 @@ export function SymmetryLight() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

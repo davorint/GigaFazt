@@ -254,6 +254,10 @@
       "eyebrow": "Wi-Fi 7",
       "title": "Así viaja el Wi-Fi por tu depa",
       "lead": "Una simulación de las ondas que salen del módem y de cómo las frenan los muros. Arrastra el módem y compara generaciones.",
+      "modemArt": {
+        "alt": "Ilustración de un módem Wi-Fi 7 blanco, de pie, con una luz de estado cian y ondas de Wi-Fi que se expanden a su alrededor.",
+        "caption": "Ilustración · Módem Wi-Fi 7 incluido en {speed}"
+      },
       "insight": "Los muros frenan igual a todas las generaciones. Lo que cambia es lo que cada una hace con la señal que llega: canales más anchos, más datos en cada onda y, con Wi-Fi 7, varias bandas al mismo tiempo.",
       "hud": "Simulación de ondas 2D",
       "generation": "Generación",
@@ -389,7 +393,21 @@
       "viewPlans": "Ver planes",
       "downTo": "hacia tu casa",
       "upTo": "hacia la red",
-      "physics": "Reflexión interna total: la luz rebota en las paredes del núcleo y no se escapa"
+      "physics": "Reflexión interna total: la luz rebota en las paredes del núcleo y no se escapa",
+      "story": {
+        "c1": {
+          "title": "La luz entra al hilo.",
+          "body": "Tus datos viajan como pulsos de luz dentro de un hilo de vidrio del grosor de un cabello."
+        },
+        "c2": {
+          "title": "Rebota sin escaparse.",
+          "body": "Las paredes del núcleo la reflejan una y otra vez: reflexión interna total. Por eso la señal llega lejos sin perderse."
+        },
+        "c3": {
+          "title": "Llega a tu casa. Y tu subida sale por el mismo hilo.",
+          "body": "Bajada y subida viajan al mismo tiempo y a la misma velocidad. Eso es fibra simétrica."
+        }
+      }
     }
   },
   "map": {

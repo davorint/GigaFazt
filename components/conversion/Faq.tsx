@@ -48,15 +48,15 @@ export function Faq() {
                 rel="noopener noreferrer"
                 event="whatsapp_clicked"
                 props={{ context: "faq" }}
-                className="inline-flex h-10 items-center gap-2 rounded-md border border-ok/40 bg-ok/10 px-4 text-sm font-medium text-ok transition-colors hover:bg-ok/15 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="inline-flex h-11 items-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-5 text-sm font-medium transition-colors hover:border-white/25 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
-                <MessageCircle className="size-4" aria-hidden />
+                <MessageCircle className="size-4 text-ok" aria-hidden />
                 {t("cta.whatsapp")}
               </TrackedLink>
             )}
             <a
               href="#cta"
-              className="inline-flex items-center gap-2 rounded-md px-2 py-2 font-mono text-xs uppercase tracking-wider text-fiber hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="inline-flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-foreground/75 transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               {t("faq.cta")}
               <ArrowRight className="size-4" aria-hidden />

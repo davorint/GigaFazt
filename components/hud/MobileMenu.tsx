@@ -9,6 +9,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Brand } from "./Brand"
+import { SmartLink } from "./SmartLink"
 import { StatusBadge } from "./StatusBadge"
 import { LocaleToggle } from "./LocaleToggle"
 import { MotionToggle } from "./MotionToggle"
@@ -42,12 +43,12 @@ export function MobileMenu({
             <SheetClose
               key={link.key}
               render={
-                <a
+                <SmartLink
                   href={link.href}
                   className="rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   {t(link.key)}
-                </a>
+                </SmartLink>
               }
             />
           ))}

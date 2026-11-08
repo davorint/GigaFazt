@@ -60,7 +60,7 @@
 /* Dark-only palette: shadcn semantic tokens mapped to the optical-lab system. */
 :root,
 .dark {
-  --background: #030712; /* page */
+  --background: #020409; /* page (deeper black, 2026-11-08) */
   --foreground: #f4f4f5; /* text */
   --card: #09090b;
   --card-foreground: #f4f4f5;
@@ -507,8 +507,8 @@ html[data-motion="off"] .install-node {
    top edge like the cards; decorative only. */
 .footer-wordmark {
   background:
-    radial-gradient(70% 120% at 50% 0%, rgb(255 255 255 / 0.22), transparent 70%),
-    linear-gradient(90deg, rgb(34 211 238 / 0.55), rgb(103 232 249 / 0.4) 45%, rgb(167 139 250 / 0.5));
+    radial-gradient(70% 120% at 50% 0%, rgb(255 255 255 / 0.2), transparent 70%),
+    linear-gradient(90deg, rgb(226 232 240 / 0.26), rgb(255 255 255 / 0.34) 50%, rgb(226 232 240 / 0.26));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -969,7 +969,7 @@ html[data-shot] .wifi-router-ping {
   position: absolute;
   inset: -1px;
   pointer-events: none;
-  background: linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 0.55) 48%, rgb(255 255 255 / 0.15) 54%, transparent 70%);
+  background: linear-gradient(105deg, transparent 30%, rgb(34 211 238 / 0.35) 46%, rgb(167 139 250 / 0.3) 54%, transparent 70%);
   transform: translateX(-110%);
 }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
@@ -1022,4 +1022,110 @@ html.lenis body {
   transition-property: overflow;
   transition-duration: 1ms;
   transition-behavior: allow-discrete;
+}
+
+/* Film grain (owner, 2026-11-08: "hyper expensive" point 5): a static,
+   barely visible noise layer over the whole page. It breaks up gradient
+   banding in the dark glows and gives the page a printed, cinematic finish.
+   One tiled SVG turbulence texture, normal blending (no mix-blend-mode, so
+   the WebGL scenes underneath don't pay for a blend every frame). */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.055;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.6 -0.55'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+/* Fiber scroll story (fiber/SymmetryLight; owner, 2026-11-08: point 6):
+   on desktop with motion allowed the wrapper is tall and the stage + HUD pin
+   to the viewport while three chapters crossfade (data-chapter, set from
+   scroll). Phones, reduced motion, the pause toggle and screenshots keep the
+   plain stage with its one-paragraph description. Pure CSS, so the layout is
+   final before hydration (no shift). */
+.fiber-story-only {
+  display: none;
+}
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="off"]):not([data-shot]) .fiber-story {
+    height: 260svh;
+  }
+  html:not([data-motion="off"]):not([data-shot]) .fiber-story-pin {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+  html:not([data-motion="off"]):not([data-shot]) .fiber-story-only {
+    display: block;
+  }
+  html:not([data-motion="off"]):not([data-shot]) .fiber-story-hide {
+    display: none;
+  }
+}
+.fiber-story-only ol {
+  display: grid;
+}
+.fiber-chapter {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform: translateY(18px);
+  filter: blur(6px);
+  transition: opacity 0.7s ease, transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.7s ease;
+}
+[data-chapter="0"] .fiber-chapter[data-step="0"],
+[data-chapter="1"] .fiber-chapter[data-step="1"],
+[data-chapter="2"] .fiber-chapter[data-step="2"] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* Page transitions (layout/PageTransition; owner, 2026-11-08: point 8).
+   The old page leaves fast (fade, slight drop, blur); the new one rises in a
+   beat later. The nav is its own named layer so it stays put instead of
+   crossfading with the page. Off under reduced motion and the pause toggle. */
+[data-site-nav] {
+  view-transition-name: site-nav;
+}
+::view-transition-old(.page-out) {
+  animation: 180ms cubic-bezier(0.4, 0, 1, 1) both page-leave;
+}
+::view-transition-new(.page-in) {
+  animation: 520ms cubic-bezier(0.2, 0.7, 0.2, 1) 120ms both page-arrive;
+}
+@keyframes page-leave {
+  to { opacity: 0; transform: translateY(12px); filter: blur(6px); }
+}
+@keyframes page-arrive {
+  from { opacity: 0; transform: translateY(-14px); filter: blur(8px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+html[data-motion="off"]::view-transition-group(*),
+html[data-motion="off"]::view-transition-old(*),
+html[data-motion="off"]::view-transition-new(*) {
+  animation: none !important;
+}
+
+/* Finishing details (owner, 2026-11-08: point 9): branded text selection,
+   a slim quiet scrollbar, and focus rings that sit off the element. */
+::selection {
+  background: rgb(34 211 238 / 0.3);
+  color: #fff;
+}
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.16) transparent;
+}
+:where(a, button, [role="button"], input, select, textarea, summary, [tabindex]):focus-visible {
+  outline-offset: 3px;
 }

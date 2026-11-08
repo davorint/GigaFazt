@@ -571,7 +571,7 @@ export default function WifiLab() {
             <p className="text-sm text-foreground/90">{t("cta", { speed: speedLabel(wifi7Plan.downMbps) })}</p>
             <Button
               size="lg"
-              className="mt-3 h-11 w-full font-mono text-xs uppercase tracking-wider shadow-[0_0_24px_-6px_var(--color-fiber)]"
+              className="mt-3 w-full"
               onClick={() => {
                 track("plan_selected", { planId: wifi7Plan!.id, context: "wifi" })
                 selection.openLead(wifi7Plan!.id)

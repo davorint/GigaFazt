@@ -3,7 +3,6 @@ import { ArrowRight } from "lucide-react"
 import { SymmetryLight } from "./SymmetryLight"
 import { WhatItMeans } from "./WhatItMeans"
 import { LazyTelemetryPanel } from "./LazyTelemetryPanel"
-import { LazyLatencyPhysics } from "./LazyLatencyPhysics"
 import { DeepDiveCards, deepDiveReady } from "./DeepDiveCards"
 
 /**
@@ -39,21 +38,17 @@ export function FiberSection() {
         <LazyTelemetryPanel />
       </div>
 
-      {deepDiveReady() ? (
-        <div className="reveal-stagger mt-12 grid gap-8 lg:grid-cols-2">
-          <LazyLatencyPhysics />
+      {/* Latency physics now lives inside the live-network panel. */}
+      {deepDiveReady() && (
+        <div className="reveal mt-12">
           <DeepDiveCards />
-        </div>
-      ) : (
-        <div className="reveal mx-auto mt-12 max-w-3xl">
-          <LazyLatencyPhysics />
         </div>
       )}
 
       <div className="mt-12 flex justify-center">
         <a
           href="#plans"
-          className="inline-flex items-center gap-2 rounded-md px-3 py-2 font-mono text-xs uppercase tracking-wider text-fiber hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground/75 transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           {t("fiber.cta")}
           <ArrowRight className="size-4" aria-hidden />

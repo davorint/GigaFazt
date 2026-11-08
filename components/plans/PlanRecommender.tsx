@@ -141,7 +141,7 @@ export function PlanRecommender({ onClose }: { onClose: () => void }) {
             <div className="mt-auto flex flex-wrap gap-2 pt-7">
               <Button
                 size="lg"
-                className="h-11 flex-1 font-mono text-xs uppercase tracking-wider"
+                className="flex-1"
                 onClick={() => {
                   selection.selectPlan(recommended.id)
                   track("plan_selected", { planId: recommended.id, context: "recommender" })
@@ -154,7 +154,7 @@ export function PlanRecommender({ onClose }: { onClose: () => void }) {
               <Button
                 variant="outline"
                 size="lg"
-                className="h-11 font-mono text-xs uppercase tracking-wider"
+                className=""
                 onClick={() => {
                   selection.selectPlan(recommended.id)
                   onClose()
@@ -164,7 +164,7 @@ export function PlanRecommender({ onClose }: { onClose: () => void }) {
                 <ArrowUp />
                 {t("showCard")}
               </Button>
-              <Button variant="ghost" size="lg" className="h-11" onClick={restart}>
+              <Button variant="ghost" size="lg" onClick={restart}>
                 <RotateCcw />
                 {t("restart")}
               </Button>
@@ -250,7 +250,7 @@ export function PlanRecommender({ onClose }: { onClose: () => void }) {
 
             <div className="mt-auto flex gap-2 pt-7">
               {step > 0 && (
-                <Button type="button" variant="ghost" size="lg" className="h-11" onClick={() => go(step - 1)}>
+                <Button type="button" variant="ghost" size="lg" onClick={() => go(step - 1)}>
                   <ArrowLeft />
                   {t("back")}
                 </Button>

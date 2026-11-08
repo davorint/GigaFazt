@@ -12,19 +12,18 @@ export function HeroActions({ viewPlans, coverageLink }: { viewPlans: string; co
     <>
       <Button
         size="lg"
-        className="h-11 font-mono text-xs tracking-wider shadow-[0_0_24px_-6px_var(--color-fiber)]"
         onClick={() => {
           track("plan_selected", { planId: featuredPlan.id, context: "hero" })
           scrollToId("plans")
         }}
       >
-        {viewPlans.toUpperCase()}
+        {viewPlans}
         <ArrowRight />
       </Button>
       <Button
         variant="ghost"
         size="lg"
-        className="h-11 gap-1.5 font-mono text-xs tracking-wider text-muted-foreground"
+        className="gap-1.5 text-muted-foreground"
         onClick={() => scrollToId("map")}
       >
         <MapPin />

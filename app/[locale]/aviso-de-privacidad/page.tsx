@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer"
 import { PrivacyNotice } from "@/components/legal/PrivacyNotice"
 import { company } from "@/lib/company"
 import { pageMeta } from "@/lib/site"
+import { PageTransition } from "@/components/layout/PageTransition"
 
 export async function generateMetadata({
   params,
@@ -32,11 +33,13 @@ export default async function PrivacyPage({ params }: PageProps<"/[locale]/aviso
   return (
     <>
       <Nav base={`/${locale}`} />
+      <PageTransition>
       <main>
         <Section id="privacy" aria-label={t("title")} className="border-b-0">
           <PrivacyNotice />
         </Section>
       </main>
+      </PageTransition>
       <Footer base={`/${locale}`} />
     </>
   )

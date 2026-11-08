@@ -7,6 +7,7 @@ import { PlansJsonLd } from "@/components/plans/PlansJsonLd"
 import { Footer } from "@/components/layout/Footer"
 import { LeadSheetHost } from "@/components/conversion/LeadSheetHost"
 import { pageMeta } from "@/lib/site"
+import { PageTransition } from "@/components/layout/PageTransition"
 
 export async function generateMetadata({
   params,
@@ -27,11 +28,13 @@ export default async function PlanesPage({ params }: PageProps<"/[locale]/planes
   return (
     <>
       <Nav base={`/${locale}`} />
+      <PageTransition>
       <main className="pt-8">
         <Section id="plans" aria-label={t("plans")}>
           <PlansSection variant="page" />
         </Section>
       </main>
+      </PageTransition>
       <Footer base={`/${locale}`} />
       <LeadSheetHost />
       <PlansJsonLd locale={locale} path="/planes" />

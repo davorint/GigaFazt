@@ -15,7 +15,7 @@ import { track } from "@/lib/analytics"
 import { ContractButton } from "./ContractButton"
 
 const LINK =
-  "inline-flex min-h-11 flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-md border border-white/12 bg-background/60 px-4 py-2 text-sm transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+  "inline-flex min-h-11 flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border border-white/15 bg-white/[0.03] px-5 py-2 text-sm font-medium transition-colors hover:border-white/25 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 
 /**
  * Final CTA client island: the selected plan as a "ticket" (speed, monthly
@@ -80,9 +80,9 @@ export function FinalCtaActions() {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => track("whatsapp_clicked", { context: "final_cta", planId })}
-            className={`${LINK} text-ok`}
+            className={LINK}
           >
-            <MessageCircle className="size-4" aria-hidden />
+            <MessageCircle className="size-4 text-ok" aria-hidden />
             {t("whatsapp")}
           </a>
         )}

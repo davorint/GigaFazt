@@ -4,6 +4,7 @@ import { wifi7Plan } from "@/lib/plans"
 import { speedLabel } from "@/lib/format"
 import { LazyWifiLab } from "./LazyWifiLab"
 import { WifiComparison } from "./WifiComparison"
+import { ModemShowcase } from "./ModemShowcase"
 
 /**
  * "Así viaja el Wi-Fi por tu depa", its own home section (#wifi) right after
@@ -20,10 +21,18 @@ export function WifiSection() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-      <div className="reveal max-w-2xl">
-        <p className="eyebrow mb-3">[ {t("eyebrow")} ]</p>
-        <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">{t("title")}</h2>
-        <p className="mt-3 text-muted-foreground">{t("lead")}</p>
+      <div className="grid items-end gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="reveal max-w-2xl">
+          <p className="eyebrow mb-3">[ {t("eyebrow")} ]</p>
+          <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">{t("title")}</h2>
+          <p className="mt-3 text-muted-foreground">{t("lead")}</p>
+        </div>
+        {wifi7Plan && (
+          <ModemShowcase
+            className="mx-auto h-64 w-full max-w-[340px] lg:h-72"
+            caption={t("modemArt.caption", { speed: speedLabel(wifi7Plan.downMbps) })}
+          />
+        )}
       </div>
 
       <div className="mt-8">

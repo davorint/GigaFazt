@@ -23,6 +23,7 @@ import { STATES } from "@/lib/geo/states"
 import { plans, speedRange } from "@/lib/plans"
 import { SITE_URL, absoluteUrl, localizedPath, pageMeta } from "@/lib/site"
 import { stateIn, stateName, stateServed } from "@/lib/geo/state-names"
+import { PageTransition } from "@/components/layout/PageTransition"
 
 /**
  * Only the three service states are prerendered. Unknown slugs hit notFound();
@@ -95,6 +96,7 @@ async function AreaContent({ params }: { params: PageProps<"/[locale]/cobertura/
   return (
     <>
       <Nav base={home} />
+      <PageTransition>
       <main className="pt-16">
         <Section id="area" aria-label={name}>
           <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2">
@@ -230,6 +232,7 @@ async function AreaContent({ params }: { params: PageProps<"/[locale]/cobertura/
           </nav>
         </Section>
       </main>
+      </PageTransition>
       <Footer base={home} />
       <LeadSheetHost />
       <PlansJsonLd locale={locale} path={`/cobertura/${slug}`} />

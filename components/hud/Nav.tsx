@@ -13,6 +13,7 @@ import { whatsappHref } from "@/lib/contact"
 import { track } from "@/lib/analytics"
 import { scrollToId } from "@/lib/scroll"
 import { Brand } from "./Brand"
+import { SmartLink } from "./SmartLink"
 import { StatusBadge } from "./StatusBadge"
 import { LocaleToggle } from "./LocaleToggle"
 import { MotionToggle } from "./MotionToggle"
@@ -131,7 +132,7 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
 
   return (
     <>
-      <header
+      <header data-site-nav
         className={cn(
           "fixed inset-x-0 top-0 z-50 transition-all duration-200",
           condensed
@@ -159,7 +160,7 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
               const isPage = link.page && current === link.key
               const isActive = isPage || (!link.page && active === link.href.split("#")[1])
               return (
-                <a
+                <SmartLink
                   key={link.key}
                   data-key={link.key}
                   href={link.href}
@@ -172,7 +173,7 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
                   )}
                 >
                   {t(link.key)}
-                </a>
+                </SmartLink>
               )
             })}
             <span
@@ -191,13 +192,13 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
             <LocaleToggle className="hidden sm:flex" />
             <Button
               size="sm"
-              className="group hidden h-8 gap-1.5 rounded-full px-4 font-mono text-xs tracking-wider shadow-[0_0_20px_-4px_var(--color-fiber)] sm:inline-flex"
+              className="group hidden h-8 gap-1.5 px-4 sm:inline-flex"
               onClick={() => {
                 track("plan_selected", { context: "nav" })
                 if (!scrollToId("plans")) router.push(`${base}#plans`)
               }}
             >
-              {t("viewPlans").toUpperCase()}
+              {t("viewPlans")}
               <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
             </Button>
 
@@ -235,31 +236,31 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
         aria-label={t("quick")}
         inert={!pastHero}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-border bg-background/90 backdrop-blur-md transition-transform duration-200 md:hidden",
+          "fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-white/[0.08] bg-background/80 backdrop-blur-xl transition-transform duration-200 md:hidden",
           pastHero ? "translate-y-0" : "translate-y-full"
         )}
       >
-        <a
+        <SmartLink
           href={`${base}#map`}
           className="flex flex-col items-center gap-0.5 py-2 text-xs focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none text-muted-foreground"
         >
           <MapPin className="size-4" />
           {t("cobertura")}
-        </a>
-        <a
+        </SmartLink>
+        <SmartLink
           href={`${base}#plans`}
           className="flex flex-col items-center gap-0.5 border-x border-border py-2 text-xs focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none text-muted-foreground"
         >
           <Layers className="size-4" />
           {t("planes")}
-        </a>
+        </SmartLink>
         {whatsapp ? (
           <a
             href={whatsappHref(whatsapp)}
             onClick={() => track("whatsapp_clicked", { context: "bottombar" })}
-            className="flex flex-col items-center gap-0.5 py-2 text-xs focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none text-ok"
+            className="flex flex-col items-center gap-0.5 py-2 text-xs focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none text-muted-foreground"
           >
-            <MessageCircle className="size-4" />
+            <MessageCircle className="size-4 text-ok" />
             {t("whatsapp")}
           </a>
         ) : (

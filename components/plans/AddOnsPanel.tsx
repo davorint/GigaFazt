@@ -170,7 +170,7 @@ export function AddOnsPanel() {
         <PriceTerms plan={plan} inline className="mt-2" />
         <Button
           size="lg"
-          className="mt-5 h-11 w-full font-mono text-xs uppercase tracking-wider"
+          className="mt-5 w-full"
           onClick={() => {
             track("plan_selected", { planId: plan.id, context: "addons" })
             selection.openLead(plan.id)

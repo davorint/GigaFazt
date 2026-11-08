@@ -9,6 +9,7 @@ import { ThroughputGraph } from "./ThroughputGraph"
 import { LatencyGauge } from "./LatencyGauge"
 import { Sparkline } from "./Sparkline"
 import { useReducedMotion } from "@/lib/motion"
+import LatencyPhysics from "./LatencyPhysics"
 
 const WINDOW_MS = 60_000
 const BACKFILL = 90 // 60 s at the mock's 1.5 Hz
@@ -151,6 +152,11 @@ export default function TelemetryPanel({ source = mockTelemetry }: { source?: Te
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Latency physics closes the panel: one "network" statement, not two cards. */}
+      <div className="mt-10 border-t border-white/[0.06] pt-8">
+        <LatencyPhysics bare />
       </div>
     </div>
   )

@@ -254,6 +254,10 @@
       "eyebrow": "Wi-Fi 7",
       "title": "How Wi-Fi travels through your home",
       "lead": "A simulation of the waves leaving the modem and how walls slow them down. Drag the modem and compare generations.",
+      "modemArt": {
+        "alt": "Illustration of a white, standing Wi-Fi 7 modem with a cyan status light and Wi-Fi waves spreading around it.",
+        "caption": "Illustration · Wi-Fi 7 modem included in {speed}"
+      },
       "insight": "Walls slow every generation down the same way. What changes is what each one does with the signal that gets through: wider channels, more data in every wave and, with Wi-Fi 7, several bands at the same time.",
       "hud": "2D wave simulation",
       "generation": "Generation",
@@ -389,7 +393,21 @@
       "viewPlans": "View plans",
       "downTo": "toward your home",
       "upTo": "toward the network",
-      "physics": "Total internal reflection: light bounces off the core walls and never escapes"
+      "physics": "Total internal reflection: light bounces off the core walls and never escapes",
+      "story": {
+        "c1": {
+          "title": "Light enters the strand.",
+          "body": "Your data travels as pulses of light inside a glass strand as thin as a hair."
+        },
+        "c2": {
+          "title": "It bounces without escaping.",
+          "body": "The core's walls reflect it again and again: total internal reflection. That's why the signal goes far without fading."
+        },
+        "c3": {
+          "title": "It reaches your home. And your upload leaves on the same strand.",
+          "body": "Download and upload travel at the same time and at the same speed. That's symmetrical fiber."
+        }
+      }
     }
   },
   "map": {

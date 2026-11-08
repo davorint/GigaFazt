@@ -3,6 +3,7 @@ import { company } from "@/lib/company"
 import { isPlaceholder } from "@/lib/placeholder"
 import { PlaceholderChip } from "./PlaceholderChip"
 import { BrandLogo } from "./BrandLogo"
+import { SmartLink } from "./SmartLink"
 
 /**
  * The GigaFazt logo linking home (`#hero` on the home page, the locale
@@ -13,7 +14,7 @@ import { BrandLogo } from "./BrandLogo"
 export function Brand({ href = "#hero" }: { href?: string }) {
   const t = useTranslations("nav")
   return (
-    <a
+    <SmartLink
       href={href}
       className="flex items-center gap-2 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
@@ -23,6 +24,6 @@ export function Brand({ href = "#hero" }: { href?: string }) {
         <BrandLogo alt={company.name} height={30} className="-my-1 -ml-1.5" />
       )}
       <span className="sr-only">{t("home")}</span>
-    </a>
+    </SmartLink>
   )
 }
