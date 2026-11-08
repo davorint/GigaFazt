@@ -538,7 +538,6 @@
       "retail": "Stores and restaurants",
       "buildings": "Buildings and shopping centers"
     },
-    "diagramCaption": "Fiber reaches every floor and every area",
     "servicesEyebrow": "Business services",
     "servicesTitle": "Everything your network needs, from one provider",
     "servicesLead": "From where the fiber comes in to the last workstation.",
@@ -591,7 +590,32 @@
     "ctaTitle": "Bring fiber to your whole business",
     "ctaLead": "We serve {area}. Tell us about your project and we will prepare a custom quote.",
     "smallOffice": "Just need internet for a small store or office?",
-    "plansLink": "View plans"
+    "plansLink": "View plans",
+    "jump": "See services",
+    "spec": {
+      "link": "Link",
+      "linkValue": "Up to {max} Gbps",
+      "reach": "Reach",
+      "reachValue": "Fiber in every area",
+      "project": "Project",
+      "projectValue": "Custom design and installation",
+      "quote": "Quote",
+      "quoteValue": "Per project, on WhatsApp"
+    },
+    "capacityEyebrow": "Capacity",
+    "capacityTitle": "A dedicated link, just for your business.",
+    "capacityScale": "Link scale",
+    "spacesTitle": "For any workspace",
+    "phase": "Phase",
+    "index": "Service",
+    "schematic": {
+      "entry": "Service entrance",
+      "riser": "Fiber riser",
+      "level": "L{n}",
+      "node": "Connected area"
+    },
+    "unit": "Gbps",
+    "capacityRange": "0 – {max} Gbps"
   },
   "privacy": {
     "metaTitle": "Privacy Notice",

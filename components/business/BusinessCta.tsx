@@ -3,27 +3,37 @@ import { ArrowRight } from "lucide-react"
 import { Link } from "@/i18n/navigation"
 import { QuoteButton } from "./QuoteButton"
 
-/** Closing quote CTA, plus a way back to the regular plans for small offices. */
+/**
+ * Closing quote CTA as a framed panel on the blueprint (corner ticks, no
+ * glow), plus a way back to the regular plans for small offices.
+ */
 export function BusinessCta() {
   const t = useTranslations()
   return (
-    <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-      <div className="hud-brackets relative overflow-hidden rounded-2xl surface px-6 py-12 text-center sm:px-12">
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-24 mx-auto h-48 max-w-xl rounded-full bg-fiber/15 blur-3xl" />
-        <h2 className="mx-auto max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-5xl">{t("business.ctaTitle")}</h2>
-        <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-          {t("business.ctaLead", { area: t("coverage.area") })}
-        </p>
-        <div className="mt-8 flex justify-center">
-          <QuoteButton context="business_cta" />
+    <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32">
+      <div className="reveal biz-frame overflow-hidden">
+        <div aria-hidden className="biz-blueprint pointer-events-none absolute inset-0 opacity-60 [mask-image:linear-gradient(90deg,transparent,#000_70%)]" />
+        <div className="relative grid gap-10 p-8 sm:p-12 lg:grid-cols-[1.4fr_1fr] lg:items-end lg:p-16">
+          <div>
+            <h2 className="biz-display max-w-2xl text-4xl leading-[1.02] font-semibold tracking-[-0.04em] sm:text-6xl">
+              {t("business.ctaTitle")}
+            </h2>
+            <p className="mt-6 max-w-xl text-zinc-400">{t("business.ctaLead", { area: t("coverage.area") })}</p>
+          </div>
+          <div className="flex flex-col items-start gap-6 lg:items-end">
+            <QuoteButton context="business_cta" />
+            <p className="text-sm text-zinc-400 lg:text-right">
+              {t("business.smallOffice")}{" "}
+              <Link
+                href="/planes"
+                className="inline-flex items-center gap-1 rounded text-zinc-200 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              >
+                {t("business.plansLink")}
+                <ArrowRight className="size-3.5" aria-hidden />
+              </Link>
+            </p>
+          </div>
         </div>
-        <p className="mt-8 text-sm text-muted-foreground">
-          {t("business.smallOffice")}{" "}
-          <Link href="/planes" className="inline-flex items-center gap-1 rounded text-fiber hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-            {t("business.plansLink")}
-            <ArrowRight className="size-3.5" aria-hidden />
-          </Link>
-        </p>
       </div>
     </div>
   )

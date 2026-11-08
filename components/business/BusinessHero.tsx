@@ -1,52 +1,78 @@
 import { useTranslations } from "next-intl"
-import { Briefcase, Building, Store, Warehouse } from "lucide-react"
+import { ArrowDown } from "lucide-react"
 import { business } from "@/lib/business"
-import { BuildingDiagram } from "./BuildingDiagram"
-import { QuoteButton } from "./QuoteButton"
 import { InView } from "@/components/layout/InView"
+import { IsoBuilding } from "./IsoBuilding"
+import { QuoteButton } from "./QuoteButton"
 
-const SPACE_ICONS = { offices: Briefcase, warehouses: Warehouse, retail: Store, buildings: Building } as const
-
-/** /empresas hero: the promise ("gigabit en todas las áreas") + quote CTA + diagram. */
+/**
+ * /empresas hero, in the page's own "enterprise" language (globals.css
+ * `.biz*`): blueprint grid, white display type, the isometric building
+ * schematic, and a spec bar of owner-confirmed facts along the bottom.
+ */
 export function BusinessHero() {
   const t = useTranslations("business")
+  const spec = [
+    { k: "link", v: t("spec.linkValue", { max: business.maxLinkGbps }), note: true },
+    { k: "reach", v: t("spec.reachValue") },
+    { k: "project", v: t("spec.projectValue") },
+    { k: "quote", v: t("spec.quoteValue") },
+  ] as const
+
   return (
-    <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 pt-28 pb-20 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:pt-36">
-      <div>
-        <p className="eyebrow mb-4">[ {t("eyebrow")} ]</p>
-        <h1 className="text-4xl font-semibold tracking-[-0.03em] text-balance sm:text-5xl lg:text-6xl">{t("h1")}</h1>
-        <p className="mt-5 max-w-xl text-lg text-muted-foreground">{t("lead")}</p>
+    <div className="relative overflow-hidden">
+      <div aria-hidden className="biz-blueprint biz-fade-x pointer-events-none absolute inset-0 [mask-image:radial-gradient(90%_80%_at_60%_40%,#000_35%,transparent_100%)]" />
+      <div aria-hidden className="pointer-events-none absolute top-1/3 right-[-10%] h-[42rem] w-[42rem] rounded-full bg-[radial-gradient(closest-side,rgb(167_139_250/0.10),transparent)]" />
 
-        <p className="mt-6 font-mono text-sm">
-          <span className="text-fiber">{t("speed", { max: business.maxLinkGbps })}</span>
-          <span className="text-muted-foreground"> · {t("speedQual")}</span>
-        </p>
+      <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 pt-32 pb-12 sm:px-6 lg:min-h-[calc(100svh-7rem)] lg:grid-cols-[1.05fr_1fr] lg:pt-28">
+        <div>
+          <p className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.25em] text-zinc-400">
+            <span aria-hidden className="h-px w-8 bg-[var(--biz-accent)]" />
+            {t("eyebrow")}
+          </p>
+          <h1 className="biz-display mt-6 text-5xl leading-[0.98] font-semibold tracking-[-0.045em] text-balance sm:text-6xl lg:text-[5.25rem]">
+            {t("h1")}
+          </h1>
+          <p className="mt-7 max-w-xl text-lg leading-relaxed text-zinc-400">{t("lead")}</p>
 
-        <div className="mt-8 flex flex-wrap items-center gap-4">
-          <QuoteButton context="business_hero" />
-          <span className="text-sm text-muted-foreground">{t("quoteNote")}</span>
+          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
+            <QuoteButton context="business_hero" />
+            <a
+              href="#business-services"
+              className="inline-flex min-h-11 items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-zinc-300 transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              {t("jump")}
+              <ArrowDown className="size-4" aria-hidden />
+            </a>
+          </div>
+          <p className="mt-4 text-sm text-zinc-400">{t("quoteNote")}</p>
         </div>
 
-        <ul className="mt-10 flex flex-wrap gap-2" aria-label={t("spacesLabel")}>
-          {business.spaces.map((s) => {
-            const Icon = SPACE_ICONS[s]
-            return (
-              <li key={s} className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-3 py-1.5 text-xs text-muted-foreground">
-                <Icon className="size-3.5 text-fiber" aria-hidden />
-                {t(`spaces.${s}`)}
-              </li>
-            )
-          })}
-        </ul>
+        <InView className="relative mx-auto w-full max-w-[36rem]">
+          <IsoBuilding className="h-auto w-full" />
+        </InView>
       </div>
 
-      <InView className="surface hud-brackets relative rounded-xl p-4 sm:p-6">
-        <div aria-hidden className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(ellipse_at_50%_60%,rgb(34_211_238/0.14),transparent_70%)]" />
-        <BuildingDiagram className="relative h-auto w-full" />
-        <p className="relative mt-3 text-center font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">
-          {t("diagramCaption")}
-        </p>
-      </InView>
+      {/* Spec bar: four owner-confirmed facts, set like a datasheet header. */}
+      <div className="relative mx-auto max-w-7xl px-4 pb-16 sm:px-6">
+        <dl className="grid border-y border-[var(--biz-line)] sm:grid-cols-2 lg:grid-cols-4">
+          {spec.map((s, i) => (
+            <div
+              key={s.k}
+              className="flex flex-col-reverse gap-2 border-[var(--biz-line)] py-5 max-lg:border-b max-lg:last:border-b-0 sm:px-5 sm:first:pl-0 lg:border-l lg:first:border-l-0"
+            >
+              <dd className="text-lg font-medium tracking-[-0.01em] text-white">
+                {s.v}
+                {"note" in s && <sup className="ml-0.5 text-[var(--biz-accent)]">*</sup>}
+              </dd>
+              <dt className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-zinc-400">
+                <span className="text-[var(--biz-accent)]">{String(i + 1).padStart(2, "0")}</span> · {t(`spec.${s.k}`)}
+              </dt>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-3 font-mono text-[0.65rem] text-zinc-400">* {t("speedQual")}</p>
+      </div>
     </div>
   )
 }

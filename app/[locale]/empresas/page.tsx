@@ -4,6 +4,7 @@ import { Nav } from "@/components/hud/Nav"
 import { Section } from "@/components/layout/Section"
 import { Footer } from "@/components/layout/Footer"
 import { BusinessHero } from "@/components/business/BusinessHero"
+import { BusinessCapacity } from "@/components/business/BusinessCapacity"
 import { BusinessServices } from "@/components/business/BusinessServices"
 import { BusinessSteps } from "@/components/business/BusinessSteps"
 import { BusinessCta } from "@/components/business/BusinessCta"
@@ -24,6 +25,8 @@ export async function generateMetadata({
  * Businesses (owner, 2026-11-07): custom fiber installations, gigabit in every
  * area, dedicated internet, cabling, Wi-Fi and network equipment. Its own page
  * so the home page stays light; all server-rendered (no extra client JS).
+ * Its own visual language (`.biz`): graphite, white type, violet accent,
+ * hairlines and a blueprint grid instead of the consumer pages' cyan glow.
  */
 export default async function EmpresasPage({ params }: PageProps<"/[locale]/empresas">) {
   const { locale } = await params
@@ -33,9 +36,13 @@ export default async function EmpresasPage({ params }: PageProps<"/[locale]/empr
   return (
     <>
       <Nav base={`/${locale}`} current="empresas" />
-      <main>
-        <Section id="business" aria-label={t("eyebrow")} className="holo-grid">
+      {/* .biz: the page's own enterprise look (globals.css), unlike the consumer pages. */}
+      <main className="biz">
+        <Section id="business" aria-label={t("eyebrow")}>
           <BusinessHero />
+        </Section>
+        <Section id="business-capacity" aria-label={t("capacityEyebrow")}>
+          <BusinessCapacity />
         </Section>
         <Section id="business-services" aria-label={t("servicesEyebrow")}>
           <BusinessServices />

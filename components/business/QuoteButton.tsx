@@ -7,11 +7,11 @@ import { company } from "@/lib/company"
 import { isPlaceholder } from "@/lib/placeholder"
 import { whatsappHref } from "@/lib/contact"
 
-/** "Cotizar por WhatsApp": business quotes go straight to a chat (no prices online). */
+/** "Cotizar por WhatsApp": business quotes go straight to a chat (no prices online). White, sharp: the /empresas primary action. */
 export function QuoteButton({ context, className }: { context: string; className?: string }) {
   const t = useTranslations("business")
   const base =
-    "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 py-2.5 font-mono text-xs uppercase tracking-wider"
+    "inline-flex min-h-12 items-center justify-center gap-2 rounded-[3px] px-6 py-3 font-mono text-xs uppercase tracking-[0.18em]"
   if (isPlaceholder(company.whatsapp)) {
     return (
       <span className={cn(base, "border border-border text-muted-foreground", className)}>
@@ -30,7 +30,7 @@ export function QuoteButton({ context, className }: { context: string; className
       props={{ context }}
       className={cn(
         base,
-        "bg-fiber font-semibold text-background shadow-[0_0_24px_-6px_var(--color-fiber)] transition-colors hover:bg-fiber/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+        "bg-white font-semibold text-black transition-colors hover:bg-zinc-200 focus-visible:ring-2 focus-visible:ring-[var(--biz-accent,var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
         className
       )}
     >

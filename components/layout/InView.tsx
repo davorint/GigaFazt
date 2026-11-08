@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react"
 
 /**
  * Sets `data-inview` while the wrapper is on screen, so CSS loops inside it
- * (e.g. `.biz-flow`) only run when visible: they repaint every frame.
+ * (e.g. `.iso-packet`) only run when visible: they repaint every frame.
  * Also sets `data-seen` the first time it is visible (never removed), for
  * once-per-section reveals (DESIGN motion: animate on scroll once).
  */

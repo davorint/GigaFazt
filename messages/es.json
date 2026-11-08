@@ -538,7 +538,6 @@
       "retail": "Comercios y restaurantes",
       "buildings": "Edificios y plazas"
     },
-    "diagramCaption": "La fibra llega a cada piso y a cada área",
     "servicesEyebrow": "Servicios para empresas",
     "servicesTitle": "Todo lo que tu red necesita, con un solo proveedor",
     "servicesLead": "Desde la llegada de la fibra hasta el último puesto de trabajo.",
@@ -591,7 +590,32 @@
     "ctaTitle": "Lleva la fibra a todo tu negocio",
     "ctaLead": "Damos servicio en {area}. Cuéntanos de tu proyecto y te preparamos una cotización a la medida.",
     "smallOffice": "¿Solo necesitas internet para un local u oficina pequeña?",
-    "plansLink": "Ver planes"
+    "plansLink": "Ver planes",
+    "jump": "Ver servicios",
+    "spec": {
+      "link": "Enlace",
+      "linkValue": "Hasta {max} Gbps",
+      "reach": "Alcance",
+      "reachValue": "Fibra en cada área",
+      "project": "Proyecto",
+      "projectValue": "Diseño e instalación a la medida",
+      "quote": "Cotización",
+      "quoteValue": "Por proyecto, por WhatsApp"
+    },
+    "capacityEyebrow": "Capacidad",
+    "capacityTitle": "Un enlace dedicado, solo para tu empresa.",
+    "capacityScale": "Escala del enlace",
+    "spacesTitle": "Para cualquier espacio de trabajo",
+    "phase": "Fase",
+    "index": "Servicio",
+    "schematic": {
+      "entry": "Acometida",
+      "riser": "Montante de fibra",
+      "level": "N{n}",
+      "node": "Área conectada"
+    },
+    "unit": "Gbps",
+    "capacityRange": "0 – {max} Gbps"
   },
   "privacy": {
     "metaTitle": "Aviso de Privacidad",

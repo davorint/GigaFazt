@@ -179,19 +179,6 @@
 
 /* /empresas building diagram: light flowing along the fiber (static under
    reduced motion / paused animations via the global rules). */
-@keyframes biz-flow {
-  to {
-    stroke-dashoffset: -48;
-  }
-}
-.biz-flow {
-  animation: biz-flow 1.6s linear infinite;
-  animation-play-state: paused;
-}
-[data-inview] .biz-flow {
-  animation-play-state: running;
-}
-
 /* MapLibre controls as small dark glass HUD panels (DESIGN "Map direction"). */
 .maplibregl-ctrl-group {
   background: rgb(3 7 18 / 0.75) !important;
@@ -746,4 +733,132 @@ section[data-section="faq"]::before {
 [data-map] .maplibregl-ctrl-bottom-right {
   right: max(0px, calc((100% - 80rem) / 2));
   bottom: 1rem;
+}
+
+/* ── /empresas: "enterprise" visual language ───────────────────────────────
+   Deliberately unlike the consumer pages: graphite instead of navy, white
+   type with violet as the only accent, sharp corners, hairlines, a blueprint
+   grid with crosshair marks, no glow. Scoped to <main class="biz">. */
+.biz {
+  --biz-bg: #060608;
+  --biz-panel: #0b0b0e;
+  --biz-line: rgb(255 255 255 / 0.09);
+  --biz-line-strong: rgb(255 255 255 / 0.18);
+  --biz-accent: #a78bfa;
+  --biz-accent-soft: rgb(167 139 250 / 0.12);
+  background: var(--biz-bg);
+}
+.biz section {
+  border-color: var(--biz-line);
+}
+/* Blueprint: 1px grid every 96 px with a small "+" at each crossing. */
+.biz-blueprint {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cpath d='M0 0h7M0 0v7M96 0h-7M0 96v-7' stroke='%23ffffff' stroke-opacity='0.28' fill='none'/%3E%3C/svg%3E"),
+    linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 96px 96px;
+  background-position: -1px -1px;
+}
+.biz-fade-x {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+/* Corner ticks for framed panels (no rounded cards on this page). */
+.biz-frame {
+  position: relative;
+  border: 1px solid var(--biz-line);
+  background: var(--biz-panel);
+}
+.biz-frame::before,
+.biz-frame::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+}
+.biz-frame::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid var(--biz-accent);
+  border-left: 1px solid var(--biz-accent);
+}
+.biz-frame::after {
+  right: -1px;
+  bottom: -1px;
+  border-right: 1px solid var(--biz-accent);
+  border-bottom: 1px solid var(--biz-accent);
+}
+.biz-display {
+  background: linear-gradient(180deg, #ffffff 30%, #a1a1aa 115%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Isometric building schematic (IsoBuilding): lines draw in once, then light
+   packets climb the riser and run along one branch per level while visible.
+   Packets are transform-only; draw-in and packets are instant/stopped under
+   reduced motion and paused animations via the global rules. */
+@keyframes iso-draw {
+  to { stroke-dashoffset: 0; }
+}
+.iso-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: iso-draw 1.4s cubic-bezier(0.6, 0, 0.2, 1) calc(var(--d, 0) * 1ms) forwards;
+}
+@keyframes iso-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.iso-fade {
+  opacity: 0;
+  animation: iso-fade 0.6s ease calc(var(--d, 0) * 1ms) forwards;
+}
+@keyframes iso-run {
+  0% { transform: translate(0, 0); opacity: 0; }
+  8% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+}
+.iso-packet {
+  opacity: 0;
+  animation: iso-run var(--t, 2.4s) cubic-bezier(0.5, 0, 0.5, 1) calc(var(--d, 0) * 1ms) infinite;
+  animation-play-state: paused;
+}
+[data-inview] .iso-packet {
+  animation-play-state: running;
+}
+
+/* Capacity ruler (BusinessCapacity): fills 0 → max once when first seen. */
+.biz-ruler-fill {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s;
+}
+[data-seen] .biz-ruler-fill {
+  transform: none;
+}
+
+/* Services index rows: a violet hairline sweeps in on hover / focus. */
+.biz-row {
+  position: relative;
+}
+.biz-row::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--biz-accent), transparent 70%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.biz-row:hover::before,
+.biz-row:focus-within::before {
+  transform: none;
 }
