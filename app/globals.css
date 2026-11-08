@@ -697,7 +697,7 @@ section[data-section="faq"]::before {
   to { stroke-dashoffset: -0.72; }
 }
 .wifi-link {
-  animation: wifi-link-flow 1.2s linear infinite;
+  animation: wifi-link-flow 2.4s linear infinite;
 }
 @keyframes wifi-router-ping {
   0% { transform: scale(0.5); opacity: 0.9; }
