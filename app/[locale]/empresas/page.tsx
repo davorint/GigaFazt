@@ -4,11 +4,8 @@ import { Nav } from "@/components/hud/Nav"
 import { Section } from "@/components/layout/Section"
 import { Footer } from "@/components/layout/Footer"
 import { BusinessHero } from "@/components/business/BusinessHero"
-import { BusinessCapacity } from "@/components/business/BusinessCapacity"
 import { BusinessTiers } from "@/components/business/BusinessTiers"
-import { BusinessFiber } from "@/components/business/BusinessFiber"
-import { BusinessServices } from "@/components/business/BusinessServices"
-import { BusinessLan } from "@/components/business/BusinessLan"
+import { BusinessNetworks } from "@/components/business/BusinessNetworks"
 import { BusinessSteps } from "@/components/business/BusinessSteps"
 import { BusinessCta } from "@/components/business/BusinessCta"
 import { business } from "@/lib/business"
@@ -26,13 +23,14 @@ export async function generateMetadata({
 }
 
 /**
- * Businesses (owner, 2026-11-07/08), in two chapters: 01 internet service
- * (capacity + the negocios / empresarial / dedicado packages, which differ by
- * availability) and 02 fiber networks, deployment and cabling (opener,
- * services, what an internal network makes possible, how we work). Its own page
- * so the home page stays light; all server-rendered (no extra client JS).
- * Its own visual language (`.biz`): graphite, white type, violet accent,
- * hairlines and a blueprint grid instead of the consumer pages' cyan glow.
+ * Businesses (owner, 2026-11-07/08): hero (statement + live 3D building),
+ * chapter 01 internet service (the three packages as one comparison), chapter
+ * 02 fiber networks (opener, what we do, what it makes possible), how we work,
+ * and a full-screen closing scene. Its own page so the home page stays light;
+ * server-rendered except the lazy hero building (three.js, never in the
+ * initial chunk). Its own visual language (`.biz`): graphite, white type,
+ * violet accent, hairlines and a blueprint grid instead of the consumer pages'
+ * cyan glow.
  */
 export default async function EmpresasPage({ params }: PageProps<"/[locale]/empresas">) {
   const { locale } = await params
@@ -48,22 +46,13 @@ export default async function EmpresasPage({ params }: PageProps<"/[locale]/empr
         <Section id="business" aria-label={t("eyebrow")}>
           <BusinessHero />
         </Section>
-        <Section id="business-capacity" aria-label={t("capacityEyebrow")}>
-          <BusinessCapacity />
-        </Section>
-        <Section id="business-internet" aria-label={t("tiers.eyebrow")}>
+        <Section id="business-internet" aria-label={t("chapters.internet.title")}>
           <BusinessTiers />
         </Section>
-        <Section id="business-fiber" aria-label={t("chapters.fiber.title")}>
-          <BusinessFiber />
+        <Section id="business-networks" aria-label={t("chapters.fiber.title")}>
+          <BusinessNetworks />
         </Section>
-        <Section id="business-services" aria-label={t("servicesEyebrow")}>
-          <BusinessServices />
-        </Section>
-        <Section id="business-lan" aria-label={t("lan.eyebrow")}>
-          <BusinessLan />
-        </Section>
-        <Section id="business-steps" aria-label={t("stepsEyebrow")}>
+        <Section id="business-steps" aria-label={t("stepsTitle")}>
           <BusinessSteps />
         </Section>
         <Section id="business-cta" aria-label={t("ctaTitle")}>

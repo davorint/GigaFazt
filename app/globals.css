@@ -899,14 +899,72 @@ html[data-shot] .wifi-router-ping {
   animation-play-state: running;
 }
 
-/* Capacity ruler (BusinessCapacity): fills 0 → max once when first seen. */
-.biz-ruler-fill {
+/* Packages comparison (BusinessTiers): Dedicado is the lit column, a soft
+   violet light from the top and violet side hairlines. */
+.biz-lit-col {
+  background: rgb(167 139 250 / 0.045);
+  box-shadow: inset 1px 0 0 rgb(167 139 250 / 0.35), inset -1px 0 0 rgb(167 139 250 / 0.35);
+}
+.biz-lit-top {
+  background:
+    radial-gradient(90% 120% at 50% 0%, rgb(167 139 250 / 0.22), transparent 70%),
+    rgb(167 139 250 / 0.045);
+  box-shadow:
+    inset 0 2px 0 var(--biz-accent),
+    inset 1px 0 0 rgb(167 139 250 / 0.35),
+    inset -1px 0 0 rgb(167 139 250 / 0.35),
+    0 -30px 60px -30px rgb(167 139 250 / 0.6);
+}
+.biz-lit-bottom {
+  box-shadow:
+    inset 1px 0 0 rgb(167 139 250 / 0.35),
+    inset -1px 0 0 rgb(167 139 250 / 0.35),
+    inset 0 -1px 0 rgb(167 139 250 / 0.35);
+}
+.biz-lit-card {
+  background:
+    radial-gradient(100% 60% at 50% 0%, rgb(167 139 250 / 0.16), transparent 70%),
+    var(--biz-panel);
+}
+
+/* Network uses (NetworkUses): small diagrams that play once / loop only
+   while in view; the final frames are the meaningful static state. */
+.biz-race-fill {
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 1.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s;
+  transition: transform var(--dur, 1s) linear 0.3s;
 }
-[data-seen] .biz-ruler-fill {
+[data-seen] .biz-race-fill,
+html[data-shot] .biz-race-fill {
   transform: none;
+}
+@keyframes biz-lane-run {
+  0% { transform: translateX(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: none; opacity: 0; }
+}
+.biz-lane-packet {
+  opacity: 0;
+  animation: biz-lane-run 2.2s cubic-bezier(0.45, 0, 0.55, 1) var(--d, 0s) infinite;
+  animation-play-state: paused;
+}
+@keyframes biz-rec {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+.biz-rec {
+  animation: biz-rec 1.6s ease-in-out var(--d, 0s) infinite;
+  animation-play-state: paused;
+}
+[data-inview] .biz-lane-packet,
+[data-inview] .biz-rec {
+  animation-play-state: running;
+}
+
+/* Closing scene: the schematic fully lit. */
+.biz-finale-building svg {
+  filter: drop-shadow(0 0 10px rgb(167 139 250 / 0.55));
 }
 
 /* Services index rows: a violet hairline sweeps in on hover / focus. */

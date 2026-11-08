@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
-import { ArrowRight, Menu, MapPin, Layers, MessageCircle } from "lucide-react"
+import { ArrowRight, Menu, MapPin, Layers, MessageCircle, Network } from "lucide-react"
 import { cn } from "cn"
 import { Button } from "@/components/ui/button"
 import { company } from "@/lib/company"
@@ -47,6 +47,7 @@ const SECTION_IDS = ["hero", "plans", "fiber", "wifi", "map", "faq"]
  */
 export function Nav({ base = "", current }: { base?: string; current?: (typeof PAGES)[number]["key"] }) {
   const t = useTranslations("nav")
+  const tb = useTranslations("business")
   const locale = useLocale()
   const router = useRouter()
   const links = [
@@ -129,6 +130,18 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
   }
 
   const whatsapp = isPlaceholder(company.whatsapp) ? null : company.whatsapp
+  // /empresas: the CTA and the phone bottom bar lead to a quote, not to the consumer plans.
+  const biz = current === "empresas"
+  const bizQuoteHref = whatsapp ? whatsappHref(whatsapp, tb("whatsappMessage")) : "#business-cta"
+  const quickLinks = biz
+    ? [
+        { href: "#business-internet", label: t("bizInternet"), Icon: Layers },
+        { href: "#business-networks", label: t("bizNetworks"), Icon: Network },
+      ]
+    : [
+        { href: `${base}#map`, label: t("cobertura"), Icon: MapPin },
+        { href: `${base}#plans`, label: t("planes"), Icon: Layers },
+      ]
 
   return (
     <>
@@ -190,17 +203,30 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
             <StatusBadge className="hidden sm:inline-flex" />
             <MotionToggle className="hidden sm:inline-flex" />
             <LocaleToggle className="hidden sm:flex" />
-            <Button
-              size="sm"
-              className="group hidden h-8 gap-1.5 px-4 sm:inline-flex"
-              onClick={() => {
-                track("plan_selected", { context: "nav" })
-                if (!scrollToId("plans")) router.push(`${base}#plans`)
-              }}
-            >
-              {t("viewPlans")}
-              <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
-            </Button>
+            {biz ? (
+              // Business mode: the page's one action (a quote) instead of the consumer plans.
+              <a
+                href={bizQuoteHref}
+                {...(whatsapp ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                onClick={() => whatsapp && track("whatsapp_clicked", { context: "nav_business" })}
+                className="group hidden h-8 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-medium text-black transition-colors hover:bg-zinc-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none sm:inline-flex"
+              >
+                {t("quote")}
+                <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
+              </a>
+            ) : (
+              <Button
+                size="sm"
+                className="group hidden h-8 gap-1.5 px-4 sm:inline-flex"
+                onClick={() => {
+                  track("plan_selected", { context: "nav" })
+                  if (!scrollToId("plans")) router.push(`${base}#plans`)
+                }}
+              >
+                {t("viewPlans")}
+                <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
+              </Button>
+            )}
 
             <Button
               variant="outline"
@@ -240,28 +266,30 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
           pastHero ? "translate-y-0" : "translate-y-full"
         )}
       >
-        <SmartLink
-          href={`${base}#map`}
-          className="flex flex-col items-center gap-0.5 py-2 text-xs focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none text-muted-foreground"
-        >
-          <MapPin className="size-4" />
-          {t("cobertura")}
-        </SmartLink>
-        <SmartLink
-          href={`${base}#plans`}
-          className="flex flex-col items-center gap-0.5 border-x border-border py-2 text-xs focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none text-muted-foreground"
-        >
-          <Layers className="size-4" />
-          {t("planes")}
-        </SmartLink>
+        {quickLinks.map(({ href, label, Icon }, i) => (
+          <SmartLink
+            key={href}
+            href={href}
+            className={cn(
+              "flex flex-col items-center gap-0.5 py-2 text-xs focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none text-muted-foreground",
+              i === 1 && "border-x border-border"
+            )}
+          >
+            <Icon className="size-4" />
+            {label}
+          </SmartLink>
+        ))}
         {whatsapp ? (
           <a
-            href={whatsappHref(whatsapp)}
-            onClick={() => track("whatsapp_clicked", { context: "bottombar" })}
-            className="flex flex-col items-center gap-0.5 py-2 text-xs focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none text-muted-foreground"
+            href={biz ? bizQuoteHref : whatsappHref(whatsapp)}
+            onClick={() => track("whatsapp_clicked", { context: biz ? "bottombar_business" : "bottombar" })}
+            className={cn(
+              "flex flex-col items-center gap-0.5 py-2 text-xs focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none",
+              biz ? "font-medium text-white" : "text-muted-foreground"
+            )}
           >
             <MessageCircle className="size-4 text-ok" />
-            {t("whatsapp")}
+            {biz ? t("quote") : t("whatsapp")}
           </a>
         ) : (
           <span className="flex flex-col items-center gap-0.5 py-2 text-xs text-muted-foreground">

@@ -18,7 +18,10 @@
     "home": "Inicio",
     "main": "Principal",
     "quick": "Accesos rápidos",
-    "empresas": "Empresas"
+    "empresas": "Empresas",
+    "quote": "Cotizar",
+    "bizInternet": "Internet",
+    "bizNetworks": "Redes"
   },
   "status": {
     "operational": "Operativo",
@@ -652,23 +655,18 @@
     "metaTitle": "Fibra óptica para empresas: instalaciones a la medida",
     "metaDescription": "Instalaciones de fibra óptica a la medida para tu negocio: velocidad gigabit en todas las áreas, internet dedicado de hasta {max} Gbps, red interna de fibra de hasta {lanMax}GbE, internet empresarial, internet para negocios, cableado estructurado, Wi-Fi empresarial y equipo de red.",
     "eyebrow": "Empresas",
-    "h1": "Internet y redes de fibra óptica para tu empresa.",
-    "lead": "Dos servicios, un solo proveedor: el internet que conecta tu empresa con el mundo y la red de fibra que la conecta por dentro.",
-    "speed": "Enlaces de hasta {max} Gbps",
+    "h1": "La red que tu operación no ve, y no puede perder.",
+    "lead": "Internet dedicado de hasta {max} Gbps y redes internas de fibra de hasta {to}GbE, diseñadas e instaladas por un mismo equipo.",
     "speedQual": "velocidad máxima del enlace contratado",
-    "quote": "Cotizar por WhatsApp",
-    "quoteNote": "Cotización a la medida de tu espacio.",
+    "quote": "Cotizar proyecto",
+    "quoteNote": "Te respondemos por WhatsApp con una cotización a la medida.",
     "chapters": {
       "label": "Servicios para empresas",
       "internet": {
-        "kicker": "Proveedor de internet",
-        "title": "Internet para empresas",
-        "body": "Enlaces simétricos de hasta {max} Gbps, en tres paquetes según la disponibilidad que necesites."
+        "title": "Internet para empresas"
       },
       "fiber": {
-        "kicker": "Despliegue y cableado",
-        "title": "Redes de fibra óptica",
-        "body": "Desplegamos y cableamos con fibra toda tu empresa: una red interna de {from}GbE hasta {to}GbE (Gigabit Ethernet)."
+        "title": "Redes de fibra óptica"
       }
     },
     "whatsappMessage": "Hola, quiero cotizar una instalación de fibra óptica para mi negocio.",
@@ -679,9 +677,6 @@
       "retail": "Comercios y restaurantes",
       "buildings": "Edificios y plazas"
     },
-    "servicesEyebrow": "Servicios de redes",
-    "servicesTitle": "Todo lo que tu red necesita, con un solo proveedor",
-    "servicesLead": "Desde la llegada de la fibra hasta el último puesto de trabajo.",
     "services": {
       "customInstall": {
         "title": "Instalaciones de fibra a la medida",
@@ -709,13 +704,9 @@
       }
     },
     "lan": {
-      "eyebrow": "Red interna de fibra",
-      "title": "Tu empresa conectada por dentro, hasta {to}GbE.",
-      "lead": "Con una red interna de fibra óptica, todas las áreas trabajan como si estuvieran en el mismo equipo.",
       "items": {
         "storage": {
-          "title": "Almacenamiento centralizado de estado sólido",
-          "body": "Instalamos almacenamiento SSD central para toda la empresa: todos guardan y abren sus archivos desde un mismo lugar, a la velocidad de la red."
+          "title": "Almacenamiento centralizado de estado sólido"
         },
         "cameras": {
           "title": "Varias cámaras de video 8K a la vez",
@@ -726,57 +717,45 @@
           "body": "Un archivo de {gb} GB pasa de un equipo a otro en unos {tFrom} segundos en {from}GbE y en unos {tTo} segundos en {to}GbE (velocidad teórica de la red)."
         },
         "sharedHardware": {
-          "title": "Menos gasto en equipo duplicado",
-          "body": "Con baja latencia y altas velocidades, toda la empresa comparte servidores, almacenamiento e impresoras en lugar de comprar equipo para cada área."
+          "title": "Menos gasto en equipo duplicado"
         },
         "futureProof": {
           "title": "Lista para el futuro, sin recablear",
           "body": "La misma fibra pasa de {from}GbE a {to}GbE cambiando solo el equipo de cada extremo. Tu cableado no se vuelve obsoleto."
         },
         "backups": {
-          "title": "Respaldos automáticos centralizados",
-          "body": "Cada computadora respalda sus archivos en el almacenamiento central, para recuperarlos si un equipo falla."
+          "title": "Respaldos automáticos centralizados"
         },
         "editing": {
-          "title": "Edición de video colaborativa",
-          "body": "Varios editores trabajan video 8K directo desde el almacenamiento compartido, sin copiar archivos."
+          "title": "Edición de video colaborativa"
         },
         "voip": {
-          "title": "Telefonía IP en toda la empresa",
-          "body": "Teléfonos IP en cada área, conectados a la misma red de fibra."
+          "title": "Telefonía IP en toda la empresa"
         },
         "segments": {
           "title": "Redes separadas por área",
           "body": "Administración, cámaras, invitados y producción en redes separadas sobre la misma fibra, para más seguridad."
         },
         "buildings": {
-          "title": "Conecta tus edificios y bodegas",
-          "body": "Unimos con fibra los edificios de un mismo predio para que trabajen como una sola red."
+          "title": "Conecta tus edificios y bodegas"
         },
         "security": {
-          "title": "Videovigilancia y control de acceso integrados",
-          "body": "Cámaras, lectores y puertas en una misma red, con grabación central."
+          "title": "Videovigilancia y control de acceso integrados"
         },
         "signage": {
-          "title": "Pantallas digitales 4K y 8K",
-          "body": "Señalización en recepciones, tiendas y showrooms, alimentada desde tu red."
+          "title": "Pantallas digitales 4K y 8K"
         },
         "fewerClosets": {
-          "title": "Menos cuartos de equipo",
-          "body": "La fibra llega mucho más lejos que el cable de cobre: menos cuartos intermedios y menos equipo que alimentar."
+          "title": "Menos cuartos de equipo"
         },
         "wifi7": {
-          "title": "Wi-Fi 7 empresarial sobre fibra",
-          "body": "Cada punto de acceso conectado por fibra, para que el Wi-Fi no quede limitado por el cable."
+          "title": "Wi-Fi 7 empresarial sobre fibra"
         }
       }
     },
     "tiers": {
-      "eyebrow": "Internet para empresas",
       "title": "Misma velocidad, distinta disponibilidad.",
       "lead": "Contrata la velocidad que necesites en cualquier paquete. Lo que cambia es qué tan garantizado está tu enlace.",
-      "speedLabel": "Velocidad",
-      "speedValue": "La que necesites",
       "uptimeLabel": "Disponibilidad (SLA)",
       "uptimeValue": "{pct} % mensual",
       "bandwidthLabel": "Ancho de banda garantizado",
@@ -810,26 +789,42 @@
         }
       },
       "whatsappMessage": "Hola, quiero cotizar {tier} para mi negocio.",
-      "note": "No publicamos precios: cotizamos cada paquete según el tamaño y el uso de tu negocio."
+      "note": "No publicamos precios: cotizamos cada paquete según el tamaño y el uso de tu negocio.",
+      "speedAll": "Todos los paquetes llevan enlaces simétricos de hasta {max} Gbps*, a la velocidad que necesites.",
+      "featured": "Mayor disponibilidad",
+      "featureLabel": "Paquete",
+      "notIncluded": "No incluido",
+      "uptimePct": "{pct} %",
+      "monthly": "mensual"
     },
     "fiber": {
-      "eyebrow": "Despliegue y cableado de fibra óptica",
       "title": "Toda tu empresa, cableada con fibra óptica.",
       "lead": "Diseñamos, desplegamos e instalamos la red de fibra de tu empresa, desde la acometida hasta el último puesto de trabajo.",
       "figureNote": "Red interna de {from}GbE a {to}GbE (Gigabit Ethernet) entre áreas, pisos y edificios, sobre tu propia fibra.",
-      "scale": "Red interna",
-      "range": "{from}GbE – {to}GbE",
-      "stats": {
-        "lan": "Red interna",
-        "lanValue": "{from}GbE – {to}GbE",
-        "reach": "Alcance",
-        "reachValue": "Fibra hasta cada área",
-        "project": "Proyecto",
-        "projectValue": "Diseño e instalación de punta a punta"
+      "whatsappMessage": "Hola, quiero cotizar una red de fibra óptica para mi empresa.",
+      "doTitle": "Lo que hacemos",
+      "usesTitle": "Lo que hace posible una red de fibra propia",
+      "moreTitle": "Y también",
+      "race": {
+        "file": "Archivo de {gb} GB",
+        "theoretical": "Tiempo teórico a velocidad de línea"
       },
-      "whatsappMessage": "Hola, quiero cotizar una red de fibra óptica para mi empresa."
+      "lanes": {
+        "admin": "Administración",
+        "cameras": "Cámaras",
+        "guests": "Invitados",
+        "production": "Producción",
+        "strand": "Una sola fibra"
+      },
+      "cams": {
+        "rec": "REC"
+      },
+      "future": {
+        "today": "Hoy",
+        "later": "Mañana",
+        "same": "La misma fibra"
+      }
     },
-    "stepsEyebrow": "Cómo trabajamos",
     "stepsTitle": "De la idea a tu red funcionando",
     "steps": {
       "talk": {
@@ -853,13 +848,7 @@
     "ctaLead": "Damos servicio en {area}. Cuéntanos de tu proyecto y te preparamos una cotización a la medida.",
     "smallOffice": "¿Solo necesitas internet para un local u oficina pequeña?",
     "plansLink": "Ver planes",
-    "capacityEyebrow": "Capacidad",
-    "capacityTitle": "La velocidad que necesites, en cualquier paquete.",
-    "capacityBody": "Enlaces simétricos de hasta {max} Gbps en internet dedicado, empresarial o para negocios.",
-    "capacityScale": "Escala del enlace",
-    "spacesTitle": "Para cualquier espacio de trabajo",
     "phase": "Fase",
-    "index": "Servicio",
     "schematic": {
       "entry": "Acometida",
       "riser": "Montante de fibra",
@@ -869,7 +858,10 @@
     "unit": "Gbps",
     "unitLan": "GbE",
     "unitLanLong": "Gigabit Ethernet",
-    "capacityRange": "0 – {max} Gbps"
+    "quoteChannel": "por WhatsApp",
+    "seePackages": "Ver paquetes",
+    "buildingAlt": "Ilustración de un edificio de cuatro niveles: la fibra entra desde la calle, sube por un montante y se ramifica a cada área; los pisos se iluminan uno por uno.",
+    "buildingCaption": "Ilustración"
   },
   "privacy": {
     "metaTitle": "Aviso de Privacidad",

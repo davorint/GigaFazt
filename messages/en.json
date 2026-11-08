@@ -18,7 +18,10 @@
     "home": "Home",
     "main": "Main",
     "quick": "Quick links",
-    "empresas": "Businesses"
+    "empresas": "Businesses",
+    "quote": "Get a quote",
+    "bizInternet": "Internet",
+    "bizNetworks": "Networks"
   },
   "status": {
     "operational": "Operational",
@@ -652,23 +655,18 @@
     "metaTitle": "Fiber for businesses: custom installations",
     "metaDescription": "Custom fiber optic installations for your business: gigabit speeds in every area, dedicated internet up to {max} Gbps, an internal fiber network up to {lanMax}GbE, enterprise internet, business internet, structured cabling, business Wi-Fi and network equipment.",
     "eyebrow": "Businesses",
-    "h1": "Internet and fiber optic networks for your company.",
-    "lead": "Two services, one provider: the internet that connects your company to the world and the fiber network that connects it inside.",
-    "speed": "Links up to {max} Gbps",
+    "h1": "The network your operation never sees, and can't afford to lose.",
+    "lead": "Dedicated internet up to {max} Gbps and internal fiber networks up to {to}GbE, designed and installed by one team.",
     "speedQual": "maximum speed of the contracted link",
-    "quote": "Get a quote on WhatsApp",
-    "quoteNote": "Quoted for your space.",
+    "quote": "Request a quote",
+    "quoteNote": "We reply on WhatsApp with a quote for your project.",
     "chapters": {
       "label": "Business services",
       "internet": {
-        "kicker": "Internet provider",
-        "title": "Business internet",
-        "body": "Symmetrical links up to {max} Gbps, in three packages based on the availability you need."
+        "title": "Business internet"
       },
       "fiber": {
-        "kicker": "Deployment and cabling",
-        "title": "Fiber optic networks",
-        "body": "We deploy and wire your whole company with fiber: an internal network from {from}GbE up to {to}GbE (Gigabit Ethernet)."
+        "title": "Fiber optic networks"
       }
     },
     "whatsappMessage": "Hi, I would like a quote for a fiber optic installation for my business.",
@@ -679,9 +677,6 @@
       "retail": "Stores and restaurants",
       "buildings": "Buildings and shopping centers"
     },
-    "servicesEyebrow": "Network services",
-    "servicesTitle": "Everything your network needs, from one provider",
-    "servicesLead": "From where the fiber comes in to the last workstation.",
     "services": {
       "customInstall": {
         "title": "Custom fiber installations",
@@ -709,13 +704,9 @@
       }
     },
     "lan": {
-      "eyebrow": "Internal fiber network",
-      "title": "Your company connected inside, up to {to}GbE.",
-      "lead": "With an internal fiber optic network, every area works as if it were on the same machine.",
       "items": {
         "storage": {
-          "title": "Centralized solid-state storage",
-          "body": "We install central SSD storage for the whole company: everyone saves and opens files from one place, at network speed."
+          "title": "Centralized solid-state storage"
         },
         "cameras": {
           "title": "Several 8K video cameras at once",
@@ -726,57 +717,45 @@
           "body": "A {gb} GB file moves between machines in about {tFrom} seconds on {from}GbE and in about {tTo} seconds on {to}GbE (theoretical network speed)."
         },
         "sharedHardware": {
-          "title": "Less spent on duplicate hardware",
-          "body": "With low latency and high speeds, the whole company shares servers, storage and printers instead of buying equipment for each area."
+          "title": "Less spent on duplicate hardware"
         },
         "futureProof": {
           "title": "Ready for the future, no rewiring",
           "body": "The same fiber goes from {from}GbE to {to}GbE by changing only the equipment at each end. Your cabling doesn't become obsolete."
         },
         "backups": {
-          "title": "Automatic central backups",
-          "body": "Every computer backs up to the central storage, so files can be recovered if a machine fails."
+          "title": "Automatic central backups"
         },
         "editing": {
-          "title": "Collaborative video editing",
-          "body": "Several editors work on 8K video straight from the shared storage, without copying files."
+          "title": "Collaborative video editing"
         },
         "voip": {
-          "title": "IP phones across the company",
-          "body": "IP phones in every area, on the same fiber network."
+          "title": "IP phones across the company"
         },
         "segments": {
           "title": "Separate networks per area",
           "body": "Admin, cameras, guests and production on separate networks over the same fiber, for more security."
         },
         "buildings": {
-          "title": "Connect your buildings and warehouses",
-          "body": "We link the buildings on one property with fiber so they work as a single network."
+          "title": "Connect your buildings and warehouses"
         },
         "security": {
-          "title": "Integrated video surveillance and access control",
-          "body": "Cameras, readers and doors on one network, with central recording."
+          "title": "Integrated video surveillance and access control"
         },
         "signage": {
-          "title": "4K and 8K digital screens",
-          "body": "Signage in reception areas, stores and showrooms, fed from your network."
+          "title": "4K and 8K digital screens"
         },
         "fewerClosets": {
-          "title": "Fewer equipment rooms",
-          "body": "Fiber reaches much farther than copper cable: fewer intermediate rooms and less equipment to power."
+          "title": "Fewer equipment rooms"
         },
         "wifi7": {
-          "title": "Business Wi-Fi 7 over fiber",
-          "body": "Every access point connected by fiber, so the Wi-Fi isn't held back by the cable."
+          "title": "Business Wi-Fi 7 over fiber"
         }
       }
     },
     "tiers": {
-      "eyebrow": "Internet for businesses",
       "title": "Same speed, different availability.",
       "lead": "Get the speed you need in any package. What changes is how guaranteed your link is.",
-      "speedLabel": "Speed",
-      "speedValue": "Whatever you need",
       "uptimeLabel": "Availability (SLA)",
       "uptimeValue": "{pct}% monthly",
       "bandwidthLabel": "Guaranteed bandwidth",
@@ -810,26 +789,42 @@
         }
       },
       "whatsappMessage": "Hi, I'd like a quote for {tier} for my business.",
-      "note": "We don't publish prices: we quote each package based on the size and usage of your business."
+      "note": "We don't publish prices: we quote each package based on the size and usage of your business.",
+      "speedAll": "Every package comes with symmetrical links up to {max} Gbps*, at the speed you need.",
+      "featured": "Highest availability",
+      "featureLabel": "Package",
+      "notIncluded": "Not included",
+      "uptimePct": "{pct}%",
+      "monthly": "monthly"
     },
     "fiber": {
-      "eyebrow": "Fiber optic deployment and cabling",
       "title": "Your whole company, wired with optical fiber.",
       "lead": "We design, deploy and install your company's fiber network, from the street entry to the last workstation.",
       "figureNote": "An internal network from {from}GbE to {to}GbE (Gigabit Ethernet) between areas, floors and buildings, on your own fiber.",
-      "scale": "Internal network",
-      "range": "{from}GbE – {to}GbE",
-      "stats": {
-        "lan": "Internal network",
-        "lanValue": "{from}GbE – {to}GbE",
-        "reach": "Reach",
-        "reachValue": "Fiber to every area",
-        "project": "Project",
-        "projectValue": "End-to-end design and installation"
+      "whatsappMessage": "Hi, I'd like a quote for a fiber optic network for my company.",
+      "doTitle": "What we do",
+      "usesTitle": "What your own fiber network makes possible",
+      "moreTitle": "And also",
+      "race": {
+        "file": "{gb} GB file",
+        "theoretical": "Theoretical time at line rate"
       },
-      "whatsappMessage": "Hi, I'd like a quote for a fiber optic network for my company."
+      "lanes": {
+        "admin": "Admin",
+        "cameras": "Cameras",
+        "guests": "Guests",
+        "production": "Production",
+        "strand": "One single fiber"
+      },
+      "cams": {
+        "rec": "REC"
+      },
+      "future": {
+        "today": "Today",
+        "later": "Later",
+        "same": "The same fiber"
+      }
     },
-    "stepsEyebrow": "How we work",
     "stepsTitle": "From idea to a working network",
     "steps": {
       "talk": {
@@ -853,13 +848,7 @@
     "ctaLead": "We serve {area}. Tell us about your project and we will prepare a custom quote.",
     "smallOffice": "Just need internet for a small store or office?",
     "plansLink": "View plans",
-    "capacityEyebrow": "Capacity",
-    "capacityTitle": "The speed you need, in any package.",
-    "capacityBody": "Symmetrical links up to {max} Gbps on dedicated, enterprise or business internet.",
-    "capacityScale": "Link scale",
-    "spacesTitle": "For any workspace",
     "phase": "Phase",
-    "index": "Service",
     "schematic": {
       "entry": "Service entrance",
       "riser": "Fiber riser",
@@ -869,7 +858,10 @@
     "unit": "Gbps",
     "unitLan": "GbE",
     "unitLanLong": "Gigabit Ethernet",
-    "capacityRange": "0 – {max} Gbps"
+    "quoteChannel": "on WhatsApp",
+    "seePackages": "See packages",
+    "buildingAlt": "Illustration of a four-level building: fiber comes in from the street, climbs a riser and branches out to every area; the floors light up one by one.",
+    "buildingCaption": "Illustration"
   },
   "privacy": {
     "metaTitle": "Privacy Notice",

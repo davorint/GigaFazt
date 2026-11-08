@@ -39,7 +39,8 @@ const branch = (z: number, [x, y]: [number, number]) =>
 const diamond = (x: number, y: number, z: number, r = 7) =>
   `M${pt(x - r, y, z)} L${pt(x, y - r, z)} L${pt(x + r, y, z)} L${pt(x, y + r, z)} Z`
 
-export function IsoBuilding({ className }: { className?: string }) {
+/** `uid` keeps the gradient id unique when the drawing appears twice on a page; `labels={false}` for a backdrop. */
+export function IsoBuilding({ className, uid = "iso", labels = true }: { className?: string; uid?: string; labels?: boolean }) {
   const t = useTranslations("business.schematic")
   const top = LEVELS[LEVELS.length - 1]
   const [rx0, ry0] = P(RX, RY, ENTRY_Z)
@@ -49,7 +50,7 @@ export function IsoBuilding({ className }: { className?: string }) {
   return (
     <svg viewBox="-360 -300 720 600" aria-hidden className={className}>
       <defs>
-        <linearGradient id="iso-plate" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={`${uid}-plate`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#a78bfa" stopOpacity="0.10" />
           <stop offset="1" stopColor="#ffffff" stopOpacity="0.015" />
         </linearGradient>
@@ -70,7 +71,7 @@ export function IsoBuilding({ className }: { className?: string }) {
       {/* Floor plates, bottom to top. */}
       {LEVELS.map((z, i) => (
         <g key={z}>
-          <path d={plate(z)} fill="url(#iso-plate)" className="iso-fade" style={{ "--d": 150 + i * 120 } as React.CSSProperties} />
+          <path d={plate(z)} fill={`url(#${uid}-plate)`} className="iso-fade" style={{ "--d": 150 + i * 120 } as React.CSSProperties} />
           <path
             d={plate(z)}
             pathLength={1}
@@ -81,7 +82,7 @@ export function IsoBuilding({ className }: { className?: string }) {
             style={{ "--d": i * 120 } as React.CSSProperties}
           />
           {/* Level label at the left corner. */}
-          <text
+          {labels && <text
             x={P(0, D, z)[0] - 14}
             y={P(0, D, z)[1] + 4}
             textAnchor="end"
@@ -89,7 +90,7 @@ export function IsoBuilding({ className }: { className?: string }) {
             style={{ "--d": 500 + i * 120 } as React.CSSProperties}
           >
             {t("level", { n: i + 1 })}
-          </text>
+          </text>}
         </g>
       ))}
 
@@ -167,8 +168,8 @@ export function IsoBuilding({ className }: { className?: string }) {
         )
       })}
 
-      {/* Callouts. */}
-      <g className="iso-fade font-mono text-[11px] tracking-[0.15em] uppercase" style={{ "--d": 1600 } as React.CSSProperties}>
+      {/* Callouts (off when the drawing is a backdrop). */}
+      {labels && <g className="iso-fade font-mono text-[11px] tracking-[0.15em] uppercase" style={{ "--d": 1600 } as React.CSSProperties}>
         <path d={`M${pt(RX, STREET_Y - 40, ENTRY_Z)} l -40 26 h -70`} fill="none" stroke="#ffffff" strokeOpacity="0.35" />
         <text x={P(RX, STREET_Y - 40, ENTRY_Z)[0] - 114} y={P(RX, STREET_Y - 40, ENTRY_Z)[1] + 22} textAnchor="end" className="fill-zinc-300">
           {t("entry")}
@@ -181,7 +182,7 @@ export function IsoBuilding({ className }: { className?: string }) {
         <text x={P(W - 30, 30, LEVELS[2])[0] + 46} y={P(W - 30, 30, LEVELS[2])[1] - 10} className="fill-zinc-300">
           {t("node")}
         </text>
-      </g>
+      </g>}
     </svg>
   )
 }
