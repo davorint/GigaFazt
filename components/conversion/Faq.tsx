@@ -7,6 +7,7 @@ import { whatsappHref } from "@/lib/contact"
 import { hourLabel } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { factText, faqEntries } from "./faq-content"
+import { RevealHeading } from "@/components/layout/RevealHeading"
 
 /**
  * FAQ (SPEC §8), two columns (2026-11-07): a sticky intro + WhatsApp help card
@@ -23,11 +24,11 @@ export function Faq() {
   const hours = company.policies.officeHours
 
   return (
-    <div className="mx-auto grid max-w-7xl gap-12 px-4 py-24 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
+    <div className="mx-auto grid max-w-7xl gap-12 section-pad px-4 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
       <div className="lg:sticky lg:top-28 lg:self-start">
         <p className="eyebrow mb-3">[ {t("sections.faq")} ]</p>
-        <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">{t("sectionHeads.faq")}</h2>
-        <p className="mt-3 max-w-md text-muted-foreground">{t("faq.lead")}</p>
+        <RevealHeading className="display-2">{t("sectionHeads.faq")}</RevealHeading>
+        <p className="section-lead max-w-md">{t("faq.lead")}</p>
 
         <div className="surface hud-brackets relative mt-8 max-w-md rounded-2xl p-6">
           <p className="text-lg font-semibold tracking-[-0.01em]">{t("faq.helpTitle")}</p>

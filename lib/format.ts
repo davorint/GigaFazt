@@ -24,8 +24,18 @@ export function hourLabel(hour: number, locale: string): string {
   return new Intl.DateTimeFormat("en-US", { hour: "numeric", timeZone: "UTC" }).format(Date.UTC(2020, 0, 1, hour))
 }
 
+/** Intl locale for numbers: es-MX writes decimals with a dot (3.6), like the rest of the site. */
+export function numberLocale(locale: string): string {
+  return locale === "en" ? "en-US" : "es-MX"
+}
+
+/** "3.6", "1,733" in both languages (never the "3,6" of es-ES). */
+export function formatNumber(n: number, locale: string, maxFractionDigits = 1): string {
+  return new Intl.NumberFormat(numberLocale(locale), { maximumFractionDigits: maxFractionDigits }).format(n)
+}
+
 export function formatMxn(value: number, locale: string): string {
-  return new Intl.NumberFormat(locale === "en" ? "en-US" : "es-MX", {
+  return new Intl.NumberFormat(numberLocale(locale), {
     maximumFractionDigits: 0,
   }).format(value)
 }
@@ -33,7 +43,7 @@ export function formatMxn(value: number, locale: string): string {
 export function formatDate(iso: string, locale: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-MX", {
+  return new Intl.DateTimeFormat(numberLocale(locale), {
     day: "numeric",
     month: "short",
     year: "numeric",

@@ -27,7 +27,7 @@ export function SmoothScroll() {
         autoRaf: true,
         autoToggle: true,
         allowNestedScroll: true,
-        lerp: 0.1,
+        lerp: 0.075, // a touch heavier than the default 0.1: slower settle, more weight
         anchors: { offset: -80 },
         prevent: (node) => node.closest?.('[role="dialog"], [data-lenis-prevent]') != null,
       })

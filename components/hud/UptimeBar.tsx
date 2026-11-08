@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl"
 import { cn } from "cn"
 import { fetchStatus } from "@/lib/status-client"
 import { hasUptime, uptimeAverage, uptimeLevel, type StatusResponse } from "@/lib/status"
+import { numberLocale } from "@/lib/format"
 
 const LEVEL_CLASS = { ok: "bg-ok/80", warn: "bg-warn", down: "bg-destructive" } as const
 
@@ -32,7 +33,7 @@ export function UptimeBar() {
   const days = data.uptime90d.slice(-90)
   const avg = uptimeAverage(days) ?? 0
   const pct = (v: number) =>
-    new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 3 }).format(v)
+    new Intl.NumberFormat(numberLocale(locale), { style: "percent", maximumFractionDigits: 3 }).format(v)
 
   return (
     <figure className="rounded-xl surface p-5">

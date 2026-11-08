@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest"
 import {
-  BAND_IDS,
   DEVICES,
   GENERATIONS,
   ROUTER_START,
   WALL_LOSS_DB,
   clampRouter,
   getGeneration,
+  lineup,
   linkFor,
   quality,
   roomAt,
@@ -16,15 +16,28 @@ import {
 import { SIM_H, SIM_W, buildMask, wallDamping, WAVELENGTH_CELLS, CELL_M, SIM_C, WALL_SPEED } from "./wifi-sim"
 import { WALL_THICKNESS_M } from "./wifi"
 
-describe("wifi generations", () => {
+describe("wifi generations (dual-band 2 × 2 home modems)", () => {
   it("are ordered and only Wi-Fi 7 has MLO", () => {
     const years = GENERATIONS.map((g) => g.year ?? 0)
     expect([...years].sort((a, b) => a - b)).toEqual(years)
     expect(GENERATIONS.filter((g) => g.mlo).map((g) => g.id)).toEqual(["wifi7"])
   })
-  it("theoretical maxima match streams × channel × modulation growth", () => {
-    expect(getGeneration("wifi7").maxGbps).toBeGreaterThan(getGeneration("wifi6").maxGbps * 4)
-    expect(getGeneration("wifi6e").maxGbps).toBe(getGeneration("wifi6").maxGbps)
+  it("compare like for like: same bands and streams, rising speed", () => {
+    for (const g of GENERATIONS) {
+      expect(g.bands).toEqual(["b24", "b5"])
+      expect(g.streams).toBe(4)
+    }
+    const speeds = GENERATIONS.map((g) => g.maxGbps)
+    expect([...speeds].sort((a, b) => a - b)).toEqual(speeds)
+    expect(getGeneration("wifi4").maxGbps).toBeCloseTo(0.6, 3)
+    expect(getGeneration("wifi6").maxGbps).toBeCloseTo(2.976, 3)
+  })
+  it("the plan's modem leads the lineup and equals a dual-band 2 × 2 Wi-Fi 7", () => {
+    const l = lineup(true)
+    expect(l.map((g) => g.id)).toEqual(["wifi4", "wifi5", "wifi6", "modem"])
+    expect(Math.max(...l.map((g) => g.maxGbps))).toBe(getGeneration("modem").maxGbps)
+    expect(getGeneration("modem").maxGbps).toBeCloseTo(getGeneration("wifi7").maxGbps, 6)
+    expect(lineup(false).map((g) => g.id)).toEqual(["wifi4", "wifi5", "wifi6", "wifi7"])
   })
 })
 
@@ -60,14 +73,14 @@ describe("wall crossings", () => {
 })
 
 describe("links", () => {
-  it("Wi-Fi 5 only uses 5 GHz", () => {
-    for (const d of DEVICES) expect(linkFor(getGeneration("wifi5"), ROUTER_START, d.at).bands).toEqual(["b5"])
+  it("non-MLO generations use one band per device", () => {
+    for (const id of ["wifi4", "wifi5", "wifi6"] as const)
+      for (const d of DEVICES) expect(linkFor(getGeneration(id), ROUTER_START, d.at).bands).toHaveLength(1)
   })
-  it("non-MLO generations use one band; Wi-Fi 7 combines bands near the modem", () => {
+  it("Wi-Fi 7 combines both bands near the modem", () => {
     const near = { x: ROUTER_START.x + 1, y: ROUTER_START.y + 1 }
-    expect(linkFor(getGeneration("wifi6e"), ROUTER_START, near).bands).toHaveLength(1)
-    expect(linkFor(getGeneration("wifi6e"), ROUTER_START, near).bands).toEqual(["b6"])
-    expect(linkFor(getGeneration("wifi7"), ROUTER_START, near).bands).toEqual([...BAND_IDS])
+    expect(linkFor(getGeneration("wifi6"), ROUTER_START, near).bands).toEqual(["b5"])
+    expect(linkFor(getGeneration("wifi7"), ROUTER_START, near).bands).toEqual(["b24", "b5"])
   })
   it("quality thresholds", () => {
     expect(quality(-50)).toBe("excellent")

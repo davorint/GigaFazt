@@ -4,13 +4,13 @@ import { wifi7Plan } from "@/lib/plans"
 import { speedLabel } from "@/lib/format"
 import { LazyWifiLab } from "./LazyWifiLab"
 import { WifiComparison } from "./WifiComparison"
-import { ModemShowcase } from "./ModemShowcase"
+import { ModemSpotlight } from "./ModemSpotlight"
 
 /**
- * "Así viaja el Wi-Fi por tu depa", its own home section (#wifi) right after
- * Fiber: the simulated apartment lab (lazy island), the one-line insight
- * (walls slow every generation; generations differ in what they do with the
- * signal), the server-rendered comparison table and the qualifying note.
+ * Wi-Fi home section (#wifi), right after Fiber: the plan's Wi-Fi 7 modem as a
+ * product spotlight first, then the simulated apartment lab (lazy island)
+ * that lets visitors compare it with older generations, the one-line insight,
+ * the like-for-like comparison table and the qualifying note.
  */
 export function WifiSection() {
   const t = useTranslations("fiber.wifi")
@@ -20,31 +20,25 @@ export function WifiSection() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-      <div className="grid items-end gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="reveal max-w-2xl">
-          <p className="eyebrow mb-3">[ {t("eyebrow")} ]</p>
-          <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">{t("title")}</h2>
-          <p className="mt-3 text-muted-foreground">{t("lead")}</p>
-        </div>
-        {wifi7Plan && (
-          <ModemShowcase
-            className="mx-auto h-64 w-full max-w-[340px] lg:h-72"
-            caption={t("modemArt.caption", { speed: speedLabel(wifi7Plan.downMbps) })}
-          />
-        )}
+    <div className="mx-auto max-w-7xl section-pad px-4 sm:px-6">
+      <ModemSpotlight />
+
+      <div className="mt-28 max-w-3xl sm:mt-40">
+        <h3 className="text-3xl font-medium tracking-[-0.035em] sm:text-4xl">{t("title")}</h3>
+        <p className="reveal mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t("lead")}</p>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-10">
         <LazyWifiLab />
       </div>
 
-      <p className="reveal mt-12 max-w-3xl border-l-2 border-fiber/70 pl-5 text-lg leading-relaxed text-foreground/90 sm:text-xl">
+      <p className="reveal mt-16 max-w-3xl border-l-2 border-fiber/70 pl-5 text-lg leading-relaxed text-foreground/90 sm:text-xl">
         {t("insight")}
       </p>
 
-      <div className="reveal mt-10">
-        <h3 className="mb-4 text-lg font-semibold tracking-[-0.02em]">{t("tableTitle")}</h3>
+      <div className="reveal mt-16">
+        <h3 className="text-2xl font-medium tracking-[-0.03em] sm:text-3xl">{t("tableTitle")}</h3>
+        <p className="mt-2 mb-6 text-muted-foreground">{t("tableSub")}</p>
         <WifiComparison />
       </div>
 

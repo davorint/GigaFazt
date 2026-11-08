@@ -11,11 +11,10 @@ import { useReducedMotion } from "@/lib/motion"
 import { selection } from "@/lib/selection"
 import { track } from "@/lib/analytics"
 import { wifi7Plan } from "@/lib/plans"
-import { speedLabel } from "@/lib/format"
+import { formatNumber, speedLabel } from "@/lib/format"
 import {
   APT,
   BANDS,
-  BAND_IDS,
   DEVICES,
   GENERATIONS,
   MATERIAL_IDS,
@@ -25,7 +24,9 @@ import {
   WALLS,
   WALL_THICKNESS_M,
   clampRouter,
+  PLAN_MODEM,
   getGeneration,
+  lineup,
   linkFor,
   roomAt,
   type BandId,
@@ -85,6 +86,9 @@ export default function WifiLab() {
   const dragging = useRef(false)
 
   const gen = getGeneration(genId)
+  // Standards on the switcher; the plan's modem has its own option below.
+  const standards = lineup(!!wifi7Plan).filter((g) => g.kind === "standard")
+  const shownBands = [...new Set(lineup(!!wifi7Plan).flatMap((g) => g.bands))]
   const planSpeed = wifi7Plan ? speedLabel(wifi7Plan.downMbps) : ""
   const nameOf = (g: Generation) => (g.kind === "modem" ? t("modem.name", { speed: planSpeed }) : g.name)
   const active = useMemo(
@@ -139,7 +143,7 @@ export default function WifiLab() {
     setAnnounce(summarize(router, getGeneration(id)))
   }
 
-  const fmt = (n: number) => n.toLocaleString(locale, { maximumFractionDigits: 1 })
+  const fmt = (n: number) => formatNumber(n, locale)
   const maxText = gen.maxGbps < 1 ? { v: fmt(gen.maxGbps * 1000), u: "Mbps" } : { v: fmt(gen.maxGbps), u: "Gbps" }
   const bits = Math.log2(gen.qam)
 
@@ -324,7 +328,7 @@ export default function WifiLab() {
               {t("hud")} · {nameOf(gen)}
             </span>
             <span className="ml-auto flex items-center gap-1.5">
-              {BAND_IDS.map((b) => (
+              {shownBands.map((b) => (
                 <span
                   key={b}
                   className={cn(
@@ -377,9 +381,9 @@ export default function WifiLab() {
                   <span className={cn("text-sm font-semibold", QUALITY_CLASS[link.quality])}>{t(`quality.${link.quality}`)}</span>
                   <span className="font-mono text-[0.65rem] text-muted-foreground tabular-nums">{Math.round(best)} dBm</span>
                 </span>
-                {/* Per-band meters (2.4 / 5 / 6 GHz) for this generation */}
-                <span aria-hidden className="grid grid-cols-3 gap-1">
-                  {BAND_IDS.map((b) => {
+                {/* Per-band meters (2.4 / 5 GHz) for this generation */}
+                <span aria-hidden className="grid grid-cols-2 gap-1">
+                  {shownBands.map((b) => {
                     const v = link.dbm[b]
                     const used = link.bands.includes(b)
                     const fill = v === undefined ? 0 : Math.max(0.06, Math.min(1, (v + 90) / 50))
@@ -418,8 +422,11 @@ export default function WifiLab() {
         />
         <fieldset className="relative">
           <legend className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">{t("generation")}</legend>
-          <div className="mt-2.5 grid grid-cols-5 gap-1 rounded-xl border border-white/10 bg-black/30 p-1">
-            {GENERATIONS.map((g) => {
+          <div
+            className="mt-2.5 grid gap-1 rounded-xl border border-white/10 bg-black/30 p-1"
+            style={{ gridTemplateColumns: `repeat(${standards.length}, minmax(0, 1fr))` }}
+          >
+            {standards.map((g) => {
               const on = g.id === genId
               return (
                 <label
@@ -450,7 +457,10 @@ export default function WifiLab() {
               )}
             >
               <input type="radio" name="wifi-generation" value="modem" checked={genId === "modem"} onChange={() => pickGen("modem")} className="sr-only" />
-              <span className="font-semibold">{t("modem.option")}</span>
+              <span className="font-semibold">
+                {t("modem.option")}
+                <span className="ml-2 font-mono text-sm font-normal text-fiber">{PLAN_MODEM.name}</span>
+              </span>
               <span className="font-mono text-[0.65rem] uppercase tracking-wider opacity-80">{t("modem.optionSub", { speed: planSpeed })}</span>
             </label>
           )}
@@ -472,13 +482,25 @@ export default function WifiLab() {
             </span>
             <span className="text-xl text-muted-foreground">{maxText.u}</span>
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">{gen.kind === "modem" ? t("modem.maxLabel") : t("maxLabel")}</p>
-          {gen.bandMaxMbps && (
-            <p className="mt-1 font-mono text-[0.7rem] text-muted-foreground">
-              {t("modem.perBand", {
-                b24: `${fmt(gen.bandMaxMbps.b24 ?? 0)} Mbps`,
-                b5: `${fmt(gen.bandMaxMbps.b5 ?? 0)} Mbps`,
-              })}
+          <p className="mt-1 text-xs text-muted-foreground">{t("maxLabel")}</p>
+          <p className="mt-1 font-mono text-[0.7rem] text-muted-foreground">
+            {t("modem.perBand", {
+              b24: `${fmt(gen.bandMaxMbps.b24 ?? 0)} Mbps`,
+              b5: `${fmt(gen.bandMaxMbps.b5 ?? 0)} Mbps`,
+            })}
+          </p>
+          {wifi7Plan && (
+            <p
+              className={cn(
+                "mt-3 inline-flex rounded-md border px-2 py-1 font-mono text-xs tabular-nums",
+                gen.kind === "modem"
+                  ? "border-fiber/40 bg-fiber/10 text-fiber"
+                  : gen.maxGbps * 1000 < wifi7Plan.downMbps
+                    ? "border-warn/40 text-warn"
+                    : "border-white/15 text-muted-foreground"
+              )}
+            >
+              {t("vsPlan", { x: fmt((gen.maxGbps * 1000) / wifi7Plan.downMbps), speed: planSpeed })}
             </p>
           )}
         </div>
@@ -487,16 +509,16 @@ export default function WifiLab() {
           <div>
             <dt className="font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">{t("bands")}</dt>
             <dd className="mt-1.5 flex gap-1.5">
-              {BAND_IDS.map((b) => (
+              {shownBands.map((b) => (
                 <span
                   key={b}
-                  className={cn("rounded-md border px-2 py-1 font-mono text-xs transition-opacity", active[b] ? "" : "opacity-30 line-through")}
-                  style={{ borderColor: `${BANDS[b].color}55`, color: BANDS[b].color, background: active[b] ? `${BANDS[b].color}14` : undefined }}
+                  className="rounded-md border px-2 py-1 font-mono text-xs"
+                  style={{ borderColor: `${BANDS[b].color}55`, color: BANDS[b].color, background: `${BANDS[b].color}14` }}
                 >
                   {BANDS[b].label}
-                  {!active[b] && <span className="sr-only"> ({t("notAvailable")})</span>}
                 </span>
               ))}
+              <span className="self-center pl-1 font-mono text-[0.7rem] text-muted-foreground">{t("modem.streamsPerBand", { n: gen.streams / gen.bands.length })}</span>
             </dd>
           </div>
           <div>
@@ -531,24 +553,24 @@ export default function WifiLab() {
           </div>
           <div>
             <dt className="flex justify-between font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">
-              {t("streams")}
+              {t("linksAtOnce")}
               <span className="text-foreground">
-                {gen.streams}
-                {gen.kind === "modem" && (
-                  <span className="ml-1.5 normal-case text-muted-foreground">
-                    ({t("modem.streamsPerBand", { n: gen.streams / gen.bands.length })})
-                  </span>
-                )}
+                {gen.mlo ? 2 : 1}
+                {gen.mlo && <span className="ml-1.5 text-fiber">MLO</span>}
               </span>
             </dt>
-            <dd aria-hidden className="mt-2 flex h-5 items-end gap-[3px]">
-              {Array.from({ length: 16 }, (_, i) => (
-                <span
-                  key={i}
-                  className={cn("w-full rounded-[1px] transition-all duration-300", i < gen.streams ? "bg-violet-300/90 shadow-[0_0_6px_rgb(167_139_250/0.8)]" : "bg-white/[0.06]")}
-                  style={{ height: `${40 + ((i * 37) % 60)}%` }}
-                />
-              ))}
+            {/* One lane per band a single device can use at the same time. */}
+            <dd aria-hidden className="mt-2 grid grid-cols-2 gap-1">
+              {shownBands.map((b, i) => {
+                const on = gen.mlo || i === shownBands.length - 1
+                return (
+                  <span
+                    key={b}
+                    className="h-2 rounded-[2px] transition-all duration-300"
+                    style={{ background: on ? BANDS[b].color : "rgb(255 255 255 / 0.07)", boxShadow: on ? `0 0 8px ${BANDS[b].color}` : undefined }}
+                  />
+                )
+              })}
             </dd>
           </div>
           <div>

@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl"
 import { InView } from "@/components/layout/InView"
 import { FinaleStrands } from "./FinaleStrands"
 import { FinalCtaActions } from "./FinalCtaActions"
+import { RevealHeading } from "@/components/layout/RevealHeading"
 
 /**
  * Final CTA (SPEC §8) as the page's closing scene: near full-screen, the
@@ -17,12 +18,10 @@ export function FinalCta() {
   return (
     <InView className="finale relative isolate flex min-h-[88svh] items-center overflow-hidden">
       <FinaleStrands />
-      <div className="reveal mx-auto w-full max-w-7xl px-4 py-28 text-center sm:px-6">
+      <div className="mx-auto w-full max-w-7xl section-pad px-4 text-center sm:px-6">
         <p className="eyebrow mb-4">[ {t("eyebrow")} ]</p>
-        <h2 className="mx-auto max-w-4xl text-balance text-5xl leading-[1.02] font-semibold tracking-[-0.035em] sm:text-6xl lg:text-7xl">
-          {t("title")}
-        </h2>
-        <p className="mx-auto mt-5 max-w-xl text-lg text-muted-foreground">{t("lead")}</p>
+        <RevealHeading className="display-1 mx-auto max-w-5xl">{t("title")}</RevealHeading>
+        <p className="reveal section-lead mx-auto">{t("lead")}</p>
         <FinalCtaActions />
       </div>
     </InView>

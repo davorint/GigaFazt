@@ -7,6 +7,7 @@ import { feeLabel, speedLabel } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { ContractButton } from "./ContractButton"
 import { InView } from "@/components/layout/InView"
+import { RevealHeading } from "@/components/layout/RevealHeading"
 
 /**
  * How installation works (SPEC §7). The owner removed the address check, so
@@ -32,13 +33,11 @@ export function InstallSteps() {
   ] as const
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-      <div className="reveal">
+    <div className="section-pad mx-auto max-w-7xl px-4 sm:px-6">
+      <div>
       <p className="eyebrow mb-3">[ {t("sections.install")} ]</p>
-      <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-        {t("sectionHeads.install")}
-      </h2>
-      <p className="mt-3 max-w-2xl text-muted-foreground">{t("install.lead")}</p>
+      <RevealHeading className="display-2 max-w-4xl">{t("sectionHeads.install")}</RevealHeading>
+      <p className="section-lead reveal">{t("install.lead")}</p>
       </div>
 
       <InView

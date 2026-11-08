@@ -3,7 +3,7 @@ import { useLocale, useTranslations } from "next-intl"
 import { Users } from "lucide-react"
 import { featuredPlan } from "@/lib/plans"
 import { company } from "@/lib/company"
-import { formatMxn } from "@/lib/format"
+import { formatMxn, formatNumber } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { PriceTerms } from "@/components/plans/PriceTerms"
 import { FiberBackdrop } from "./FiberBackdrop"
@@ -52,17 +52,18 @@ function riseWords(node: React.ReactNode): React.ReactNode {
     u.length === 1 && u[0] === " " ? (
       " "
     ) : (
-      <span key={k} className="hero-word" style={{ "--i": i++ } as React.CSSProperties}>
-        {u.map((x, j) => (
-          <Fragment key={j}>{x}</Fragment>
-        ))}
+      <span key={k} className="hero-word">
+        <span style={{ "--i": i++ } as React.CSSProperties}>
+          {u.map((x, j) => (
+            <Fragment key={j}>{x}</Fragment>
+          ))}
+        </span>
       </span>
     )
   )
 }
 
-const H1_CLASS =
-  "block text-balance text-5xl font-semibold leading-[1.02] tracking-[-0.035em] sm:text-6xl lg:text-[5.5rem]"
+const H1_CLASS = "display-1 block"
 
 export function Hero() {
   const t = useTranslations("hero")
@@ -80,23 +81,25 @@ export function Hero() {
     )
 
   return (
-    <div className="relative isolate flex min-h-screen flex-col overflow-hidden">
-      <FiberBackdrop />
+    <div className="hero-root relative isolate flex min-h-screen flex-col overflow-hidden">
+      <div className="hero-backdrop-exit absolute inset-0">
+        <FiberBackdrop />
+      </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-4 pt-24 pb-12 sm:px-6">
+      <div className="hero-exit relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-4 pt-24 pb-12 sm:px-6">
         <p className="eyebrow hero-rise" style={rise(0)}>[ {t("eyebrow")} ]</p>
 
         {/* The headline plus an aria-hidden copy on top that carries a band of
             light sweeping right → left, from the node (globals.css .hero-sweep:
             off under reduced motion, paused animations and screenshots). */}
-        <div className="relative mt-5 max-w-4xl">
+        <div className="relative mt-6 max-w-6xl">
           <h1 className={H1_CLASS}>{headline(true)}</h1>
           <span aria-hidden className={`hero-sweep pointer-events-none absolute inset-0 ${H1_CLASS}`}>
             {headline(false)}
           </span>
         </div>
 
-        <p className="hero-rise mt-6 max-w-xl text-lg text-muted-foreground" style={rise(520)}>
+        <p className="hero-rise mt-8 max-w-xl text-lg leading-relaxed text-muted-foreground" style={rise(520)}>
           {t("subhead")}
         </p>
 
@@ -113,7 +116,7 @@ export function Hero() {
         {!isPlaceholder(company.network.clients) && (
           <p className="hero-rise mt-6 flex items-center gap-2 text-sm text-muted-foreground" style={rise(820)}>
             <Users className="size-4 text-ok" aria-hidden />
-            {t("clients", { count: company.network.clients.toLocaleString(locale) })}
+            {t("clients", { count: formatNumber(company.network.clients, locale, 0) })}
           </p>
         )}
       </div>

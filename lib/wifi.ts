@@ -3,15 +3,19 @@
  * depa" (components/fiber/WifiLab). Two kinds of data, both kept out of
  * components:
  *
- *  - GENERATIONS: public figures of each IEEE standard. `maxGbps` is the
- *    standard's theoretical maximum (max streams × widest channel × densest
- *    modulation), never a promise about our service. Not company facts.
+ *  - GENERATIONS: a like-for-like comparison (owner, 2026-11-08: "sell the
+ *    modem"). Each generation is shown as a home modem with the SAME layout as
+ *    the plan's modem: 2.4 + 5 GHz, 2 × 2 on each band, the widest channel the
+ *    generation allows on those bands. `bandMaxMbps` are the standards' PHY
+ *    rates for that layout (802.11n/ac/ax/be MCS tables, short guard
+ *    interval), so the figures are computed, never invented, and the plan's
+ *    modem is compared against its true peers instead of a 16-antenna,
+ *    tri-band lab maximum. On Wi-Fi 5 modems the 2.4 GHz radio runs Wi-Fi 4
+ *    (802.11ac is 5 GHz only). The UI note states the layout and that tri-band
+ *    (6 GHz) equipment adds capacity.
  *  - The apartment, wall losses and the link model: an ILLUSTRATIVE simulation
  *    (hard rule #2: every surface that shows it carries SIMULACIÓN). Wall
  *    losses are approximate industry reference values and vary with the build.
- *
- * BUSINESS.md doesn't say which bands, channel widths or MLO the plan's Wi-Fi 7
- * modem supports, so the page simulates the standard, not our modem.
  */
 
 import { company } from "./company"
@@ -40,34 +44,46 @@ export const TECH_SHORT: Record<TechId, string> = {
 }
 
 export type Generation = {
-  id: "wifi4" | "wifi5" | "wifi6" | "wifi6e" | "wifi7" | "modem"
-  /** An IEEE standard, or the plan's actual modem (named in messages, never by brand). */
+  id: "wifi4" | "wifi5" | "wifi6" | "wifi7" | "modem"
+  /** A home modem of that generation, or the plan's actual modem (named in messages, never by brand). */
   kind: "standard" | "modem"
-  /** Short name on the switcher ("4", "6E"…) and the full brand name. */
+  /** Short name on the switcher ("4", "6"…) and the full brand name. */
   short: string
   name: string
   ieee: string
-  /** IEEE ratification (4, 5) or Wi-Fi Alliance certification launch (6, 6E, 7); none for the modem. */
+  /** IEEE ratification (4, 5) or Wi-Fi Alliance certification launch (6, 7); none for the modem. */
   year: number | null
   bands: readonly BandId[]
   maxChannelMhz: number
   qam: number
   streams: number
-  /** Theoretical maximum PHY rate of the standard (modem: sum of its bands), Gbps. */
+  /** Theoretical maximum PHY rate, both bands combined, Gbps. */
   maxGbps: number
-  /** Modem only: theoretical max per band, Mbps. */
-  bandMaxMbps?: Partial<Record<BandId, number>>
+  /** Theoretical max per band, Mbps. */
+  bandMaxMbps: Partial<Record<BandId, number>>
   /** One device can use several bands at the same time (Multi-Link Operation). */
   mlo: boolean
+  /** Splits each channel among many devices (OFDMA). */
+  ofdma: boolean
   tech: readonly TechId[]
 }
 
+const DUAL: readonly BandId[] = ["b24", "b5"]
+const sumGbps = (b: Partial<Record<BandId, number>>) => Object.values(b).reduce((s, v) => s + (v ?? 0), 0) / 1000
+const home = (g: Omit<Generation, "kind" | "bands" | "streams" | "maxGbps">): Generation => ({
+  ...g,
+  kind: "standard",
+  bands: DUAL,
+  streams: 4,
+  maxGbps: sumGbps(g.bandMaxMbps),
+})
+
+/** Dual-band 2 × 2 home modems, one per generation (PHY rates per band). */
 export const GENERATIONS: readonly Generation[] = [
-  { id: "wifi4", kind: "standard", short: "4", name: "Wi-Fi 4", ieee: "802.11n", year: 2009, bands: ["b24", "b5"], maxChannelMhz: 40, qam: 64, streams: 4, maxGbps: 0.6, mlo: false, tech: ["mimo"] },
-  { id: "wifi5", kind: "standard", short: "5", name: "Wi-Fi 5", ieee: "802.11ac", year: 2013, bands: ["b5"], maxChannelMhz: 160, qam: 256, streams: 8, maxGbps: 6.9, mlo: false, tech: ["muMimo"] },
-  { id: "wifi6", kind: "standard", short: "6", name: "Wi-Fi 6", ieee: "802.11ax", year: 2019, bands: ["b24", "b5"], maxChannelMhz: 160, qam: 1024, streams: 8, maxGbps: 9.6, mlo: false, tech: ["ofdma", "twt"] },
-  { id: "wifi6e", kind: "standard", short: "6E", name: "Wi-Fi 6E", ieee: "802.11ax", year: 2021, bands: ["b24", "b5", "b6"], maxChannelMhz: 160, qam: 1024, streams: 8, maxGbps: 9.6, mlo: false, tech: ["band6"] },
-  { id: "wifi7", kind: "standard", short: "7", name: "Wi-Fi 7", ieee: "802.11be", year: 2024, bands: ["b24", "b5", "b6"], maxChannelMhz: 320, qam: 4096, streams: 16, maxGbps: 46, mlo: true, tech: ["mlo", "ch320", "qam4096"] },
+  home({ id: "wifi4", short: "4", name: "Wi-Fi 4", ieee: "802.11n", year: 2009, maxChannelMhz: 40, qam: 64, bandMaxMbps: { b24: 300, b5: 300 }, mlo: false, ofdma: false, tech: ["mimo"] }),
+  home({ id: "wifi5", short: "5", name: "Wi-Fi 5", ieee: "802.11ac", year: 2013, maxChannelMhz: 160, qam: 256, bandMaxMbps: { b24: 300, b5: 1733 }, mlo: false, ofdma: false, tech: ["muMimo"] }),
+  home({ id: "wifi6", short: "6", name: "Wi-Fi 6", ieee: "802.11ax", year: 2019, maxChannelMhz: 160, qam: 1024, bandMaxMbps: { b24: 574, b5: 2402 }, mlo: false, ofdma: true, tech: ["ofdma", "twt"] }),
+  home({ id: "wifi7", short: "7", name: "Wi-Fi 7", ieee: "802.11be", year: 2024, maxChannelMhz: 160, qam: 4096, bandMaxMbps: { b24: 688, b5: 2882 }, mlo: true, ofdma: true, tech: ["mlo", "qam4096", "ofdma"] }),
 ]
 
 export const MAX_CHANNEL_MHZ = Math.max(...GENERATIONS.map((g) => g.maxChannelMhz))
@@ -77,18 +93,24 @@ const m = company.equipment.wifi7Modem
 export const PLAN_MODEM: Generation = {
   id: "modem",
   kind: "modem",
-  short: "",
-  name: "",
+  short: "7",
+  name: "Wi-Fi 7",
   ieee: "802.11be",
   year: null,
   bands: m.bands,
   maxChannelMhz: m.maxChannelMhz,
   qam: m.qam,
   streams: m.streamsPerBand * m.bands.length,
-  maxGbps: Object.values(m.bandMaxMbps).reduce((s, v) => s + (v ?? 0), 0) / 1000,
+  maxGbps: sumGbps(m.bandMaxMbps),
   bandMaxMbps: m.bandMaxMbps,
   mlo: m.mlo,
+  ofdma: true,
   tech: [...(m.mlo ? (["mlo"] as const) : []), ...(m.qam >= 4096 ? (["qam4096"] as const) : []), "ofdma"],
+}
+
+/** What the page compares: the plan's modem takes the Wi-Fi 7 slot when a plan includes it. */
+export function lineup(hasPlanModem: boolean): readonly Generation[] {
+  return hasPlanModem ? [...GENERATIONS.filter((g) => g.id !== "wifi7"), PLAN_MODEM] : GENERATIONS
 }
 
 export function getGeneration(id: Generation["id"]): Generation {

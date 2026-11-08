@@ -4,6 +4,7 @@ import { SymmetryLight } from "./SymmetryLight"
 import { WhatItMeans } from "./WhatItMeans"
 import { LazyTelemetryPanel } from "./LazyTelemetryPanel"
 import { DeepDiveCards, deepDiveReady } from "./DeepDiveCards"
+import { RevealHeading } from "@/components/layout/RevealHeading"
 
 /**
  * Symmetrical Fiber (SPEC §4), the flagship section: "Dentro de la fibra"
@@ -15,13 +16,11 @@ export function FiberSection() {
   const t = useTranslations()
 
   return (
-    <div className="py-24">
-      <div className="reveal mx-auto max-w-7xl px-4 sm:px-6">
+    <div className="section-pad">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <p className="eyebrow mb-3">[ {t("sections.fiber")} ]</p>
-        <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-          {t("sectionHeads.fiber")}
-        </h2>
-        <p className="mt-3 max-w-2xl text-muted-foreground">{t("fiber.lead")}</p>
+        <RevealHeading className="display-2 max-w-4xl">{t("sectionHeads.fiber")}</RevealHeading>
+        <p className="section-lead reveal">{t("fiber.lead")}</p>
       </div>
 
       {/* Full-bleed: edge to edge, outside the content container. */}

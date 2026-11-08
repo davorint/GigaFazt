@@ -937,20 +937,45 @@ html[data-shot] .wifi-router-ping {
 /* Hero entrance: the headline's words rise in one by one, then the blocks
    under it. Starts at opacity 0.01 (not 0) so the H1 still paints on the
    first frame and LCP isn't pushed back by the animation. */
-.hero-word {
+.hero-word,
+.mask-word {
+  /* A clip window per word; the inner span rises through it. The padding
+     keeps descenders and accents inside the window. */
+  display: inline-block;
+  overflow: clip;
+  vertical-align: top;
+  padding: 0.08em 0.04em 0.14em;
+  margin: -0.08em -0.04em -0.14em;
+}
+.hero-word > span,
+.mask-word > span {
   display: inline-block;
 }
+.hero-sweep .hero-word {
+  overflow: visible; /* let the sweep's glow spill past the word box */
+}
+/* Starts 70% down the window (not fully hidden) so the H1 paints on the first
+   frame and LCP isn't pushed back by the animation. */
 @keyframes hero-word-in {
-  from { opacity: 0.01; transform: translateY(0.45em); filter: blur(10px); }
-  to { opacity: 1; transform: none; filter: none; }
+  from { opacity: 0.01; transform: translateY(70%); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes hero-rise-in {
   from { opacity: 0.01; transform: translateY(14px); }
   to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: no-preference) {
-  html:not([data-motion="off"]):not([data-shot]) .hero-word {
-    animation: hero-word-in 1s cubic-bezier(0.2, 0.7, 0.2, 1) calc(80ms + var(--i, 0) * 70ms) both;
+  html:not([data-motion="off"]):not([data-shot]) h1 .hero-word > span {
+    animation: hero-word-in 1.1s cubic-bezier(0.16, 1, 0.3, 1) calc(80ms + var(--i, 0) * 80ms) both;
+  }
+  /* Section headings (RevealHeading): words rise out of their mask once,
+     when first seen. Armed only by JS for headings that start off screen. */
+  html:not([data-motion="off"]):not([data-shot]) [data-armed] .mask-word > span {
+    transform: translateY(110%);
+    transition: transform 0.95s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i, 0) * 60ms);
+  }
+  html:not([data-motion="off"]):not([data-shot]) [data-armed][data-seen] .mask-word > span {
+    transform: none;
   }
   html:not([data-motion="off"]):not([data-shot]) .hero-rise {
     animation: hero-rise-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0ms) both;
@@ -1128,4 +1153,64 @@ html {
 }
 :where(a, button, [role="button"], input, select, textarea, summary, [tabindex]):focus-visible {
   outline-offset: 3px;
+}
+
+/* ── Display type and section rhythm (owner, 2026-11-08: "hyper expensive"
+   pass B) ───────────────────────────────────────────────────────────────────
+   Big, lighter-weight, tightly tracked headlines and much more air between
+   sections. Fluid sizes: 48 → 112 px (hero) and 36 → 72 px (sections); the
+   hero tops out ~100 px at 1440 so "mes." clears the fiber node. */
+.display-1 {
+  font-size: clamp(3rem, 1.5rem + 5.4vw, 7rem);
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+.display-2 {
+  font-size: clamp(2.25rem, 1.3rem + 3.6vw, 4.5rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+/* Section lead paragraph under a display-2 heading. */
+.section-lead {
+  margin-top: 1.5rem;
+  max-width: 36rem;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+.section-pad {
+  padding-block: clamp(6rem, 3rem + 10vw, 13rem);
+}
+
+/* ── Hero scroll exit (pass D) ────────────────────────────────────────────
+   As the hero scrolls away the copy lifts and dims a little faster than the
+   page, and the fiber backdrop drifts slower: a sense of depth and weight.
+   CSS scroll-driven (no JS); off under reduced motion, the pause toggle and
+   screenshots, and in browsers without view timelines. */
+@keyframes hero-copy-exit {
+  to { transform: translateY(-12vh) scale(0.97); opacity: 0.15; }
+}
+@keyframes hero-backdrop-exit {
+  to { transform: translateY(22vh); opacity: 0.5; }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    html:not([data-motion="off"]):not([data-shot]) .hero-root {
+      view-timeline: --hero block;
+    }
+    html:not([data-motion="off"]):not([data-shot]) .hero-exit {
+      animation: hero-copy-exit linear both;
+      animation-timeline: --hero;
+      animation-range: exit 0% exit 90%;
+    }
+    html:not([data-motion="off"]):not([data-shot]) .hero-backdrop-exit {
+      animation: hero-backdrop-exit linear both;
+      animation-timeline: --hero;
+      animation-range: exit 0% exit 100%;
+    }
+  }
 }

@@ -5,8 +5,9 @@ import { UptimeBar } from "./UptimeBar"
 import { Testimonials } from "./Testimonials"
 import { company } from "@/lib/company"
 import { plans } from "@/lib/plans"
-import { formatSpeed } from "@/lib/format"
+import { formatNumber, formatSpeed } from "@/lib/format"
 import { isPlaceholder, type Maybe } from "@/lib/placeholder"
+import { RevealHeading } from "@/components/layout/RevealHeading"
 
 /**
  * Proof band (SPEC §6). Only claims we can back: the qualified metro latency,
@@ -30,7 +31,7 @@ export function ProofBand() {
   const big = [
     !isPlaceholder(clients) && {
       key: "clients",
-      value: t("proof.clientsValue", { count: clients.toLocaleString(locale) }),
+      value: t("proof.clientsValue", { count: formatNumber(clients, locale, 0) }),
       unit: null,
       label: t("proof.clients"),
     },
@@ -49,7 +50,7 @@ export function ProofBand() {
   // under the headline figures read as unfinished.
   type Stat = { value: React.ReactNode; label: string }
   const known = (v: Maybe<number>, label: string): Stat[] =>
-    isPlaceholder(v) ? [] : [{ value: v.toLocaleString(locale), label }]
+    isPlaceholder(v) ? [] : [{ value: formatNumber(v, locale, 0), label }]
   const stats: Stat[] = [
     { value: <>{t("proof.latencyValue")}<sup className="text-fiber">*</sup></>, label: t("proof.latency") },
     ...known(kmFiber, t("proof.km")),
@@ -57,15 +58,13 @@ export function ProofBand() {
   ]
 
   return (
-    <div className="proof-band relative overflow-hidden py-24 sm:py-32">
-      <div className="reveal mx-auto grid max-w-7xl gap-4 px-4 sm:px-6 lg:grid-cols-2 lg:items-end lg:gap-16">
+    <div className="proof-band relative overflow-hidden section-pad">
+      <div className="mx-auto grid max-w-7xl gap-4 px-4 sm:px-6 lg:grid-cols-2 lg:items-end lg:gap-16">
         <div>
           <p className="eyebrow mb-3">[ {t("sections.proof")} ]</p>
-          <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-            {t("sectionHeads.proof")}
-          </h2>
+          <RevealHeading className="display-2 max-w-3xl">{t("sectionHeads.proof")}</RevealHeading>
         </div>
-        <p className="max-w-md text-muted-foreground lg:justify-self-end">{t("proof.lead")}</p>
+        <p className="reveal max-w-md text-lg leading-relaxed text-muted-foreground lg:justify-self-end">{t("proof.lead")}</p>
       </div>
 
       {/* Full-bleed statement row: one fiber line runs edge to edge above the figures. */}

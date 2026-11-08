@@ -8,6 +8,7 @@ import { RecommenderPrompt } from "./RecommenderPrompt"
 import { AddOnsPanel } from "./AddOnsPanel"
 import { ComparisonTable } from "./ComparisonTable"
 import { wifi7Plan } from "@/lib/plans"
+import { RevealHeading } from "@/components/layout/RevealHeading"
 
 /**
  * Plans (SPEC §3), the conversion core. `home` links out to /planes for the
@@ -19,18 +20,18 @@ export function PlansSection({ variant = "home" }: { variant?: "home" | "page" }
   const Heading = variant === "page" ? "h1" : "h2"
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-      <div className="reveal">
+    <div className="section-pad mx-auto max-w-7xl px-4 sm:px-6">
+      <div>
       <p className="eyebrow mb-3">[ {t("sections.plans")} ]</p>
-      <Heading className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
+      <RevealHeading as={Heading} className="display-2 max-w-4xl">
         {variant === "page" ? t("plans.pageTitle") : t("sectionHeads.plans")}
-      </Heading>
-      <p className="mt-3 max-w-2xl text-muted-foreground">
+      </RevealHeading>
+      <p className="section-lead reveal">
         {variant === "page" ? t("plans.pageLead") : t("plans.lead")}
       </p>
       </div>
 
-      <div className="relative mt-14">
+      <div className="relative mt-20">
         {/* The featured card's own light on the page behind it. */}
         <div
           aria-hidden

@@ -5,19 +5,19 @@ import { ArrowRight } from "lucide-react"
 import { LazyCoverageMap } from "./LazyCoverageMap"
 import { ClientList } from "./ClientList"
 import { MapLegend } from "./MapLegend"
+import { RevealHeading } from "@/components/layout/RevealHeading"
+import { formatNumber } from "@/lib/format"
 
 /** Coverage Map section (SPEC §5, owner direction: state-level, clients first). */
 export function CoverageMapSection() {
   const t = useTranslations()
   const locale = useLocale()
   return (
-    <div className="py-24">
-      <div className="reveal mx-auto max-w-7xl px-4 sm:px-6">
+    <div className="section-pad">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
       <p className="eyebrow mb-3">[ {t("sections.map")} ]</p>
-      <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-        {t("sectionHeads.map")}
-      </h2>
-      <p className="mt-3 max-w-2xl text-muted-foreground">{t("map.lead", { count: isPlaceholder(company.network.clients) ? "—" : company.network.clients.toLocaleString(locale) })}</p>
+      <RevealHeading className="display-2 max-w-4xl">{t("sectionHeads.map")}</RevealHeading>
+      <p className="section-lead reveal">{t("map.lead", { count: isPlaceholder(company.network.clients) ? "—" : formatNumber(company.network.clients, locale, 0) })}</p>
 
       </div>
 
