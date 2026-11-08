@@ -15,6 +15,7 @@ import { PriceTag } from "./PriceTag"
 import { PriceTerms } from "./PriceTerms"
 import { SpeedMeter } from "./SpeedMeter"
 import { PlanLight } from "./PlanLight"
+import { CountUp } from "@/components/layout/CountUp"
 
 /**
  * Plan card (SPEC §3). Hierarchy: light chamber (tier at a glance) → speed →
@@ -47,6 +48,7 @@ export function PlanCard({ plan, maxMbps, level = "h3" }: { plan: Plan; maxMbps:
     <article
       ref={ref}
       aria-labelledby={headingId}
+      data-plan={plan.id}
       className={cn(
         "plan-card relative flex flex-col overflow-hidden rounded-2xl transition-transform duration-200",
         plan.highlight ? "plan-featured hud-brackets border border-transparent md:-translate-y-4" : "surface hover:-translate-y-1",
@@ -55,6 +57,12 @@ export function PlanCard({ plan, maxMbps, level = "h3" }: { plan: Plan; maxMbps:
     >
       <div className="relative h-28 overflow-hidden border-b border-white/[0.06]">
         <PlanLight ratio={ratio} />
+        {/* Hover / focus: the chamber brightens (opacity-only layer, .plan-glow). */}
+        <div
+          aria-hidden
+          className="plan-glow absolute inset-0"
+          style={{ background: `radial-gradient(80% 120% at 50% 50%, rgb(34 211 238 / ${(0.1 + 0.18 * ratio).toFixed(2)}), rgb(167 139 250 / 0.06) 55%, transparent 80%)` }}
+        />
         {/* Plain overlay instead of mask-image: no per-frame recomposite of the moving layer. */}
         <div aria-hidden className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-b from-transparent to-surface" />
         {plan.highlight && (
@@ -67,7 +75,7 @@ export function PlanCard({ plan, maxMbps, level = "h3" }: { plan: Plan; maxMbps:
       <div className="flex flex-1 flex-col px-6 pt-5 pb-6">
       <Heading id={headingId} className="flex items-baseline gap-2 font-mono">
         <span className={cn("text-7xl font-semibold tracking-[-0.05em] text-foreground", plan.highlight && "bg-gradient-to-b from-white to-cyan-200 bg-clip-text text-transparent")}>
-          {speed.value}
+          <CountUp text={String(speed.value)} />
         </span>
         <span className="text-xl text-muted-foreground">{speed.unit}</span>
       </Heading>

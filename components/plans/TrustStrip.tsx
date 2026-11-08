@@ -1,37 +1,46 @@
 import { useTranslations } from "next-intl"
-import { BadgeCheck, Clock, Headset, ShieldCheck } from "lucide-react"
-import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
+import { Activity, BadgeCheck, Clock, Headset, Router, ShieldCheck, Unlock, Wrench } from "lucide-react"
 import { company } from "@/lib/company"
-import { isPlaceholder, type Maybe } from "@/lib/placeholder"
+import { isPlaceholder } from "@/lib/placeholder"
+
+type Fact = { key: string; icon: typeof Wrench; value: string; sub: string }
 
 /**
- * Trust strip (SPEC §3): no hidden fees · install time · local support ·
- * guarantee. The two yes/no claims are owner-confirmed BUSINESS.md fields:
- * chip until set, hidden if false (hard rule #1).
+ * Trust strip (SPEC §3), redesigned 2026-11-07: owner-confirmed facts first
+ * (free installation, no minimum term, modem included, 24 h monitoring), then
+ * the BUSINESS.md claims only once the owner confirms them (no-hidden-fees,
+ * local support, install days, guarantee). An unconfirmed claim isn't shown
+ * here at all; those values keep their POR DEFINIR chips where they are
+ * needed (install steps, FAQ, price terms), so nothing is invented or hidden.
  */
 export function TrustStrip() {
   const t = useTranslations("trust")
-  const { installDays, guarantee, noHiddenFees, localSupport } = company.terms
+  const { installFeeMxn, contractTerm, installDays, guarantee, noHiddenFees, localSupport } = company.terms
+  const { monitoring24h } = company.network
 
-  const value = (v: Maybe<string>) =>
-    isPlaceholder(v) ? <PlaceholderChip keyName={v.key} /> : <span className="text-foreground">{v}</span>
-
-  const claim = (v: Maybe<boolean>) => (isPlaceholder(v) ? <PlaceholderChip keyName={v.key} /> : null)
-
-  const items = [
-    noHiddenFees !== false && { icon: BadgeCheck, label: t("noHiddenFees"), extra: claim(noHiddenFees) },
-    { icon: Clock, label: t("install"), extra: value(installDays) },
-    localSupport !== false && { icon: Headset, label: t("localSupport"), extra: claim(localSupport) },
-    { icon: ShieldCheck, label: t("guarantee"), extra: value(guarantee) },
-  ].filter((i) => i !== false)
+  const facts: (Fact | false)[] = [
+    installFeeMxn === 0 && { key: "free", icon: Wrench, value: t("freeInstall"), sub: t("freeInstallSub") },
+    contractTerm === null && { key: "term", icon: Unlock, value: t("noTerm"), sub: t("noTermSub") },
+    { key: "modem", icon: Router, value: t("modem"), sub: t("modemSub") },
+    monitoring24h === true && { key: "monitor", icon: Activity, value: t("monitor"), sub: t("monitorSub") },
+    noHiddenFees === true && { key: "fees", icon: BadgeCheck, value: t("noHiddenFees"), sub: "" },
+    localSupport === true && { key: "support", icon: Headset, value: t("localSupport"), sub: "" },
+    !isPlaceholder(installDays) && { key: "days", icon: Clock, value: `${t("install")} ${installDays}`, sub: "" },
+    !isPlaceholder(guarantee) && { key: "guarantee", icon: ShieldCheck, value: t("guarantee"), sub: guarantee },
+  ]
+  const items = facts.filter((f): f is Fact => Boolean(f))
 
   return (
-    <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/[0.07] shadow-[0_32px_64px_-32px_rgb(0_0_0_/_0.9)] sm:grid-cols-2 lg:grid-cols-4">
-      {items.map(({ icon: Icon, label, extra }) => (
-        <li key={label} className="surface-cell flex items-center gap-3 px-5 py-4 text-sm">
-          <Icon className="size-4 shrink-0 text-ok" aria-hidden />
-          <span className="text-muted-foreground">{label}</span>
-          {extra}
+    <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07] sm:grid-cols-2 lg:grid-cols-4">
+      {items.map(({ key, icon: Icon, value, sub }) => (
+        <li key={key} className="surface-cell flex items-center gap-3.5 px-4 py-5 sm:px-5">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-ok/30 bg-ok/10 shadow-[0_0_20px_-6px_var(--color-ok)]">
+            <Icon className="size-[18px] text-ok" aria-hidden />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold leading-tight text-foreground sm:text-base">{value}</span>
+            {sub && <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{sub}</span>}
+          </span>
         </li>
       ))}
     </ul>

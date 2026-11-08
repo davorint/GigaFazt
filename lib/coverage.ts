@@ -8,11 +8,38 @@ export const STATE_NAMES: Record<StateCode, string> = {
 }
 
 /**
- * Coverage is defined at state level (owner, 2026-11-06): the service zone is
- * CDMX, Estado de México and Morelos. Street-level availability is confirmed
- * per address when a lead comes in (the site never promises a specific
- * address is covered).
+ * Service zone (owner, 2026-11-07): the Mexico City metro area, i.e. all of
+ * CDMX + the Estado de México municipios that border it except the northeast
+ * ones, plus Cuernavaca,
+ * Tepoztlán and Amatlán (a locality of Tepoztlán) in Morelos. Current clients
+ * are mostly in west CDMX, Huixquilucan and Naucalpan (lib/clients.ts).
+ * Street-level availability is confirmed per address when a lead comes in.
+ * The map polygons come from scripts/build_service_zone.py (keep in sync).
  */
+export const SERVICE_ZONE: Record<StateCode, { scope: "all" | "metro" | "localities"; places: string[] }> = {
+  CDMX: { scope: "all", places: [] },
+  MEX: {
+    scope: "metro",
+    // Edomex municipios bordering CDMX, minus the northeast ones (owner, 2026-11-07:
+    // Coacalco, Ecatepec, Nezahualcóyotl, La Paz). build_service_zone.py output.
+    places: [
+      "Chalco",
+      "Huixquilucan",
+      "Juchitepec",
+      "Naucalpan de Juárez",
+      "Ocoyoacac",
+      "Tianguistenco",
+      "Tlalnepantla de Baz",
+      "Tultitlán",
+      "Valle de Chalco Solidaridad",
+      "Xalatlaco",
+    ],
+  },
+  // Amatlán (de Quetzalcóatl) is a locality of the Tepoztlán municipio.
+  MOR: { scope: "localities", places: ["Cuernavaca", "Tepoztlán", "Amatlán"] },
+}
+
+/** One state page per service state; each page states its exact scope. */
 export const coverageAreas: CoverageArea[] = STATES.map((s) => ({
   slug: s.slug,
   name: s.name,

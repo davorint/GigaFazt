@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
-import { Menu, MapPin, Layers, MessageCircle } from "lucide-react"
+import { ArrowRight, Menu, MapPin, Layers, MessageCircle } from "lucide-react"
 import { cn } from "cn"
 import { Button } from "@/components/ui/button"
 import { company } from "@/lib/company"
@@ -38,6 +38,10 @@ const SECTION_IDS = ["hero", "fiber", "plans", "map", "faq"]
 /**
  * `base` prefixes the hash links when rendered off the home page (e.g. "/es").
  * `current` marks the page link of the page being viewed.
+ *
+ * 2026-11-07: links sit in a glass pill with a sliding cyan underline under
+ * the active section; a thin scroll-progress line runs along the bottom of the
+ * condensed bar (transform only, written outside React); the CTA is a pill.
  */
 export function Nav({ base = "", current }: { base?: string; current?: (typeof PAGES)[number]["key"] }) {
   const t = useTranslations("nav")
@@ -54,12 +58,30 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
   const [pastHero, setPastHero] = useState(!!base)
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuMounted, setMenuMounted] = useState(false)
+  const progressRef = useRef<HTMLSpanElement>(null)
+  const linksRef = useRef<HTMLDivElement>(null)
+  const [bar, setBar] = useState<{ left: number; width: number } | null>(null)
 
   useEffect(() => {
-    const onScroll = () => setCondensed(window.scrollY > 8)
-    onScroll()
+    let raf = 0
+    const update = () => {
+      raf = 0
+      setCondensed(window.scrollY > 8)
+      const max = document.documentElement.scrollHeight - window.innerHeight
+      const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0
+      if (progressRef.current) progressRef.current.style.transform = `scaleX(${p})`
+    }
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update)
+    }
+    update()
     window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
+    window.addEventListener("resize", onScroll)
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+      window.removeEventListener("resize", onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
   }, [])
 
   useEffect(() => {
@@ -85,6 +107,19 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
     sections.forEach((s) => observer.observe(s))
     return () => observer.disconnect()
   }, [base])
+
+  // Sliding underline: measure the active link inside the pill.
+  const activeKey =
+    links.find((l) => (l.page ? current === l.key : active === l.href.split("#")[1]))?.key ?? null
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = activeKey ? linksRef.current?.querySelector<HTMLElement>(`[data-key="${activeKey}"]`) : null
+      setBar(el ? { left: el.offsetLeft + 12, width: el.offsetWidth - 24 } : null)
+    }
+    measure()
+    window.addEventListener("resize", measure)
+    return () => window.removeEventListener("resize", measure)
+  }, [activeKey])
 
   const openMenu = () => {
     setMenuMounted(true)
@@ -112,17 +147,24 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
         >
           <Brand href={base || "#hero"} />
 
-          <div className="hidden items-center gap-1 md:flex">
+          <div
+            ref={linksRef}
+            className={cn(
+              "relative hidden items-center gap-0.5 rounded-full border px-1.5 py-1 transition-colors duration-200 md:flex",
+              condensed ? "border-white/10 bg-white/[0.03]" : "border-transparent"
+            )}
+          >
             {links.map((link) => {
               const isPage = link.page && current === link.key
               const isActive = isPage || (!link.page && active === link.href.split("#")[1])
               return (
                 <a
                   key={link.key}
+                  data-key={link.key}
                   href={link.href}
                   aria-current={isPage ? "page" : isActive ? "true" : undefined}
                   className={cn(
-                    "rounded-md px-3 py-1.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                    "rounded-full px-3 py-1.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                     isActive
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -132,6 +174,14 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
                 </a>
               )
             })}
+            <span
+              aria-hidden
+              className={cn(
+                "pointer-events-none absolute bottom-0.5 left-0 h-[2px] rounded-full bg-fiber shadow-[0_0_8px_var(--color-fiber)] transition-[transform,width,opacity] duration-250 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
+                bar ? "opacity-100" : "opacity-0"
+              )}
+              style={bar ? { width: bar.width, transform: `translateX(${bar.left}px)` } : { width: 0 }}
+            />
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -140,13 +190,14 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
             <LocaleToggle className="hidden sm:flex" />
             <Button
               size="sm"
-              className="hidden font-mono text-xs tracking-wider shadow-[0_0_20px_-4px_var(--color-fiber)] sm:inline-flex"
+              className="group hidden h-8 gap-1.5 rounded-full px-4 font-mono text-xs tracking-wider shadow-[0_0_20px_-4px_var(--color-fiber)] sm:inline-flex"
               onClick={() => {
                 track("plan_selected", { context: "nav" })
                 if (!scrollToId("plans")) router.push(`${base}#plans`)
               }}
             >
-              [ {t("viewPlans").toUpperCase()} ]
+              {t("viewPlans").toUpperCase()}
+              <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
             </Button>
 
             <Button
@@ -161,6 +212,16 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
             </Button>
           </div>
         </nav>
+        {/* Scroll progress along the bottom edge of the condensed bar. */}
+        <span
+          aria-hidden
+          ref={progressRef}
+          className={cn(
+            "pointer-events-none absolute inset-x-0 bottom-[-1px] h-px origin-left bg-gradient-to-r from-fiber/40 via-fiber to-[#a5f3fc] shadow-[0_0_8px_var(--color-fiber)] transition-opacity duration-200",
+            condensed ? "opacity-100" : "opacity-0"
+          )}
+          style={{ transform: "scaleX(0)" }}
+        />
       </header>
 
       {menuMounted && (

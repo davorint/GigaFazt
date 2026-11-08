@@ -1,7 +1,7 @@
 {
   "meta": {
-    "title": "Fibra óptica simétrica para CDMX, Edomex y Morelos",
-    "description": "Internet de fibra óptica 100% simétrica en la CDMX, el Estado de México y Morelos. Misma velocidad de bajada y de subida, desde {min} hasta {max}.",
+    "title": "Fibra óptica simétrica en la zona metropolitana de la CDMX",
+    "description": "Internet de fibra óptica 100% simétrica en la zona metropolitana de la Ciudad de México y en Cuernavaca, Tepoztlán y Amatlán. Misma velocidad de bajada y de subida, desde {min} hasta {max}.",
     "wifi7": "El plan de {speed} incluye módem Wi-Fi 7."
   },
   "nav": {
@@ -25,7 +25,7 @@
   },
   "hero": {
     "eyebrow": "100% FIBRA ÓPTICA SIMÉTRICA",
-    "h1": "Gigabit simétrico por ${price} al mes.",
+    "h1": "Gigabit simétrico por <hl>${price} al mes</hl>.",
     "h1NoPrice": "Gigabit simétrico para tu casa o tu negocio.",
     "subhead": "Sube un video 4K en segundos. Misma velocidad de bajada y de subida en todos los planes.",
     "viewPlans": "Ver planes",
@@ -114,6 +114,10 @@
     }
   },
   "recommender": {
+    "promptTitle": "¿No sabes cuál elegir?",
+    "promptLead": "Responde tres preguntas y te decimos qué plan te conviene.",
+    "promptCta": "Ayúdame a elegir",
+    "close": "Cerrar",
     "title": "¿Qué plan necesito?",
     "lead": "Tres preguntas y te decimos cuál te conviene.",
     "step": "Paso {n} de {total}",
@@ -152,13 +156,22 @@
       "top": "Es nuestro plan más rápido: el mayor salto que podemos darte hoy."
     },
     "choose": "Elegir este plan",
-    "wifi7": "Incluye módem Wi-Fi 7: más dispositivos conectados a la vez y mejor velocidad por Wi-Fi."
+    "wifi7": "Incluye módem Wi-Fi 7: más dispositivos conectados a la vez y mejor velocidad por Wi-Fi.",
+    "showCard": "Ver en los planes"
   },
   "trust": {
     "noHiddenFees": "Sin costos ocultos",
     "install": "Instalación en",
     "localSupport": "Soporte local",
-    "guarantee": "Garantía"
+    "guarantee": "Garantía",
+    "freeInstall": "Instalación gratis",
+    "freeInstallSub": "No pagas por instalar",
+    "noTerm": "Sin plazo forzoso",
+    "noTermSub": "Sin contrato de permanencia",
+    "modem": "Módem incluido",
+    "modemSub": "En comodato, sin costo adicional",
+    "monitor": "Monitoreo 24 h",
+    "monitorSub": "Personal técnico vigila la red"
   },
   "compare": {
     "title": "Compara los planes",
@@ -208,12 +221,14 @@
       "plan": "Elige un plan.",
       "date": "Elige una fecha de hoy en adelante.",
       "consent": "Necesitamos tu consentimiento para contactarte."
-    }
+    },
+    "simplified": "Aviso de privacidad simplificado: <entity></entity> (“{name}”), con domicilio en <address></address>, usará tu nombre, teléfono, correo y domicilio para contactarte, confirmar cobertura y agendar tu instalación. También podemos enviarte promociones; si no quieres recibirlas, escribe a <email></email>. No compartimos tus datos con terceros salvo cuando la ley lo exige.",
+    "readFull": "Lee el aviso integral"
   },
   "footer": {
     "privacy": "Aviso de Privacidad",
     "terms": "Términos y condiciones",
-    "tagline": "Internet de fibra óptica simétrica en la Ciudad de México, el Estado de México y Morelos.",
+    "tagline": "Internet de fibra óptica simétrica en la zona metropolitana de la Ciudad de México y en Cuernavaca, Tepoztlán y Amatlán.",
     "explore": "Explora",
     "faq": "Preguntas frecuentes",
     "coverage": "Cobertura",
@@ -298,7 +313,7 @@
     }
   },
   "map": {
-    "lead": "Damos servicio en la Ciudad de México, el Estado de México y Morelos, con más de {count} clientes activos. Aquí ves algunos edificios que ya son clientes y algunos ejemplos ilustrativos.",
+    "lead": "Damos servicio en la zona metropolitana de la Ciudad de México y en Cuernavaca, Tepoztlán y Amatlán, en Morelos. Tenemos más de {count} clientes activos, sobre todo en el poniente de la ciudad. Aquí ves algunos edificios que ya son clientes y algunos ejemplos ilustrativos.",
     "layers": "Capas",
     "layer": {
       "clients": "Clientes",
@@ -326,7 +341,7 @@
     "listTitle": "Clientes y zonas de servicio",
     "listDesc": "Versión en texto del mapa. Elige un cliente para ubicarlo.",
     "approx": "Ubicaciones aproximadas a nivel colonia.",
-    "mapAlt": "Mapa de la zona de servicio: Ciudad de México, Estado de México y Morelos, con los límites de alcaldías y municipios. Marca {real} edificios cliente y {demo} ejemplos ilustrativos, con líneas ilustrativas entre CDMX, Toluca y Cuernavaca.",
+    "mapAlt": "Mapa de la zona de servicio: las 16 alcaldías de la Ciudad de México, municipios vecinos del Estado de México al poniente, norte y oriente, y Cuernavaca y Tepoztlán en Morelos, sobre el contorno de los tres estados. Marca {real} edificios cliente y {demo} ejemplos ilustrativos, con líneas ilustrativas entre el centro de la ciudad, el poniente, el norte y Cuernavaca.",
     "cta": "¿Vives en la zona? Contrata y confirmamos tu cobertura",
     "ui": {
       "map": "Mapa",
@@ -367,7 +382,7 @@
     "steps": {
       "zone": {
         "title": "Revisa tu zona",
-        "body": "Damos servicio en {states}.",
+        "body": "Damos servicio en {area}.",
         "link": "Ver el mapa"
       },
       "plan": {
@@ -440,10 +455,12 @@
       },
       "coverage": {
         "q": "¿En dónde dan servicio?",
-        "a": "En {states}. Confirmamos la cobertura de tu dirección exacta al contratar."
+        "a": "En {area}. Confirmamos la cobertura de tu dirección exacta al contratar."
       }
     },
-    "officeHoursValue": "Lunes a viernes, de {open} a {close} h"
+    "officeHoursValue": "Lunes a viernes, de {open} a {close} h",
+    "helpTitle": "¿No encuentras tu respuesta?",
+    "helpBody": "Escríbenos por WhatsApp y resolvemos tus dudas."
   },
   "cta": {
     "eyebrow": "CONTRATAR",
@@ -469,13 +486,15 @@
     "seeMap": "Ver en el mapa",
     "clients": "Clientes en {name}",
     "plansTitle": "Planes en {name}",
-    "others": "También damos servicio en"
+    "others": "También damos servicio en",
+    "where": "Dónde damos servicio"
   },
   "seo": {
     "serviceName": "Internet de fibra óptica simétrica",
     "serviceType": "Internet de fibra óptica (FTTH)",
     "serviceDescription": "Internet de fibra óptica hasta el hogar con la misma velocidad de bajada y de subida.",
-    "ogAlt": "Fibra óptica simétrica en la Ciudad de México, el Estado de México y Morelos"
+    "ogAlt": "Fibra óptica simétrica en la zona metropolitana de la Ciudad de México y en Cuernavaca, Tepoztlán y Amatlán",
+    "ogZones": "Zona metropolitana CDMX · Cuernavaca · Tepoztlán · Amatlán"
   },
   "motion": {
     "pause": "Pausar animaciones",
@@ -484,15 +503,21 @@
   "states": {
     "cdmx": {
       "name": "Ciudad de México",
-      "in": "la Ciudad de México"
+      "in": "la Ciudad de México",
+      "served": "la Ciudad de México",
+      "scope": "Las 16 alcaldías."
     },
     "estado-de-mexico": {
       "name": "Estado de México",
-      "in": "el Estado de México"
+      "in": "el Estado de México",
+      "served": "la zona metropolitana del Estado de México",
+      "scope": "Municipios vecinos de la Ciudad de México."
     },
     "morelos": {
       "name": "Morelos",
-      "in": "Morelos"
+      "in": "Morelos",
+      "served": "Cuernavaca, Tepoztlán y Amatlán",
+      "scope": "Cuernavaca, Tepoztlán y Amatlán."
     }
   },
   "business": {
@@ -564,8 +589,174 @@
       }
     },
     "ctaTitle": "Lleva la fibra a todo tu negocio",
-    "ctaLead": "Damos servicio en {states}. Cuéntanos de tu proyecto y te preparamos una cotización a la medida.",
+    "ctaLead": "Damos servicio en {area}. Cuéntanos de tu proyecto y te preparamos una cotización a la medida.",
     "smallOffice": "¿Solo necesitas internet para un local u oficina pequeña?",
     "plansLink": "Ver planes"
+  },
+  "privacy": {
+    "metaTitle": "Aviso de Privacidad",
+    "metaDescription": "Aviso de Privacidad Integral de {name}: qué datos personales tratamos, para qué, y cómo ejercer tus derechos ARCO.",
+    "eyebrow": "LEGAL",
+    "title": "Aviso de Privacidad Integral",
+    "updated": "Fecha de última actualización: {date}",
+    "toc": "Contenido",
+    "intro": "En {name} cuidamos tu información. Este Aviso de Privacidad Integral explica qué datos personales tratamos, para qué los usamos y cómo puedes ejercer tus derechos, conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (DOF, 20 de marzo de 2025) y demás normatividad aplicable. Aplica a quienes nos dejan sus datos en este sitio, por WhatsApp o por teléfono, y a nuestros clientes.",
+    "sections": [
+      {
+        "id": "responsable",
+        "title": "Identidad y domicilio del responsable",
+        "paras": [
+          "{entity} (en adelante, “{name}”), con domicilio para oír y recibir notificaciones en {address}, es responsable del tratamiento de tus datos personales.",
+          "Nuestro Departamento de Datos Personales atiende cualquier solicitud o duda sobre este aviso en {email}."
+        ]
+      },
+      {
+        "id": "datos",
+        "title": "Datos personales que tratamos",
+        "paras": [
+          "Según tu relación con nosotros, podemos tratar estas categorías de datos:"
+        ],
+        "items": [
+          [
+            "Identificación y contacto",
+            "nombre, teléfono (incluido WhatsApp) y correo electrónico."
+          ],
+          [
+            "Ubicación del servicio",
+            "el domicilio donde solicitas o recibes el servicio, para confirmar cobertura e instalar."
+          ],
+          [
+            "Datos de tu solicitud y del servicio",
+            "plan y servicios adicionales que eliges, fecha preferida para la instalación, historial de atención y de comunicaciones contigo."
+          ],
+          [
+            "Fiscales, solo si pides factura",
+            "RFC, nombre o razón social, régimen fiscal, código postal y domicilio fiscal."
+          ],
+          [
+            "Técnicos del servicio (clientes)",
+            "datos necesarios para operar la red y darte soporte, como identificadores del módem, la dirección IP asignada y registros técnicos de la conexión."
+          ],
+          [
+            "Navegación en este sitio",
+            "datos técnicos que describimos en la sección de cookies."
+          ]
+        ],
+        "after": [
+          "No tratamos datos personales sensibles. A través de este sitio no recabamos datos financieros ni patrimoniales (por ejemplo, números de tarjeta o cuentas bancarias); si alguna vez fueran necesarios, te pediremos tu consentimiento expreso.",
+          "Para contratar debes ser mayor de edad. No recabamos de forma intencional datos de menores de edad."
+        ]
+      },
+      {
+        "id": "finalidades",
+        "title": "Para qué usamos tus datos",
+        "paras": [
+          "Finalidades primarias. Son necesarias para la relación que tienes o quieres tener con nosotros, por lo que no requieren tu consentimiento (artículo 9, fracción IV, de la Ley):"
+        ],
+        "items": [
+          "Atender tu solicitud y contactarte por teléfono, WhatsApp o correo electrónico.",
+          "Confirmar que tenemos cobertura en tu domicilio.",
+          "Agendar y realizar la instalación.",
+          "Celebrar y administrar tu contrato y prestarte los servicios de internet y, en su caso, televisión que contrates.",
+          "Darte soporte técnico y atender fallas, quejas y aclaraciones.",
+          "Facturar y gestionar los pagos de tus servicios.",
+          "Operar y proteger nuestra red y este sitio, y prevenir fraudes.",
+          "Atender tus solicitudes de derechos ARCO y cumplir obligaciones legales y requerimientos de autoridades competentes."
+        ],
+        "after": [
+          "Finalidades secundarias. No son necesarias para darte el servicio, pero nos ayudan a darte una mejor atención:",
+          "• Enviarte promociones, ofertas y novedades de nuestros servicios.",
+          "• Invitarte a encuestas de calidad y satisfacción.",
+          "Si no quieres que usemos tus datos para estas finalidades, escríbenos en cualquier momento a {email} con el asunto “No deseo promociones”. Tu negativa nunca será motivo para negarte o condicionar el servicio."
+        ]
+      },
+      {
+        "id": "transferencias",
+        "title": "Con quién compartimos tus datos",
+        "paras": [
+          "No vendemos ni rentamos tus datos personales.",
+          "No realizamos transferencias que requieran tu consentimiento. Solo podemos transferir tus datos sin tu consentimiento en los casos que permite el artículo 36 de la Ley, por ejemplo, a autoridades competentes cuando una ley lo exija o por orden judicial. Si esto cambia, actualizaremos este aviso e incluiremos una opción para que aceptes o rechaces la transferencia antes de realizarla.",
+          "Nos apoyamos en proveedores que tratan datos por cuenta nuestra (hospedaje de este sitio, almacenamiento, mensajería y gestión de clientes). Solo pueden usarlos para prestarnos el servicio y están obligados a guardar confidencialidad.",
+          "Si nos escribes por WhatsApp, esa conversación también queda sujeta a los términos y a la política de privacidad de WhatsApp."
+        ]
+      },
+      {
+        "id": "arco",
+        "title": "Tus derechos ARCO y la revocación del consentimiento",
+        "paras": [
+          "Tienes derecho a conocer qué datos tenemos y cómo los usamos (Acceso), a corregirlos si son inexactos o están incompletos (Rectificación), a pedir que los eliminemos de nuestros registros (Cancelación) y a oponerte a su uso para fines específicos (Oposición). También puedes revocar el consentimiento que nos hayas dado.",
+          "Para ejercerlos, envía tu solicitud a {email} con lo siguiente:"
+        ],
+        "items": [
+          "Tu nombre y un domicilio o correo para recibir la respuesta.",
+          "Copia de tu identificación oficial vigente o, si actúa un representante, el documento que acredite su representación y su identificación.",
+          "La descripción clara de los datos sobre los que quieres ejercer tu derecho (salvo en solicitudes de acceso).",
+          "El derecho que quieres ejercer o lo que nos solicitas.",
+          "Cualquier otro dato o documento que nos ayude a localizar tu información."
+        ],
+        "after": [
+          "Te comunicaremos nuestra respuesta en un plazo máximo de 20 días contados desde que recibamos tu solicitud. Si procede, la haremos efectiva dentro de los 15 días siguientes a la respuesta. El ejercicio de estos derechos es gratuito; solo podríamos cobrarte costos de reproducción, copias o envío.",
+          "La revocación no tiene efectos retroactivos. Ten en cuenta que, si revocas el consentimiento para una finalidad primaria o pides cancelar datos indispensables, es posible que no podamos seguir prestándote el servicio."
+        ]
+      },
+      {
+        "id": "limitar",
+        "title": "Cómo limitar el uso o divulgación de tus datos",
+        "paras": [
+          "Puedes pedirnos que dejemos de usar tus datos para promociones escribiendo a {email}. Te incluiremos en nuestra lista interna de exclusión.",
+          "También puedes inscribir tu número en el Registro Público para Evitar Publicidad (REPEP) de la Procuraduría Federal del Consumidor."
+        ]
+      },
+      {
+        "id": "cookies",
+        "title": "Cookies y tecnologías similares",
+        "paras": [
+          "Este sitio usa solo lo necesario para funcionar:"
+        ],
+        "items": [
+          [
+            "Idioma",
+            "una cookie que recuerda el idioma que elegiste."
+          ],
+          [
+            "Animaciones",
+            "una preferencia guardada en tu navegador cuando usas “Pausar animaciones”."
+          ],
+          [
+            "Datos técnicos",
+            "nuestro servidor registra datos como la dirección IP, el tipo de navegador y las páginas solicitadas, para operar y proteger el sitio. Usamos el país aproximado de tu conexión solo para mostrarte el sitio en español."
+          ]
+        ],
+        "after": [
+          "Hoy no usamos cookies de publicidad ni de analítica de terceros. Si las incorporamos, actualizaremos este aviso y te daremos la opción de rechazarlas. Puedes borrar o bloquear las cookies desde la configuración de tu navegador; el sitio seguirá funcionando."
+        ]
+      },
+      {
+        "id": "seguridad",
+        "title": "Seguridad y conservación",
+        "paras": [
+          "Aplicamos medidas de seguridad administrativas, técnicas y físicas para proteger tus datos contra daño, pérdida, alteración, destrucción o uso, acceso o tratamiento no autorizado. Si ocurriera una vulneración que afecte de forma significativa tus derechos, te avisaremos de inmediato.",
+          "Conservamos tus datos solo el tiempo necesario para las finalidades de este aviso y para cumplir nuestras obligaciones legales. Si dejas tus datos pero no contratas, los conservaremos solo mientras damos seguimiento a tu solicitud. Después, los bloqueamos y eliminamos de forma segura."
+        ]
+      },
+      {
+        "id": "cambios",
+        "title": "Cambios a este aviso",
+        "paras": [
+          "Podemos actualizar este aviso por cambios legales, en nuestros servicios o en la forma en que tratamos tus datos. La versión vigente estará siempre en {url}, con su fecha de última actualización.",
+          "Si el cambio es importante (por ejemplo, una nueva finalidad o una transferencia), además te lo comunicaremos por correo electrónico o WhatsApp, si contamos con ellos, y te pediremos tu consentimiento cuando la ley lo exija."
+        ]
+      },
+      {
+        "id": "autoridad",
+        "title": "Autoridad",
+        "paras": [
+          "Si consideras que tu derecho a la protección de datos personales fue vulnerado, puedes acudir ante la Secretaría Anticorrupción y Buen Gobierno, autoridad competente en la materia."
+        ]
+      }
+    ]
+  },
+  "coverage": {
+    "area": "la zona metropolitana de la Ciudad de México y en Cuernavaca, Tepoztlán y Amatlán (Morelos)"
   }
 }

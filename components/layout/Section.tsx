@@ -3,7 +3,8 @@ import { cn } from "cn"
 /**
  * Every top-level section is `<section id data-section>` (CLAUDE.md convention);
  * the screenshot script keys off `[data-section]`. `scroll-mt` offsets the
- * fixed nav for anchor links.
+ * fixed nav for anchor links. `isolate` keeps the per-section ambient light
+ * (globals.css, `[data-section]::before`) behind the content but above the page.
  */
 export function Section({
   id,
@@ -22,7 +23,7 @@ export function Section({
       data-section={id}
       aria-label={ariaLabel}
       className={cn(
-        "relative scroll-mt-20 border-b border-border",
+        "relative isolate scroll-mt-20 border-b border-border",
         className
       )}
     >

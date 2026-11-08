@@ -38,7 +38,7 @@ export function FinalCtaActions() {
   return (
     <>
       {plan && total && (
-        <div className="hud-brackets relative mx-auto mt-10 w-full max-w-md rounded-xl border border-white/10 bg-surface/80 px-5 py-4 text-left shadow-[0_0_60px_-24px_var(--color-fiber)] sm:px-6">
+        <div className="finale-ticket hud-brackets relative mx-auto mt-10 w-full max-w-md rounded-xl border border-white/10 bg-surface/80 px-5 py-4 text-left shadow-[0_0_60px_-24px_var(--color-fiber)] sm:px-6">
           <div className="flex items-baseline justify-between gap-3 font-mono text-[0.7rem] uppercase tracking-wider text-muted-foreground">
             <span>{t("selected")}</span>
             <a
@@ -87,13 +87,9 @@ export function FinalCtaActions() {
           </a>
         )}
 
-        {isPlaceholder(company.salesPhone) ? (
-          <span className={`${LINK} text-muted-foreground`}>
-            <Phone className="size-4" aria-hidden />
-            {t("call")}
-            <PlaceholderChip keyName={company.salesPhone.key} />
-          </span>
-        ) : (
+        {/* The phone action appears once SALES_PHONE is set (BUSINESS.md); until
+            then WhatsApp is the direct line. The footer still shows the chip. */}
+        {isPlaceholder(company.salesPhone) ? null : (
           <a href={telHref(company.salesPhone)} className={LINK}>
             <Phone className="size-4" aria-hidden />
             <span className="font-mono tabular-nums">{company.salesPhone}</span>

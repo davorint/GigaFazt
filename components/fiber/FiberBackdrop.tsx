@@ -106,9 +106,11 @@ export function FiberBackdrop() {
       )}
 
       {/* Fade the scene into the page so copy stays readable over it. */}
+      {/* Scrim behind the copy only: the strands still run in from the left
+          edge and converge at the node to the right of the headline. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent"
+        className="pointer-events-none absolute inset-0 bg-background/55 md:bg-transparent md:[background:radial-gradient(62%_68%_at_26%_54%,rgb(3_7_18/0.93),rgb(3_7_18/0.72)_50%,transparent_86%)]"
       />
       <div
         aria-hidden

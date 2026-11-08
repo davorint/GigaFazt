@@ -51,9 +51,9 @@ export const clients: ClientSite[] = [
   {
     id: "demo-residencial-lumen",
     name: "Residencial Lumen",
-    area: "Metepec",
+    area: "Huixquilucan",
     state: "MEX",
-    lngLat: [-99.6, 19.26],
+    lngLat: [-99.28, 19.4],
     kind: "residential",
     demo: true,
   },

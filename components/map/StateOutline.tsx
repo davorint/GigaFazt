@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl"
 import { cn } from "cn"
 import geo from "@/public/geo/states.json"
+import zoneGeo from "@/public/geo/service-zone.json"
 import { clients } from "@/lib/clients"
 import type { StateCode } from "@/lib/types"
 import { stateIn } from "@/lib/geo/state-names"
@@ -11,12 +12,13 @@ type Geometry = { type: "Polygon"; coordinates: Ring[] } | { type: "MultiPolygon
 type Feature = { properties: { state: string; name: string }; geometry: Geometry }
 
 const features = (geo as { features: Feature[] }).features
+const zone = (zoneGeo as unknown as { features: { properties: { state: string }; geometry: Geometry }[] }).features
 const W = 600
 const PAD = 16
 
 /**
- * Static SVG of the three service states with one highlighted (for the
- * /cobertura pages). Server-rendered from /public/geo/states.json: zero JS,
+ * Static SVG of the three states with one outlined and its service zone lit
+ * (lib/coverage SERVICE_ZONE; for the /cobertura pages). Server-rendered from /public/geo/states.json: zero JS,
  * no MapLibre. Equirectangular with cos(lat) correction (fine at this scale).
  * Client dots are neighborhood-level; demo clients use the amber ring.
  */
@@ -54,13 +56,24 @@ export function StateOutline({ state, className }: { state: StateCode; className
           <path
             key={f.properties.state}
             d={path(f.geometry)}
-            className={active ? "fill-fiber/20 stroke-fiber" : "fill-white/[0.03] stroke-white/15"}
-            strokeWidth={active ? 1.5 : 1}
+            className={active ? "fill-fiber/[0.06] stroke-fiber/70" : "fill-white/[0.03] stroke-white/15"}
+            strokeWidth={active ? 1.2 : 1}
             strokeLinejoin="round"
-            style={active ? { filter: "drop-shadow(0 0 6px var(--color-fiber))" } : undefined}
           />
         )
       })}
+      {zone
+        .filter((z) => z.properties.state === state)
+        .map((z) => (
+          <path
+            key={z.properties.state}
+            d={path(z.geometry)}
+            className="fill-fiber/30 stroke-fiber"
+            strokeWidth={1.5}
+            strokeLinejoin="round"
+            style={{ filter: "drop-shadow(0 0 6px var(--color-fiber))" }}
+          />
+        ))}
       {here.map((c) => {
         const [x, y] = xy(c.lngLat)
         return c.demo ? (

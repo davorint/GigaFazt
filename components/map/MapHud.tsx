@@ -92,7 +92,8 @@ export function MapHud({
       ) : (
         <>
           <p className="mt-2 text-base font-semibold">{stateName(ts, state.slug)}</p>
-          <p className="font-mono text-xs text-muted-foreground">{t("clientsHere", { count: real })}</p>
+          <p className="text-xs text-muted-foreground">{ts(`${state.slug}.scope`)}</p>
+          <p className="mt-1 font-mono text-xs text-muted-foreground">{t("clientsHere", { count: real })}</p>
           {demo > 0 && (
             <p className="mt-1 flex flex-wrap items-center gap-2 font-mono text-xs text-muted-foreground">
               {t("demoHere", { count: demo })}

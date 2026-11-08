@@ -7,7 +7,8 @@ const MAX_GBPS = 10;
 
 /**
  * Mirrored down/up throughput over a rolling 60 s window (SPEC §4): download
- * above the axis, upload mirrored below, so symmetry reads at a glance. Plain
+ * above the axis (cyan), upload mirrored below (violet, the site-wide upload
+ * color), so symmetry reads at a glance. Plain
  * SVG, no chart library. `label` is the text equivalent (role="img").
  */
 export function ThroughputGraph({
@@ -65,8 +66,8 @@ export function ThroughputGraph({
           />
           <path
             d={area("upGbps", -1)}
-            fill="rgb(6 182 212 / 0.08)"
-            stroke="rgb(6 182 212 / 0.7)"
+            fill="rgb(167 139 250 / 0.2)"
+            stroke="var(--color-up)"
             strokeWidth="1.5"
             vectorEffect="non-scaling-stroke"
           />

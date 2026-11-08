@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation"
 import { plans } from "@/lib/plans"
 import { PlanCard } from "./PlanCard"
 import { TrustStrip } from "./TrustStrip"
-import { PlanRecommender } from "./PlanRecommender"
+import { RecommenderPrompt } from "./RecommenderPrompt"
 import { AddOnsPanel } from "./AddOnsPanel"
 import { ComparisonTable } from "./ComparisonTable"
 import { wifi7Plan } from "@/lib/plans"
@@ -20,6 +20,7 @@ export function PlansSection({ variant = "home" }: { variant?: "home" | "page" }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+      <div className="reveal">
       <p className="eyebrow mb-3">[ {t("sections.plans")} ]</p>
       <Heading className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
         {variant === "page" ? t("plans.pageTitle") : t("sectionHeads.plans")}
@@ -27,8 +28,9 @@ export function PlansSection({ variant = "home" }: { variant?: "home" | "page" }
       <p className="mt-3 max-w-2xl text-muted-foreground">
         {variant === "page" ? t("plans.pageLead") : t("plans.lead")}
       </p>
+      </div>
 
-      <div className="mt-12 grid gap-6 md:grid-cols-3">
+      <div className="reveal-stagger mt-12 grid gap-6 md:grid-cols-3">
         {plans.map((plan) => (
           <PlanCard key={plan.id} plan={plan} maxMbps={maxMbps} level={variant === "page" ? "h2" : "h3"} />
         ))}
@@ -38,12 +40,15 @@ export function PlansSection({ variant = "home" }: { variant?: "home" | "page" }
         {wifi7Plan && <> {t("plans.wifi7Note")}</>}
       </p>
 
-      <div className="mt-8">
+      <div className="reveal mt-8">
         <TrustStrip />
       </div>
 
-      <div className="mt-12 grid gap-6 lg:grid-cols-2">
-        <PlanRecommender />
+      {/* The 3-step helper opens in a dialog; the package builder is one wide ticket. */}
+      <div className="reveal mt-6">
+        <RecommenderPrompt />
+      </div>
+      <div className="reveal mt-6">
         <AddOnsPanel />
       </div>
 

@@ -40,6 +40,19 @@ async function main() {
         reducedMotion: motion,
         deviceScaleFactor: 1,
       })
+      // Scroll-driven reveals depend on scroll position, and element captures
+      // taller than the viewport would show their lower parts mid-reveal.
+      // `data-shot` turns the reveals off (globals.css) for static captures.
+      await context.addInitScript(() => {
+        const mark = () => document.documentElement?.setAttribute("data-shot", "")
+        if (document.documentElement) mark()
+        else
+          new MutationObserver((_, obs) => {
+            if (!document.documentElement) return
+            mark()
+            obs.disconnect()
+          }).observe(document, { childList: true })
+      })
       const openPage = async () => {
         const p = await context.newPage()
         p.on("console", (msg) => {

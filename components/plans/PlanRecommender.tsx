@@ -2,9 +2,27 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
-import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react"
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  Briefcase,
+  Cctv,
+  Gamepad2,
+  House,
+  Laptop,
+  RotateCcw,
+  Sparkles,
+  Tv,
+  Upload,
+  User,
+  Users,
+  UsersRound,
+  Video,
+} from "lucide-react"
 import { cn } from "cn"
 import { Button } from "@/components/ui/button"
+import { DialogTitle } from "@/components/ui/dialog"
 import { plans, getPlan, wifi7Plan } from "@/lib/plans"
 import { speedLabel } from "@/lib/format"
 import {
@@ -18,6 +36,7 @@ import {
   type Wfh,
 } from "@/lib/recommend"
 import { selection } from "@/lib/selection"
+import { motionReduced } from "@/lib/motion"
 import { track } from "@/lib/analytics"
 import { PriceTag } from "./PriceTag"
 import { PriceTerms } from "./PriceTerms"
@@ -25,12 +44,29 @@ import { Choice } from "./Choice"
 
 const TOTAL = 3
 
+const PEOPLE_ICONS: Record<People, typeof User> = { "1-2": User, "3-5": Users, "6+": UsersRound }
+const USE_ICONS: Record<Use, typeof User> = { gaming: Gamepad2, streaming4k: Tv, homeOffice: Video, creator: Upload, smartHome: Cctv }
+const WFH_ICONS: Record<Wfh, typeof User> = { no: House, one: Laptop, several: Briefcase }
+
+/** Scroll to the recommended plan card and flash it (plans/PlanCard `data-plan`). */
+function showPlanCard(id: string) {
+  const card = document.querySelector<HTMLElement>(`[data-plan="${id}"]`)
+  if (!card) return
+  card.scrollIntoView({ behavior: motionReduced() ? "auto" : "smooth", block: "center" })
+  card.classList.remove("plan-flash")
+  void card.offsetWidth // restart the animation
+  card.classList.add("plan-flash")
+  window.setTimeout(() => card.classList.remove("plan-flash"), 2400)
+}
+
 /**
  * "¿Qué plan necesito?" (SPEC §3): three native-input steps (fully keyboard
  * usable), then one recommended plan with a one-line reason from the
  * deterministic scoring in lib/recommend.ts. Result is announced via aria-live.
+ * Lives in a dialog (RecommenderModal): actions that leave it (contract, show
+ * the card) close it first, then act once the dialog has released focus/scroll.
  */
-export function PlanRecommender() {
+export function PlanRecommender({ onClose }: { onClose: () => void }) {
   const t = useTranslations("recommender")
   const [step, setStep] = useState(0)
   const [people, setPeople] = useState<People | null>(null)
@@ -78,9 +114,16 @@ export function PlanRecommender() {
   const recommended = result ? getPlan(result.planId) : undefined
 
   return (
-    <div className="flex h-full flex-col rounded-xl surface p-6">
-      <h3 className="text-xl font-semibold tracking-[-0.02em]">{t("title")}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">{t("lead")}</p>
+    <div className="flex flex-col p-5 sm:p-7">
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-fiber/30 bg-fiber/10">
+          <Sparkles className="size-[18px] text-fiber" aria-hidden />
+        </span>
+        <div>
+          <DialogTitle render={<h2 />} className="text-xl font-semibold tracking-[-0.02em]">{t("title")}</DialogTitle>
+          <p className="mt-0.5 text-sm text-muted-foreground">{t("lead")}</p>
+        </div>
+      </div>
 
       <div className="mt-6 flex flex-1 flex-col">
         {result && recommended ? (
@@ -95,7 +138,7 @@ export function PlanRecommender() {
             <p className="eyebrow">
               [ {t("resultEyebrow")} ]
             </p>
-            <p className="mt-3 font-mono text-5xl font-semibold tracking-[-0.04em]">
+            <p className="proof-figure mt-3 w-fit font-mono text-6xl font-semibold tracking-[-0.05em] sm:text-7xl">
               {speedLabel(recommended.downMbps)}
             </p>
             <p className="mt-3 text-base">{t(`reason.${result.reason}`)}</p>
@@ -106,17 +149,31 @@ export function PlanRecommender() {
               <PriceTag plan={recommended} size="sm" />
               <PriceTerms plan={recommended} inline className="mt-2" />
             </div>
-            <div className="mt-auto flex flex-wrap gap-2 pt-6">
+            <div className="mt-auto flex flex-wrap gap-2 pt-7">
               <Button
                 size="lg"
                 className="h-11 flex-1 font-mono text-xs uppercase tracking-wider"
                 onClick={() => {
                   selection.selectPlan(recommended.id)
                   track("plan_selected", { planId: recommended.id, context: "recommender" })
-                  selection.openLead(recommended.id)
+                  onClose()
+                  window.setTimeout(() => selection.openLead(recommended.id), 220)
                 }}
               >
                 {t("choose")}
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-11 font-mono text-xs uppercase tracking-wider"
+                onClick={() => {
+                  selection.selectPlan(recommended.id)
+                  onClose()
+                  window.setTimeout(() => showPlanCard(recommended.id), 260)
+                }}
+              >
+                <ArrowUp />
+                {t("showCard")}
               </Button>
               <Button variant="ghost" size="lg" className="h-11" onClick={restart}>
                 <RotateCcw />
@@ -137,11 +194,14 @@ export function PlanRecommender() {
             <p className="font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">
               {t("step", { n: step + 1, total: TOTAL })}
             </p>
-            <div className="mt-1 flex gap-1" aria-hidden>
+            <div className="mt-2 flex gap-1.5" aria-hidden>
               {Array.from({ length: TOTAL }, (_, i) => (
                 <span
                   key={i}
-                  className={cn("h-0.5 flex-1 rounded-full", i <= step ? "bg-fiber" : "bg-muted")}
+                  className={cn(
+                    "h-1 flex-1 rounded-full transition-colors duration-300",
+                    i < step ? "bg-fiber" : i === step ? "bg-fiber shadow-[0_0_10px_var(--color-fiber)]" : "bg-white/[0.08]"
+                  )}
                 />
               ))}
             </div>
@@ -150,14 +210,14 @@ export function PlanRecommender() {
               <legend
                 ref={focusRef as React.RefObject<HTMLLegendElement>}
                 tabIndex={-1}
-                className="mb-3 text-base font-medium outline-none"
+                className="mb-4 text-lg font-semibold tracking-[-0.01em] outline-none"
               >
                 {step === 0 && t("people.legend")}
                 {step === 1 && t("uses.legend")}
                 {step === 2 && t("wfh.legend")}
               </legend>
 
-              <div className="grid gap-2">
+              <div className={cn("grid gap-2.5", step === 1 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-3")}>
                 {step === 0 &&
                   PEOPLE.map((v) => (
                     <Choice
@@ -167,6 +227,7 @@ export function PlanRecommender() {
                       checked={people === v}
                       onChange={() => setPeople(v)}
                       label={t(`people.${v}`)}
+                      icon={PEOPLE_ICONS[v]}
                     />
                   ))}
                 {step === 1 &&
@@ -180,6 +241,7 @@ export function PlanRecommender() {
                         setUses((u) => (on ? [...u, v] : u.filter((x) => x !== v)))
                       }
                       label={t(`uses.${v}`)}
+                      icon={USE_ICONS[v]}
                     />
                   ))}
                 {step === 2 &&
@@ -191,12 +253,13 @@ export function PlanRecommender() {
                       checked={wfh === v}
                       onChange={() => setWfh(v)}
                       label={t(`wfh.${v}`)}
+                      icon={WFH_ICONS[v]}
                     />
                   ))}
               </div>
             </fieldset>
 
-            <div className="mt-auto flex gap-2 pt-6">
+            <div className="mt-auto flex gap-2 pt-7">
               {step > 0 && (
                 <Button type="button" variant="ghost" size="lg" className="h-11" onClick={() => go(step - 1)}>
                   <ArrowLeft />
@@ -206,7 +269,6 @@ export function PlanRecommender() {
               <Button
                 type="submit"
                 size="lg"
-                variant="outline"
                 disabled={!canNext}
                 className="ml-auto h-11 font-mono text-xs uppercase tracking-wider"
               >

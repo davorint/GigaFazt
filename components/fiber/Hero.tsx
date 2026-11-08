@@ -32,18 +32,22 @@ export function Hero() {
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col justify-center px-4 pt-24 pb-16 sm:px-6">
         <p className="eyebrow">[ {t("eyebrow")} ]</p>
 
-        <h1 className="mt-5 max-w-4xl text-balance text-5xl font-semibold leading-[1.05] tracking-[-0.03em] sm:text-6xl lg:text-7xl">
+        <h1 className="mt-5 max-w-4xl text-balance text-5xl font-semibold leading-[1.02] tracking-[-0.035em] sm:text-6xl lg:text-[5.5rem]">
           {isPlaceholder(featuredPrice)
             ? t("h1NoPrice")
-            : t("h1", { price: formatMxn(featuredPrice, locale) })}
+            : t.rich("h1", {
+                price: formatMxn(featuredPrice, locale),
+                hl: (chunks) => <span className="text-brand">{chunks}</span>,
+              })}
         </h1>
 
         <p className="mt-6 max-w-xl text-lg text-muted-foreground">
           {t("subhead")}
         </p>
 
-        {/* Hard rule #5: the H1 price's fee, term and promo, right under the pitch. */}
-        <PriceTerms plan={featuredPlan} inline className="mt-5" />
+        {/* Hard rule #5: the H1 price's fee and term right under the pitch (the
+            promo chip waits in Plans until BUSINESS.md sets it). */}
+        <PriceTerms plan={featuredPlan} inline hidePendingPromo className="mt-5" />
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Button

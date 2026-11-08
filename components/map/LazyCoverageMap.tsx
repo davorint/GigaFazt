@@ -4,7 +4,7 @@ import dynamic from "next/dynamic"
 import { WhenVisible } from "@/components/layout/WhenVisible"
 
 const Frame = () => (
-  <div aria-hidden className="h-[520px] rounded-2xl border border-border/70 bg-background md:h-[700px]" />
+  <div aria-hidden className="h-[540px] md:h-[clamp(680px,88svh,900px)]" />
 )
 
 // MapLibre (+ its CSS) loads only within one viewport of the map (SPEC perf rules).

@@ -1,8 +1,9 @@
+import { readFile } from "node:fs/promises"
+import { join } from "node:path"
 import { ImageResponse } from "next/og"
 import es from "@/messages/es.json"
 import en from "@/messages/en.json"
 import { routing } from "@/i18n/routing"
-import { STATES } from "@/lib/geo/states"
 import { company } from "@/lib/company"
 import { isPlaceholder } from "@/lib/placeholder"
 
@@ -13,6 +14,13 @@ export const contentType = "image/png"
 // image metadata is generated at build time.
 const MESSAGES = { es, en } as const
 const messagesFor = (locale: string) => MESSAGES[locale === "en" ? "en" : "es"]
+
+/** The brand lockup (public/brand) as a data URI for Satori. Cached: Cache Components forbids uncached IO here. */
+async function lockupDataUri(): Promise<string> {
+  "use cache"
+  const svg = await readFile(join(process.cwd(), "public/brand/gigafazt-lockup.svg"))
+  return `data:image/svg+xml;base64,${svg.toString("base64")}`
+}
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }))
@@ -26,13 +34,14 @@ export async function generateImageMetadata({ params }: { params: Promise<{ loca
 
 /**
  * Default OG image per locale. No price on it: hard rule #5 needs fee/term next
- * to any price, which doesn't fit a share card. Brand wordmark once COMPANY_NAME is set.
+ * to any price, which doesn't fit a share card. Brand lockup once COMPANY_NAME is set.
  */
 export default async function OgImage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
   const m = messagesFor(locale)
   const hero = m.hero
-  const zones = STATES.map((s) => m.states[s.slug as keyof typeof m.states].name).join(" · ")
+  const logoSrc = await lockupDataUri()
+  const zones = m.seo.ogZones
 
   return new ImageResponse(
     (
@@ -53,9 +62,9 @@ export default async function OgImage({ params }: { params: Promise<{ locale: st
         }}
       >
         {!isPlaceholder(company.name) && (
-          <div style={{ display: "flex", alignItems: "center", marginBottom: 40, fontSize: 40, fontWeight: 700, letterSpacing: -1 }}>
-            <div style={{ display: "flex", width: 26, height: 26, marginRight: 18, background: "#06b6d4", borderRadius: 5, transform: "rotate(45deg)", boxShadow: "0 0 24px #06b6d4" }} />
-            {company.name}
+          <div style={{ display: "flex", marginBottom: 40, marginLeft: -10 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders plain <img>, next/image doesn't apply */}
+            <img src={logoSrc} width={309} height={80} alt={company.name} />
           </div>
         )}
         <div style={{ display: "flex", fontSize: 26, letterSpacing: 6, color: "#06b6d4" }}>

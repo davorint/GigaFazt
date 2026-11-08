@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation"
 import { SimTag } from "@/components/hud/SimTag"
 import { clientsByState } from "@/lib/clients"
 import { STATES } from "@/lib/geo/states"
+import { SERVICE_ZONE } from "@/lib/coverage"
 import { scrollToId } from "@/lib/scroll"
 import { requestMapFocus } from "@/lib/map-focus"
 import { track } from "@/lib/analytics"
@@ -39,6 +40,11 @@ export function ClientList() {
                 {stateName(ts, s.slug)}
               </button>
               <p className="font-mono text-[0.65rem] uppercase tracking-wider text-ok">{t("legend.zone")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {SERVICE_ZONE[s.code].scope === "metro"
+                  ? `${ts(`${s.slug}.scope`).replace(/\.$/, "")}: ${SERVICE_ZONE[s.code].places.join(", ")}.`
+                  : ts(`${s.slug}.scope`)}
+              </p>
               <Link
                 href={`/cobertura/${s.slug}`}
                 onClick={() => track("map_region_opened", { slug: s.slug })}

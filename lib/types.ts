@@ -98,8 +98,17 @@ export interface Company {
   }
   /** Legal pages (LFPDPPP privacy notice, terms). */
   legal: {
+    /** Locale-less site path ("/aviso-de-privacidad") or an absolute URL. */
     privacyUrl: Maybe<string>
     termsUrl: Maybe<string>
+    /** Razón social of the data controller (LFPDPPP art. 15-I). */
+    entityName: Maybe<string>
+    /** Controller's address for notices (LFPDPPP art. 15-I). */
+    address: Maybe<string>
+    /** Data-protection contact for ARCO, revocation and opt-outs (art. 29). */
+    privacyEmail: Maybe<string>
+    /** ISO date of the privacy notice's last update. */
+    privacyUpdated: string
   }
   /** Policies answered in the FAQ. */
   policies: {

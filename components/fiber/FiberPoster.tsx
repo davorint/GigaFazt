@@ -16,8 +16,16 @@ export function FiberPoster({
   className?: string
   label: string
 }) {
-  // Strand endpoints fanning from the bundle at (120, 450) to the right edge.
-  const ends = [120, 205, 290, 375, 450, 520, 600, 685, 770, 840]
+  // Bow-tie bundle (matches FiberScene): strands enter from the left edge,
+  // pinch through the node right of the headline and fan out to the right.
+  const NX = 1000
+  const NY = 400
+  const lefts = [-40, 80, 200, 320, 420, 520, 620, 740, 860, 960]
+  const rights = [120, 205, 290, 375, 450, 520, 600, 685, 770, 840]
+  const strands = lefts.map(
+    (yl, i) =>
+      `M0 ${yl} C 380 ${yl}, ${NX - 260} ${NY + (yl - NY) * 0.12}, ${NX} ${NY} C ${NX + 200} ${NY + (rights[i] - NY) * 0.12}, 1300 ${rights[i]}, 1440 ${rights[i]}`
+  )
 
   return (
     <svg
@@ -45,14 +53,14 @@ export function FiberPoster({
 
       {/* Soft depth wash behind the strands (pre-blurred gradient, not a canvas blur). */}
       <rect width="1440" height="900" fill="#030712" />
-      <ellipse cx="300" cy="450" rx="620" ry="520" fill="url(#fp-bundle)" opacity="0.18" />
+      <ellipse cx={NX} cy={NY} rx="620" ry="480" fill="url(#fp-bundle)" opacity="0.16" />
 
       {/* Glow halo. */}
       <g filter="url(#fp-glow)" opacity="0.7">
-        {ends.map((y, i) => (
+        {strands.map((d, i) => (
           <path
             key={`g${i}`}
-            d={`M120 450 C 480 450, 900 ${(450 + y) / 2}, 1440 ${y}`}
+            d={d}
             stroke="#22d3ee"
             strokeWidth="4"
             fill="none"
@@ -62,10 +70,10 @@ export function FiberPoster({
 
       {/* Crisp cores. */}
       <g>
-        {ends.map((y, i) => (
+        {strands.map((d, i) => (
           <path
             key={`c${i}`}
-            d={`M120 450 C 480 450, 900 ${(450 + y) / 2}, 1440 ${y}`}
+            d={d}
             stroke="url(#fp-core)"
             strokeWidth="2"
             fill="none"
@@ -77,26 +85,24 @@ export function FiberPoster({
       {/* Light pulses frozen along a few strands. */}
       <g filter="url(#fp-glow)" opacity="0.9">
         {[
-          [720, 437],
-          [1020, 620],
-          [980, 290],
-          [540, 455],
+          [870, 403],
+          [1190, 352],
+          [1230, 505],
         ].map(([x, y], i) => (
           <circle key={`pg${i}`} cx={x} cy={y} r="6" fill="#a5f3fc" />
         ))}
       </g>
       {[
-        [720, 437],
-        [1020, 620],
-        [980, 290],
-        [540, 455],
+        [870, 403],
+        [1190, 352],
+        [1230, 505],
       ].map(([x, y], i) => (
         <circle key={`p${i}`} cx={x} cy={y} r="4" fill="#ecfeff" />
       ))}
 
       {/* The bundle. */}
-      <circle cx="120" cy="450" r="90" fill="url(#fp-bundle)" />
-      <circle cx="120" cy="450" r="6" fill="#ecfeff" />
+      <circle cx={NX} cy={NY} r="90" fill="url(#fp-bundle)" />
+      <circle cx={NX} cy={NY} r="5" fill="#ecfeff" />
     </svg>
   )
 }

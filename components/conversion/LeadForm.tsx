@@ -28,7 +28,7 @@ import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
 import { PriceTerms } from "@/components/plans/PriceTerms"
 import { addOns, getPlan, monthlyTotal, plans } from "@/lib/plans"
 import { formatMxn, speedLabel } from "@/lib/format"
-import { isPlaceholder } from "@/lib/placeholder"
+import { isPlaceholder, type Maybe } from "@/lib/placeholder"
 import { company } from "@/lib/company"
 import { leadSchema, todayInMexico, type Lead, type LeadInput } from "@/lib/lead"
 import { selection } from "@/lib/selection"
@@ -55,6 +55,10 @@ export function LeadForm({
   const tp = useTranslations("plans")
   const locale = useLocale()
   const [status, setStatus] = useState<Status>("idle")
+  /** Site paths ("/aviso-de-privacidad") get the locale prefix; absolute URLs pass through. */
+  const localHref = (v: string) => (v.startsWith("/") ? `/${locale}${v}` : v)
+  const legalValue = (v: Maybe<string>) =>
+    isPlaceholder(v) ? <PlaceholderChip keyName={v.key} /> : <span className="text-foreground">{v}</span>
 
   // zod messages are i18n keys (lib/lead.ts); translate them for display.
   const base = zodResolver(leadSchema) as Resolver<LeadInput, unknown, Lead>
@@ -298,6 +302,27 @@ export function LeadForm({
           </label>
         </div>
 
+        {/* LFPDPPP art. 16-II: data collected online needs the simplified notice
+            (identity, data, purposes, how to opt out) plus a link to the full one. */}
+        <p className="rounded-md border border-white/10 bg-white/[0.02] p-3 text-xs leading-relaxed text-muted-foreground">
+          {t.rich("simplified", {
+            name: company.name as string,
+            entity: () => legalValue(company.legal.entityName),
+            address: () => legalValue(company.legal.address),
+            email: () => legalValue(company.legal.privacyEmail),
+          })}{" "}
+          {!isPlaceholder(company.legal.privacyUrl) && (
+            <a
+              href={localHref(company.legal.privacyUrl)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-fiber underline underline-offset-4"
+            >
+              {t("readFull")}
+            </a>
+          )}
+        </p>
+
         <FormField
           control={form.control}
           name="consent"
@@ -320,7 +345,7 @@ export function LeadForm({
                     </>
                   ) : (
                     <a
-                      href={company.legal.privacyUrl}
+                      href={localHref(company.legal.privacyUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-medium underline underline-offset-4"

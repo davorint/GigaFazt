@@ -6,7 +6,6 @@ import { plans } from "@/lib/plans"
 import { feeLabel, speedLabel } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { ContractButton } from "./ContractButton"
-import { statesInList } from "@/lib/geo/state-names"
 import { InView } from "@/components/layout/InView"
 
 /**
@@ -26,7 +25,7 @@ export function InstallSteps() {
   const { installDays, installFeeMxn } = company.terms
 
   const steps = [
-    { id: "zone", body: t("install.steps.zone.body", { states: statesInList((k) => t(`states.${k}`), locale) }) },
+    { id: "zone", body: t("install.steps.zone.body", { area: t("coverage.area") }) },
     { id: "plan", body: t("install.steps.plan.body", { speeds: or.format(plans.map((p) => speedLabel(p.downMbps))) }) },
     { id: "visit", body: t("install.steps.visit.body") },
     { id: "live", body: t("install.steps.live.body") },
@@ -34,33 +33,42 @@ export function InstallSteps() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+      <div className="reveal">
       <p className="eyebrow mb-3">[ {t("sections.install")} ]</p>
       <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
         {t("sectionHeads.install")}
       </h2>
       <p className="mt-3 max-w-2xl text-muted-foreground">{t("install.lead")}</p>
+      </div>
 
       <InView
         as="ol"
-        className="install-steps mt-12 grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/[0.07] shadow-[0_32px_64px_-32px_rgb(0_0_0_/_0.9)] md:grid-cols-2 lg:grid-cols-4"
+        className="install-steps reveal mt-12 grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/[0.07] shadow-[0_32px_64px_-32px_rgb(0_0_0_/_0.9)] md:grid-cols-2 lg:grid-cols-4"
       >
         {steps.map((s, i) => (
           <li
             key={s.id}
             style={{ "--i": i } as React.CSSProperties}
-            className="surface-cell relative flex flex-col gap-3 py-6 pr-6 pl-[4.5rem] md:pl-6"
+            className="surface-cell relative flex flex-col gap-3 overflow-hidden py-8 pr-8 pl-[5.25rem] md:pl-8"
           >
             <span aria-hidden className="install-rail">
               <span className="install-rail-lit" />
               <span className="install-packet"><span className="install-packet-dot" /></span>
             </span>
             <span
-              className="install-node relative z-10 grid size-8 place-items-center rounded-full font-mono text-[0.7rem] tabular-nums max-md:absolute max-md:top-6 max-md:left-6"
+              className="install-node relative z-10 grid size-11 place-items-center rounded-full font-mono text-sm tabular-nums max-md:absolute max-md:top-8 max-md:left-8"
               aria-hidden
             >
               {String(i + 1).padStart(2, "0")}
             </span>
-            <h3 className="font-semibold">{t(`install.steps.${s.id}.title`)}</h3>
+            {/* Oversized outlined step number: decorative watermark. */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -right-2 -bottom-6 font-mono text-[7.5rem] leading-none font-semibold tracking-[-0.08em] text-transparent [-webkit-text-stroke:1px_rgb(103_232_249/0.13)]"
+            >
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <h3 className="mt-2 text-lg font-semibold">{t(`install.steps.${s.id}.title`)}</h3>
             <p className="text-sm text-muted-foreground">{s.body}</p>
             {s.id === "zone" && (
               <a href="#map" className="mt-auto inline-flex items-center gap-1 self-start rounded text-sm text-fiber hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">

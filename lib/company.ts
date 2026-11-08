@@ -8,7 +8,7 @@ import { placeholder } from "./placeholder"
  */
 export const company: Company = {
   name: "GigaFazt", // owner, 2026-11-07
-  logo: placeholder("LOGO"),
+  logo: "/brand/gigafazt-lockup.svg", // 2026-11-07 (owner picked the dark lockup)
   domain: "gigafazt.com", // owner, 2026-11-07 (enables indexing + canonical URLs)
   whatsapp: "+52 5540947678", // owner, 2026-11-07 (10 digits kept together)
   salesPhone: placeholder("SALES_PHONE"),
@@ -43,8 +43,12 @@ export const company: Company = {
     analytics: placeholder("ANALYTICS"),
   },
   legal: {
-    privacyUrl: placeholder("PRIVACY_NOTICE_URL"),
+    privacyUrl: "/aviso-de-privacidad", // site page (components/legal/PrivacyNotice)
     termsUrl: placeholder("TERMS_URL"),
+    entityName: placeholder("RAZON_SOCIAL"),
+    address: placeholder("DOMICILIO_RESPONSABLE"),
+    privacyEmail: placeholder("PRIVACY_EMAIL"),
+    privacyUpdated: "2026-11-07",
   },
   policies: {
     cancellation: placeholder("CANCELLATION_POLICY"),

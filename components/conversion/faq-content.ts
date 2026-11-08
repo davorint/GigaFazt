@@ -1,5 +1,4 @@
 import { faqItems, tvFaqArgs, type FaqFact, type FaqItem } from "@/lib/faq"
-import { statesInList } from "@/lib/geo/state-names"
 import { formatMxn } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { plansWith } from "@/lib/plans"
@@ -16,11 +15,11 @@ export interface FaqEntry {
 /** Resolved question/answer copy for each FAQ item (shared by UI and JSON-LD). */
 export function faqEntries(t: T, locale: string): FaqEntry[] {
   const tv = tvFaqArgs()
-  const states = statesInList((k) => t(`states.${k}`), locale)
+  const area = t("coverage.area")
   const args: Partial<Record<FaqItem["id"], Record<string, string | number>>> = {
     tv: { channels: tv.channels, movies: tv.movies, series: tv.series },
-    coverage: { states },
-    moving: { states },
+    coverage: { area },
+    moving: { area },
     router: modemArgs(locale),
   }
   return faqItems.map((item) => ({

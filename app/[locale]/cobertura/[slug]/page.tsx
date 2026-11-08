@@ -17,12 +17,12 @@ import { FinalCta } from "@/components/conversion/FinalCta"
 import { LeadSheetHost } from "@/components/conversion/LeadSheetHost"
 import { ServiceJsonLd } from "@/components/seo/SiteJsonLd"
 import { JsonLd } from "@/components/seo/JsonLd"
-import { areaBySlug, coverageAreas } from "@/lib/coverage"
+import { SERVICE_ZONE, areaBySlug, coverageAreas } from "@/lib/coverage"
 import { clientsByState } from "@/lib/clients"
 import { STATES } from "@/lib/geo/states"
 import { plans, speedRange } from "@/lib/plans"
 import { SITE_URL, absoluteUrl, localizedPath, pageMeta } from "@/lib/site"
-import { stateIn, stateName } from "@/lib/geo/state-names"
+import { stateIn, stateName, stateServed } from "@/lib/geo/state-names"
 
 /**
  * Only the three service states are prerendered. Unknown slugs hit notFound();
@@ -41,7 +41,7 @@ export async function generateMetadata({
   if (!area) notFound()
   setRequestLocale(locale)
   const t = await getTranslations({ locale, namespace: "area" })
-  const inName = stateIn(await getTranslations({ locale, namespace: "states" }), slug)
+  const inName = stateServed(await getTranslations({ locale, namespace: "states" }), slug)
   return pageMeta(
     locale,
     `/cobertura/${slug}`,
@@ -73,7 +73,9 @@ async function AreaContent({ params }: { params: PageProps<"/[locale]/cobertura/
   const t = await getTranslations()
   const ts = await getTranslations("states")
   const name = stateName(ts, slug)
-  const inName = stateIn(ts, slug)
+  const inName = stateServed(ts, slug)
+  const inState = stateIn(ts, slug)
+  const zone = SERVICE_ZONE[area.state]
   const state = STATES.find((s) => s.code === area.state)!
   const list = clientsByState(area.state)
   const others = STATES.filter((s) => s.code !== area.state)
@@ -114,7 +116,20 @@ async function AreaContent({ params }: { params: PageProps<"/[locale]/cobertura/
                 {t("area.h1", { name: inName })}
               </h1>
               <p className="mt-5 max-w-xl text-lg text-muted-foreground">{t("area.lead", { name: inName })}</p>
-              <p className="mt-3 max-w-xl text-sm text-muted-foreground">{t("map.hud.confirm")}</p>
+              <div className="mt-6 max-w-xl rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                <h2 className="font-mono text-xs uppercase tracking-wider text-ok">{t("area.where")}</h2>
+                <p className="mt-2 text-sm text-foreground">{ts(`${slug}.scope`)}</p>
+                {zone.scope === "metro" && (
+                  <ul className="mt-2 flex flex-wrap gap-1.5">
+                    {zone.places.map((p) => (
+                      <li key={p} className="rounded border border-white/10 px-2 py-0.5 font-mono text-[0.7rem] text-muted-foreground">
+                        {p}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="mt-3 text-xs text-muted-foreground">{t("map.hud.confirm")}</p>
+              </div>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <ContractButton context={`area_${slug}`} />
                 <a
@@ -149,7 +164,7 @@ async function AreaContent({ params }: { params: PageProps<"/[locale]/cobertura/
               {list.length > 0 && (
                 <div className="mt-4 border-t border-border pt-4">
                   <h2 className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
-                    {t("area.clients", { name: inName })}
+                    {t("area.clients", { name: inState })}
                   </h2>
                   <ul className="mt-3 space-y-1.5">
                     {list.map((c) => (
@@ -207,7 +222,7 @@ async function AreaContent({ params }: { params: PageProps<"/[locale]/cobertura/
                     href={`/cobertura/${s.slug}`}
                     className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
-                    {t("area.h1", { name: stateIn(ts, s.slug) })}
+                    {t("area.h1", { name: stateServed(ts, s.slug) })}
                   </Link>
                 </li>
               ))}

@@ -56,10 +56,6 @@ export default async function LocaleLayout({
       className={`${geistSans.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full bg-background text-foreground">
-        <div
-          aria-hidden
-          className="holo-grid pointer-events-none fixed inset-0 -z-10"
-        />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
         <SurfaceLight />
       </body>

@@ -16,12 +16,19 @@ export function PriceTerms({
   className,
   inline = false,
   quiet = false,
+  hidePendingPromo = false,
 }: {
   plan: Pick<Plan, "installFeeMxn" | "contractMonths" | "promo">
   className?: string
   inline?: boolean
   /** Lower visual weight (plan cards): the speed and price lead, terms follow. */
   quiet?: boolean
+  /**
+   * Hero only: skip the promo line while it is still a BUSINESS.md
+   * placeholder. The chip stays visible next to every price in Plans and the
+   * final CTA (hard rules #1/#5); the first screen leads with real terms.
+   */
+  hidePendingPromo?: boolean
 }) {
   const t = useTranslations("plans")
   const locale = useLocale()
@@ -57,6 +64,7 @@ export function PriceTerms({
         </li>
       )}
       {promo &&
+        !(hidePendingPromo && isPlaceholder(promo)) &&
         (isPlaceholder(promo) ? (
           <li className="flex items-center gap-1.5">
             <span>{t("promo")}:</span>

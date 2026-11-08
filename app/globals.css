@@ -7,6 +7,7 @@
 /* Design tokens (DESIGN.md "optical lab at night"). Dark-only site. */
 @theme {
   --color-fiber: #06b6d4; /* cyan: light, data in motion, primary CTA */
+  --color-up: #a78bfa; /* violet: upload, the second half of the brand gradient */
   --color-ok: #22c55e; /* green: healthy, available, included */
   --color-warn: #f59e0b; /* amber: planned, promo, attention */
   --color-surface: #09090b; /* cards */
@@ -265,12 +266,12 @@ html[data-motion="off"] *::after {
   --beam: var(--color-fiber);
   position: relative;
   width: 16px;
-  height: 92px;
+  height: 150px;
   cursor: pointer;
 }
 .map-beam[data-demo] {
   --beam: var(--color-warn);
-  height: 60px;
+  height: 96px;
 }
 .map-beam::before,
 .map-beam::after {
@@ -318,7 +319,7 @@ html[data-motion="off"] *::after {
 @keyframes map-beam-rise {
   0% { transform: translateY(0); opacity: 0; }
   15% { opacity: 1; }
-  100% { transform: translateY(-90px); opacity: 0; }
+  100% { transform: translateY(-150px); opacity: 0; }
 }
 .map-paused .map-beam-spark {
   animation-play-state: paused;
@@ -408,7 +409,7 @@ html[data-motion="off"] *::after {
    instantly and the packet rests at its invisible end frame. */
 .install-rail {
   position: absolute;
-  inset: 0 auto 0 calc(1.5rem + 1rem - 0.5px);
+  inset: 0 auto 0 calc(2rem + 1.375rem - 0.5px);
   width: 1px;
   background: rgb(255 255 255 / 0.08);
   pointer-events: none;
@@ -464,23 +465,23 @@ html[data-motion="off"] *::after {
   top: 0;
   left: -1px;
   width: 3px;
-  height: 22px;
+  height: 40px;
   border-radius: 999px;
   translate: 0 -100%;
   background: linear-gradient(180deg, transparent, #fff);
   box-shadow: 0 0 10px var(--color-fiber);
 }
 li:last-child > .install-rail {
-  bottom: calc(100% - 2.5rem);
+  bottom: calc(100% - 3.375rem);
 }
 @media (min-width: 48rem) {
   .install-rail {
-    inset: calc(1.5rem + 1rem - 0.5px) 0 auto 0;
+    inset: calc(2rem + 1.375rem - 0.5px) 0 auto 0;
     width: auto;
     height: 1px;
   }
   li:last-child > .install-rail {
-    right: calc(100% - 2.5rem);
+    right: calc(100% - 3.375rem);
     bottom: auto;
   }
   .install-rail-lit {
@@ -498,7 +499,7 @@ li:last-child > .install-rail {
   .install-packet-dot {
     top: -1px;
     left: 0;
-    width: 22px;
+    width: 40px;
     height: 3px;
     translate: -100% 0;
     background: linear-gradient(90deg, transparent, #fff);
@@ -519,11 +520,13 @@ html[data-motion="off"] .install-node {
    top edge like the cards; decorative only. */
 .footer-wordmark {
   background:
-    radial-gradient(90% 140% at 50% 0%, rgb(34 211 238 / 0.16), transparent 75%),
-    linear-gradient(180deg, rgb(255 255 255 / 0.13) 0%, rgb(255 255 255 / 0.02) 90%);
+    radial-gradient(70% 120% at 50% 0%, rgb(255 255 255 / 0.22), transparent 70%),
+    linear-gradient(90deg, rgb(34 211 238 / 0.55), rgb(103 232 249 / 0.4) 45%, rgb(167 139 250 / 0.5));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  -webkit-mask-image: linear-gradient(180deg, #000 10%, transparent 92%);
+  mask-image: linear-gradient(180deg, #000 10%, transparent 92%);
 }
 
 /* Proof band (ProofBand): the page's one full-bleed statement band. A cyan
@@ -559,4 +562,188 @@ html[data-motion="off"] .install-node {
 }
 .finale[data-inview] .finale-core {
   animation-play-state: running;
+}
+
+/* Plan card flash (PlanRecommender "Ver en los planes"): a cyan ring that
+   fades out. Instant under reduced motion / paused animations. */
+@keyframes plan-flash {
+  0% { box-shadow: 0 0 0 0 rgb(6 182 212 / 0); }
+  20% { box-shadow: 0 0 0 2px var(--color-fiber), 0 0 48px 4px rgb(6 182 212 / 0.45); }
+  100% { box-shadow: 0 0 0 0 rgb(6 182 212 / 0); }
+}
+.plan-flash {
+  animation: plan-flash 2.2s ease-out;
+}
+
+/* "Arma tu paquete" ticket stub (AddOnsPanel): a dashed perforation with two
+   notches cut into the card edges, over a slightly lit footer. Static. */
+.ticket-stub {
+  position: relative;
+  background: linear-gradient(180deg, rgb(6 182 212 / 0.06), rgb(6 182 212 / 0.02));
+}
+.ticket-stub::before {
+  content: "";
+  position: absolute;
+  inset: 0 1.25rem auto;
+  border-top: 1px dashed rgb(255 255 255 / 0.18);
+}
+.ticket-stub::after {
+  content: "";
+  position: absolute;
+  inset: -0.75rem -0.75rem auto;
+  height: 1.5rem;
+  background:
+    radial-gradient(circle at 0.75rem 50%, var(--background) 0.7rem, transparent 0.75rem),
+    radial-gradient(circle at calc(100% - 0.75rem) 50%, var(--background) 0.7rem, transparent 0.75rem);
+  pointer-events: none;
+}
+
+/* FAQ answers open smoothly where ::details-content is supported (progressive
+   enhancement; elsewhere they open instantly). Off under reduced motion via
+   the global rules. */
+.faq-item {
+  interpolate-size: allow-keywords;
+}
+.faq-item::details-content {
+  block-size: 0;
+  overflow-y: clip;
+  transition: block-size 250ms cubic-bezier(0.2, 0.8, 0.2, 1), content-visibility 250ms allow-discrete;
+}
+.faq-item[open]::details-content {
+  block-size: auto;
+}
+
+/* ── Section light (owner, 2026-11-07: "jaw-dropping" pass) ────────────────
+   Each home section gets its own ambient light so the page isn't one flat
+   near-black: cyan = download / light, violet = upload. Static gradients on a
+   ::before behind the content (Section is `isolate`). The holographic grid is
+   no longer page-wide: only the "lab" sections (fiber, proof) carry it. */
+section[data-section]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+section[data-section="plans"]::before {
+  background:
+    radial-gradient(45% 30% at 80% 14%, rgb(6 182 212 / 0.11), transparent 70%),
+    radial-gradient(40% 30% at 8% 70%, rgb(167 139 250 / 0.07), transparent 70%),
+    radial-gradient(50% 25% at 60% 100%, rgb(6 182 212 / 0.05), transparent 70%);
+}
+section[data-section="fiber"]::before,
+section[data-section="proof"]::before {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 45%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 85% 75% at 50% 45%, #000 40%, transparent 100%);
+}
+section[data-section="fiber"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 18% at 50% 0%, rgb(167 139 250 / 0.12), transparent 75%),
+    radial-gradient(45% 25% at 15% 62%, rgb(6 182 212 / 0.07), transparent 70%),
+    radial-gradient(45% 25% at 88% 85%, rgb(167 139 250 / 0.07), transparent 70%);
+}
+section[data-section="map"]::before {
+  background:
+    radial-gradient(55% 40% at 55% 50%, rgb(6 182 212 / 0.09), transparent 70%),
+    radial-gradient(35% 20% at 10% 8%, rgb(167 139 250 / 0.06), transparent 70%);
+}
+section[data-section="install"]::before {
+  background: radial-gradient(50% 60% at 50% 55%, rgb(6 182 212 / 0.07), transparent 70%);
+}
+section[data-section="faq"]::before {
+  background:
+    radial-gradient(35% 35% at 12% 18%, rgb(167 139 250 / 0.08), transparent 70%),
+    radial-gradient(40% 30% at 90% 80%, rgb(6 182 212 / 0.05), transparent 70%);
+}
+
+/* Brand gradient (cyan download → violet upload) for display text. */
+.text-brand {
+  background: linear-gradient(100deg, #e0fbff 0%, #67e8f9 35%, #a5b4fc 70%, #c4b5fd 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ── Scroll reveal ──────────────────────────────────────────────────────────
+   CSS scroll-driven (no JS): `.reveal` rises into place as it enters the
+   viewport; direct children of `.reveal-stagger` follow one after another.
+   Progressive enhancement: browsers without view timelines, reduced motion
+   and the "Pausar animaciones" toggle show everything in place. Elements
+   already past the viewport (reloads, anchor jumps) sit at the end state
+   (fill: both). Transform + opacity only (compositor). */
+@keyframes reveal-rise {
+  from { opacity: 0; transform: translateY(36px); }
+  to { opacity: 1; transform: none; }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    html:not([data-motion="off"]):not([data-shot]) .reveal,
+    html:not([data-motion="off"]):not([data-shot]) .reveal-stagger > * {
+      animation: reveal-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+    html:not([data-motion="off"]):not([data-shot]) .reveal-stagger > :nth-child(2) { animation-range: entry 10% entry 80%; }
+    html:not([data-motion="off"]):not([data-shot]) .reveal-stagger > :nth-child(3) { animation-range: entry 20% entry 90%; }
+    html:not([data-motion="off"]):not([data-shot]) .reveal-stagger > :nth-child(n + 4) { animation-range: entry 30% entry 100%; }
+  }
+}
+
+/* Plan card light chamber: brightens on hover / focus (an opacity-only glow
+   layer over the rails, no repaint of the moving packets). */
+.plan-glow {
+  opacity: 0;
+  transition: opacity 350ms ease;
+}
+.plan-card:hover .plan-glow,
+.plan-card:focus-within .plan-glow {
+  opacity: 1;
+}
+
+/* Final CTA: when the strands first meet (data-seen), the ticket flashes once.
+   Under reduced motion / paused animations the global rules make it instant. */
+@keyframes finale-ticket-flash {
+  0% { box-shadow: 0 0 60px -24px var(--color-fiber); border-color: rgb(255 255 255 / 0.1); }
+  25% { box-shadow: 0 0 0 1px rgb(165 243 252 / 0.9), 0 0 90px 6px rgb(6 182 212 / 0.45); border-color: rgb(165 243 252 / 0.9); }
+  100% { box-shadow: 0 0 60px -24px var(--color-fiber); border-color: rgb(255 255 255 / 0.1); }
+}
+.finale[data-seen] .finale-ticket {
+  animation: finale-ticket-flash 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.5s 1 both;
+}
+
+/* "Arma tu paquete" as a horizontal ticket on wide screens: the perforation
+   runs vertically between the options and the stub. */
+@media (min-width: 64rem) {
+  .ticket-stub.ticket-stub-side {
+    background: linear-gradient(90deg, rgb(6 182 212 / 0.07), rgb(6 182 212 / 0.02));
+  }
+  .ticket-stub.ticket-stub-side::before {
+    inset: 1.25rem auto 1.25rem 0;
+    border-top: 0;
+    border-left: 1px dashed rgb(255 255 255 / 0.18);
+  }
+  .ticket-stub.ticket-stub-side::after {
+    inset: -0.75rem auto -0.75rem -0.75rem;
+    width: 1.5rem;
+    height: auto;
+    background:
+      radial-gradient(circle at 50% 0.75rem, var(--background) 0.7rem, transparent 0.75rem),
+      radial-gradient(circle at 50% calc(100% - 0.75rem), var(--background) 0.7rem, transparent 0.75rem);
+  }
+}
+
+/* Full-bleed coverage map: keep MapLibre's zoom buttons in the content column
+   (max-w-7xl) and above the bottom fade, like the other overlay controls. */
+[data-map] .maplibregl-ctrl-bottom-right {
+  right: max(0px, calc((100% - 80rem) / 2));
+  bottom: 1rem;
 }

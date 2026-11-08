@@ -2,7 +2,7 @@
 
 import { useCallback } from "react"
 import { useLocale, useTranslations } from "next-intl"
-import { Tv } from "lucide-react"
+import { PackagePlus, Tv } from "lucide-react"
 import { cn } from "cn"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -18,6 +18,8 @@ import { PriceTerms } from "./PriceTerms"
 /**
  * "Arma tu paquete" (SPEC §3 AddOns): pick a speed, toggle add-ons, and the
  * monthly total updates instantly. The CTA opens the lead Sheet prefilled.
+ * Wide screens: one horizontal ticket, the stub on the right behind a
+ * vertical perforation (.ticket-stub-side).
  */
 export function AddOnsPanel() {
   const t = useTranslations("addons")
@@ -30,23 +32,32 @@ export function AddOnsPanel() {
   const money = useCallback((n: number) => `$${formatMxn(n, locale)}`, [locale])
 
   return (
-    <div className="flex h-full flex-col rounded-xl surface p-6">
-      <h3 className="text-xl font-semibold tracking-[-0.02em]">{t("title")}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">{t("lead")}</p>
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl surface lg:flex-row">
+      <div className="p-5 sm:p-7 lg:flex-1">
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-fiber/30 bg-fiber/10">
+          <PackagePlus className="size-[18px] text-fiber" aria-hidden />
+        </span>
+        <div>
+          <h3 className="text-xl font-semibold tracking-[-0.02em]">{t("title")}</h3>
+          <p className="mt-0.5 text-sm text-muted-foreground">{t("lead")}</p>
+        </div>
+      </div>
 
-      <fieldset className="mt-6">
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+      <fieldset>
         <legend className="mb-2 font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">
           {t("plan")}
         </legend>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2.5">
           {plans.map((p) => (
             <label
               key={p.id}
               className={cn(
-                "flex cursor-pointer items-center justify-center rounded-lg border px-2 py-2.5 font-mono text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+                "flex cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl border px-2 py-3.5 font-mono transition-[border-color,background-color,box-shadow] duration-200 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
                 p.id === plan.id
-                  ? "border-fiber bg-fiber/10 text-foreground"
-                  : "border-border text-muted-foreground hover:text-foreground"
+                  ? "border-fiber/70 bg-fiber/10 text-foreground shadow-[0_0_24px_-10px_var(--color-fiber)]"
+                  : "border-white/10 bg-white/[0.02] text-muted-foreground hover:border-white/25 hover:text-foreground"
               )}
             >
               <input
@@ -60,13 +71,14 @@ export function AddOnsPanel() {
                 }}
                 className="sr-only"
               />
-              {speedLabel(p.downMbps)}
+              <span className="whitespace-nowrap text-base font-semibold tabular-nums sm:text-xl">{speedLabel(p.downMbps)}</span>
+              <span className="text-[0.6rem] uppercase tracking-wider opacity-70">↓↑ {tp("symmetric")}</span>
             </label>
           ))}
         </div>
       </fieldset>
 
-      <fieldset className="mt-6">
+      <fieldset>
         <legend className="mb-2 font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">
           {t("extras")}
         </legend>
@@ -78,8 +90,8 @@ export function AddOnsPanel() {
               <li
                 key={a.id}
                 className={cn(
-                  "rounded-lg border p-4 transition-colors",
-                  on ? "border-fiber/50 bg-fiber/5" : "border-border"
+                  "rounded-xl border p-4 transition-[border-color,background-color,box-shadow] duration-200",
+                  on ? "border-fiber/60 bg-fiber/[0.07] shadow-[0_0_24px_-12px_var(--color-fiber)]" : "border-white/10 bg-white/[0.02]"
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -128,9 +140,13 @@ export function AddOnsPanel() {
           })}
         </ul>
       </fieldset>
+      </div>
 
-      <div className="mt-auto pt-6">
-        <div className="flex flex-wrap items-end justify-between gap-2 border-t border-border pt-5">
+      </div>
+
+      {/* The "ticket": a perforated stub with the live total (hard rule #5 terms under it). */}
+      <div className="ticket-stub ticket-stub-side mt-auto px-5 pt-6 pb-5 sm:px-7 sm:pb-7 lg:mt-0 lg:flex lg:w-[25rem] lg:shrink-0 lg:flex-col lg:justify-center lg:py-8">
+        <div className="flex flex-wrap items-end justify-between gap-2">
           <span className="font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">
             {t("total")}
           </span>
@@ -138,7 +154,7 @@ export function AddOnsPanel() {
             <AnimatedNumber
               value={total.known}
               format={money}
-              className="text-3xl font-semibold text-foreground"
+              className="text-4xl font-semibold tracking-[-0.03em] text-foreground sm:text-5xl"
             />
             <span className="text-sm text-muted-foreground">{tp("perMonth")}</span>
             {total.pending && (

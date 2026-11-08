@@ -36,14 +36,14 @@ function camera(mobile: boolean) {
  * Fit the three states to the frame. fitBounds sizes for the unpitched
  * footprint, so the tilted view would leave the states small: nudge the zoom.
  */
-function fitView(map: MLMap, mobile: boolean, animate: boolean) {
+function fitView(map: MLMap, mobile: boolean, animate: boolean, duration = 700) {
   const cam = camera(mobile)
   // Offset lifts the states toward the frame's middle (the tilted far side is
   // fog) and, on desktop, clears the bottom-left legend.
-  const fit = map.cameraForBounds(MAP_FIT, { ...cam, offset: mobile ? [0, 36] : [70, -60] })
+  const fit = map.cameraForBounds(MAP_FIT, { ...cam, offset: mobile ? [0, -70] : [70, -60] })
   if (!fit) return
-  const opts = { ...fit, pitch: cam.pitch, bearing: cam.bearing, zoom: (fit.zoom ?? 8) + (mobile ? -0.35 : 0.4) }
-  if (animate) map.easeTo({ ...opts, duration: 700 })
+  const opts = { ...fit, pitch: cam.pitch, bearing: cam.bearing, zoom: (fit.zoom ?? 8) + (mobile ? 0.1 : 0.4) }
+  if (animate) map.easeTo({ ...opts, duration, easing: (t) => 1 - Math.pow(1 - t, 3) })
   else map.jumpTo(opts)
 }
 
@@ -158,8 +158,29 @@ export default function CoverageMap() {
     const beamMarkers: maplibregl.Marker[] = []
     const beamNodes = beams.current
 
+    // Fly-in (first time the map is well in view): start high and flat, then
+    // ease down onto the tilted table. Skipped under reduced motion, for
+    // static captures, and when a ClientList focus is already waiting.
+    const flyIn = !motionReduced() && !document.documentElement.hasAttribute("data-shot")
+    let flown = !flyIn
+    const arrive = new IntersectionObserver(
+      ([e]) => {
+        // Observed only after "load" (map.loaded() can stay false while the
+        // GeoJSON streams in, which would skip the one callback we get).
+        if (!e.isIntersecting || e.intersectionRatio < 0.4 || flown) return
+        flown = true
+        arrive.disconnect()
+        fitView(map, mobile, true, 2600)
+      },
+      { threshold: 0.45 }
+    )
+
     map.on("load", () => {
       fitView(map, mobile, false)
+      if (!flown) {
+        map.jumpTo({ zoom: map.getZoom() - 1.4, pitch: 12, bearing: map.getBearing() + 14 })
+        arrive.observe(el)
+      }
       // Ground grid (replaces the flat CSS grid: this one tilts with the camera).
       map.addSource("grid", { type: "geojson", data: graticule() })
       map.addLayer({
@@ -200,8 +221,17 @@ export default function CoverageMap() {
         type: "fill",
         source: "states",
         paint: {
-          "fill-color": ["case", ["boolean", ["feature-state", "hover"], false], "#0b3344", "#072230"],
+          "fill-color": ["case", ["boolean", ["feature-state", "hover"], false], "#082230", "#041219"],
         },
+      })
+      // Service zone (lib/coverage SERVICE_ZONE): CDMX, the Edomex municipios
+      // bordering it, Cuernavaca + Tepoztlán. Lit on top of the dark state slabs.
+      map.addSource("zone", { type: "geojson", data: "/geo/service-zone.json" })
+      map.addLayer({
+        id: "zone-fill",
+        type: "fill",
+        source: "zone",
+        paint: { "fill-color": CYAN, "fill-opacity": 0.28 },
       })
       // Alcaldía / municipio limits: thin, faint, under the state outlines.
       map.addSource("municipios", { type: "geojson", data: "/geo/municipios.json" })
@@ -270,6 +300,21 @@ export default function CoverageMap() {
           "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.75],
           "line-width": ["case", ["boolean", ["feature-state", "hover"], false], 2, 1.2],
         },
+      })
+
+      map.addLayer({
+        id: "zone-glow",
+        type: "line",
+        source: "zone",
+        layout: { "line-join": "round" },
+        paint: { "line-color": CYAN, "line-opacity": 0.45, "line-width": 5, "line-blur": 5 },
+      })
+      map.addLayer({
+        id: "zone-line",
+        type: "line",
+        source: "zone",
+        layout: { "line-join": "round" },
+        paint: { "line-color": "#67e8f9", "line-opacity": 0.85, "line-width": 1.2 },
       })
 
       map.addSource("corridors", {
@@ -363,7 +408,11 @@ export default function CoverageMap() {
       map.on("sourcedata", onData)
 
       const early = takePendingMapFocus()
-      if (early) focusTarget(early)
+      if (early) {
+        flown = true
+        arrive.disconnect()
+        focusTarget(early)
+      }
 
       // State labels as HTML (tile-less style has no glyphs).
       for (const s of STATES) {
@@ -460,6 +509,8 @@ export default function CoverageMap() {
       setFocusHud(true)
     }
     const offFocus = onMapFocus((target) => {
+      flown = true
+      arrive.disconnect()
       if (map.loaded()) focusTarget(target)
       else map.once("load", () => focusTarget(target))
     })
@@ -467,6 +518,7 @@ export default function CoverageMap() {
     return () => {
       cancelAnimationFrame(raf)
       io.disconnect()
+      arrive.disconnect()
       offFocus()
       document.removeEventListener("visibilitychange", resume)
       unsubscribeMotion()
@@ -488,7 +540,7 @@ export default function CoverageMap() {
         if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis(layers.includes("clients")))
       }
       beams.current.forEach((n) => (n.style.visibility = layers.includes("clients") ? "" : "hidden"))
-      for (const id of ["states-wall-glow", "states-wall", "states-wall-edge", "states-fill", "municipios-line", "states-glow", "states-line"]) {
+      for (const id of ["states-wall-glow", "states-wall", "states-wall-edge", "states-fill", "zone-fill", "municipios-line", "states-glow", "states-line", "zone-glow", "zone-line"]) {
         if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis(layers.includes("coverage")))
       }
       containerRef.current
@@ -532,7 +584,7 @@ export default function CoverageMap() {
   const demoCount = clients.length - realCount
 
   return (
-    <div className="hud-brackets relative h-[520px] overflow-hidden rounded-2xl border border-border/70 bg-background md:h-[700px]">
+    <div className="relative h-[540px] overflow-hidden md:h-[clamp(680px,88svh,900px)]">
       <div
         ref={containerRef}
         data-map
@@ -546,6 +598,13 @@ export default function CoverageMap() {
         aria-hidden
         className="pointer-events-none absolute inset-0 [background:radial-gradient(120%_90%_at_50%_55%,transparent_55%,var(--color-background)_100%)]"
       />
+      {/* Full-bleed: melt the top and bottom edges into the page. */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background to-transparent" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />
+
+      {/* Overlay controls sit in the page's content column, not at the screen edges. */}
+      <div className="pointer-events-none absolute inset-0">
+      <div className="relative mx-auto h-full max-w-7xl [&>*]:pointer-events-auto">
 
       <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
         <ToggleGroup
@@ -588,6 +647,8 @@ export default function CoverageMap() {
 
       {/* Phones get the legend below the map (CoverageMapSection) instead. */}
       <MapLegend className={target ? "absolute bottom-3 left-3 hidden" : "absolute bottom-3 left-3 hidden md:block"} />
+      </div>
+      </div>
 
       {locked && (
         <button

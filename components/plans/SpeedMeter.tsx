@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl"
+import { ArrowDown, ArrowUp } from "lucide-react"
 
 const SEGMENTS = 10
 
@@ -11,13 +12,13 @@ export function SpeedMeter({ downMbps, upMbps, maxMbps }: { downMbps: number; up
   const t = useTranslations("plans")
   const lit = (v: number) => Math.max(1, Math.round((SEGMENTS * v) / maxMbps))
   return (
-    <div aria-hidden className="grid gap-1.5 font-mono text-[0.65rem] text-muted-foreground">
+    <div aria-hidden className="grid gap-2 text-muted-foreground">
       {[
-        { arrow: "↓", value: downMbps, title: t("down"), on: "bg-fiber shadow-[0_0_8px_var(--color-fiber)]" },
-        { arrow: "↑", value: upMbps, title: t("up"), on: "bg-violet-400 shadow-[0_0_8px_var(--color-violet-400)]" },
-      ].map((row) => (
-        <div key={row.arrow} className="flex items-center gap-2" title={row.title}>
-          <span className={row.arrow === "↓" ? "w-2 text-fiber" : "w-2 text-violet-300"}>{row.arrow}</span>
+        { arrow: "down", Icon: ArrowDown, value: downMbps, title: t("down"), on: "bg-fiber shadow-[0_0_8px_var(--color-fiber)]", color: "text-fiber drop-shadow-[0_0_4px_var(--color-fiber)]" },
+        { arrow: "up", Icon: ArrowUp, value: upMbps, title: t("up"), on: "bg-violet-400 shadow-[0_0_8px_var(--color-violet-400)]", color: "text-violet-300 drop-shadow-[0_0_4px_var(--color-violet-400)]" },
+      ].map(({ Icon, ...row }) => (
+        <div key={row.arrow} className="flex items-center gap-2.5" title={row.title}>
+          <Icon className={`size-5 shrink-0 ${row.color}`} strokeWidth={2.75} />
           <span className="grid flex-1 grid-cols-10 gap-1">
             {Array.from({ length: SEGMENTS }, (_, i) => (
               <span key={i} className={`h-1.5 rounded-[2px] ${i < lit(row.value) ? row.on : "bg-white/[0.07]"}`} />

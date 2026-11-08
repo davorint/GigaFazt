@@ -11,20 +11,25 @@ export function CoverageMapSection() {
   const t = useTranslations()
   const locale = useLocale()
   return (
-    <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+    <div className="py-24">
+      <div className="reveal mx-auto max-w-7xl px-4 sm:px-6">
       <p className="eyebrow mb-3">[ {t("sections.map")} ]</p>
       <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
         {t("sectionHeads.map")}
       </h2>
       <p className="mt-3 max-w-2xl text-muted-foreground">{t("map.lead", { count: isPlaceholder(company.network.clients) ? "—" : company.network.clients.toLocaleString(locale) })}</p>
 
-      {/* Wider than the text column: the tilted map is the section's centerpiece. */}
-      <div className="mt-12 min-[1400px]:-mx-12 min-[1600px]:-mx-24">
-        <LazyCoverageMap />
-        <MapLegend className="mt-3 md:hidden" />
       </div>
 
-      <div className="mt-10">
+      {/* Full-bleed: the tilted map is the section's centerpiece, edge to edge. */}
+      <div className="mt-8">
+        <LazyCoverageMap />
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+      <MapLegend className="mt-3 md:hidden" />
+
+      <div className="reveal mt-10">
         <ClientList />
       </div>
 
@@ -36,6 +41,7 @@ export function CoverageMapSection() {
           {t("map.cta")}
           <ArrowRight className="size-4" aria-hidden />
         </a>
+      </div>
       </div>
     </div>
   )

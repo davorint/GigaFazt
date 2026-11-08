@@ -5,6 +5,8 @@ import { cn } from "cn"
 
 /**
  * Visible placeholder for an unfilled BUSINESS.md value (hard rule #1).
+ * Quiet style (dashed outline, no fill): still visible, but it no longer
+ * competes with the real figures around it.
  * `keyName` is the BUSINESS.md key, surfaced in the tooltip for the owner.
  */
 export function PlaceholderChip({
@@ -19,7 +21,7 @@ export function PlaceholderChip({
     <span
       title={`${t("placeholderTitle")}: ${keyName}`}
       className={cn(
-        "inline-flex items-center whitespace-nowrap rounded border border-warn/40 bg-warn/10 px-1.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-wider text-warn",
+        "inline-flex items-center whitespace-nowrap rounded border border-dashed border-warn/45 px-1.5 py-px font-mono text-[0.6rem] uppercase tracking-wider text-warn/90",
         className
       )}
     >

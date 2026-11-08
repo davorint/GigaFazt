@@ -1,5 +1,7 @@
 /**
- * STYLIZED corridors between metro hubs (SPEC §5: CDMX ↔ Toluca ↔ Cuernavaca).
+ * STYLIZED corridors between hubs of the service zone (owner, 2026-11-07:
+ * metro area + Cuernavaca/Tepoztlán): city center ↔ west ↔ north, and
+ * center ↔ Cuernavaca ↔ Tepoztlán.
  * These are illustrative arcs between city centers, NOT real fiber routes
  * (hard rule #6). Labeled "trazo ilustrativo" in the legend.
  */
@@ -12,8 +14,10 @@ export interface Corridor {
 
 const HUBS = {
   cdmx: [-99.13, 19.43],
-  toluca: [-99.66, 19.29],
+  poniente: [-99.26, 19.37],
+  norte: [-99.2, 19.54],
   cuernavaca: [-99.23, 18.92],
+  tepoztlan: [-99.1, 18.985],
 } as const satisfies Record<string, [number, number]>
 
 /** Quadratic-bezier arc between two points, bowed by `bend` (deg units). */
@@ -35,7 +39,9 @@ function arc(a: readonly [number, number], b: readonly [number, number], bend = 
 }
 
 export const corridors: Corridor[] = [
-  { id: "cdmx-toluca", from: "CDMX", to: "Toluca", coords: arc(HUBS.cdmx, HUBS.toluca) },
-  { id: "toluca-cuernavaca", from: "Toluca", to: "Cuernavaca", coords: arc(HUBS.toluca, HUBS.cuernavaca, 0.1) },
-  { id: "cuernavaca-cdmx", from: "Cuernavaca", to: "CDMX", coords: arc(HUBS.cuernavaca, HUBS.cdmx, 0.1) },
+  { id: "cdmx-poniente", from: "CDMX", to: "Poniente", coords: arc(HUBS.cdmx, HUBS.poniente, 0.03) },
+  { id: "poniente-norte", from: "Poniente", to: "Norte", coords: arc(HUBS.poniente, HUBS.norte, 0.03) },
+  { id: "norte-cdmx", from: "Norte", to: "CDMX", coords: arc(HUBS.norte, HUBS.cdmx, 0.03) },
+  { id: "cdmx-cuernavaca", from: "CDMX", to: "Cuernavaca", coords: arc(HUBS.cdmx, HUBS.cuernavaca, 0.1) },
+  { id: "cuernavaca-tepoztlan", from: "Cuernavaca", to: "Tepoztlán", coords: arc(HUBS.cuernavaca, HUBS.tepoztlan, 0.03) },
 ]

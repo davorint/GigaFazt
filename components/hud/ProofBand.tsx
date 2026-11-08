@@ -1,6 +1,6 @@
 import { useLocale, useTranslations } from "next-intl"
 import { ArrowRight } from "lucide-react"
-import { PlaceholderChip } from "./PlaceholderChip"
+import { CountUp } from "@/components/layout/CountUp"
 import { UptimeBar } from "./UptimeBar"
 import { Testimonials } from "./Testimonials"
 import { company } from "@/lib/company"
@@ -10,14 +10,15 @@ import { isPlaceholder, type Maybe } from "@/lib/placeholder"
 
 /**
  * Proof band (SPEC §6). Only claims we can back: the qualified metro latency,
- * the top plan speed from lib/plans.ts, and BUSINESS.md network figures (POR
- * DEFINIR chips until filled). The Dedicado 99.999% SLA and "10 Gbps" were
+ * the top plan speed from lib/plans.ts, and BUSINESS.md network figures (km,
+ * POPs: shown once filled). The Dedicado 99.999% SLA and "10 Gbps" were
  * dropped with the owner's single lineup. Uptime + testimonials render only
  * with real data.
  *
  * Layout: the one full-bleed "statement" band of the page. Real figures
  * (clients, 24 h monitoring, top speed) are set huge across the width, lit by
- * one fiber line; the qualified/pending figures follow in a quiet row.
+ * one fiber line, and count up once on first view; the qualified figures
+ * follow in a quiet row.
  */
 export function ProofBand() {
   const t = useTranslations()
@@ -25,8 +26,6 @@ export function ProofBand() {
   const top = formatSpeed(Math.max(...plans.map((p) => p.downMbps)))
   const { kmFiber, pops, clients, monitoring24h } = company.network
 
-  const figure = (v: Maybe<number>) =>
-    isPlaceholder(v) ? <PlaceholderChip keyName={v.key} className="text-xs" /> : v.toLocaleString(locale)
 
   const big = [
     !isPlaceholder(clients) && {
@@ -45,15 +44,21 @@ export function ProofBand() {
     { key: "speed", value: String(top.value), unit: top.unit, label: t("proof.speed") },
   ].filter((x): x is { key: string; value: string; unit: string | null; label: string } => Boolean(x))
 
-  const stats = [
+  // Secondary figures show once BUSINESS.md fills them (still-open values
+  // are listed in PROGRESS.md "Open questions"); a row of POR DEFINIR chips
+  // under the headline figures read as unfinished.
+  type Stat = { value: React.ReactNode; label: string }
+  const known = (v: Maybe<number>, label: string): Stat[] =>
+    isPlaceholder(v) ? [] : [{ value: v.toLocaleString(locale), label }]
+  const stats: Stat[] = [
     { value: <>{t("proof.latencyValue")}<sup className="text-fiber">*</sup></>, label: t("proof.latency") },
-    { value: figure(kmFiber), label: t("proof.km") },
-    { value: figure(pops), label: t("proof.pops") },
+    ...known(kmFiber, t("proof.km")),
+    ...known(pops, t("proof.pops")),
   ]
 
   return (
     <div className="proof-band relative overflow-hidden py-24 sm:py-32">
-      <div className="mx-auto grid max-w-7xl gap-4 px-4 sm:px-6 lg:grid-cols-2 lg:items-end lg:gap-16">
+      <div className="reveal mx-auto grid max-w-7xl gap-4 px-4 sm:px-6 lg:grid-cols-2 lg:items-end lg:gap-16">
         <div>
           <p className="eyebrow mb-3">[ {t("sections.proof")} ]</p>
           <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
@@ -67,7 +72,7 @@ export function ProofBand() {
       <div className="relative mt-16 sm:mt-20">
         <div aria-hidden className="proof-line absolute inset-x-0 top-0 h-px" />
         <ul
-          className="mx-auto grid max-w-7xl px-4 sm:grid-cols-[repeat(var(--n),minmax(0,1fr))] sm:px-6"
+          className="reveal-stagger mx-auto grid max-w-7xl px-4 sm:grid-cols-[repeat(var(--n),minmax(0,1fr))] sm:px-6"
           style={{ "--n": big.length } as React.CSSProperties}
         >
           {big.map((b) => (
@@ -75,7 +80,7 @@ export function ProofBand() {
               <span aria-hidden className="absolute top-0 left-0 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-fiber shadow-[0_0_0_4px_rgb(6_182_212_/_0.15),0_0_18px_var(--color-fiber)] max-sm:hidden" />
               <p className="flex items-baseline gap-3 font-mono">
                 <span className="proof-figure text-[clamp(4.5rem,10vw,9.5rem)] leading-[0.9] font-semibold tracking-[-0.06em] tabular-nums">
-                  {b.value}
+                  <CountUp text={b.value} />
                 </span>
                 {b.unit && <span className="text-2xl font-medium text-fiber sm:text-3xl">{b.unit}</span>}
               </p>
@@ -86,7 +91,10 @@ export function ProofBand() {
       </div>
 
       <div className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
-        <dl className="grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/[0.07] sm:grid-cols-3">
+        <dl
+          className="reveal grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/[0.07] sm:grid-cols-[repeat(var(--n),minmax(0,1fr))] sm:max-w-[calc(var(--n)*26rem)]"
+          style={{ "--n": stats.length } as React.CSSProperties}
+        >
           {stats.map((s) => (
             <div key={s.label} className="surface-cell flex flex-col-reverse gap-1.5 px-5 py-5">
               <dt className="text-sm text-muted-foreground">{s.label}</dt>

@@ -1,6 +1,7 @@
 import { useLocale, useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { StatusBadge } from "@/components/hud/StatusBadge"
+import { BrandLogo } from "@/components/hud/BrandLogo"
 import { MotionToggle } from "@/components/hud/MotionToggle"
 import { TrackedLink } from "@/components/hud/TrackedLink"
 import type { AnalyticsEvent } from "@/lib/analytics"
@@ -13,6 +14,9 @@ import { stateName } from "@/lib/geo/state-names"
 
 /** "+52 5540947678" → "5540947678": local visitors read national format; links keep +52. */
 const national = (v: string) => v.replace(/^\+52\s*/, "")
+
+/** Site paths ("/aviso-de-privacidad") get the locale prefix; absolute URLs pass through. */
+const localHref = (v: string, prefix: string) => (v.startsWith("/") ? `${prefix}${v}` : v)
 
 const A = "rounded text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 
@@ -73,15 +77,14 @@ export function Footer({ base = "" }: { base?: string }) {
   const prefix = base || `/${locale}`
 
   return (
-    <footer id="footer" data-section="footer" className="relative overflow-hidden border-t border-border bg-surface pb-16 md:pb-0">
+    <footer id="footer" data-section="footer" className="relative overflow-hidden border-t border-border bg-background pb-16 [background-image:radial-gradient(55%_45%_at_50%_100%,rgb(6_182_212/0.10),transparent_70%),radial-gradient(35%_30%_at_85%_100%,rgb(167_139_250/0.08),transparent_70%)] md:pb-0">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr]">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span aria-hidden className="inline-block size-4 rotate-45 rounded-[3px] bg-fiber shadow-[0_0_12px_var(--color-fiber)]" />
             {isPlaceholder(company.name) ? (
               <PlaceholderChip keyName={company.name.key} />
             ) : (
-              <span className="font-mono text-sm">{company.name}</span>
+              <BrandLogo alt={company.name} height={36} className="-ml-1.5" />
             )}
           </div>
           <p className="max-w-xs text-sm text-muted-foreground">{t("tagline")}</p>
@@ -125,8 +128,8 @@ export function Footer({ base = "" }: { base?: string }) {
         <div>
           <h2 className="eyebrow mb-3">{t("legal")}</h2>
           <ul className="space-y-2 text-sm">
-            <Field label={t("privacy")} value={company.legal.privacyUrl} href={(v) => v} showValue={false} />
-            <Field label={t("terms")} value={company.legal.termsUrl} href={(v) => v} showValue={false} />
+            <Field label={t("privacy")} value={company.legal.privacyUrl} href={(v) => localHref(v, prefix)} showValue={false} />
+            <Field label={t("terms")} value={company.legal.termsUrl} href={(v) => localHref(v, prefix)} showValue={false} />
           </ul>
         </div>
       </div>

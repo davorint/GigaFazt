@@ -30,8 +30,13 @@ export const MAP_BOUNDS: [[number, number], [number, number]] = [
   [-96.4, 21.2],
 ]
 
-/** Initial view fitting all three states. */
+/**
+ * Initial view: framed on the service zone (CDMX + bordering Edomex
+ * municipios + Cuernavaca/Tepoztlán, bbox ≈ [-99.54, 18.84] – [-98.68, 19.69])
+ * with a margin, so the served area fills the table and the unserved parts of
+ * the states fall off toward the edges.
+ */
 export const MAP_FIT: [[number, number], [number, number]] = [
-  [-100.62, 18.33],
-  [-98.59, 20.29],
+  [-100.0, 18.62],
+  [-98.3, 19.95],
 ]

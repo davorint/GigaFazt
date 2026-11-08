@@ -8,7 +8,7 @@ import * as THREE from "three"
 
 /**
  * The hero's WebGL layer (DESIGN "Hero 3D direction"): curved glass fiber
- * strands bundled on the left and fanning out, each with an emissive cyan core
+ * strands converging from the left into one node and fanning out to the right, each with an emissive cyan core
  * and light pulses travelling along it. Loaded only via `next/dynamic`
  * ({ ssr: false }) from `FiberBackdrop`, so three.js stays out of the initial
  * bundle (hard rule #8). Never mounted under reduced motion — the poster is the
@@ -17,16 +17,20 @@ import * as THREE from "three"
 
 const CORE_COLOR = "#22d3ee"
 const PULSE_COLOR = "#a5f3fc"
-const PULSES_PER_STRAND = 2
+const PULSES_PER_STRAND = 3
+/** Where the bundle pinches (world units): right of the headline on desktop, under the copy on phones. */
+const NODES = { desktop: [1.7, 0.3], mobile: [0.3, -1.9] } as const
 
 function Strands({
   strands,
   interactive,
   showPulses,
+  node: NODE,
 }: {
   strands: number
   interactive: boolean
   showPulses: boolean
+  node: readonly [number, number]
 }) {
   const group = useRef<THREE.Group>(null)
   const pulses = useRef<THREE.InstancedMesh>(null)
@@ -35,30 +39,35 @@ function Strands({
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const up = useMemo(() => new THREE.Vector3(0, 1, 0), [])
 
+  // Bow-tie bundle: strands run in from the left edge (the network), pinch
+  // through one bright node to the right of the headline (GigaFazt), then fan
+  // out toward the right edge (the homes). Light flows left → right.
   const curves = useMemo(
     () =>
       Array.from({ length: strands }, (_, i) => {
         const t = strands === 1 ? 0.5 : i / (strands - 1)
-        const spread = (t - 0.5) * 2 // -1..1
-        const endY = spread * 2.3
-        const endZ = Math.cos(t * Math.PI) * 0.9
+        const s = (t - 0.5) * 2 // -1..1
+        const z = Math.cos(t * Math.PI) * 0.9
+        const [nx, ny] = NODE
         return new THREE.CatmullRomCurve3([
-          new THREE.Vector3(-4.6, spread * 0.12, 0),
-          new THREE.Vector3(-2.4, spread * 0.55, endZ * 0.3),
-          new THREE.Vector3(0.6, spread * 1.2, endZ),
-          new THREE.Vector3(3.4, endY * 0.95, endZ * 0.7),
-          new THREE.Vector3(6.2, endY, endZ * 0.3),
+          new THREE.Vector3(-6.4, ny + s * 2.9 - 0.4, -0.8 * z),
+          new THREE.Vector3(-3.2, ny + s * 1.5 - 0.15, -0.3 * z),
+          new THREE.Vector3(nx - 1.3, ny + s * 0.22, 0),
+          new THREE.Vector3(nx, ny + s * 0.03, 0),
+          new THREE.Vector3(nx + 1.2, ny + s * 0.35, z * 0.4),
+          new THREE.Vector3(nx + 2.8, ny + s * 1.6 - 0.2, z * 0.8),
+          new THREE.Vector3(6.6, s * 2.6 - 0.1, z * 0.3),
         ])
       }),
-    [strands]
+    [strands, NODE]
   )
 
   const shellGeos = useMemo(
-    () => curves.map((c) => new THREE.TubeGeometry(c, 64, 0.028, 8, false)),
+    () => curves.map((c) => new THREE.TubeGeometry(c, 128, 0.028, 8, false)),
     [curves]
   )
   const coreGeos = useMemo(
-    () => curves.map((c) => new THREE.TubeGeometry(c, 64, 0.008, 6, false)),
+    () => curves.map((c) => new THREE.TubeGeometry(c, 128, 0.008, 6, false)),
     [curves]
   )
 
@@ -95,7 +104,7 @@ function Strands({
     const inst = pulses.current
     if (!inst) return
     // Pulses travel along the curves; cursor activity speeds them up ~1.5×.
-    const speed = 0.16 * (1 + boost.current * 0.5)
+    const speed = 0.11 * (1 + boost.current * 0.5)
     const t = state.clock.elapsedTime
     for (let i = 0; i < count; i++) {
       const curve = curves[Math.floor(i / PULSES_PER_STRAND)]
@@ -139,8 +148,8 @@ function Strands({
       )}
 
       {/* The bundle node. */}
-      <mesh position={[-4.5, 0, 0]}>
-        <sphereGeometry args={[0.13, 16, 16]} />
+      <mesh position={[NODE[0], NODE[1], 0]}>
+        <sphereGeometry args={[0.1, 16, 16]} />
         <meshBasicMaterial color="#ecfeff" toneMapped={false} />
       </mesh>
     </group>
@@ -179,8 +188,8 @@ export function FiberScene({
       />
       <ambientLight intensity={0.5} />
       <directionalLight position={[3, 4, 5]} intensity={1.2} color="#67e8f9" />
-      <pointLight position={[-4.5, 0, 2]} intensity={6} distance={14} color={CORE_COLOR} />
-      <Strands strands={strands} interactive={interactive} showPulses={showPulses} />
+      <pointLight position={[NODES[quality][0], NODES[quality][1], 2]} intensity={6} distance={14} color={CORE_COLOR} />
+      <Strands strands={strands} interactive={interactive} showPulses={showPulses} node={NODES[quality]} />
       {bloom && (
         <EffectComposer>
           <Bloom luminanceThreshold={0.35} intensity={1.1} radius={0.7} mipmapBlur />

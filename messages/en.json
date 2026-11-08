@@ -1,7 +1,7 @@
 {
   "meta": {
-    "title": "Symmetrical fiber internet for Mexico City, the State of Mexico and Morelos",
-    "description": "100% symmetrical fiber internet in Mexico City, the State of Mexico and Morelos. The same download and upload speed, from {min} up to {max}.",
+    "title": "Symmetrical fiber internet in the Mexico City metro area",
+    "description": "100% symmetrical fiber internet in the Mexico City metro area and in Cuernavaca, Tepoztlán and Amatlán. The same download and upload speed, from {min} up to {max}.",
     "wifi7": "The {speed} plan includes a Wi-Fi 7 modem."
   },
   "nav": {
@@ -25,7 +25,7 @@
   },
   "hero": {
     "eyebrow": "100% SYMMETRICAL FIBER",
-    "h1": "Symmetrical gigabit for ${price} a month.",
+    "h1": "Symmetrical gigabit for <hl>${price} a month</hl>.",
     "h1NoPrice": "Symmetrical gigabit for your home or business.",
     "subhead": "Upload a 4K video in seconds. The same download and upload speed on every plan.",
     "viewPlans": "See plans",
@@ -114,6 +114,10 @@
     }
   },
   "recommender": {
+    "promptTitle": "Not sure which one?",
+    "promptLead": "Answer three questions and we'll tell you which plan fits.",
+    "promptCta": "Help me choose",
+    "close": "Close",
     "title": "Which plan do I need?",
     "lead": "Three questions and we'll tell you which one fits.",
     "step": "Step {n} of {total}",
@@ -152,13 +156,22 @@
       "top": "It's our fastest plan: the biggest jump we can give you today."
     },
     "choose": "Choose this plan",
-    "wifi7": "Includes a Wi-Fi 7 modem: more devices online at once and better Wi-Fi speed."
+    "wifi7": "Includes a Wi-Fi 7 modem: more devices online at once and better Wi-Fi speed.",
+    "showCard": "Show me the plan"
   },
   "trust": {
     "noHiddenFees": "No hidden fees",
     "install": "Installed in",
     "localSupport": "Local support",
-    "guarantee": "Guarantee"
+    "guarantee": "Guarantee",
+    "freeInstall": "Free installation",
+    "freeInstallSub": "You pay nothing to install",
+    "noTerm": "No minimum term",
+    "noTermSub": "No lock-in contract",
+    "modem": "Modem included",
+    "modemSub": "On loan, at no extra cost",
+    "monitor": "24 h monitoring",
+    "monitorSub": "Technical staff watch the network"
   },
   "compare": {
     "title": "Compare plans",
@@ -208,12 +221,14 @@
       "plan": "Pick a plan.",
       "date": "Pick today or a later date.",
       "consent": "We need your consent to contact you."
-    }
+    },
+    "simplified": "Short privacy notice: <entity></entity> (“{name}”), with its address at <address></address>, will use your name, phone, email and address to contact you, confirm coverage and schedule your installation. We may also send you promotions; if you don't want them, write to <email></email>. We don't share your data with third parties except when the law requires it.",
+    "readFull": "Read the full notice"
   },
   "footer": {
     "privacy": "Privacy Notice",
     "terms": "Terms and conditions",
-    "tagline": "Symmetrical fiber internet in Mexico City, the State of Mexico and Morelos.",
+    "tagline": "Symmetrical fiber internet in the Mexico City metro area and in Cuernavaca, Tepoztlán and Amatlán.",
     "explore": "Explore",
     "faq": "FAQ",
     "coverage": "Coverage",
@@ -298,7 +313,7 @@
     }
   },
   "map": {
-    "lead": "We serve Mexico City, the State of Mexico and Morelos, with more than {count} active clients. Here are some buildings that are already clients plus a few illustrative examples.",
+    "lead": "We serve the Mexico City metro area and Cuernavaca, Tepoztlán and Amatlán in Morelos. We have more than {count} active clients, mostly in the west of the city. Here are some buildings that are already clients plus a few illustrative examples.",
     "layers": "Layers",
     "layer": {
       "clients": "Clients",
@@ -326,7 +341,7 @@
     "listTitle": "Clients and service areas",
     "listDesc": "Text version of the map. Pick a client to locate it.",
     "approx": "Locations approximate to neighborhood level.",
-    "mapAlt": "Service area map: Mexico City, the State of Mexico and Morelos, with alcaldía and municipality limits. Marks {real} client buildings and {demo} illustrative examples, with illustrative lines between CDMX, Toluca and Cuernavaca.",
+    "mapAlt": "Service area map: Mexico City's 16 alcaldías, neighboring State of Mexico municipalities to the west, north and east, and Cuernavaca and Tepoztlán in Morelos, over the outline of the three states. Marks {real} client buildings and {demo} illustrative examples, with illustrative lines between the city center, the west, the north and Cuernavaca.",
     "cta": "Live in the area? Sign up and we'll confirm your coverage",
     "ui": {
       "map": "Map",
@@ -367,7 +382,7 @@
     "steps": {
       "zone": {
         "title": "Check your area",
-        "body": "We serve {states}.",
+        "body": "We serve {area}.",
         "link": "See the map"
       },
       "plan": {
@@ -440,10 +455,12 @@
       },
       "coverage": {
         "q": "Where do you provide service?",
-        "a": "In {states}. We confirm coverage at your exact address when you sign up."
+        "a": "In {area}. We confirm coverage at your exact address when you sign up."
       }
     },
-    "officeHoursValue": "Monday to Friday, {open} to {close}"
+    "officeHoursValue": "Monday to Friday, {open} to {close}",
+    "helpTitle": "Can't find your answer?",
+    "helpBody": "Message us on WhatsApp and we'll help you out."
   },
   "cta": {
     "eyebrow": "SIGN UP",
@@ -469,13 +486,15 @@
     "seeMap": "See on the map",
     "clients": "Clients in {name}",
     "plansTitle": "Plans in {name}",
-    "others": "We also serve"
+    "others": "We also serve",
+    "where": "Where we provide service"
   },
   "seo": {
     "serviceName": "Symmetrical fiber internet",
     "serviceType": "Fiber-to-the-home internet (FTTH)",
     "serviceDescription": "Fiber-to-the-home internet with the same download and upload speed.",
-    "ogAlt": "Symmetrical fiber internet in Mexico City, the State of Mexico and Morelos"
+    "ogAlt": "Symmetrical fiber internet in the Mexico City metro area and in Cuernavaca, Tepoztlán and Amatlán",
+    "ogZones": "Mexico City metro area · Cuernavaca · Tepoztlán · Amatlán"
   },
   "motion": {
     "pause": "Pause animations",
@@ -484,15 +503,21 @@
   "states": {
     "cdmx": {
       "name": "Mexico City",
-      "in": "Mexico City"
+      "in": "Mexico City",
+      "served": "Mexico City",
+      "scope": "All 16 alcaldías."
     },
     "estado-de-mexico": {
       "name": "State of Mexico",
-      "in": "the State of Mexico"
+      "in": "the State of Mexico",
+      "served": "the State of Mexico metro area",
+      "scope": "Municipalities next to Mexico City."
     },
     "morelos": {
       "name": "Morelos",
-      "in": "Morelos"
+      "in": "Morelos",
+      "served": "Cuernavaca, Tepoztlán and Amatlán",
+      "scope": "Cuernavaca, Tepoztlán and Amatlán."
     }
   },
   "business": {
@@ -564,8 +589,174 @@
       }
     },
     "ctaTitle": "Bring fiber to your whole business",
-    "ctaLead": "We serve {states}. Tell us about your project and we will prepare a custom quote.",
+    "ctaLead": "We serve {area}. Tell us about your project and we will prepare a custom quote.",
     "smallOffice": "Just need internet for a small store or office?",
     "plansLink": "View plans"
+  },
+  "privacy": {
+    "metaTitle": "Privacy Notice",
+    "metaDescription": "{name}'s full Privacy Notice: which personal data we process, why, and how to exercise your ARCO rights.",
+    "eyebrow": "LEGAL",
+    "title": "Privacy Notice",
+    "updated": "Last updated: {date}",
+    "toc": "Contents",
+    "intro": "At {name} we take care of your information. This Privacy Notice explains which personal data we process, what we use it for and how to exercise your rights, under Mexico's Federal Law on the Protection of Personal Data Held by Private Parties (published March 20, 2025). It applies to anyone who leaves their details on this site, on WhatsApp or by phone, and to our customers. This is a translation for convenience; the Spanish version is the legally binding one.",
+    "sections": [
+      {
+        "id": "responsable",
+        "title": "Who is responsible for your data",
+        "paras": [
+          "{entity} (“{name}”), with an address for notices at {address}, is responsible for processing your personal data.",
+          "Our Personal Data Department handles any request or question about this notice at {email}."
+        ]
+      },
+      {
+        "id": "datos",
+        "title": "Personal data we process",
+        "paras": [
+          "Depending on your relationship with us, we may process these categories of data:"
+        ],
+        "items": [
+          [
+            "Identification and contact",
+            "name, phone number (including WhatsApp) and email."
+          ],
+          [
+            "Service location",
+            "the address where you request or receive the service, to confirm coverage and install."
+          ],
+          [
+            "Your request and service",
+            "the plan and add-ons you choose, your preferred installation date, and your support and communication history."
+          ],
+          [
+            "Tax data, only if you request an invoice",
+            "RFC, name or company name, tax regime, postal code and tax address."
+          ],
+          [
+            "Technical service data (customers)",
+            "data needed to run the network and support you, such as modem identifiers, your assigned IP address and technical connection logs."
+          ],
+          [
+            "Browsing this site",
+            "technical data described in the cookies section."
+          ]
+        ],
+        "after": [
+          "We do not process sensitive personal data. We do not collect financial or patrimonial data (such as card or bank account numbers) through this site; if it were ever needed, we would ask for your express consent.",
+          "You must be of legal age to sign up. We do not knowingly collect data from minors."
+        ]
+      },
+      {
+        "id": "finalidades",
+        "title": "What we use your data for",
+        "paras": [
+          "Primary purposes. They are necessary for the relationship you have or want to have with us, so they do not require your consent (article 9, section IV, of the Law):"
+        ],
+        "items": [
+          "Handle your request and contact you by phone, WhatsApp or email.",
+          "Confirm we have coverage at your address.",
+          "Schedule and carry out the installation.",
+          "Sign and manage your contract and provide the internet and, if applicable, TV services you sign up for.",
+          "Provide technical support and handle outages, complaints and clarifications.",
+          "Invoice and process payments for your services.",
+          "Operate and protect our network and this site, and prevent fraud.",
+          "Handle your ARCO requests and comply with legal obligations and requests from competent authorities."
+        ],
+        "after": [
+          "Secondary purposes. They are not necessary to provide the service, but help us serve you better:",
+          "• Sending you promotions, offers and news about our services.",
+          "• Inviting you to quality and satisfaction surveys.",
+          "If you don't want us to use your data for these purposes, email us at any time at {email} with the subject “No promotions”. Saying no will never be a reason to refuse or condition the service."
+        ]
+      },
+      {
+        "id": "transferencias",
+        "title": "Who we share your data with",
+        "paras": [
+          "We do not sell or rent your personal data.",
+          "We do not make transfers that require your consent. We may only transfer your data without your consent in the cases allowed by article 36 of the Law, for example to competent authorities when a law requires it or under a court order. If this changes, we will update this notice and include an option to accept or reject the transfer before it happens.",
+          "We rely on providers that process data on our behalf (hosting for this site, storage, messaging and customer management). They may only use it to provide their service to us and are bound by confidentiality.",
+          "If you message us on WhatsApp, that conversation is also subject to WhatsApp's terms and privacy policy."
+        ]
+      },
+      {
+        "id": "arco",
+        "title": "Your ARCO rights and withdrawing consent",
+        "paras": [
+          "You have the right to know what data we hold and how we use it (Access), to correct it if it is inaccurate or incomplete (Rectification), to ask us to delete it from our records (Cancellation) and to object to its use for specific purposes (Opposition). You may also withdraw any consent you have given us.",
+          "To exercise them, send your request to {email} including:"
+        ],
+        "items": [
+          "Your name and an address or email to receive our answer.",
+          "A copy of your valid official ID or, if a representative acts for you, proof of representation and their ID.",
+          "A clear description of the data the request is about (except for access requests).",
+          "The right you want to exercise or what you are asking for.",
+          "Any other information or document that helps us locate your data."
+        ],
+        "after": [
+          "We will reply within 20 days of receiving your request. If it is granted, we will carry it out within the following 15 days. Exercising these rights is free; we may only charge reproduction, copying or shipping costs.",
+          "Withdrawal is not retroactive. If you withdraw consent for a primary purpose or ask us to delete essential data, we may no longer be able to provide the service."
+        ]
+      },
+      {
+        "id": "limitar",
+        "title": "How to limit the use or disclosure of your data",
+        "paras": [
+          "You can ask us to stop using your data for promotions by emailing {email}. We will add you to our internal opt-out list.",
+          "You can also register your number in the Public Registry to Avoid Advertising (REPEP) run by Mexico's Federal Consumer Protection Agency (Profeco)."
+        ]
+      },
+      {
+        "id": "cookies",
+        "title": "Cookies and similar technologies",
+        "paras": [
+          "This site only uses what it needs to work:"
+        ],
+        "items": [
+          [
+            "Language",
+            "a cookie that remembers the language you chose."
+          ],
+          [
+            "Animations",
+            "a preference saved in your browser when you use “Pause animations”."
+          ],
+          [
+            "Technical data",
+            "our server logs data such as your IP address, browser type and the pages requested, to run and protect the site. We use your connection's approximate country only to show you the site in Spanish."
+          ]
+        ],
+        "after": [
+          "We currently use no third-party advertising or analytics cookies. If we add them, we will update this notice and let you reject them. You can delete or block cookies in your browser settings; the site will keep working."
+        ]
+      },
+      {
+        "id": "seguridad",
+        "title": "Security and retention",
+        "paras": [
+          "We apply administrative, technical and physical security measures to protect your data against damage, loss, alteration, destruction or unauthorized use, access or processing. If a breach significantly affects your rights, we will tell you immediately.",
+          "We keep your data only as long as needed for the purposes in this notice and to meet our legal obligations. If you leave your details but don't sign up, we keep them only while we follow up on your request. After that, we block and securely delete them."
+        ]
+      },
+      {
+        "id": "cambios",
+        "title": "Changes to this notice",
+        "paras": [
+          "We may update this notice due to legal changes, changes in our services or in how we process your data. The current version will always be at {url}, with its last-updated date.",
+          "If the change is significant (for example, a new purpose or a transfer), we will also tell you by email or WhatsApp, if we have them, and ask for your consent when the law requires it."
+        ]
+      },
+      {
+        "id": "autoridad",
+        "title": "Authority",
+        "paras": [
+          "If you believe your right to the protection of your personal data has been violated, you may go to the Secretaría Anticorrupción y Buen Gobierno, the competent authority."
+        ]
+      }
+    ]
+  },
+  "coverage": {
+    "area": "the Mexico City metro area and Cuernavaca, Tepoztlán and Amatlán (Morelos)"
   }
 }
