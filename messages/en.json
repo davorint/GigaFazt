@@ -650,7 +650,7 @@
   },
   "business": {
     "metaTitle": "Fiber for businesses: custom installations",
-    "metaDescription": "Custom fiber optic installations for your business: gigabit speeds in every area, dedicated internet up to {max} Gbps, enterprise internet, business internet, structured cabling, business Wi-Fi and network equipment.",
+    "metaDescription": "Custom fiber optic installations for your business: gigabit speeds in every area, dedicated internet up to {max} Gbps, an internal fiber network up to {lanMax} Gbps, enterprise internet, business internet, structured cabling, business Wi-Fi and network equipment.",
     "eyebrow": "Businesses",
     "h1": "Gigabit speeds in every area of your business.",
     "lead": "We design and install a custom fiber network so your offices, floors, warehouses and stores all work at the same speed.",
@@ -673,6 +673,10 @@
       "customInstall": {
         "title": "Custom fiber installations",
         "body": "We design the network around your space and operation, and install it end to end."
+      },
+      "fiberLan": {
+        "title": "Fiber optic internal network",
+        "body": "We wire your whole company with optical fiber so you get an internal network from {from} up to {to} Gbps."
       },
       "everyArea": {
         "title": "Gigabit in every area",
@@ -705,6 +709,8 @@
         "minimum": "A guaranteed minimum",
         "shared": "Shared, best effort"
       },
+      "videoLabel": "Video conferences",
+      "videoValue": "Several at once, without problems",
       "supportLabel": "Support",
       "support": {
         "monitored247": "24/7 with active monitoring",
@@ -720,11 +726,11 @@
         },
         "enterprise": {
           "name": "Enterprise internet",
-          "tagline": "For companies that work online all day."
+          "tagline": "Connect your whole company with optical fiber."
         },
         "businessInternet": {
           "name": "Business internet",
-          "tagline": "Symmetrical fiber for your business's day-to-day."
+          "tagline": "Connect your whole business at maximum speed."
         }
       },
       "whatsappMessage": "Hi, I'd like a quote for {tier} for my business.",

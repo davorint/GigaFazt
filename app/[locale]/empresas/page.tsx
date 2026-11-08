@@ -20,7 +20,7 @@ export async function generateMetadata({
   setRequestLocale(locale)
   const t = await getTranslations({ locale, namespace: "business" })
   const ts = await getTranslations({ locale, namespace: "seo" })
-  return pageMeta(locale, "/empresas", t("metaTitle"), t("metaDescription", { max: business.maxLinkGbps }), ts("ogAlt"))
+  return pageMeta(locale, "/empresas", t("metaTitle"), t("metaDescription", { max: business.maxLinkGbps, lanMax: business.internalNetworkGbps.to }), ts("ogAlt"))
 }
 
 /**

@@ -1,9 +1,10 @@
 import { useTranslations } from "next-intl"
-import { Building2, Cable, DraftingCompass, Router, Wifi } from "lucide-react"
+import { Building2, Cable, DraftingCompass, Network, Router, Wifi } from "lucide-react"
 import { business } from "@/lib/business"
 
 const ICONS = {
   customInstall: DraftingCompass,
+  fiberLan: Network,
   everyArea: Building2,
   cabling: Cable,
   wifi: Wifi,
@@ -42,7 +43,7 @@ export function BusinessServices() {
                 {String(i + 1).padStart(2, "0")}
               </span>
               <h3 className="text-xl font-medium tracking-[-0.02em] text-white sm:text-2xl">{t(`services.${id}.title`)}</h3>
-              <p className="col-start-2 text-zinc-400 md:col-start-auto">{t(`services.${id}.body`, { max: business.maxLinkGbps })}</p>
+              <p className="col-start-2 text-zinc-400 md:col-start-auto">{t(`services.${id}.body`, { max: business.maxLinkGbps, ...business.internalNetworkGbps })}</p>
               <Icon className="hidden size-6 justify-self-end text-zinc-400 md:block" strokeWidth={1.25} aria-hidden />
             </li>
           )

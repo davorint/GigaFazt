@@ -650,7 +650,7 @@
   },
   "business": {
     "metaTitle": "Fibra óptica para empresas: instalaciones a la medida",
-    "metaDescription": "Instalaciones de fibra óptica a la medida para tu negocio: velocidad gigabit en todas las áreas, internet dedicado de hasta {max} Gbps, internet empresarial, internet para negocios, cableado estructurado, Wi-Fi empresarial y equipo de red.",
+    "metaDescription": "Instalaciones de fibra óptica a la medida para tu negocio: velocidad gigabit en todas las áreas, internet dedicado de hasta {max} Gbps, red interna de fibra de hasta {lanMax} Gbps, internet empresarial, internet para negocios, cableado estructurado, Wi-Fi empresarial y equipo de red.",
     "eyebrow": "Empresas",
     "h1": "Velocidad gigabit en todas las áreas de tu negocio.",
     "lead": "Diseñamos e instalamos tu red de fibra óptica a la medida, para que oficinas, pisos, bodegas y locales trabajen a la misma velocidad.",
@@ -673,6 +673,10 @@
       "customInstall": {
         "title": "Instalaciones de fibra a la medida",
         "body": "Diseñamos la red según tu espacio y tu operación, y la instalamos de punta a punta."
+      },
+      "fiberLan": {
+        "title": "Red interna de fibra óptica",
+        "body": "Cableamos con fibra óptica toda tu empresa para que tengas una red interna de {from} hasta {to} Gbps."
       },
       "everyArea": {
         "title": "Gigabit en cada área",
@@ -705,6 +709,8 @@
         "minimum": "Te garantizamos un mínimo",
         "shared": "Compartido, al mejor esfuerzo"
       },
+      "videoLabel": "Videoconferencias",
+      "videoValue": "Varias al mismo tiempo, sin problemas",
       "supportLabel": "Soporte",
       "support": {
         "monitored247": "24/7 con monitoreo activo",
@@ -720,11 +726,11 @@
         },
         "enterprise": {
           "name": "Internet empresarial",
-          "tagline": "Para empresas que trabajan conectadas todo el día."
+          "tagline": "Conecta toda tu empresa con fibra óptica."
         },
         "businessInternet": {
           "name": "Internet para negocios",
-          "tagline": "Fibra simétrica para el día a día de tu negocio."
+          "tagline": "Conecta todo tu negocio a la máxima velocidad."
         }
       },
       "whatsappMessage": "Hola, quiero cotizar {tier} para mi negocio.",

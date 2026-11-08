@@ -34,11 +34,12 @@ export function BusinessTiers() {
               label: t("bandwidthLabel"),
               value: t(`bandwidth.${tier.bandwidth}`),
             },
+            ...(tier.videoCalls ? [{ label: t("videoLabel"), value: t("videoValue") }] : []),
             { label: t("supportLabel"), value: t(`support.${tier.support}`) },
             ...(tier.backupRoute ? [{ label: t("extraLabel"), value: t("backupRoute") }] : []),
           ]
           return (
-            <li key={tier.id} className={`flex flex-col p-6 sm:p-8 ${i === 0 ? "biz-frame" : "border border-[var(--biz-line)]"}`}>
+            <li key={tier.id} className={`flex flex-col p-6 sm:p-8 ${tier.id === "dedicated" ? "biz-frame" : "border border-[var(--biz-line)]"}`}>
               <p className="font-mono text-sm tabular-nums text-[var(--biz-accent)]" aria-hidden>
                 {String(i + 1).padStart(2, "0")}
               </p>
