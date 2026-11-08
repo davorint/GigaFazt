@@ -1019,6 +1019,123 @@ html[data-shot] .biz-race-fill {
   transform: scaleX(var(--story-p, 0));
 }
 
+/* Interactive floor (FloorLab): points are real buttons over the plan
+   (≥ 24 px targets); the selected run's light flows from the closet. */
+.floor-point {
+  position: absolute;
+  display: flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(196 181 253 / 0.55);
+  border-radius: 999px;
+  background: #0b0b0e;
+  color: #c4b5fd;
+  transform: translate(-50%, -50%);
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.floor-point:hover {
+  border-color: #ffffff;
+  color: #ffffff;
+}
+.floor-point:focus-visible {
+  outline: 2px solid var(--biz-accent, #a78bfa);
+  outline-offset: 3px;
+}
+.floor-point-lit,
+.floor-point[aria-pressed="true"] {
+  border-color: #ffffff !important;
+  background: #a78bfa;
+  color: #0b0b0e !important;
+  box-shadow: 0 0 0 4px rgb(167 139 250 / 0.22), 0 0 18px rgb(167 139 250 / 0.8);
+}
+.floor-point-closet {
+  width: 34px;
+  height: 34px;
+  border-color: #a78bfa;
+  border-radius: 6px;
+  background: #1a1430;
+  color: #ffffff;
+}
+@media (min-width: 640px) {
+  .floor-point {
+    width: 30px;
+    height: 30px;
+  }
+  .floor-point-closet {
+    width: 40px;
+    height: 40px;
+  }
+}
+@keyframes floor-flow {
+  to { stroke-dashoffset: -18; }
+}
+.floor-run-lit {
+  stroke-dasharray: 10 8;
+  animation: floor-flow 0.9s linear infinite;
+}
+
+/* Phone / reduced-motion version of the hero story (BusinessHero): each
+   chapter's schematic lights its part once it is first seen. Hidden while
+   the pinned desktop story runs. */
+.iso-dim {
+  opacity: 0.32;
+  transition: opacity 0.9s ease;
+}
+.iso-hot {
+  opacity: 0.32;
+  transition: opacity 0.9s ease 0.2s, filter 0.9s ease 0.2s;
+}
+[data-seen] .iso-hot,
+html[data-shot] .iso-hot {
+  opacity: 1;
+  filter: drop-shadow(0 0 6px rgb(167 139 250 / 0.85));
+}
+@media (min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="off"]):not([data-shot]) .biz-story-alt {
+    display: none;
+  }
+}
+
+/* Footer on /empresas (Footer variant="biz"): graphite, violet floor light,
+   sans-serif headings instead of the consumer pages' mono eyebrows. */
+footer.footer-biz {
+  border-color: rgb(255 255 255 / 0.09);
+  background-color: #060608;
+  background-image: radial-gradient(50% 45% at 50% 100%, rgb(167 139 250 / 0.09), transparent 70%) !important;
+}
+.footer-biz .eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.footer-biz .footer-wordmark {
+  background:
+    radial-gradient(70% 120% at 50% 0%, rgb(196 181 253 / 0.22), transparent 70%),
+    linear-gradient(90deg, rgb(228 228 231 / 0.2), rgb(255 255 255 / 0.32) 50%, rgb(228 228 231 / 0.2));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* "Cómo trabajamos" (BusinessSteps): phases along a vertical fiber riser; a
+   packet runs down it while in view. */
+@keyframes biz-riser-run {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: none; opacity: 0; }
+}
+.biz-riser-packet {
+  opacity: 0;
+  animation: biz-riser-run 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-play-state: paused;
+}
+[data-inview] .biz-riser-packet {
+  animation-play-state: running;
+}
+
 /* Closing scene: the schematic fully lit. */
 .biz-finale-building svg {
   filter: drop-shadow(0 0 10px rgb(167 139 250 / 0.55));

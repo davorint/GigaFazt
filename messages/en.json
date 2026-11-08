@@ -703,56 +703,6 @@
         "body": "We supply and install the switches, firewalls and routers your network needs."
       }
     },
-    "lan": {
-      "items": {
-        "storage": {
-          "title": "Centralized solid-state storage"
-        },
-        "cameras": {
-          "title": "Several 8K video cameras at once",
-          "body": "Stream and record several 8K cameras at the same time without saturating your operation's network."
-        },
-        "sharing": {
-          "title": "Files and videos shared instantly",
-          "body": "A {gb} GB file moves between machines in about {tFrom} seconds on {from}GbE and in about {tTo} seconds on {to}GbE (theoretical network speed)."
-        },
-        "sharedHardware": {
-          "title": "Less spent on duplicate hardware"
-        },
-        "futureProof": {
-          "title": "Ready for the future, no rewiring",
-          "body": "The same fiber goes from {from}GbE to {to}GbE by changing only the equipment at each end. Your cabling doesn't become obsolete."
-        },
-        "backups": {
-          "title": "Automatic central backups"
-        },
-        "editing": {
-          "title": "Collaborative video editing"
-        },
-        "voip": {
-          "title": "IP phones across the company"
-        },
-        "segments": {
-          "title": "Separate networks per area",
-          "body": "Admin, cameras, guests and production on separate networks over the same fiber, for more security."
-        },
-        "buildings": {
-          "title": "Connect your buildings and warehouses"
-        },
-        "security": {
-          "title": "Integrated video surveillance and access control"
-        },
-        "signage": {
-          "title": "4K and 8K digital screens"
-        },
-        "fewerClosets": {
-          "title": "Fewer equipment rooms"
-        },
-        "wifi7": {
-          "title": "Business Wi-Fi 7 over fiber"
-        }
-      }
-    },
     "tiers": {
       "title": "Same speed, different availability.",
       "lead": "Get the speed you need in any package. What changes is how guaranteed your link is.",
@@ -803,45 +753,29 @@
       "figureNote": "An internal network from {from}GbE to {to}GbE (Gigabit Ethernet) between areas, floors and buildings, on your own fiber.",
       "whatsappMessage": "Hi, I'd like a quote for a fiber optic network for my company.",
       "doTitle": "What we do",
-      "usesTitle": "What your own fiber network makes possible",
-      "moreTitle": "And also",
-      "race": {
-        "file": "{gb} GB file",
-        "theoretical": "Theoretical time at line rate"
-      },
-      "lanes": {
-        "admin": "Admin",
-        "cameras": "Cameras",
-        "guests": "Guests",
-        "production": "Production",
-        "strand": "One single fiber"
-      },
-      "cams": {
-        "rec": "REC"
-      },
-      "future": {
-        "today": "Today",
-        "later": "Later",
-        "same": "The same fiber"
-      }
+      "doLead": "From where the fiber enters to the last workstation."
     },
     "stepsTitle": "From idea to a working network",
     "steps": {
       "talk": {
         "title": "Tell us about your space",
-        "body": "Message us on WhatsApp: which areas you want connected and how many people work there."
+        "body": "Answer four questions about your space and it reaches us on WhatsApp: what you need, where, for how many people and when.",
+        "out": "Your project summary"
       },
       "design": {
         "title": "We design your network",
-        "body": "We propose the installation, link and equipment that fit your operation."
+        "body": "We propose the installation, link and equipment that fit your operation.",
+        "out": "Network design"
       },
       "quote": {
         "title": "A custom quote",
-        "body": "You get a proposal with the scope and price of your project."
+        "body": "You get a proposal with the scope and price of your project.",
+        "out": "Scope and price"
       },
       "install": {
         "title": "We install and hand over",
-        "body": "We install the fiber and equipment and hand over a working network."
+        "body": "We install the fiber and equipment and hand over a working network.",
+        "out": "A working network"
       }
     },
     "ctaTitle": "Bring fiber to your whole business",
@@ -912,7 +846,162 @@
       "cut": "Simulate a primary link cut",
       "restore": "Restore primary link",
       "note": "Illustrative simulation. The backup route is optional on Internet dedicado, and switchover time depends on each link's design."
-    }
+    },
+    "brief": {
+      "title": "Tell us about your project",
+      "lead": "Four quick questions. At the end WhatsApp opens with a summary ready to send.",
+      "steps": {
+        "0": "What you need",
+        "1": "Your space",
+        "2": "Size and timing",
+        "3": "Summary"
+      },
+      "stepStatus": "Step {n} of {total}: {name}",
+      "questions": {
+        "0": "What do you need?",
+        "1": "What kind of space is it?",
+        "2": "How many people work there?",
+        "3": "Review and send"
+      },
+      "needs": {
+        "internet": "Business internet",
+        "fiberLan": "Internal fiber network",
+        "cabling": "Structured cabling",
+        "wifi": "Business Wi-Fi",
+        "equipment": "Network equipment"
+      },
+      "needsHint": {
+        "internet": "Symmetrical links up to {max} Gbps",
+        "fiberLan": "From {from}GbE to {to}GbE between areas and floors",
+        "cabling": "Fiber and copper to every workstation",
+        "wifi": "Coverage planned for the whole space",
+        "equipment": "Switches, firewalls and routers"
+      },
+      "tierQuestion": "Which internet package are you interested in?",
+      "tierUnsure": "Not sure yet",
+      "floorsQuestion": "How many floors or levels?",
+      "floors": {
+        "1": "1 level",
+        "2-3": "2 to 3 levels",
+        "4-10": "4 to 10 levels",
+        "10+": "More than 10"
+      },
+      "people": {
+        "1-10": "1 to 10",
+        "11-50": "11 to 50",
+        "51-200": "51 to 200",
+        "200+": "More than 200"
+      },
+      "whenQuestion": "When do you need it?",
+      "when": {
+        "asap": "As soon as possible",
+        "1-3m": "In 1 to 3 months",
+        "3m+": "In more than 3 months",
+        "exploring": "Just exploring"
+      },
+      "companyLabel": "Company name (optional)",
+      "preview": "Message that will be sent",
+      "privacy": "WhatsApp opens with this message for you to send. We don't store your answers.",
+      "message": {
+        "intro": "Hi, I'd like a quote for a project for my company.",
+        "needs": "I need",
+        "space": "Space",
+        "people": "People",
+        "when": "Timing",
+        "company": "Company"
+      },
+      "back": "Back",
+      "next": "Next",
+      "send": "Send on WhatsApp",
+      "close": "Close"
+    },
+    "floor": {
+      "title": "What a fiber network looks like inside.",
+      "lead": "Pick a type of space and tap any point to see what it connects and how the fiber reaches it.",
+      "spaceLabel": "Type of space",
+      "spaces": {
+        "offices": "Office",
+        "warehouses": "Warehouse",
+        "retail": "Restaurant",
+        "buildings": "Shopping plaza"
+      },
+      "segmentsToggle": "Show separate networks",
+      "segmentsLegend": "Networks",
+      "segments": {
+        "admin": "Admin",
+        "cameras": "Cameras and access",
+        "guests": "Guests",
+        "production": "Operations"
+      },
+      "hint": "Tap a point to see its fiber run.",
+      "caption": "Illustration: example layout",
+      "allOfType": "{count, plural, one {# in this space} other {# in this space}}",
+      "onNetwork": "On the {network} network",
+      "inventory": "{count} connected points",
+      "ctaNote": "Your quote starts with this type of space.",
+      "rooms": {
+        "reception": "Reception",
+        "meeting": "Meeting room",
+        "direction": "Management",
+        "work": "Work area",
+        "site": "Network room",
+        "kitchen": "Kitchen",
+        "office": "Office",
+        "docks": "Loading docks",
+        "storage": "Storage",
+        "hall": "Dining room",
+        "terrace": "Terrace",
+        "cashier": "Checkout",
+        "bathrooms": "Restrooms",
+        "unit": "Unit {n}",
+        "lobby": "Lobby",
+        "admin": "Admin office"
+      },
+      "kinds": {
+        "closet": {
+          "name": "Network room",
+          "short": "Network room",
+          "body": "Fiber from the street arrives here and your network begins: switches, firewall and patch panels in one place. From here, fiber runs to every point."
+        },
+        "ap": {
+          "name": "Wi-Fi access point",
+          "short": "Wi-Fi",
+          "body": "Connected by fiber, so Wi-Fi isn't held back by the cable. Its position is planned to cover the whole area."
+        },
+        "camera": {
+          "name": "Video camera",
+          "short": "Cameras",
+          "body": "Streams and records in high resolution to central storage, on its own network, without crowding your operation's."
+        },
+        "access": {
+          "name": "Access control",
+          "short": "Access",
+          "body": "Readers and doors on the same network as the cameras, with a central log."
+        },
+        "screen": {
+          "name": "Digital display",
+          "short": "Displays",
+          "body": "4K and 8K displays in lobbies, rooms, kitchens or stores, fed from your network."
+        },
+        "desk": {
+          "name": "Workstation",
+          "short": "Workstations",
+          "body": "Opens and saves files on central storage at network speed."
+        },
+        "phone": {
+          "name": "IP phone",
+          "short": "Phones",
+          "body": "IP phones in every area, on the same fiber network."
+        },
+        "storage": {
+          "name": "Central storage",
+          "short": "Storage",
+          "body": "Central SSD storage for the whole company, with automatic backups. A {gb} GB file moves in about {tTo} s at {to}GbE (theoretical speed)."
+        }
+      }
+    },
+    "stepsLead": "One team from start to finish.",
+    "stepsYouGet": "You get:"
   },
   "privacy": {
     "metaTitle": "Privacy Notice",

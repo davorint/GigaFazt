@@ -12,6 +12,7 @@ import { isPlaceholder } from "@/lib/placeholder"
 import { whatsappHref } from "@/lib/contact"
 import { track } from "@/lib/analytics"
 import { scrollToId } from "@/lib/scroll"
+import { brief } from "@/lib/brief"
 import { Brand } from "./Brand"
 import { SmartLink } from "./SmartLink"
 import { StatusBadge } from "./StatusBadge"
@@ -133,6 +134,13 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
   // /empresas: the CTA and the phone bottom bar lead to a quote, not to the consumer plans.
   const biz = current === "empresas"
   const bizQuoteHref = whatsapp ? whatsappHref(whatsapp, tb("whatsappMessage")) : "#business-cta"
+  // On /empresas the quote opens the project brief (lib/brief); modified clicks keep the plain link.
+  const openBizBrief = (e: React.MouseEvent<HTMLAnchorElement>, context: string) => {
+    if (!whatsapp || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+    e.preventDefault()
+    track("brief_opened", { context })
+    brief.open(undefined, context)
+  }
   const quickLinks = biz
     ? [
         { href: "#business-internet", label: t("bizInternet"), Icon: Layers },
@@ -208,7 +216,7 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
               <a
                 href={bizQuoteHref}
                 {...(whatsapp ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                onClick={() => whatsapp && track("whatsapp_clicked", { context: "nav_business" })}
+                onClick={(e) => openBizBrief(e, "nav_business")}
                 className="group hidden h-8 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-medium text-black transition-colors hover:bg-zinc-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none sm:inline-flex"
               >
                 {t("quote")}
@@ -282,7 +290,7 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
         {whatsapp ? (
           <a
             href={biz ? bizQuoteHref : whatsappHref(whatsapp)}
-            onClick={() => track("whatsapp_clicked", { context: biz ? "bottombar_business" : "bottombar" })}
+            onClick={(e) => (biz ? openBizBrief(e, "bottombar_business") : track("whatsapp_clicked", { context: "bottombar" }))}
             className={cn(
               "flex flex-col items-center gap-0.5 py-2 text-xs focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none",
               biz ? "font-medium text-white" : "text-muted-foreground"

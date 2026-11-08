@@ -1,27 +1,32 @@
 import { useTranslations } from "next-intl"
 import { ArrowUpRight, MessageCircle } from "lucide-react"
 import { cn } from "cn"
-import { TrackedLink } from "@/components/hud/TrackedLink"
+import { QuoteLink } from "./QuoteLink"
+import type { BriefPreset } from "@/lib/brief"
 import { PlaceholderChip } from "@/components/hud/PlaceholderChip"
 import { company } from "@/lib/company"
 import { isPlaceholder } from "@/lib/placeholder"
 import { whatsappHref } from "@/lib/contact"
 
 /**
- * The /empresas primary action, "Cotizar proyecto": opens a WhatsApp chat
- * (business quotes are per project, no prices online), optionally with a
- * specific opening message. Sans-serif, sentence case, near-square corners
+ * The /empresas primary action, "Cotizar proyecto": opens the project brief
+ * (lib/brief), which ends in a WhatsApp chat with a structured summary;
+ * without JS it is a plain WhatsApp link with `message` (business quotes are
+ * per project, no prices online). Sans-serif, sentence case, near-square corners
  * (the page's sharp language); a small WhatsApp glyph says where it goes and
  * the channel is in the accessible name. `ghost` = hairline secondary.
  */
 export function QuoteButton({
   context,
   message,
+  preset,
   variant = "primary",
   className,
 }: {
   context: string
   message?: string
+  /** What the brief can pre-answer (lib/brief). */
+  preset?: BriefPreset
   variant?: "primary" | "ghost"
   className?: string
 }) {
@@ -37,12 +42,12 @@ export function QuoteButton({
     )
   }
   return (
-    <TrackedLink
+    <QuoteLink
       href={whatsappHref(company.whatsapp, message ?? t("whatsappMessage"))}
       target="_blank"
       rel="noopener noreferrer"
-      event="whatsapp_clicked"
-      props={{ context }}
+      context={context}
+      preset={preset}
       className={cn(
         base,
         "transition-[background-color,border-color,box-shadow] duration-200 focus-visible:ring-2 focus-visible:ring-[var(--biz-accent,var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
@@ -56,6 +61,6 @@ export function QuoteButton({
       {t("quote")}
       <span className="sr-only"> {t("quoteChannel")}</span>
       <ArrowUpRight className="size-4 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" aria-hidden />
-    </TrackedLink>
+    </QuoteLink>
   )
 }

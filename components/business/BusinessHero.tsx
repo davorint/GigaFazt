@@ -4,6 +4,7 @@ import { QuoteButton } from "./QuoteButton"
 import { IsoBuilding } from "./IsoBuilding"
 import { BuildingShowcase } from "./BuildingShowcase"
 import { BizStory } from "./BizStory"
+import { InView } from "@/components/layout/InView"
 
 const CHAPTERS = ["entry", "riser", "floors", "inside"] as const
 
@@ -17,7 +18,8 @@ const CHAPTERS = ["entry", "riser", "floors", "inside"] as const
  * and scrolling walks the building through four chapters (fiber arrives, the
  * riser, every floor, inside a floor) while the copy crossfades from the hero
  * to each chapter. Phones, reduced motion, the pause toggle and screenshots
- * get the plain hero (chapters hidden, `.biz-story*` in globals.css).
+ * get the plain hero, followed by the same four chapters as a list
+ * (`.biz-story-alt`): each a schematic that lights its part once seen.
  */
 export function BusinessHero() {
   const t = useTranslations("business")
@@ -25,6 +27,7 @@ export function BusinessHero() {
   const max = business.maxLinkGbps
 
   return (
+    <>
     <BizStory>
       <div className="biz-story-pin relative overflow-hidden">
         <div aria-hidden className="biz-blueprint biz-fade-x pointer-events-none absolute inset-0 [mask-image:radial-gradient(90%_80%_at_60%_40%,#000_35%,transparent_100%)]" />
@@ -106,5 +109,29 @@ export function BusinessHero() {
         </div>
       </div>
     </BizStory>
+
+    {/* The story without the pin (phones, reduced motion, paused animations). */}
+    <div className="biz-story-alt mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:pb-28">
+      <h2 className="reveal text-2xl font-medium tracking-[-0.02em] text-white sm:text-3xl">{t("story.label")}</h2>
+      <ol className="reveal-stagger mt-8 grid gap-px overflow-hidden border border-[var(--biz-line)] bg-[var(--biz-line)] sm:grid-cols-2 lg:grid-cols-4">
+        {CHAPTERS.map((k, i) => (
+          <li key={k} className="flex flex-col bg-[var(--biz-bg)]">
+            <InView className="relative h-56 overflow-hidden border-b border-[var(--biz-line)] bg-[var(--biz-panel)]">
+              <div aria-hidden className="biz-blueprint pointer-events-none absolute inset-0 opacity-40" />
+              <IsoBuilding uid={`iso-ch-${k}`} labels={false} focus={k} className="relative h-full w-full" />
+            </InView>
+            <div className="p-6">
+              <p className="font-mono text-xs text-[var(--biz-accent)] tabular-nums" aria-hidden>
+                {String(i + 1).padStart(2, "0")}
+              </p>
+              <h3 className="mt-3 text-xl font-medium tracking-[-0.02em] text-white">{t(`story.${k}.title`, { from, to })}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">{t(`story.${k}.body`, { max, from, to })}</p>
+              {k === "entry" && <p className="mt-2 text-xs text-zinc-400">* {t("speedQual")}</p>}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+    </>
   )
 }

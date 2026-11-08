@@ -11,6 +11,7 @@ export type AnalyticsEvent =
   | "lead_submitted"
   | "whatsapp_clicked"
   | "map_region_opened"
+  | "brief_opened"
 
 export function track(
   event: AnalyticsEvent,

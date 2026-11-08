@@ -39,9 +39,31 @@ const branch = (z: number, [x, y]: [number, number]) =>
 const diamond = (x: number, y: number, z: number, r = 7) =>
   `M${pt(x - r, y, z)} L${pt(x, y - r, z)} L${pt(x + r, y, z)} L${pt(x, y + r, z)} Z`
 
-/** `uid` keeps the gradient id unique when the drawing appears twice on a page; `labels={false}` for a backdrop. */
-export function IsoBuilding({ className, uid = "iso", labels = true }: { className?: string; uid?: string; labels?: boolean }) {
+export type IsoFocus = "entry" | "riser" | "floors" | "inside"
+type Part = "entry" | "riser" | number
+
+/** Which parts a story chapter lights ("hot") and which it dims. */
+function focusClass(focus: IsoFocus | undefined, part: Part): string | undefined {
+  if (!focus) return undefined
+  const hot =
+    (focus === "entry" && part === "entry") ||
+    (focus === "riser" && part === "riser") ||
+    (focus === "floors" && typeof part === "number") ||
+    (focus === "inside" && part === LEVELS.length - 1)
+  if (hot) return "iso-hot"
+  const neutral = (focus === "riser" && part === "entry") || (focus === "floors" && part === "riser")
+  return neutral ? undefined : "iso-dim"
+}
+
+/**
+ * `uid` keeps the gradient id unique when the drawing appears twice on a page;
+ * `labels={false}` for a backdrop; `focus` lights one part for a story
+ * chapter (the phone / reduced-motion story) and dims the rest; hot parts
+ * light up once the wrapper is first seen (`.iso-hot`, globals.css).
+ */
+export function IsoBuilding({ className, uid = "iso", labels = true, focus }: { className?: string; uid?: string; labels?: boolean; focus?: IsoFocus }) {
   const t = useTranslations("business.schematic")
+  const fc = (part: Part) => focusClass(focus, part)
   const top = LEVELS[LEVELS.length - 1]
   const [rx0, ry0] = P(RX, RY, ENTRY_Z)
   const [, ryTop] = P(RX, RY, top)
@@ -70,7 +92,7 @@ export function IsoBuilding({ className, uid = "iso", labels = true }: { classNa
 
       {/* Floor plates, bottom to top. */}
       {LEVELS.map((z, i) => (
-        <g key={z}>
+        <g key={z} className={fc(i)}>
           <path d={plate(z)} fill={`url(#${uid}-plate)`} className="iso-fade" style={{ "--d": 150 + i * 120 } as React.CSSProperties} />
           <path
             d={plate(z)}
@@ -94,20 +116,37 @@ export function IsoBuilding({ className, uid = "iso", labels = true }: { classNa
         </g>
       ))}
 
-      {/* Street → service entrance → riser. */}
-      <path
-        d={`M${pt(RX, STREET_Y, ENTRY_Z)} L${pt(RX, RY, ENTRY_Z)} L${pt(RX, RY, top + 18)}`}
-        pathLength={1}
-        fill="none"
-        stroke="#a78bfa"
-        strokeWidth="2"
-        className="iso-draw"
-        style={{ "--d": 500 } as React.CSSProperties}
-      />
+      {/* Street → service entrance, then the riser. */}
+      <g className={fc("entry")}>
+        <path
+          d={`M${pt(RX, STREET_Y, ENTRY_Z)} L${pt(RX, RY, ENTRY_Z)}`}
+          pathLength={1}
+          fill="none"
+          stroke="#a78bfa"
+          strokeWidth="2"
+          className="iso-draw"
+          style={{ "--d": 500 } as React.CSSProperties}
+        />
+        {/* The optional backup route, only in the "fiber arrives" chapter. */}
+        {focus === "entry" && (
+          <path d={`M${pt(-90, RY, ENTRY_Z)} L${pt(RX, RY, ENTRY_Z)}`} fill="none" stroke="#c4b5fd" strokeWidth="1.6" strokeDasharray="5 6" />
+        )}
+      </g>
+      <g className={fc("riser")}>
+        <path
+          d={`M${pt(RX, RY, ENTRY_Z)} L${pt(RX, RY, top + 18)}`}
+          pathLength={1}
+          fill="none"
+          stroke="#a78bfa"
+          strokeWidth="2"
+          className="iso-draw"
+          style={{ "--d": 800 } as React.CSSProperties}
+        />
+      </g>
 
       {/* Branches and connected areas on every level. */}
       {LEVELS.map((z, i) => (
-        <g key={`b${z}`}>
+        <g key={`b${z}`} className={fc(i)}>
           {NODES[i].map((n, j) => (
             <path
               key={j}

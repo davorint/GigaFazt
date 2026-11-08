@@ -7,6 +7,7 @@ import { BusinessHero } from "@/components/business/BusinessHero"
 import { BusinessTiers } from "@/components/business/BusinessTiers"
 import { BusinessNetworks } from "@/components/business/BusinessNetworks"
 import { BusinessNoc } from "@/components/business/BusinessNoc"
+import { BriefHost } from "@/components/business/BriefHost"
 import { BusinessSteps } from "@/components/business/BusinessSteps"
 import { BusinessCta } from "@/components/business/BusinessCta"
 import { business } from "@/lib/business"
@@ -64,7 +65,8 @@ export default async function EmpresasPage({ params }: PageProps<"/[locale]/empr
         </Section>
       </main>
       </PageTransition>
-      <Footer base={`/${locale}`} />
+      <BriefHost />
+      <Footer base={`/${locale}`} variant="biz" />
     </>
   )
 }

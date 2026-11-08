@@ -44,6 +44,7 @@ export function BusinessTiers() {
     <QuoteButton
       context={`business_tier_${x.id}`}
       message={tt("whatsappMessage", { tier: tt(`items.${x.id}.name`) })}
+      preset={{ needs: ["internet"], tier: x.id }}
       variant={featured(x) ? "primary" : "ghost"}
       className={className}
     />

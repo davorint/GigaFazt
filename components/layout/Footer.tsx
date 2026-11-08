@@ -67,9 +67,10 @@ function Field({
  * Footer (SPEC §8): status badge · Aviso de Privacidad (LFPDPPP) · Términos ·
  * contact. Shared by every page; `base` is
  * the locale home ("/es") so section links work off the home page. Bottom
- * padding on mobile clears the fixed quick-nav bar.
+ * padding on mobile clears the fixed quick-nav bar. `variant="biz"` (on
+ * /empresas) takes the page's graphite and violet look (`.footer-biz`).
  */
-export function Footer({ base = "" }: { base?: string }) {
+export function Footer({ base = "", variant }: { base?: string; variant?: "biz" }) {
   const t = useTranslations("footer")
   const tn = useTranslations("nav")
   const ts = useTranslations("states")
@@ -77,7 +78,7 @@ export function Footer({ base = "" }: { base?: string }) {
   const prefix = base || `/${locale}`
 
   return (
-    <footer id="footer" data-section="footer" className="relative overflow-hidden border-t border-border bg-background pb-16 [background-image:radial-gradient(55%_45%_at_50%_100%,rgb(6_182_212/0.05),transparent_70%),radial-gradient(35%_30%_at_85%_100%,rgb(167_139_250/0.04),transparent_70%)] md:pb-0">
+    <footer id="footer" data-section="footer" className={`${variant === "biz" ? "footer-biz " : ""}relative overflow-hidden border-t border-border bg-background pb-16 [background-image:radial-gradient(55%_45%_at_50%_100%,rgb(6_182_212/0.05),transparent_70%),radial-gradient(35%_30%_at_85%_100%,rgb(167_139_250/0.04),transparent_70%)] md:pb-0`}>
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr]">
         <div className="space-y-3">
           <div className="flex items-center gap-2">

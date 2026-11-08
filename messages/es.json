@@ -703,56 +703,6 @@
         "body": "Suministramos e instalamos los switches, firewalls y routers que tu red necesita."
       }
     },
-    "lan": {
-      "items": {
-        "storage": {
-          "title": "Almacenamiento centralizado de estado sólido"
-        },
-        "cameras": {
-          "title": "Varias cámaras de video 8K a la vez",
-          "body": "Transmite y graba al mismo tiempo varias cámaras en 8K sin saturar la red de tu operación."
-        },
-        "sharing": {
-          "title": "Archivos y videos compartidos al instante",
-          "body": "Un archivo de {gb} GB pasa de un equipo a otro en unos {tFrom} segundos en {from}GbE y en unos {tTo} segundos en {to}GbE (velocidad teórica de la red)."
-        },
-        "sharedHardware": {
-          "title": "Menos gasto en equipo duplicado"
-        },
-        "futureProof": {
-          "title": "Lista para el futuro, sin recablear",
-          "body": "La misma fibra pasa de {from}GbE a {to}GbE cambiando solo el equipo de cada extremo. Tu cableado no se vuelve obsoleto."
-        },
-        "backups": {
-          "title": "Respaldos automáticos centralizados"
-        },
-        "editing": {
-          "title": "Edición de video colaborativa"
-        },
-        "voip": {
-          "title": "Telefonía IP en toda la empresa"
-        },
-        "segments": {
-          "title": "Redes separadas por área",
-          "body": "Administración, cámaras, invitados y producción en redes separadas sobre la misma fibra, para más seguridad."
-        },
-        "buildings": {
-          "title": "Conecta tus edificios y bodegas"
-        },
-        "security": {
-          "title": "Videovigilancia y control de acceso integrados"
-        },
-        "signage": {
-          "title": "Pantallas digitales 4K y 8K"
-        },
-        "fewerClosets": {
-          "title": "Menos cuartos de equipo"
-        },
-        "wifi7": {
-          "title": "Wi-Fi 7 empresarial sobre fibra"
-        }
-      }
-    },
     "tiers": {
       "title": "Misma velocidad, distinta disponibilidad.",
       "lead": "Contrata la velocidad que necesites en cualquier paquete. Lo que cambia es qué tan garantizado está tu enlace.",
@@ -803,45 +753,29 @@
       "figureNote": "Red interna de {from}GbE a {to}GbE (Gigabit Ethernet) entre áreas, pisos y edificios, sobre tu propia fibra.",
       "whatsappMessage": "Hola, quiero cotizar una red de fibra óptica para mi empresa.",
       "doTitle": "Lo que hacemos",
-      "usesTitle": "Lo que hace posible una red de fibra propia",
-      "moreTitle": "Y también",
-      "race": {
-        "file": "Archivo de {gb} GB",
-        "theoretical": "Tiempo teórico a velocidad de línea"
-      },
-      "lanes": {
-        "admin": "Administración",
-        "cameras": "Cámaras",
-        "guests": "Invitados",
-        "production": "Producción",
-        "strand": "Una sola fibra"
-      },
-      "cams": {
-        "rec": "REC"
-      },
-      "future": {
-        "today": "Hoy",
-        "later": "Mañana",
-        "same": "La misma fibra"
-      }
+      "doLead": "Desde la llegada de la fibra hasta el último puesto de trabajo."
     },
     "stepsTitle": "De la idea a tu red funcionando",
     "steps": {
       "talk": {
         "title": "Cuéntanos de tu espacio",
-        "body": "Escríbenos por WhatsApp: qué áreas quieres conectar y cuántas personas trabajan ahí."
+        "body": "Responde cuatro preguntas sobre tu espacio y nos llega por WhatsApp: qué necesitas, dónde, para cuántas personas y para cuándo.",
+        "out": "Tu resumen de proyecto"
       },
       "design": {
         "title": "Diseñamos tu red",
-        "body": "Proponemos la instalación, el enlace y el equipo adecuados para tu operación."
+        "body": "Proponemos la instalación, el enlace y el equipo adecuados para tu operación.",
+        "out": "Diseño de la red"
       },
       "quote": {
         "title": "Cotización a la medida",
-        "body": "Recibes una propuesta con el alcance y el precio de tu proyecto."
+        "body": "Recibes una propuesta con el alcance y el precio de tu proyecto.",
+        "out": "Alcance y precio"
       },
       "install": {
         "title": "Instalamos y entregamos",
-        "body": "Instalamos la fibra y el equipo, y te entregamos la red funcionando."
+        "body": "Instalamos la fibra y el equipo, y te entregamos la red funcionando.",
+        "out": "Red funcionando"
       }
     },
     "ctaTitle": "Lleva la fibra a todo tu negocio",
@@ -912,7 +846,162 @@
       "cut": "Simular corte del enlace principal",
       "restore": "Restablecer enlace principal",
       "note": "Simulación ilustrativa. La ruta de respaldo es opcional en Internet dedicado y el tiempo de conmutación depende del diseño de cada enlace."
-    }
+    },
+    "brief": {
+      "title": "Cuéntanos de tu proyecto",
+      "lead": "Cuatro preguntas rápidas. Al final se abre WhatsApp con un resumen listo para enviar.",
+      "steps": {
+        "0": "Qué necesitas",
+        "1": "Tu espacio",
+        "2": "Tamaño y fecha",
+        "3": "Resumen"
+      },
+      "stepStatus": "Paso {n} de {total}: {name}",
+      "questions": {
+        "0": "¿Qué necesitas?",
+        "1": "¿Qué tipo de espacio es?",
+        "2": "¿Cuántas personas trabajan ahí?",
+        "3": "Revisa y envía"
+      },
+      "needs": {
+        "internet": "Internet para empresas",
+        "fiberLan": "Red interna de fibra",
+        "cabling": "Cableado estructurado",
+        "wifi": "Wi-Fi empresarial",
+        "equipment": "Equipo de red"
+      },
+      "needsHint": {
+        "internet": "Enlaces simétricos de hasta {max} Gbps",
+        "fiberLan": "De {from}GbE a {to}GbE entre áreas y pisos",
+        "cabling": "Fibra y cobre hasta cada puesto",
+        "wifi": "Cobertura planeada para todo el espacio",
+        "equipment": "Switches, firewalls y routers"
+      },
+      "tierQuestion": "¿Qué paquete de internet te interesa?",
+      "tierUnsure": "Aún no lo sé",
+      "floorsQuestion": "¿Cuántos pisos o niveles?",
+      "floors": {
+        "1": "1 nivel",
+        "2-3": "2 a 3 niveles",
+        "4-10": "4 a 10 niveles",
+        "10+": "Más de 10"
+      },
+      "people": {
+        "1-10": "1 a 10",
+        "11-50": "11 a 50",
+        "51-200": "51 a 200",
+        "200+": "Más de 200"
+      },
+      "whenQuestion": "¿Para cuándo lo necesitas?",
+      "when": {
+        "asap": "Lo antes posible",
+        "1-3m": "En 1 a 3 meses",
+        "3m+": "En más de 3 meses",
+        "exploring": "Solo estoy explorando"
+      },
+      "companyLabel": "Nombre de tu empresa (opcional)",
+      "preview": "Mensaje que se enviará",
+      "privacy": "Se abre WhatsApp con este mensaje para que tú lo envíes. No guardamos tus respuestas.",
+      "message": {
+        "intro": "Hola, quiero cotizar un proyecto para mi empresa.",
+        "needs": "Necesito",
+        "space": "Espacio",
+        "people": "Personas",
+        "when": "Cuándo",
+        "company": "Empresa"
+      },
+      "back": "Atrás",
+      "next": "Siguiente",
+      "send": "Enviar por WhatsApp",
+      "close": "Cerrar"
+    },
+    "floor": {
+      "title": "Así se ve una red de fibra por dentro.",
+      "lead": "Elige un tipo de espacio y toca cualquier punto para ver qué conecta y por dónde le llega la fibra.",
+      "spaceLabel": "Tipo de espacio",
+      "spaces": {
+        "offices": "Oficina",
+        "warehouses": "Bodega",
+        "retail": "Restaurante",
+        "buildings": "Plaza comercial"
+      },
+      "segmentsToggle": "Ver redes separadas",
+      "segmentsLegend": "Redes",
+      "segments": {
+        "admin": "Administración",
+        "cameras": "Cámaras y acceso",
+        "guests": "Invitados",
+        "production": "Operación"
+      },
+      "hint": "Toca un punto para ver su recorrido de fibra.",
+      "caption": "Ilustración: distribución de ejemplo",
+      "allOfType": "{count, plural, one {# en este espacio} other {# en este espacio}}",
+      "onNetwork": "En la red de {network}",
+      "inventory": "{count} puntos conectados",
+      "ctaNote": "Tu cotización empieza con este tipo de espacio.",
+      "rooms": {
+        "reception": "Recepción",
+        "meeting": "Sala de juntas",
+        "direction": "Dirección",
+        "work": "Área de trabajo",
+        "site": "Site",
+        "kitchen": "Cocina",
+        "office": "Oficina",
+        "docks": "Andenes",
+        "storage": "Almacén",
+        "hall": "Salón",
+        "terrace": "Terraza",
+        "cashier": "Caja",
+        "bathrooms": "Baños",
+        "unit": "Local {n}",
+        "lobby": "Vestíbulo",
+        "admin": "Administración"
+      },
+      "kinds": {
+        "closet": {
+          "name": "Cuarto de red",
+          "short": "Cuarto de red",
+          "body": "Aquí llega la fibra de la calle y empieza tu red: switches, firewall y paneles de parcheo en un solo lugar. De aquí sale la fibra a cada punto."
+        },
+        "ap": {
+          "name": "Punto de acceso Wi-Fi",
+          "short": "Wi-Fi",
+          "body": "Conectado por fibra, para que el Wi-Fi no quede limitado por el cable. Su ubicación se planea para cubrir toda el área."
+        },
+        "camera": {
+          "name": "Cámara de video",
+          "short": "Cámaras",
+          "body": "Transmite y graba en alta resolución hacia el almacenamiento central, en su propia red, sin saturar la de tu operación."
+        },
+        "access": {
+          "name": "Control de acceso",
+          "short": "Acceso",
+          "body": "Lectores y puertas en la misma red que las cámaras, con registro central."
+        },
+        "screen": {
+          "name": "Pantalla digital",
+          "short": "Pantallas",
+          "body": "Pantallas 4K y 8K en recepciones, salas, cocinas o tiendas, alimentadas desde tu red."
+        },
+        "desk": {
+          "name": "Puesto de trabajo",
+          "short": "Puestos",
+          "body": "Abre y guarda archivos desde el almacenamiento central a la velocidad de la red."
+        },
+        "phone": {
+          "name": "Teléfono IP",
+          "short": "Telefonía",
+          "body": "Telefonía IP en cada área, sobre la misma red de fibra."
+        },
+        "storage": {
+          "name": "Almacenamiento central",
+          "short": "Almacenamiento",
+          "body": "Almacenamiento SSD central para toda la empresa, con respaldos automáticos. Un archivo de {gb} GB pasa en unos {tTo} s a {to}GbE (velocidad teórica)."
+        }
+      }
+    },
+    "stepsLead": "Un mismo equipo de principio a fin.",
+    "stepsYouGet": "Recibes:"
   },
   "privacy": {
     "metaTitle": "Aviso de Privacidad",
