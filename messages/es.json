@@ -115,7 +115,6 @@
   },
   "recommender": {
     "promptTitle": "¿No sabes cuál elegir?",
-    "promptLead": "Responde tres preguntas y te decimos qué plan te conviene.",
     "promptCta": "Ayúdame a elegir",
     "close": "Cerrar",
     "title": "¿Qué plan necesito?",

@@ -11,7 +11,7 @@ export function PriceTag({
   size = "lg",
 }: {
   plan: Pick<Plan, "priceMxn" | "promo">
-  size?: "lg" | "sm"
+  size?: "xl" | "lg" | "sm"
 }) {
   const t = useTranslations("plans")
   const locale = useLocale()
@@ -27,7 +27,7 @@ export function PriceTag({
       <span
         className={cn(
           "font-semibold tracking-tight text-foreground",
-          size === "lg" ? "text-4xl" : "text-xl"
+          size === "xl" ? "text-5xl" : size === "lg" ? "text-4xl" : "text-xl"
         )}
       >
         ${formatMxn(shown, locale)}

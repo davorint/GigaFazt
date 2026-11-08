@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Canvas, useFrame } from "@react-three/fiber"
 import { PerformanceMonitor } from "@react-three/drei"
 import { EffectComposer, Bloom } from "@react-three/postprocessing"
@@ -18,8 +18,80 @@ import * as THREE from "three"
 const CORE_COLOR = "#22d3ee"
 const PULSE_COLOR = "#a5f3fc"
 const PULSES_PER_STRAND = 3
-/** Where the bundle pinches (world units): right of the headline on desktop, under the copy on phones. */
-const NODES = { desktop: [1.7, 0.3], mobile: [0.3, -1.9] } as const
+/** HDR white for the node core: above 1.0 so bloom turns it into a light source. */
+const CORE_HOT = new THREE.Color(1.7, 2.3, 2.5)
+/** Where the bundle pinches (world units): right of the headline on desktop,
+ *  top right above the headline on phones (between the nav and the eyebrow). */
+const NODES = { desktop: [1.7, 0.3], mobile: [0.75, 1.8] } as const
+
+/** Soft radial falloff, drawn once into a small canvas (no texture download). */
+function radialTexture() {
+  const size = 128
+  const c = document.createElement("canvas")
+  c.width = c.height = size
+  const g = c.getContext("2d")!
+  const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
+  // Roughly exponential falloff: no plateau for the bloom threshold to outline.
+  const stops = [
+    [0, 1],
+    [0.08, 0.62],
+    [0.2, 0.3],
+    [0.36, 0.12],
+    [0.55, 0.04],
+    [0.78, 0.01],
+    [1, 0],
+  ] as const
+  for (const [o, a] of stops) grad.addColorStop(o, `rgba(255,255,255,${a})`)
+  g.fillStyle = grad
+  g.fillRect(0, 0, size, size)
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
+/**
+ * The node as a light source: HDR core, inner white bloom, wide cyan halo and
+ * a horizontal anamorphic streak, all additive sprites (no custom shader).
+ * Breathes slowly; the hero headline's light sweep starts from this side.
+ */
+function NodeLight({ node }: { node: readonly [number, number] }) {
+  const halo = useRef<THREE.Sprite>(null)
+  const inner = useRef<THREE.Sprite>(null)
+  const streak = useRef<THREE.Sprite>(null)
+  const tex = useMemo(() => radialTexture(), [])
+  useEffect(() => () => tex.dispose(), [tex])
+
+  useFrame(({ clock }) => {
+    const b = 0.9 + Math.sin(clock.elapsedTime * 1.2) * 0.1
+    halo.current?.scale.setScalar(4.2 * b)
+    inner.current?.scale.setScalar(0.95 * (0.96 + b * 0.04))
+    streak.current?.scale.set(8.5 * b, 0.26, 1)
+  })
+
+  const mat = (color: string, opacity: number) => (
+    <spriteMaterial
+      map={tex}
+      color={color}
+      opacity={opacity}
+      transparent
+      depthWrite={false}
+      blending={THREE.AdditiveBlending}
+      toneMapped={false}
+    />
+  )
+
+  return (
+    <group position={[node[0], node[1], 0.05]}>
+      <sprite ref={halo} scale={4.2}>{mat("#22d3ee", 0.5)}</sprite>
+      <sprite ref={streak} scale={[8.5, 0.26, 1]}>{mat("#67e8f9", 0.9)}</sprite>
+      <sprite ref={inner} scale={0.95}>{mat("#ecfeff", 1)}</sprite>
+      <mesh>
+        <sphereGeometry args={[0.075, 16, 16]} />
+        <meshBasicMaterial color={CORE_HOT} toneMapped={false} />
+      </mesh>
+    </group>
+  )
+}
 
 function Strands({
   strands,
@@ -147,11 +219,8 @@ function Strands({
         />
       )}
 
-      {/* The bundle node. */}
-      <mesh position={[NODE[0], NODE[1], 0]}>
-        <sphereGeometry args={[0.1, 16, 16]} />
-        <meshBasicMaterial color="#ecfeff" toneMapped={false} />
-      </mesh>
+      {/* The bundle node: the scene's light source. */}
+      <NodeLight node={NODE} />
     </group>
   )
 }
@@ -192,7 +261,7 @@ export function FiberScene({
       <Strands strands={strands} interactive={interactive} showPulses={showPulses} node={NODES[quality]} />
       {bloom && (
         <EffectComposer>
-          <Bloom luminanceThreshold={0.35} intensity={1.1} radius={0.7} mipmapBlur />
+          <Bloom luminanceThreshold={0.35} luminanceSmoothing={0.45} intensity={1.1} radius={0.7} mipmapBlur />
         </EffectComposer>
       )}
     </Canvas>

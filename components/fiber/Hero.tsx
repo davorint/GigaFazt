@@ -18,12 +18,22 @@ import { FiberBackdrop } from "./FiberBackdrop"
  * the pitch (hard rule #5); the lineup's other prices live in Plans and the
  * Wi-Fi 7 modem in the 1 Gbps plan card. One lineup for everyone.
  */
+const H1_CLASS =
+  "block text-balance text-5xl font-semibold leading-[1.02] tracking-[-0.035em] sm:text-6xl lg:text-[5.5rem]"
+
 export function Hero() {
   const t = useTranslations("hero")
   const locale = useLocale()
   const featuredPrice = featuredPlan.priceMxn
 
   const goTo = (id: string) => scrollToId(id)
+  const headline = (brand: boolean) =>
+    isPlaceholder(featuredPrice)
+      ? t("h1NoPrice")
+      : t.rich("h1", {
+          price: formatMxn(featuredPrice, locale),
+          hl: (chunks) => <span className={brand ? "text-brand" : undefined}>{chunks}</span>,
+        })
 
   return (
     <div className="relative isolate flex min-h-screen flex-col justify-center overflow-hidden">
@@ -32,14 +42,15 @@ export function Hero() {
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col justify-center px-4 pt-24 pb-16 sm:px-6">
         <p className="eyebrow">[ {t("eyebrow")} ]</p>
 
-        <h1 className="mt-5 max-w-4xl text-balance text-5xl font-semibold leading-[1.02] tracking-[-0.035em] sm:text-6xl lg:text-[5.5rem]">
-          {isPlaceholder(featuredPrice)
-            ? t("h1NoPrice")
-            : t.rich("h1", {
-                price: formatMxn(featuredPrice, locale),
-                hl: (chunks) => <span className="text-brand">{chunks}</span>,
-              })}
-        </h1>
+        {/* The headline plus an aria-hidden copy on top that carries a band of
+            light sweeping right → left, from the node (globals.css .hero-sweep:
+            off under reduced motion, paused animations and screenshots). */}
+        <div className="relative mt-5 max-w-4xl">
+          <h1 className={H1_CLASS}>{headline(true)}</h1>
+          <span aria-hidden className={`hero-sweep pointer-events-none absolute inset-0 ${H1_CLASS}`}>
+            {headline(false)}
+          </span>
+        </div>
 
         <p className="mt-6 max-w-xl text-lg text-muted-foreground">
           {t("subhead")}

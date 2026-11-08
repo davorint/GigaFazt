@@ -78,7 +78,8 @@ export function FiberBackdrop() {
           ready ? "opacity-0" : "opacity-100"
         )}
       >
-        <FiberPoster className="h-full w-full" label={t("canvasAlt")} />
+        <FiberPoster className="hidden h-full w-full md:block" label={t("canvasAlt")} />
+        <FiberPoster variant="mobile" className="h-full w-full md:hidden" label={t("canvasAlt")} />
       </div>
 
       {/* WebGL scene crossfades in once ready; decorative (poster carries the label). */}
@@ -106,11 +107,12 @@ export function FiberBackdrop() {
       )}
 
       {/* Fade the scene into the page so copy stays readable over it. */}
-      {/* Scrim behind the copy only: the strands still run in from the left
-          edge and converge at the node to the right of the headline. */}
+      {/* Scrim behind the copy only. It must end before the node (desktop:
+          ~69% across) or it dims the light source to gray. Phones: clear at
+          the top where the node sits, darker under the copy. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-background/55 md:bg-transparent md:[background:radial-gradient(62%_68%_at_26%_54%,rgb(3_7_18/0.93),rgb(3_7_18/0.72)_50%,transparent_86%)]"
+        className="pointer-events-none absolute inset-0 [background:linear-gradient(180deg,rgb(3_7_18/0.1)_10%,rgb(3_7_18/0.45)_26%,rgb(3_7_18/0.62)_45%,rgb(3_7_18/0.62))] md:[background:radial-gradient(50%_64%_at_24%_54%,rgb(3_7_18/0.92),rgb(3_7_18/0.68)_45%,transparent_80%)]"
       />
       <div
         aria-hidden

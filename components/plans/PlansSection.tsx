@@ -30,25 +30,31 @@ export function PlansSection({ variant = "home" }: { variant?: "home" | "page" }
       </p>
       </div>
 
-      <div className="reveal-stagger mt-12 grid gap-6 md:grid-cols-3">
-        {plans.map((plan) => (
-          <PlanCard key={plan.id} plan={plan} maxMbps={maxMbps} level={variant === "page" ? "h2" : "h3"} />
-        ))}
+      <div className="relative mt-14">
+        {/* The featured card's own light on the page behind it. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-y-24 right-0 -z-10 hidden w-[55%] md:block"
+          style={{ background: "radial-gradient(50% 50% at 50% 50%, rgb(6 182 212 / 0.16), rgb(167 139 250 / 0.05) 50%, transparent 72%)" }}
+        />
+        <div className="reveal-stagger grid items-start gap-6 md:grid-cols-[1fr_1fr_1.18fr] lg:gap-5">
+          {plans.map((plan) => (
+            <PlanCard key={plan.id} plan={plan} maxMbps={maxMbps} level={variant === "page" ? "h2" : "h3"} />
+          ))}
+        </div>
       </div>
-      <p className="mt-3 font-mono text-[0.7rem] text-muted-foreground">
+
+      {/* Trust facts and the helper fold into two quiet lines, not two more boxes. */}
+      <div className="reveal mt-10 grid gap-4">
+        <TrustStrip variant="inline" />
+        <RecommenderPrompt />
+      </div>
+      <p className="mx-auto mt-5 max-w-3xl text-center font-mono text-[0.7rem] text-muted-foreground">
         {t("plans.speedNote")}
         {wifi7Plan && <> {t("plans.wifi7Note")}</>}
       </p>
 
-      <div className="reveal mt-8">
-        <TrustStrip />
-      </div>
-
-      {/* The 3-step helper opens in a dialog; the package builder is one wide ticket. */}
-      <div className="reveal mt-6">
-        <RecommenderPrompt />
-      </div>
-      <div className="reveal mt-6">
+      <div className="reveal mt-14">
         <AddOnsPanel />
       </div>
 

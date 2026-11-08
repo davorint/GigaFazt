@@ -660,6 +660,36 @@ section[data-section="faq"]::before {
   color: transparent;
 }
 
+/* Hero headline light sweep (Hero.tsx): an aria-hidden copy of the H1 drawn
+   in white with a cyan glow, revealed only through a narrow mask band that
+   crosses right → left (from the fiber node) once every 9 s, so the letters
+   light up as it passes. Only enabled with motion on; hidden otherwise. */
+.hero-sweep {
+  display: none;
+}
+@keyframes hero-sweep {
+  0% { -webkit-mask-position: 0% 0; mask-position: 0% 0; }
+  30%, 100% { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="off"]):not([data-shot]) .hero-sweep {
+    display: block;
+    color: #fff;
+    text-shadow:
+      0 0 14px rgb(34 211 238 / 0.95),
+      0 0 38px rgb(34 211 238 / 0.65);
+    -webkit-mask-image: linear-gradient(100deg, transparent 43%, #000 50%, transparent 57%);
+    mask-image: linear-gradient(100deg, transparent 43%, #000 50%, transparent 57%);
+    -webkit-mask-size: 250% 100%;
+    mask-size: 250% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: 0% 0;
+    mask-position: 0% 0;
+    animation: hero-sweep 9s cubic-bezier(0.45, 0, 0.25, 1) 1.4s infinite both;
+  }
+}
+
 /* ── Scroll reveal ──────────────────────────────────────────────────────────
    CSS scroll-driven (no JS): `.reveal` rises into place as it enters the
    viewport; direct children of `.reveal-stagger` follow one after another.

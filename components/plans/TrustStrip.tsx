@@ -13,7 +13,7 @@ type Fact = { key: string; icon: typeof Wrench; value: string; sub: string }
  * here at all; those values keep their POR DEFINIR chips where they are
  * needed (install steps, FAQ, price terms), so nothing is invented or hidden.
  */
-export function TrustStrip() {
+export function TrustStrip({ variant = "grid" }: { variant?: "grid" | "inline" }) {
   const t = useTranslations("trust")
   const { installFeeMxn, contractTerm, installDays, guarantee, noHiddenFees, localSupport } = company.terms
   const { monitoring24h } = company.network
@@ -29,6 +29,21 @@ export function TrustStrip() {
     !isPlaceholder(guarantee) && { key: "guarantee", icon: ShieldCheck, value: t("guarantee"), sub: guarantee },
   ]
   const items = facts.filter((f): f is Fact => Boolean(f))
+
+  // Inline: one quiet line under the plan cards (the sub-line stays for
+  // assistive tech, e.g. "monitoring by technical staff", not 24 h support).
+  if (variant === "inline")
+    return (
+      <ul className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-sm">
+        {items.map(({ key, icon: Icon, value, sub }) => (
+          <li key={key} className="flex items-center gap-2 font-medium text-foreground/90">
+            <Icon className="size-4 shrink-0 text-ok drop-shadow-[0_0_6px_var(--color-ok)]" aria-hidden />
+            {value}
+            {sub && <span className="sr-only">: {sub}</span>}
+          </li>
+        ))}
+      </ul>
+    )
 
   return (
     <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07] sm:grid-cols-2 lg:grid-cols-4">
