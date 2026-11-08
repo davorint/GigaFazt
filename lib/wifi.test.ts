@@ -4,6 +4,7 @@ import {
   GENERATIONS,
   ROUTER_START,
   WALL_LOSS_DB,
+  burstFill,
   clampRouter,
   getGeneration,
   lineup,
@@ -111,5 +112,28 @@ describe("simulation medium", () => {
     const speeds = new Set<number>()
     for (let i = 3; i < m.length; i += 4) speeds.add(m[i])
     expect([...speeds].sort((a, b) => a - b)).toEqual([Math.round(WALL_SPEED * 255), 255])
+  })
+})
+
+describe("burstFill (wave lab data density per generation)", () => {
+  it("differs between every pair of generations on at least one band", () => {
+    const fills = GENERATIONS.map((g) => burstFill(g, GENERATIONS))
+    for (let i = 0; i < fills.length; i++)
+      for (let j = i + 1; j < fills.length; j++) expect(fills[i]).not.toEqual(fills[j])
+  })
+  it("rises with each generation, tops out at 1 and never drops below the floor", () => {
+    const fills = GENERATIONS.map((g) => burstFill(g, GENERATIONS))
+    for (const b of ["b24", "b5"] as const) {
+      const v = fills.map((f) => f[b])
+      expect([...v].sort((x, y) => x - y)).toEqual(v)
+      expect(v.at(-1)).toBe(1)
+      expect(Math.min(...v)).toBeGreaterThanOrEqual(0.1)
+    }
+    expect(fills.every((f) => f.b6 === 0)).toBe(true)
+  })
+  it("treats the plan's modem against the page's lineup", () => {
+    const compared = lineup(true)
+    const modem = getGeneration("modem")
+    expect(burstFill(modem, compared).b5).toBe(1)
   })
 })

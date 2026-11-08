@@ -350,7 +350,8 @@
           "mlo": "Wi-Fi 7 · MLO",
           "speed": "{gbps} Gbps · máx. teórico"
         }
-      }
+      },
+      "burstHint": "Ondas más densas = más datos por segundo · mismo alcance"
     },
     "telemetry": {
       "title": "La red en vivo",

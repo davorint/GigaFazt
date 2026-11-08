@@ -32,6 +32,8 @@ const MAX_STEPS_PER_FRAME = 4
 /** Steps run before the first animated frame, so the field isn't empty. */
 const WARM_STEPS = 360
 const STILL_STEPS = 900
+/** One data-burst cycle, in simulation steps (~2.5 s at STEPS_PER_SECOND). */
+const BURST_STEPS = 100
 
 const VERT = /* glsl */ `
 varying vec2 vUv;
@@ -41,6 +43,7 @@ void main() {
 }`
 
 const SIM_FRAG = /* glsl */ `
+#define BURST_STEPS ${BURST_STEPS.toFixed(1)}
 uniform sampler2D uCur;
 uniform sampler2D uPrev;
 uniform sampler2D uMask;
@@ -48,6 +51,7 @@ uniform vec2 uTexel;
 uniform vec2 uSrc;
 uniform vec3 uOmega;
 uniform vec3 uActive;
+uniform vec3 uFill;
 uniform float uTime;
 uniform float uC2;
 uniform float uDampScale;
@@ -69,13 +73,21 @@ void main() {
   // Bands the selected generation doesn't use fade out.
   n *= mix(vec3(0.95), vec3(1.0), uActive);
   // Soft source: a small Gaussian at the modem, one frequency per band.
+  // Data bursts: each band transmits for uFill of every burst period (its
+  // PHY rate in this generation vs the fastest compared, lib/wifi burstFill),
+  // so faster generations send denser wave trains over the same range.
   vec2 d = (vUv - uSrc) / uTexel;
   float g = exp(-dot(d, d) / 4.0);
-  n += uActive * sin(uOmega * uTime) * g * uAmp;
+  float ph = fract(uTime / BURST_STEPS);
+  vec3 env = smoothstep(vec3(0.0), vec3(0.05), vec3(ph))
+           * (vec3(1.0) - smoothstep(uFill - 0.05, uFill, vec3(ph)));
+  env = mix(env, vec3(1.0), step(vec3(0.995), uFill));
+  n += uActive * env * sin(uOmega * uTime) * g * uAmp;
   // NaN / blow-up guard (NaN fails every comparison).
   bvec3 ok = lessThan(abs(n), vec3(6.0));
   n = vec3(ok.x ? n.x : 0.0, ok.y ? n.y : 0.0, ok.z ? n.z : 0.0);
-  float e = mix(c.a, dot(n * n, uActive), 0.02);
+  // Coverage glow per unit of airtime, so sparse bursts don't read as less range.
+  float e = mix(c.a, dot(n * n, uActive / max(uFill, vec3(0.1))), 0.02);
   if (!(e >= 0.0 && e < 100.0)) e = 0.0;
   gl_FragColor = vec4(n, e);
 }`
@@ -109,19 +121,22 @@ void main() {
 
 export default function WifiWaves({
   active,
+  fill,
   router,
   still,
   onReady,
   onError,
 }: {
   active: Record<BandId, boolean>
+  /** 0–1 per band: share of each burst period spent transmitting (lib/wifi burstFill). */
+  fill: Record<BandId, number>
   router: Pt
   still: boolean
   onReady?: () => void
   onError?: () => void
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const api = useRef<{ setInputs: (a: Record<BandId, boolean>, r: Pt) => void; settle: () => void } | null>(null)
+  const api = useRef<{ setInputs: (a: Record<BandId, boolean>, f: Record<BandId, number>, r: Pt) => void; settle: () => void } | null>(null)
   const stillRef = useRef(still)
   const readyCb = useRef(onReady)
   const errorCb = useRef(onError)
@@ -181,6 +196,7 @@ export default function WifiWaves({
         uSrc: { value: new THREE.Vector2(0.5, 0.5) },
         uOmega: { value: new THREE.Vector3(bandOmega("b24"), bandOmega("b5"), bandOmega("b6")) },
         uActive: { value: new THREE.Vector3() },
+        uFill: { value: new THREE.Vector3(1, 1, 1) },
         uTime: { value: 0 },
         uC2: { value: SIM_C * SIM_C },
         uDampScale: { value: DAMP_SCALE },
@@ -273,9 +289,10 @@ export default function WifiWaves({
     }
 
     api.current = {
-      setInputs(a, r) {
+      setInputs(a, f, r) {
         const v = new THREE.Vector3(+a.b24, +a.b5, +a.b6)
         simMat.uniforms.uActive.value.copy(v)
+        simMat.uniforms.uFill.value.set(f.b24, f.b5, f.b6)
         viewMat.uniforms.uActive.value.copy(v)
         simMat.uniforms.uSrc.value.set(...toUv(r))
       },
@@ -311,9 +328,9 @@ export default function WifiWaves({
   // first inputs reach the simulation too.
   useEffect(() => {
     stillRef.current = still
-    api.current?.setInputs(active, router)
+    api.current?.setInputs(active, fill, router)
     api.current?.settle()
-  }, [active, router, still])
+  }, [active, fill, router, still])
 
   return <canvas ref={canvasRef} aria-hidden className="absolute inset-0 block h-full w-full" />
 }

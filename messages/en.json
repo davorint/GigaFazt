@@ -350,7 +350,8 @@
           "mlo": "Wi-Fi 7 · MLO",
           "speed": "{gbps} Gbps · theoretical max"
         }
-      }
+      },
+      "burstHint": "Denser waves = more data per second · same reach"
     },
     "telemetry": {
       "title": "The network, live",

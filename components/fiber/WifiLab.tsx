@@ -27,6 +27,7 @@ import {
   PLAN_MODEM,
   getGeneration,
   lineup,
+  burstFill,
   linkFor,
   roomAt,
   type BandId,
@@ -95,6 +96,7 @@ export default function WifiLab() {
     () => ({ b24: gen.bands.includes("b24"), b5: gen.bands.includes("b5"), b6: gen.bands.includes("b6") }) as Record<BandId, boolean>,
     [gen]
   )
+  const fill = useMemo(() => burstFill(gen, lineup(!!wifi7Plan)), [gen])
   const links = useMemo(() => DEVICES.map((d) => ({ ...d, link: linkFor(gen, router, d.at) })), [gen, router])
 
   // Link dashes and the modem ping only animate while the lab is on screen.
@@ -174,6 +176,7 @@ export default function WifiLab() {
               <SceneBoundary onError={() => setWebgl(false)}>
                 <WifiWaves
                   active={active}
+                  fill={fill}
                   router={router}
                   still={reduced}
                   onReady={() => setReady(true)}
@@ -359,6 +362,12 @@ export default function WifiLab() {
               {t(`materials.${m}`)}
             </span>
           ))}
+          <span className="inline-flex items-center gap-1.5">
+            <svg aria-hidden viewBox="0 0 20 6" className="h-1.5 w-5">
+              <path d="M0 3h3M5 3h2M9 3h11" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            {t("burstHint")}
+          </span>
           <span className="inline-flex items-center gap-1.5 sm:ml-auto">
             <Move className="size-3" aria-hidden />
             {t("dragHint")}
