@@ -7,6 +7,7 @@ import { BusinessHero } from "@/components/business/BusinessHero"
 import { BusinessCapacity } from "@/components/business/BusinessCapacity"
 import { BusinessTiers } from "@/components/business/BusinessTiers"
 import { BusinessServices } from "@/components/business/BusinessServices"
+import { BusinessLan } from "@/components/business/BusinessLan"
 import { BusinessSteps } from "@/components/business/BusinessSteps"
 import { BusinessCta } from "@/components/business/BusinessCta"
 import { business } from "@/lib/business"
@@ -53,6 +54,9 @@ export default async function EmpresasPage({ params }: PageProps<"/[locale]/empr
         </Section>
         <Section id="business-services" aria-label={t("servicesEyebrow")}>
           <BusinessServices />
+        </Section>
+        <Section id="business-lan" aria-label={t("lan.eyebrow")}>
+          <BusinessLan />
         </Section>
         <Section id="business-steps" aria-label={t("stepsEyebrow")}>
           <BusinessSteps />

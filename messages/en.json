@@ -695,6 +695,69 @@
         "body": "We supply and install the switches, firewalls and routers your network needs."
       }
     },
+    "lan": {
+      "eyebrow": "Internal fiber network",
+      "title": "Your company connected inside, up to {to} Gbps.",
+      "lead": "With an internal fiber optic network, every area works as if it were on the same machine.",
+      "items": {
+        "storage": {
+          "title": "Centralized solid-state storage",
+          "body": "We install central SSD storage for the whole company: everyone saves and opens files from one place, at network speed."
+        },
+        "cameras": {
+          "title": "Several 8K video cameras at once",
+          "body": "Stream and record several 8K cameras at the same time without saturating your operation's network."
+        },
+        "sharing": {
+          "title": "Files and videos shared instantly",
+          "body": "A {gb} GB file moves between machines in about {tFrom} seconds at {from} Gbps and in about {tTo} second at {to} Gbps (theoretical network speed)."
+        },
+        "sharedHardware": {
+          "title": "Less spent on duplicate hardware",
+          "body": "With low latency and high speeds, the whole company shares servers, storage and printers instead of buying equipment for each area."
+        },
+        "futureProof": {
+          "title": "Ready for the future, no rewiring",
+          "body": "The same fiber goes from {from} to {to} Gbps by changing only the equipment at each end. Your cabling doesn't become obsolete."
+        },
+        "backups": {
+          "title": "Automatic central backups",
+          "body": "Every computer backs up to the central storage, so files can be recovered if a machine fails."
+        },
+        "editing": {
+          "title": "Collaborative video editing",
+          "body": "Several editors work on 8K video straight from the shared storage, without copying files."
+        },
+        "voip": {
+          "title": "IP phones across the company",
+          "body": "IP phones in every area, on the same fiber network."
+        },
+        "segments": {
+          "title": "Separate networks per area",
+          "body": "Admin, cameras, guests and production on separate networks over the same fiber, for more security."
+        },
+        "buildings": {
+          "title": "Connect your buildings and warehouses",
+          "body": "We link the buildings on one property with fiber so they work as a single network."
+        },
+        "security": {
+          "title": "Integrated video surveillance and access control",
+          "body": "Cameras, readers and doors on one network, with central recording."
+        },
+        "signage": {
+          "title": "4K and 8K digital screens",
+          "body": "Signage in reception areas, stores and showrooms, fed from your network."
+        },
+        "fewerClosets": {
+          "title": "Fewer equipment rooms",
+          "body": "Fiber reaches much farther than copper cable: fewer intermediate rooms and less equipment to power."
+        },
+        "wifi7": {
+          "title": "Business Wi-Fi 7 over fiber",
+          "body": "Every access point connected by fiber, so the Wi-Fi isn't held back by the cable."
+        }
+      }
+    },
     "tiers": {
       "eyebrow": "Internet for businesses",
       "title": "Same speed, different availability.",

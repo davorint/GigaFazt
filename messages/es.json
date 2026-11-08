@@ -695,6 +695,69 @@
         "body": "Suministramos e instalamos los switches, firewalls y routers que tu red necesita."
       }
     },
+    "lan": {
+      "eyebrow": "Red interna de fibra",
+      "title": "Tu empresa conectada por dentro, hasta {to} Gbps.",
+      "lead": "Con una red interna de fibra óptica, todas las áreas trabajan como si estuvieran en el mismo equipo.",
+      "items": {
+        "storage": {
+          "title": "Almacenamiento centralizado de estado sólido",
+          "body": "Instalamos almacenamiento SSD central para toda la empresa: todos guardan y abren sus archivos desde un mismo lugar, a la velocidad de la red."
+        },
+        "cameras": {
+          "title": "Varias cámaras de video 8K a la vez",
+          "body": "Transmite y graba al mismo tiempo varias cámaras en 8K sin saturar la red de tu operación."
+        },
+        "sharing": {
+          "title": "Archivos y videos compartidos al instante",
+          "body": "Un archivo de {gb} GB pasa de un equipo a otro en unos {tFrom} segundos a {from} Gbps y en cerca de {tTo} segundo a {to} Gbps (velocidad teórica de la red)."
+        },
+        "sharedHardware": {
+          "title": "Menos gasto en equipo duplicado",
+          "body": "Con baja latencia y altas velocidades, toda la empresa comparte servidores, almacenamiento e impresoras en lugar de comprar equipo para cada área."
+        },
+        "futureProof": {
+          "title": "Lista para el futuro, sin recablear",
+          "body": "La misma fibra pasa de {from} a {to} Gbps cambiando solo el equipo de cada extremo. Tu cableado no se vuelve obsoleto."
+        },
+        "backups": {
+          "title": "Respaldos automáticos centralizados",
+          "body": "Cada computadora respalda sus archivos en el almacenamiento central, para recuperarlos si un equipo falla."
+        },
+        "editing": {
+          "title": "Edición de video colaborativa",
+          "body": "Varios editores trabajan video 8K directo desde el almacenamiento compartido, sin copiar archivos."
+        },
+        "voip": {
+          "title": "Telefonía IP en toda la empresa",
+          "body": "Teléfonos IP en cada área, conectados a la misma red de fibra."
+        },
+        "segments": {
+          "title": "Redes separadas por área",
+          "body": "Administración, cámaras, invitados y producción en redes separadas sobre la misma fibra, para más seguridad."
+        },
+        "buildings": {
+          "title": "Conecta tus edificios y bodegas",
+          "body": "Unimos con fibra los edificios de un mismo predio para que trabajen como una sola red."
+        },
+        "security": {
+          "title": "Videovigilancia y control de acceso integrados",
+          "body": "Cámaras, lectores y puertas en una misma red, con grabación central."
+        },
+        "signage": {
+          "title": "Pantallas digitales 4K y 8K",
+          "body": "Señalización en recepciones, tiendas y showrooms, alimentada desde tu red."
+        },
+        "fewerClosets": {
+          "title": "Menos cuartos de equipo",
+          "body": "La fibra llega mucho más lejos que el cable de cobre: menos cuartos intermedios y menos equipo que alimentar."
+        },
+        "wifi7": {
+          "title": "Wi-Fi 7 empresarial sobre fibra",
+          "body": "Cada punto de acceso conectado por fibra, para que el Wi-Fi no quede limitado por el cable."
+        }
+      }
+    },
     "tiers": {
       "eyebrow": "Internet para empresas",
       "title": "Misma velocidad, distinta disponibilidad.",
