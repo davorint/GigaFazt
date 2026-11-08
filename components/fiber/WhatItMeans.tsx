@@ -17,15 +17,10 @@ export function WhatItMeans() {
   const planId = useSelection((s) => s.planId)
   const plan = getPlan(planId) ?? plans[plans.length - 1]
 
-  const dur = (s: number) => {
-    const d = splitDuration(s)
-    return `${d.value} ${d.unit}`
-  }
-
   const tiles = [
-    { key: "upload10", icon: Upload, value: dur(transferSeconds(10, plan.upMbps)) },
-    { key: "streams", icon: Clapperboard, value: String(streams4k(plan.downMbps)) },
-    { key: "backup", icon: CloudUpload, value: dur(transferSeconds(1000, plan.upMbps)) },
+    { key: "upload10", icon: Upload, ...splitDuration(transferSeconds(10, plan.upMbps)) },
+    { key: "streams", icon: Clapperboard, value: String(streams4k(plan.downMbps)), unit: null },
+    { key: "backup", icon: CloudUpload, ...splitDuration(transferSeconds(1000, plan.upMbps)) },
   ] as const
 
   return (
@@ -34,11 +29,18 @@ export function WhatItMeans() {
         {t("titlePlan", { speed: speedLabel(plan.downMbps) })}
       </h3>
       <ul className="mt-5 grid gap-4 md:grid-cols-3">
-        {tiles.map(({ key, icon: Icon, value }) => (
-          <li key={key} className="rounded-xl surface p-5">
-            <Icon className="size-5 text-fiber" aria-hidden />
-            <p className="mt-3 text-sm text-muted-foreground">{t(key)}</p>
-            <p className="mt-4 font-mono text-3xl tabular-nums text-foreground">{value}</p>
+        {tiles.map(({ key, icon: Icon, value, unit }) => (
+          <li key={key} className="flex flex-col rounded-xl surface p-5 sm:p-6">
+            <div className="flex items-center gap-2.5">
+              <Icon className="size-4 shrink-0 text-fiber" aria-hidden />
+              <p className="text-sm text-muted-foreground">{t(key)}</p>
+            </div>
+            <p className="mt-6 flex items-baseline gap-2 font-mono tabular-nums">
+              <span className="text-6xl leading-none font-medium tracking-[-0.05em] text-foreground [text-shadow:0_0_32px_rgb(6_182_212_/_0.35)] sm:text-7xl">
+                {value}
+              </span>
+              {unit && <span className="text-xl text-fiber">{unit}</span>}
+            </p>
           </li>
         ))}
       </ul>

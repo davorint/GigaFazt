@@ -73,7 +73,7 @@ export function Footer({ base = "" }: { base?: string }) {
   const prefix = base || `/${locale}`
 
   return (
-    <footer id="footer" data-section="footer" className="border-t border-border bg-surface pb-16 md:pb-0">
+    <footer id="footer" data-section="footer" className="relative overflow-hidden border-t border-border bg-surface pb-16 md:pb-0">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr]">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
@@ -130,6 +130,17 @@ export function Footer({ base = "" }: { base?: string }) {
           </ul>
         </div>
       </div>
+
+      {/* Oversized faded wordmark, cropped by the footer's bottom edge. Decorative:
+          the name is already in the brand block above. */}
+      {!isPlaceholder(company.name) && (
+        <div aria-hidden className="pointer-events-none relative mx-auto max-w-7xl select-none px-4 sm:px-6">
+          <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-fiber/40 to-transparent sm:inset-x-6" />
+          <p className="footer-wordmark -mb-[0.16em] pt-6 text-center text-[clamp(4.5rem,18.5vw,17rem)] leading-[0.8] font-semibold tracking-[-0.055em]">
+            {company.name}
+          </p>
+        </div>
+      )}
     </footer>
   )
 }

@@ -3,7 +3,7 @@ import { Briefcase, Building, Store, Warehouse } from "lucide-react"
 import { business } from "@/lib/business"
 import { BuildingDiagram } from "./BuildingDiagram"
 import { QuoteButton } from "./QuoteButton"
-import { InView } from "./InView"
+import { InView } from "@/components/layout/InView"
 
 const SPACE_ICONS = { offices: Briefcase, warehouses: Warehouse, retail: Store, buildings: Building } as const
 

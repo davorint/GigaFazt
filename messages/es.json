@@ -28,12 +28,9 @@
     "h1": "Gigabit simétrico por ${price} al mes.",
     "h1NoPrice": "Gigabit simétrico para tu casa o tu negocio.",
     "subhead": "Sube un video 4K en segundos. Misma velocidad de bajada y de subida en todos los planes.",
-    "from": "Planes desde",
-    "perMonth": "/mes",
     "viewPlans": "Ver planes",
     "coverageLink": "¿Llegamos a tu zona?",
     "canvasAlt": "Haz de fibras ópticas que nace de un solo punto y se abre en abanico, con pulsos de luz cian viajando a lo largo de cada hebra.",
-    "wifi7": "El plan de {speed} incluye módem Wi-Fi 7",
     "clients": "Más de {count} clientes activos ya navegan con nosotros."
   },
   "sections": {
@@ -78,7 +75,11 @@
     "months": "{count, plural, one {# mes} other {# meses}}",
     "promoUntil": "Promo {months, plural, one {# mes} other {# meses}} · termina {date}",
     "regular": "Precio regular",
-    "fit": {"fibra-200": "Para 1 o 2 personas: streaming, clases en línea y videollamadas.", "fibra-500": "Para la familia: varias pantallas en 4K y home office al mismo tiempo.", "fibra-1g": "Para casas muy conectadas: videojuegos en línea, creadores de contenido y respaldos en la nube."},
+    "fit": {
+      "fibra-200": "Para 1 o 2 personas: streaming, clases en línea y videollamadas.",
+      "fibra-500": "Para la familia: varias pantallas en 4K y home office al mismo tiempo.",
+      "fibra-1g": "Para casas muy conectadas: videojuegos en línea, creadores de contenido y respaldos en la nube."
+    },
     "includes": "Incluye",
     "contract": "Contratar",
     "contractAria": "Contratar el plan de {speed}",

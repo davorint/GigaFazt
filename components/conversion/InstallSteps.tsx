@@ -7,11 +7,17 @@ import { feeLabel, speedLabel } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { ContractButton } from "./ContractButton"
 import { statesInList } from "@/lib/geo/state-names"
+import { InView } from "@/components/layout/InView"
 
 /**
  * How installation works (SPEC §7). The owner removed the address check, so
  * step 1 points to the coverage map and the exact address is confirmed in
  * step 3 (lead form). Install time/fee are BUSINESS.md values (chips if unset).
+ *
+ * A fiber rail runs through the step numbers (horizontal from md, vertical on
+ * phones): it lights up 01→04 once when the list scrolls into view, then a
+ * slow light packet travels along it while visible (`.install-*` in
+ * globals.css; lit and still under reduced motion / paused animations).
  */
 export function InstallSteps() {
   const t = useTranslations()
@@ -34,10 +40,24 @@ export function InstallSteps() {
       </h2>
       <p className="mt-3 max-w-2xl text-muted-foreground">{t("install.lead")}</p>
 
-      <ol className="mt-12 grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/[0.07] shadow-[0_32px_64px_-32px_rgb(0_0_0_/_0.9)] md:grid-cols-2 lg:grid-cols-4">
+      <InView
+        as="ol"
+        className="install-steps mt-12 grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/[0.07] shadow-[0_32px_64px_-32px_rgb(0_0_0_/_0.9)] md:grid-cols-2 lg:grid-cols-4"
+      >
         {steps.map((s, i) => (
-          <li key={s.id} className="surface-cell flex flex-col gap-3 p-6">
-            <span className="font-mono text-xs tabular-nums text-fiber" aria-hidden>
+          <li
+            key={s.id}
+            style={{ "--i": i } as React.CSSProperties}
+            className="surface-cell relative flex flex-col gap-3 py-6 pr-6 pl-[4.5rem] md:pl-6"
+          >
+            <span aria-hidden className="install-rail">
+              <span className="install-rail-lit" />
+              <span className="install-packet"><span className="install-packet-dot" /></span>
+            </span>
+            <span
+              className="install-node relative z-10 grid size-8 place-items-center rounded-full font-mono text-[0.7rem] tabular-nums max-md:absolute max-md:top-6 max-md:left-6"
+              aria-hidden
+            >
               {String(i + 1).padStart(2, "0")}
             </span>
             <h3 className="font-semibold">{t(`install.steps.${s.id}.title`)}</h3>
@@ -68,7 +88,7 @@ export function InstallSteps() {
             )}
           </li>
         ))}
-      </ol>
+      </InView>
 
       <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
         <ContractButton context="install" />

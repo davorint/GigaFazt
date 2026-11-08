@@ -28,12 +28,9 @@
     "h1": "Symmetrical gigabit for ${price} a month.",
     "h1NoPrice": "Symmetrical gigabit for your home or business.",
     "subhead": "Upload a 4K video in seconds. The same download and upload speed on every plan.",
-    "from": "Plans from",
-    "perMonth": "/mo",
     "viewPlans": "See plans",
     "coverageLink": "Do we cover your area?",
     "canvasAlt": "A bundle of optical fibers rising from a single point and fanning out, with cyan light pulses travelling along each strand.",
-    "wifi7": "The {speed} plan includes a Wi-Fi 7 modem",
     "clients": "More than {count} active clients are already online with us."
   },
   "sections": {
@@ -78,7 +75,11 @@
     "months": "{count, plural, one {# month} other {# months}}",
     "promoUntil": "Promo {months, plural, one {# month} other {# months}} · ends {date}",
     "regular": "Regular price",
-    "fit": {"fibra-200": "For 1–2 people: streaming, online classes and video calls.", "fibra-500": "For families: several 4K screens and working from home at the same time.", "fibra-1g": "For very connected homes: online gaming, content creators and cloud backups."},
+    "fit": {
+      "fibra-200": "For 1–2 people: streaming, online classes and video calls.",
+      "fibra-500": "For families: several 4K screens and working from home at the same time.",
+      "fibra-1g": "For very connected homes: online gaming, content creators and cloud backups."
+    },
     "includes": "Includes",
     "contract": "Sign up",
     "contractAria": "Sign up for the {speed} plan",

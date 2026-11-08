@@ -400,3 +400,163 @@ html[data-motion="off"] *::after {
 .plan-card:not([data-inview]) .plan-packet {
   animation-play-state: paused;
 }
+
+/* Install steps fiber rail (InstallSteps). Vertical through the step nodes on
+   phones, horizontal from md. Lights up 01→04 once (`data-seen` from InView),
+   then a slow packet crosses one step per 1.2 s while visible. Packets are
+   transform-only; under reduced motion / paused animations the rail is lit
+   instantly and the packet rests at its invisible end frame. */
+.install-rail {
+  position: absolute;
+  inset: 0 auto 0 calc(1.5rem + 1rem - 0.5px);
+  width: 1px;
+  background: rgb(255 255 255 / 0.08);
+  pointer-events: none;
+}
+.install-rail-lit {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(6 182 212 / 0.35), var(--color-fiber) 40%, rgb(6 182 212 / 0.5));
+  box-shadow: 0 0 8px rgb(6 182 212 / 0.6);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--i) * 350ms);
+}
+.install-node {
+  border: 1px solid rgb(255 255 255 / 0.15);
+  background: var(--color-surface);
+  color: var(--muted-foreground);
+  transition:
+    color 250ms ease calc(var(--i) * 350ms + 150ms),
+    border-color 250ms ease calc(var(--i) * 350ms + 150ms),
+    box-shadow 250ms ease calc(var(--i) * 350ms + 150ms);
+}
+.install-steps[data-seen] .install-rail-lit {
+  transform: none;
+}
+.install-steps[data-seen] .install-node {
+  color: var(--color-fiber);
+  border-color: rgb(6 182 212 / 0.7);
+  box-shadow:
+    0 0 0 4px rgb(6 182 212 / 0.08),
+    0 0 16px -2px rgb(6 182 212 / 0.7);
+}
+@keyframes install-packet {
+  0% { transform: translateY(0); opacity: 0; }
+  3% { opacity: 1; }
+  17% { opacity: 1; }
+  20% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+.install-packet {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  will-change: transform;
+  animation: install-packet 6s linear calc(var(--i) * 1.2s) infinite;
+  animation-play-state: paused;
+}
+.install-steps[data-seen][data-inview] .install-packet {
+  animation-play-state: running;
+}
+.install-packet-dot {
+  position: absolute;
+  top: 0;
+  left: -1px;
+  width: 3px;
+  height: 22px;
+  border-radius: 999px;
+  translate: 0 -100%;
+  background: linear-gradient(180deg, transparent, #fff);
+  box-shadow: 0 0 10px var(--color-fiber);
+}
+li:last-child > .install-rail {
+  bottom: calc(100% - 2.5rem);
+}
+@media (min-width: 48rem) {
+  .install-rail {
+    inset: calc(1.5rem + 1rem - 0.5px) 0 auto 0;
+    width: auto;
+    height: 1px;
+  }
+  li:last-child > .install-rail {
+    right: calc(100% - 2.5rem);
+    bottom: auto;
+  }
+  .install-rail-lit {
+    background: linear-gradient(90deg, rgb(6 182 212 / 0.35), var(--color-fiber) 40%, rgb(6 182 212 / 0.5));
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  @keyframes install-packet {
+    0% { transform: translateX(0); opacity: 0; }
+    3% { opacity: 1; }
+    17% { opacity: 1; }
+    20% { transform: translateX(100%); opacity: 0; }
+    100% { transform: translateX(100%); opacity: 0; }
+  }
+  .install-packet-dot {
+    top: -1px;
+    left: 0;
+    width: 22px;
+    height: 3px;
+    translate: -100% 0;
+    background: linear-gradient(90deg, transparent, #fff);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .install-rail-lit,
+  .install-node {
+    transition-delay: 0s !important;
+  }
+}
+html[data-motion="off"] .install-rail-lit,
+html[data-motion="off"] .install-node {
+  transition-delay: 0s !important;
+}
+
+/* Footer: oversized wordmark that fades into the page (Footer). Lit from the
+   top edge like the cards; decorative only. */
+.footer-wordmark {
+  background:
+    radial-gradient(90% 140% at 50% 0%, rgb(34 211 238 / 0.16), transparent 75%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.13) 0%, rgb(255 255 255 / 0.02) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Proof band (ProofBand): the page's one full-bleed statement band. A cyan
+   wash from the top, one fiber line edge to edge, figures lit from above.
+   Static (no loops). */
+.proof-band {
+  background:
+    radial-gradient(70% 55% at 50% 38%, rgb(6 182 212 / 0.10), transparent 70%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.015), transparent 30%, transparent 70%, rgb(255 255 255 / 0.015));
+}
+.proof-line {
+  background: linear-gradient(90deg, transparent, rgb(6 182 212 / 0.5) 15%, var(--color-fiber) 50%, rgb(6 182 212 / 0.5) 85%, transparent);
+  box-shadow: 0 0 12px rgb(6 182 212 / 0.5);
+}
+.proof-figure {
+  background: linear-gradient(180deg, #ffffff 15%, #a5f3fc 70%, var(--color-fiber));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 28px rgb(6 182 212 / 0.25));
+}
+
+/* Final CTA meeting-point glow (FinaleStrands): slow breathing, opacity only
+   (compositor). Paused offscreen via InView; the global reduce / data-motion
+   rules stop it. */
+@keyframes finale-breathe {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+.finale-core {
+  animation: finale-breathe 6s ease-in-out infinite;
+  animation-play-state: paused;
+}
+.finale[data-inview] .finale-core {
+  animation-play-state: running;
+}
