@@ -82,6 +82,8 @@ export function PlanCard({ plan, maxMbps, level = "h3" }: { plan: Plan; maxMbps:
 
       <div className={cn("relative flex flex-1 flex-col pb-6", plan.highlight ? "-mt-6 px-7 lg:px-8" : "-mt-4 px-6")}>
       <Heading id={headingId} className="flex items-baseline gap-2 font-mono">
+        {/* Speeds are plan maximums (hard rule #4). */}
+        <span className="font-sans text-base text-muted-foreground">{t("upTo")} </span>
         <span
           className={cn(
             "font-semibold tracking-[-0.05em] text-foreground",

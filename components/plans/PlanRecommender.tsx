@@ -57,6 +57,7 @@ const WFH_ICONS: Record<Wfh, typeof User> = { no: House, one: Laptop, several: B
  */
 export function PlanRecommender({ onClose }: { onClose: () => void }) {
   const t = useTranslations("recommender")
+  const tp = useTranslations("plans")
   const [step, setStep] = useState(0)
   const [people, setPeople] = useState<People | null>(null)
   const [uses, setUses] = useState<Use[]>([])
@@ -121,13 +122,14 @@ export function PlanRecommender({ onClose }: { onClose: () => void }) {
             ref={focusRef as React.RefObject<HTMLDivElement>}
             tabIndex={-1}
             role="group"
-            aria-label={`${t("resultEyebrow")}: ${speedLabel(recommended.downMbps)}. ${t(`reason.${result.reason}`)}`}
+            aria-label={`${t("resultEyebrow")}: ${tp("upToSpeed", { speed: speedLabel(recommended.downMbps) })}. ${t(`reason.${result.reason}`)}`}
             className="flex flex-1 flex-col outline-none"
           >
             <p className="eyebrow">
               [ {t("resultEyebrow")} ]
             </p>
             <p className="proof-figure mt-3 w-fit font-mono text-6xl font-semibold tracking-[-0.05em] sm:text-7xl">
+              <span className="mr-3 align-middle font-sans text-lg font-normal tracking-normal text-muted-foreground sm:text-xl">{tp("upTo")}</span>
               {speedLabel(recommended.downMbps)}
             </p>
             <p className="mt-3 text-base">{t(`reason.${result.reason}`)}</p>

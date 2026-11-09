@@ -26,8 +26,8 @@ export function ComparisonTable() {
     isPlaceholder(v) ? <PlaceholderChip keyName={v.key} /> : render(v)
 
   const rows: { key: string; label: string; cell: (p: Plan) => ReactNode }[] = [
-    { key: "download", label: t("download"), cell: (p) => speedLabel(p.downMbps) },
-    { key: "upload", label: t("upload"), cell: (p) => speedLabel(p.upMbps) },
+    { key: "download", label: t("download"), cell: (p) => tp("upToSpeed", { speed: speedLabel(p.downMbps) }) },
+    { key: "upload", label: t("upload"), cell: (p) => tp("upToSpeed", { speed: speedLabel(p.upMbps) }) },
     { key: "technology", label: t("technology"), cell: (p) => chip(p.technology, (x) => x) },
     { key: "latency", label: t("latency"), cell: () => t("latencyValue") },
     {
@@ -87,7 +87,7 @@ export function ComparisonTable() {
                     p.highlight && "text-fiber"
                   )}
                 >
-                  {speedLabel(p.downMbps)}
+                  {tp("upToSpeed", { speed: speedLabel(p.downMbps) })}
                   {p.highlight && (
                     <span className="ml-2 align-middle text-[0.6rem] font-normal uppercase tracking-wider">
                       {tp("popular")}

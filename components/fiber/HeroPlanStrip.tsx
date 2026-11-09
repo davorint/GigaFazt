@@ -49,6 +49,7 @@ export function HeroPlanStrip({ className, style }: { className?: string; style?
               )}
               <span>
                 <span className="flex items-baseline gap-1 font-mono font-semibold tracking-[-0.03em] text-white">
+                  <span className="mr-0.5 font-sans text-xs font-normal tracking-normal text-muted-foreground sm:text-sm">{tp("upTo")}</span>
                   <span className="text-xl sm:text-2xl">{speed.value}</span>
                   <span className="text-xs font-normal text-muted-foreground sm:text-sm">{speed.unit}</span>
                 </span>

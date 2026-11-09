@@ -101,7 +101,9 @@
       "wifi6Modem": "Wi-Fi 6 modem at no extra cost"
     },
     "wifi7Note": "Modem on loan at no extra cost while your service is active. Wi-Fi 7: top wireless speed needs compatible devices.",
-    "free": "Free"
+    "free": "Free",
+    "upTo": "Up to",
+    "upToSpeed": "Up to {speed}"
   },
   "addons": {
     "title": "Build your bundle",
@@ -598,7 +600,7 @@
     "title": "Ready for symmetrical internet?",
     "lead": "Pick your plan, leave your details and we will contact you to book the installation.",
     "selected": "Selected plan:",
-    "planName": "{speed} symmetrical",
+    "planName": "Up to {speed} symmetrical",
     "change": "Change",
     "whatsapp": "Message us on WhatsApp",
     "call": "Call us",
