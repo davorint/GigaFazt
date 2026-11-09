@@ -28,7 +28,8 @@ The script dissolves the municipios of each state into one outline and simplifie
 ## Service zone
 
 `public/geo/service-zone.json` (≈4 KB gz): the lit "zona de servicio" on the map and the
-/cobertura outlines. All of CDMX + the Estado de México municipios that border CDMX +
+/cobertura outlines. All of CDMX + the Estado de México municipios that border CDMX, minus
+the northeast ones the owner excluded (Coacalco, Ecatepec, Nezahualcóyotl, La Paz; `EXCLUDE` in the script) +
 Cuernavaca and Tepoztlán. From the same raw files:
 
 `python -I scripts/build_service_zone.py geo-raw public/geo/service-zone.json`
