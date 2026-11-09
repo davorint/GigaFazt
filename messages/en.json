@@ -100,7 +100,7 @@
       "wifi7Modem": "Wi-Fi 7 modem at no extra cost",
       "wifi6Modem": "Wi-Fi 6 modem at no extra cost"
     },
-    "wifi7Note": "Modem on loan at no extra cost while your service is active. Wi-Fi 7: top wireless speed needs compatible devices; older ones still connect.",
+    "wifi7Note": "Modem on loan at no extra cost while your service is active. Wi-Fi 7: top wireless speed needs compatible devices.",
     "free": "Free"
   },
   "addons": {

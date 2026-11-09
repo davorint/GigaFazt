@@ -100,7 +100,7 @@
       "wifi7Modem": "Módem Wi-Fi 7 sin costo adicional",
       "wifi6Modem": "Módem Wi-Fi 6 sin costo adicional"
     },
-    "wifi7Note": "Módem en comodato sin costo adicional: te lo prestamos mientras tu servicio esté activo. Wi-Fi 7: la velocidad inalámbrica máxima requiere dispositivos compatibles; los demás también se conectan.",
+    "wifi7Note": "Módem en comodato sin costo adicional: te lo prestamos mientras tu servicio esté activo. Wi-Fi 7: la velocidad inalámbrica máxima requiere dispositivos compatibles.",
     "free": "Gratis"
   },
   "addons": {
