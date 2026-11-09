@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { getTranslations, setRequestLocale } from "next-intl/server"
 import { speedRange } from "@/lib/plans"
+import { perksSuffix } from "@/lib/meta-text"
 import { Nav } from "@/components/hud/Nav"
 import { Section } from "@/components/layout/Section"
 import { Footer } from "@/components/layout/Footer"
@@ -17,16 +18,13 @@ import { LeadSheetHost } from "@/components/conversion/LeadSheetHost"
 import { PlansJsonLd } from "@/components/plans/PlansJsonLd"
 import { FaqJsonLd, ServiceJsonLd } from "@/components/seo/SiteJsonLd"
 import { pageMeta } from "@/lib/site"
-import { wifi7Plan } from "@/lib/plans"
-import { speedLabel } from "@/lib/format"
 import { PageTransition } from "@/components/layout/PageTransition"
 
 export async function generateMetadata({ params }: PageProps<"/[locale]">): Promise<Metadata> {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: "meta" })
   const ts = await getTranslations({ locale, namespace: "seo" })
-  const wifi7 = wifi7Plan ? ` ${t("wifi7", { speed: speedLabel(wifi7Plan.downMbps) })}` : ""
-  return pageMeta(locale, "/", t("title"), t("description", speedRange()) + wifi7, ts("ogAlt"))
+  return pageMeta(locale, "/", t("title"), t("description", { ...speedRange(), perks: perksSuffix(locale, t) }), ts("ogAlt"))
 }
 
 /** Home: the ordered list of sections only (SPEC file structure). */

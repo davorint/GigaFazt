@@ -1,8 +1,11 @@
 {
   "meta": {
-    "title": "Symmetrical fiber internet in the Mexico City metro area",
-    "description": "100% symmetrical fiber internet in the Mexico City metro area and in Cuernavaca, Tepoztlán and Amatlán. The same download and upload speed, from {min} up to {max}.",
-    "wifi7": "The {speed} plan includes a Wi-Fi 7 modem."
+    "title": "Symmetrical fiber internet in Mexico City and Morelos",
+    "description": "Symmetrical fiber internet in Mexico City, its metro area, Cuernavaca, Tepoztlán and Amatlán. Up to {max}{perks}.",
+    "perks": {
+      "freeInstall": "free installation",
+      "noTerm": "no minimum term"
+    }
   },
   "nav": {
     "fibra": "Fiber",
@@ -92,7 +95,7 @@
     "contractAria": "Sign up for the {speed} plan",
     "speedNote": "Plan maximum speeds, wired.",
     "compareAll": "Compare all plans",
-    "pageTitle": "Fiber internet plans",
+    "pageTitle": "Symmetrical fiber internet plans",
     "pageLead": "Compare speeds, prices and what each plan includes. All of them are 100% symmetrical.",
     "jsonLdName": "Symmetrical fiber internet {speed}",
     "promo": "Promo",
@@ -103,7 +106,8 @@
     "wifi7Note": "Modem on loan at no extra cost while your service is active. Wi-Fi 7: top wireless speed needs compatible devices.",
     "free": "Free",
     "upTo": "Up to",
-    "upToSpeed": "Up to {speed}"
+    "upToSpeed": "Up to {speed}",
+    "metaDescription": "Compare symmetrical fiber internet plans from {min} to {max}: monthly price with VAT and modem included{perks}."
   },
   "addons": {
     "title": "Build your bundle",
@@ -627,7 +631,13 @@
     "serviceType": "Fiber-to-the-home internet (FTTH)",
     "serviceDescription": "Fiber-to-the-home internet with the same download and upload speed.",
     "ogAlt": "Symmetrical fiber internet in the Mexico City metro area and in Cuernavaca, Tepoztlán and Amatlán",
-    "ogZones": "Mexico City metro area · Cuernavaca · Tepoztlán · Amatlán"
+    "ogZones": "Mexico City metro area · Cuernavaca · Tepoztlán · Amatlán",
+    "bizInternetName": "Business internet",
+    "bizInternetType": "Dedicated and enterprise fiber internet",
+    "bizInternetDescription": "Symmetrical fiber links up to {max} Gbps for businesses, in three packages by availability: dedicated, enterprise and business.",
+    "bizNetworksName": "Fiber networks for businesses",
+    "bizNetworksType": "Fiber network design and installation, structured cabling",
+    "bizNetworksDescription": "Design and installation of internal fiber networks from {from}GbE to {to}GbE, structured cabling, business Wi-Fi and network equipment."
   },
   "motion": {
     "pause": "Pause animations",
@@ -654,8 +664,8 @@
     }
   },
   "business": {
-    "metaTitle": "Fiber for businesses: custom installations",
-    "metaDescription": "Custom fiber optic installations for your business: gigabit speeds in every area, dedicated internet up to {max} Gbps, an internal fiber network up to {lanMax}GbE, enterprise internet, business internet, structured cabling, business Wi-Fi and network equipment.",
+    "metaTitle": "Business internet and fiber networks",
+    "metaDescription": "Dedicated internet up to {max} Gbps, fiber networks up to {lanMax}GbE, structured cabling and business Wi-Fi in Mexico City and Morelos. Get a quote.",
     "eyebrow": "Businesses",
     "h1": "The network your operation never sees, and can't afford to lose.",
     "lead": "Dedicated internet up to {max} Gbps and internal fiber networks up to {to}GbE, designed and installed by one team.",
@@ -1003,7 +1013,8 @@
       }
     },
     "stepsLead": "One team from start to finish.",
-    "stepsYouGet": "You get:"
+    "stepsYouGet": "You get:",
+    "h1Kicker": "Business internet and fiber networks"
   },
   "privacy": {
     "metaTitle": "Privacy Notice",

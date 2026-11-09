@@ -108,3 +108,14 @@ export function plansWith(id: IncludeId): Plan[] {
 
 /** The plan that includes the Wi-Fi 7 modem (owner: 1 Gbps only; no brand, no mesh). */
 export const wifi7Plan: Plan | undefined = plansWith("wifi7Modem")[0]
+
+/**
+ * Terms every plan shares, for short summaries such as meta descriptions:
+ * only what the data says (free installation, no minimum term).
+ */
+export function sharedPlanPerks(): ("freeInstall" | "noTerm")[] {
+  const out: ("freeInstall" | "noTerm")[] = []
+  if (plans.every((p) => p.installFeeMxn === 0)) out.push("freeInstall")
+  if (plans.every((p) => p.contractMonths === null)) out.push("noTerm")
+  return out
+}

@@ -38,6 +38,12 @@ export function BusinessHero() {
             {/* Chapter 0: the hero. */}
             <div className="biz-story-intro [grid-area:1/1]">
               <h1 className="biz-display text-[2.6rem] leading-[1] font-[450] tracking-[-0.045em] text-balance sm:text-6xl lg:text-[5.5rem]">
+                {/* What the page is about, in search terms, above the statement (SEO). */}
+                <span className="mb-6 flex items-center gap-3 text-sm leading-normal font-normal tracking-normal text-zinc-300 [-webkit-text-fill-color:currentColor] sm:text-base">
+                  <span aria-hidden className="h-px w-8 bg-[var(--biz-accent)]" />
+                  {t("h1Kicker")}
+                </span>
+                <span className="sr-only">: </span>
                 {t("h1")}
               </h1>
               <p className="mt-7 max-w-xl text-lg leading-relaxed text-zinc-400">{t("lead", { max, to })}</p>

@@ -97,7 +97,7 @@ export function AddOnsPanel() {
                 <div className="flex items-start gap-3">
                   <Tv className="mt-0.5 size-5 shrink-0 text-fiber" aria-hidden />
                   <div className="min-w-0 flex-1">
-                    <label htmlFor={id} className="flex flex-wrap items-baseline justify-between gap-x-3 font-medium">
+                    <label id={`${id}-label`} htmlFor={id} className="flex flex-wrap items-baseline justify-between gap-x-3 font-medium">
                       {t(`${a.id as "tv"}.name`)}
                       <span className="font-mono text-sm text-muted-foreground">
                         {isPlaceholder(a.priceMxn) ? (
@@ -128,6 +128,8 @@ export function AddOnsPanel() {
                   </div>
                   <Switch
                     id={id}
+                    // Base UI puts the id on its hidden input, so name the visible switch explicitly.
+                    aria-labelledby={`${id}-label`}
                     checked={on}
                     onCheckedChange={(checked) => {
                       selection.toggleAddOn(a.id, checked)

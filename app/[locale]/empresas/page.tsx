@@ -8,6 +8,8 @@ import { BusinessTiers } from "@/components/business/BusinessTiers"
 import { BusinessNetworks } from "@/components/business/BusinessNetworks"
 import { BusinessNoc } from "@/components/business/BusinessNoc"
 import { BriefHost } from "@/components/business/BriefHost"
+import { BusinessJsonLd } from "@/components/seo/BusinessJsonLd"
+import { BreadcrumbJsonLd } from "@/components/seo/SiteJsonLd"
 import { BusinessSteps } from "@/components/business/BusinessSteps"
 import { BusinessCta } from "@/components/business/BusinessCta"
 import { business } from "@/lib/business"
@@ -66,6 +68,8 @@ export default async function EmpresasPage({ params }: PageProps<"/[locale]/empr
       </main>
       </PageTransition>
       <BriefHost />
+      <BusinessJsonLd locale={locale} />
+      <BreadcrumbJsonLd locale={locale} items={[{ name: t("metaTitle"), path: "/empresas" }]} />
       <Footer base={`/${locale}`} variant="biz" />
     </>
   )

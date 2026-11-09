@@ -1,8 +1,11 @@
 {
   "meta": {
-    "title": "Fibra óptica simétrica en la zona metropolitana de la CDMX",
-    "description": "Internet de fibra óptica 100% simétrica en la zona metropolitana de la Ciudad de México y en Cuernavaca, Tepoztlán y Amatlán. Misma velocidad de bajada y de subida, desde {min} hasta {max}.",
-    "wifi7": "El plan de {speed} incluye módem Wi-Fi 7."
+    "title": "Internet de fibra óptica simétrica en CDMX y Morelos",
+    "description": "Internet de fibra óptica simétrica en la CDMX, su zona metropolitana, Cuernavaca, Tepoztlán y Amatlán. Hasta {max}{perks}.",
+    "perks": {
+      "freeInstall": "instalación gratis",
+      "noTerm": "sin plazo forzoso"
+    }
   },
   "nav": {
     "fibra": "Fibra",
@@ -92,7 +95,7 @@
     "contractAria": "Contratar el plan de {speed}",
     "speedNote": "Velocidades máximas del plan, por cable.",
     "compareAll": "Comparar todos los planes",
-    "pageTitle": "Planes de internet de fibra óptica",
+    "pageTitle": "Planes de internet de fibra óptica simétrica",
     "pageLead": "Compara velocidades, precios y lo que incluye cada plan. Todos son 100% simétricos.",
     "jsonLdName": "Internet de fibra óptica simétrica {speed}",
     "promo": "Promoción",
@@ -103,7 +106,8 @@
     "wifi7Note": "Módem en comodato sin costo adicional: te lo prestamos mientras tu servicio esté activo. Wi-Fi 7: la velocidad inalámbrica máxima requiere dispositivos compatibles.",
     "free": "Gratis",
     "upTo": "Hasta",
-    "upToSpeed": "Hasta {speed}"
+    "upToSpeed": "Hasta {speed}",
+    "metaDescription": "Compara los planes de internet de fibra óptica simétrica de {min} a {max}: precio mensual con IVA y módem incluido{perks}."
   },
   "addons": {
     "title": "Arma tu paquete",
@@ -627,7 +631,13 @@
     "serviceType": "Internet de fibra óptica (FTTH)",
     "serviceDescription": "Internet de fibra óptica hasta el hogar con la misma velocidad de bajada y de subida.",
     "ogAlt": "Fibra óptica simétrica en la zona metropolitana de la Ciudad de México y en Cuernavaca, Tepoztlán y Amatlán",
-    "ogZones": "Zona metropolitana CDMX · Cuernavaca · Tepoztlán · Amatlán"
+    "ogZones": "Zona metropolitana CDMX · Cuernavaca · Tepoztlán · Amatlán",
+    "bizInternetName": "Internet para empresas",
+    "bizInternetType": "Internet dedicado y empresarial por fibra óptica",
+    "bizInternetDescription": "Enlaces simétricos de fibra óptica de hasta {max} Gbps para empresas, en tres paquetes según la disponibilidad: dedicado, empresarial y para negocios.",
+    "bizNetworksName": "Redes de fibra óptica para empresas",
+    "bizNetworksType": "Diseño e instalación de redes de fibra óptica y cableado estructurado",
+    "bizNetworksDescription": "Diseño e instalación de redes internas de fibra óptica de {from}GbE a {to}GbE, cableado estructurado, Wi-Fi empresarial y equipo de red."
   },
   "motion": {
     "pause": "Pausar animaciones",
@@ -654,8 +664,8 @@
     }
   },
   "business": {
-    "metaTitle": "Fibra óptica para empresas: instalaciones a la medida",
-    "metaDescription": "Instalaciones de fibra óptica a la medida para tu negocio: velocidad gigabit en todas las áreas, internet dedicado de hasta {max} Gbps, red interna de fibra de hasta {lanMax}GbE, internet empresarial, internet para negocios, cableado estructurado, Wi-Fi empresarial y equipo de red.",
+    "metaTitle": "Internet y redes de fibra óptica para empresas",
+    "metaDescription": "Internet dedicado de hasta {max} Gbps, redes de fibra de hasta {lanMax}GbE, cableado estructurado y Wi-Fi empresarial en la CDMX y Morelos. Cotiza tu proyecto.",
     "eyebrow": "Empresas",
     "h1": "La red que tu operación no ve, y no puede perder.",
     "lead": "Internet dedicado de hasta {max} Gbps y redes internas de fibra de hasta {to}GbE, diseñadas e instaladas por un mismo equipo.",
@@ -1003,7 +1013,8 @@
       }
     },
     "stepsLead": "Un mismo equipo de principio a fin.",
-    "stepsYouGet": "Recibes:"
+    "stepsYouGet": "Recibes:",
+    "h1Kicker": "Internet y redes de fibra óptica para empresas"
   },
   "privacy": {
     "metaTitle": "Aviso de Privacidad",

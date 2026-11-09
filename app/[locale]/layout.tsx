@@ -4,7 +4,8 @@ import { NextIntlClientProvider, hasLocale } from "next-intl"
 import { getTranslations, setRequestLocale } from "next-intl/server"
 import { notFound } from "next/navigation"
 import { routing } from "@/i18n/routing"
-import { SITE_URL, SITE_URL_CONFIGURED, pageMeta } from "@/lib/site"
+import { HREFLANG, SITE_URL, SITE_URL_CONFIGURED, pageMeta } from "@/lib/site"
+import { perksSuffix } from "@/lib/meta-text"
 import { speedRange } from "@/lib/plans"
 import "../globals.css"
 import { SurfaceLight } from "@/components/layout/SurfaceLight"
@@ -33,7 +34,7 @@ export async function generateMetadata({
   if (!hasLocale(routing.locales, locale)) notFound()
   setRequestLocale(locale)
   const t = await getTranslations({ locale, namespace: "meta" })
-  const description = t("description", speedRange())
+  const description = t("description", { ...speedRange(), perks: perksSuffix(locale, t) })
   return {
     metadataBase: new URL(SITE_URL),
     ...pageMeta(locale, "/", t("title"), description, (await getTranslations({ locale, namespace: "seo" }))("ogAlt")),
@@ -52,7 +53,7 @@ export default async function LocaleLayout({
   return (
     // suppressHydrationWarning: lib/motion.ts may add data-motion before hydration.
     <html
-      lang={locale}
+      lang={HREFLANG[locale] ?? locale}
       suppressHydrationWarning
       className={`${geistSans.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
     >
