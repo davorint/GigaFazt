@@ -1,0 +1,220 @@
+{
+  "mikrotik": {
+    "meta": {
+      "title": "Simulador de burst MikroTik · Interno"
+    },
+    "intro": {
+      "eyebrow": "Herramienta interna",
+      "private": "Uso interno · sin enlaces · no indexada",
+      "title": "Simulador de burst MikroTik",
+      "lead": "Calcula y prueba la ráfaga de una cola de RouterOS antes de configurarla: cuánto dura, cuántos datos extra entrega, cuándo vuelve y qué pasa con distintos tipos de tráfico. Al final copias el comando listo.",
+      "share": "Copiar enlace con esta configuración",
+      "shared": "Enlace copiado",
+      "reset": "Restablecer",
+      "jump": {
+        "params": "Parámetros",
+        "sim": "Simulación",
+        "solver": "Calculadora",
+        "export": "Exportar",
+        "how": "Cómo funciona"
+      }
+    },
+    "params": {
+      "title": "Parámetros de la cola",
+      "lead": "Valores en Mbps y segundos, como en Winbox. Cargar un plan pone su velocidad como max-limit y valores de ráfaga iniciales: burst-limit al doble, burst-threshold al 75 % y burst-time de 16 s.",
+      "preset": "Plan",
+      "custom": "Personalizado",
+      "symmetric": "Mismos valores de subida y bajada",
+      "down": "Bajada (download)",
+      "up": "Subida (upload)",
+      "maxLimit": "max-limit",
+      "maxLimitHint": "Velocidad sostenida (MIR).",
+      "burstLimit": "burst-limit",
+      "burstLimitHint": "Tope durante la ráfaga.",
+      "burstThreshold": "burst-threshold",
+      "burstThresholdHint": "{pct} de max-limit. Interruptor: con el promedio debajo, hay ráfaga.",
+      "burstTime": "burst-time",
+      "burstTimeHint": "Ventana del promedio, no la duración de la ráfaga.",
+      "limitAt": "limit-at",
+      "limitAtHint": "Garantizado (CIR). 0 = sin definir. Solo cuenta si la cola padre se satura.",
+      "lineCap": "Tope físico del acceso",
+      "lineCapHint": "Opcional. Lo máximo que la línea entrega de verdad (puerto del ONT, PON compartida…). La ráfaga no puede pasar de aquí.",
+      "unitMbps": "Mbps",
+      "unitS": "s",
+      "ros": "RouterOS: {value}",
+      "invalid": "Valor no válido"
+    },
+    "figures": {
+      "title": "Resultado",
+      "direction": "Dirección",
+      "duration": "Duración de la ráfaga",
+      "durationSub": "a {rate}, con la línea en reposo",
+      "durationNone": "Sin ráfaga",
+      "durationNever": "No termina",
+      "durationNeverSub": "La demanda queda bajo el threshold: el promedio nunca lo alcanza",
+      "approx": "≈ threshold × burst-time ÷ tasa = {value}",
+      "extra": "Datos extra",
+      "extraSub": "por encima de max-limit en esa ráfaga",
+      "recharge": "Recarga completa",
+      "rechargeSub": "sin tráfico para tener la ráfaga entera otra vez",
+      "sustained": "Sostenido",
+      "sustainedSub": "con tráfico continuo después de la ráfaga",
+      "sustainedRepeats": "≈ promedio con la ráfaga repitiéndose",
+      "step": "Muestreo",
+      "stepSub": "RouterOS recalcula el promedio cada burst-time ÷ 16"
+    },
+    "issues": {
+      "title": "Revisión",
+      "ok": "Configuración coherente.",
+      "burstOff": "Ráfaga desactivada: hacen falta burst-limit, burst-threshold y burst-time mayores que 0.",
+      "burstLimitNotAbove": "burst-limit debe ser mayor que max-limit; si no, la ráfaga no hace nada.",
+      "thresholdAboveMax": "burst-threshold está arriba de max-limit: con tráfico continuo el promedio nunca lo alcanza de forma estable y la ráfaga vuelve una y otra vez. El cliente sostiene ≈ el threshold, no max-limit. MikroTik recomienda el threshold entre limit-at y max-limit.",
+      "thresholdBelowLimitAt": "burst-threshold está debajo de limit-at. MikroTik recomienda ponerlo entre limit-at y max-limit.",
+      "limitAtAboveMax": "limit-at no puede ser mayor que max-limit.",
+      "burstAboveLineCap": "burst-limit pasa del tope físico: en la práctica la ráfaga llega al tope, no a burst-limit.",
+      "maxAboveLineCap": "max-limit pasa del tope físico: la línea no puede entregar ni la velocidad sostenida.",
+      "shortBurst": "La ráfaga dura menos de 1 s: casi nadie la va a notar.",
+      "neverEnds": "Con esta demanda la ráfaga no termina: la tasa entregada queda debajo del threshold.",
+      "level": {
+        "error": "Error",
+        "warn": "Atención",
+        "info": "Nota"
+      }
+    },
+    "sim": {
+      "title": "Simulación",
+      "lead": "Paso a paso, como lo mide RouterOS: cada burst-time ÷ 16 compara el promedio de la ventana con el threshold y decide el tope del siguiente tramo.",
+      "tag": "SIMULACIÓN",
+      "pattern": "Tráfico del cliente",
+      "kinds": {
+        "sustained": "Descarga continua",
+        "intermittent": "Intermitente",
+        "speedtest": "Prueba de velocidad"
+      },
+      "kindsHint": {
+        "sustained": "Pide sin parar desde el inicio.",
+        "intermittent": "Ciclos de actividad y pausa, como navegar o sincronizar.",
+        "speedtest": "Una prueba de unos segundos y luego nada."
+      },
+      "saturate": "Pide todo lo que la cola le dé",
+      "demand": "Demanda del cliente",
+      "start": "Reposo inicial",
+      "on": "Activo",
+      "off": "Pausa",
+      "test": "Duración de la prueba",
+      "duration": "Tiempo simulado",
+      "stats": {
+        "activeAvg": "Promedio mientras pide",
+        "activeAvgSub": "lo que vería una prueba de velocidad en ese tiempo",
+        "total": "Transferido",
+        "totalSub": "{extra} más que sin ráfaga ({pct})",
+        "totalSubNone": "igual que sin ráfaga",
+        "burst": "Tiempo en ráfaga",
+        "burstSub": "{count, plural, =0 {ninguna ráfaga} one {# ráfaga} other {# ráfagas}}",
+        "peak": "Pico",
+        "peakSub": "tasa máxima entregada"
+      }
+    },
+    "chart": {
+      "label": "Gráfica de tasa contra tiempo, {direction}",
+      "summary": "En {duration} se entregan {total}. La ráfaga dura {first} la primera vez y suma {burst} en total. Usa las flechas izquierda y derecha para recorrer la gráfica.",
+      "legend": {
+        "rate": "Tasa entregada",
+        "avg": "Promedio (ventana burst-time)",
+        "allowed": "Ráfaga permitida",
+        "demand": "Demanda",
+        "demandSaturating": "Demanda: todo lo posible"
+      },
+      "ref": {
+        "maxLimit": "max-limit",
+        "burstLimit": "burst-limit",
+        "burstThreshold": "threshold",
+        "limitAt": "limit-at",
+        "lineCap": "tope físico"
+      },
+      "axisY": "Mbps",
+      "axisX": "segundos",
+      "tip": {
+        "t": "t = {value}",
+        "rate": "Entregado",
+        "avg": "Promedio",
+        "ceiling": "Tope",
+        "demand": "Demanda",
+        "state": "Estado",
+        "bursting": "En ráfaga",
+        "allowed": "Ráfaga permitida",
+        "limited": "Limitado a max-limit",
+        "idle": "Sin tráfico"
+      },
+      "table": "Ver los datos en tabla",
+      "tableCaption": "Un renglón por paso de {step}",
+      "col": {
+        "t": "t (s)",
+        "demand": "Demanda",
+        "avg": "Promedio",
+        "ceiling": "Tope",
+        "rate": "Entregado",
+        "state": "Estado"
+      },
+      "saturating": "todo"
+    },
+    "solver": {
+      "title": "Calculadora",
+      "lead": "Dime cuánto quieres que dure la ráfaga y te doy los valores. Usa max-limit y burst-limit de los parámetros.",
+      "using": "Con max-limit {max} y burst-limit {burst}{direction}",
+      "target": "Duración deseada de la ráfaga",
+      "mode": "Qué calcular",
+      "modes": {
+        "burstTime": "burst-time (dejo fijo el threshold)",
+        "burstThreshold": "burst-threshold (dejo fijo burst-time)"
+      },
+      "fixedThreshold": "burst-threshold fijo",
+      "fixedTime": "burst-time fijo",
+      "formula": "duración ≈ burst-threshold × burst-time ÷ burst-limit",
+      "result": "Propuesta",
+      "real": "Duración real con valores redondeados: {value}",
+      "impossible": "Con estos valores no hay ráfaga: burst-limit tiene que ser mayor que max-limit y la duración mayor que 0.",
+      "warnAboveMax": "El threshold calculado queda arriba de max-limit: la ráfaga se repetiría sin fin. Sube burst-time o baja la duración.",
+      "apply": "Aplicar a los parámetros",
+      "applied": "Aplicado"
+    },
+    "export": {
+      "title": "Exportar a RouterOS",
+      "lead": "Comandos con los parámetros de arriba. Revísalos antes de pegarlos en el router.",
+      "name": "Nombre",
+      "target": "Target (IP o red del cliente)",
+      "parent": "Parent",
+      "markDown": "Packet mark de bajada",
+      "markUp": "Packet mark de subida",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "tabs": {
+        "simple": "Simple queue",
+        "tree": "Queue tree",
+        "pcq": "PCQ",
+        "ppp": "PPP · Hotspot · RADIUS"
+      },
+      "notes": {
+        "simple": "En simple queues cada valor va como subida/bajada del target (target-upload/target-download).",
+        "tree": "Necesita las marcas de paquete en /ip firewall mangle (no se generan aquí). Un queue tree por dirección.",
+        "pcq": "Cada sub-stream (cada cliente de la cola) recibe la misma tasa y su propia ráfaga. Usa los tipos en una cola, p. ej. queue=NOMBRE-up/NOMBRE-down en una simple queue con el target de la red de clientes.",
+        "ppp": "Formato rate-limit visto desde el router: rx = subida del cliente, tx = bajada. Sirve igual en /ppp profile, en perfiles de Hotspot y en el atributo RADIUS Mikrotik-Rate-Limit. burst-time va en segundos."
+      },
+      "rateLimit": "Cadena rate-limit"
+    },
+    "how": {
+      "title": "Cómo funciona el burst",
+      "points": [
+        "RouterOS mide el promedio de la cola sobre los últimos burst-time segundos y lo recalcula cada burst-time ÷ 16.",
+        "Mientras ese promedio esté debajo de burst-threshold, la cola puede llegar a burst-limit. En cuanto lo alcanza, se queda en max-limit.",
+        "burst-time no es lo que dura la ráfaga: es la ventana del promedio. Desde una línea en reposo la ráfaga dura ≈ burst-threshold × burst-time ÷ burst-limit.",
+        "Para tener la ráfaga completa otra vez, la cola necesita burst-time segundos sin tráfico. Con menos, vuelve una ráfaga más corta en cuanto el promedio baja del threshold."
+      ],
+      "exampleTitle": "Ejemplo del manual de MikroTik",
+      "example": "limit-at 1M, max-limit 2M, burst-threshold 1500k, burst-limit 4M, burst-time 16s: el cliente descarga a 4 Mbps durante 6 s (1.5 × 16 ÷ 4) y luego queda en 2 Mbps.",
+      "loadExample": "Cargar este ejemplo",
+      "modelTitle": "Qué no modela",
+      "model": "La simulación modela una sola cola. No incluye la competencia con otras colas bajo el mismo padre (ahí entran limit-at y la prioridad), el arranque lento de TCP ni la ráfaga dentro de cada sub-ventana. El comportamiento por paso de 1/16 viene del manual clásico de MikroTik (Manual:Queue); la documentación actual describe los mismos parámetros sin ese detalle."
+    }
+  }
+}

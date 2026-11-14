@@ -19,6 +19,7 @@ npm run shot http://localhost:3000/es   # Playwright screenshots of every [data-
 ## Configuration
 - `NEXT_PUBLIC_SITE_URL`: site origin for canonical URLs, sitemap and OG. Defaults to `https://gigafazt.com` (from `lib/company.ts`). Set it on preview deployments, or add noindex there.
 - `CRM_WEBHOOK_URL`: where `/api/leads` posts consumer leads; without it, leads are only logged.
+- `MIKROTIK_USER` / `MIKROTIK_PASS`: login for the internal burst tool at `/mikrotik` (browser Basic Auth prompt). Without both, `/mikrotik` answers 404 like any unknown page. Use HTTPS in production (Basic Auth sends the password with every request). Screenshots: `SHOT_USER=… SHOT_PASS=… npm run shot http://localhost:3000/mikrotik`.
 
 ## Where things live
 - Content and data: `docs/BUSINESS.md` (outside this repo, in the project folder) → `lib/company.ts`, `lib/plans.ts`, `lib/business.ts`. Copy: `messages/{es,en}.json`.
