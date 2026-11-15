@@ -462,7 +462,7 @@
       "avgHintDown": "OpenVault (1T 2025): 1.544 GB/h por cliente residencial a las 9 p. m. ≈ 3.4 Mbps. Usa tus datos si los tienes: es lo que más pesa en el resultado.",
       "avgHintUp": "OpenVault (1T 2025): 0.096 GB/h por cliente residencial a las 9 p. m. ≈ 0.21 Mbps de subida.",
       "homes": "Clientes por puerto PON",
-      "homesHint": "Según el divisor (1:32, 1:64…). Cada puerto {tech} da {cap} nominal en esta dirección.",
+      "homesHint": "Según el divisor (1:32, 1:64…; hasta 1:128). Cada puerto {tech} da {cap} útiles en esta dirección (92 % de la nominal).",
       "fileMB": "Tamaño medio de las descargas",
       "fileHint": "Supuesto. Lo que no es video llega como descargas de tamaño aleatorio con este promedio; más grande = tráfico más a ráfagas.",
       "videoShare": "Parte que es video",
@@ -713,7 +713,9 @@
           "disabled": "Deshabilitada",
           "unlimited": "Sin límite en una dirección (max-limit 0)",
           "unknownPlan": "No coincide con ningún plan",
-          "ruleDiffers": "No sigue la regla «{rule}»"
+          "ruleDiffers": "No sigue la regla «{rule}»",
+          "ambiguousPlan": "No se sabe si es el plan de su max-limit o el de su burst-limit: pon la velocidad del plan en el nombre o comment",
+          "parentQueue": "Cola padre (no es un cliente): no se revisa ni se cambia"
         },
         "truncated": "Se muestran {shown} de {total}.",
         "migrateTitle": "Pasar todo a la regla «{rule}»",

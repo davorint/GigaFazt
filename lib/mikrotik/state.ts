@@ -1,6 +1,6 @@
 import { plans } from "../plans"
 import { DEFAULT_RULE, KINDS, planDefaults, type Pattern, type PatternKind, type PlanRule, type QueueParams } from "./burst"
-import type { PonTech } from "./capacity"
+import { DEFAULT_PON_EFFICIENCY, type PonTech } from "./capacity"
 import { QUEUE_KINDS, type Pair, type QueueKind } from "./routeros"
 
 /**
@@ -55,7 +55,22 @@ export type CapacityState = {
   fileMB: number
   pon: PonTech
   homesPerPort: number
+  /** Usable share of the PON line rate, 0..1. */
+  ponEfficiency: number
+  /** OLT: the owner's Huawei MA5608T (2026-11-15), or no OLT limit. */
+  olt: OltModel
+  /** PON boards in the OLT (the MA5608T has 2 service slots). */
+  oltBoards: number
+  /** Ports per board: 16 (GPFD, GPHF) or 8 (GPBD, GPBH). */
+  oltPortsPerBoard: number
+  /** OLT uplink to the router, Mbps (the ports in use added up). */
+  oltUplinkMbps: number
 }
+
+export type OltModel = "ma5608t" | "none"
+export const OLT_MODELS: OltModel[] = ["ma5608t", "none"]
+/** Huawei MA5608T: 2 service slots for PON boards. */
+export const MA5608T_SLOTS = 2
 
 /** A client in the shared-parent simulation. */
 export type GroupMember = {
@@ -110,6 +125,12 @@ export const DEFAULT_CAPACITY: CapacityState = {
   fileMB: 50,
   pon: "gpon",
   homesPerPort: 32,
+  ponEfficiency: DEFAULT_PON_EFFICIENCY,
+  // The owner's OLT. Boards and uplink are an example (two 16-port GPFD, one 10GE on MCUD1).
+  olt: "ma5608t",
+  oltBoards: 2,
+  oltPortsPerBoard: 16,
+  oltUplinkMbps: 10_000,
 }
 
 export const DEFAULT_PATTERN: Pattern = {
@@ -205,6 +226,7 @@ export function encodeState(s: LabState): string {
     "h",
     [num(c.parentMbps), c.direction, num(c.avgDownMbps), num(c.avgUpMbps), num(c.videoShare), num(c.videoMbps), num(c.fileMB), c.pon, num(c.homesPerPort), ...c.clients.map(num)].join(",")
   )
+  h.set("o", [num(c.ponEfficiency), c.olt, num(c.oltBoards), num(c.oltPortsPerBoard), num(c.oltUplinkMbps)].join(","))
   if (s.backgroundMbps > 0) h.set("b", num(s.backgroundMbps))
   if (s.queueKind !== "default") h.set("q", s.queueKind)
   return h.toString()
@@ -256,7 +278,28 @@ function decodeRule(v: string | null): PlanRule | null {
   return { sustained, threshold, burstTime: Math.round(burstTime) }
 }
 
-const PON_TECHS: PonTech[] = ["none", "gpon", "xgspon"]
+const PON_TECHS: PonTech[] = ["none", "gpon", "xgpon", "xgspon"]
+
+/** OLT settings (`o=`): links without it keep the defaults. */
+function decodeOlt(v: string | null): Pick<CapacityState, "ponEfficiency" | "olt" | "oltBoards" | "oltPortsPerBoard" | "oltUplinkMbps"> | null {
+  if (!v) return null
+  const [eff, olt, boards, ppb, uplink] = v.split(",")
+  const c = {
+    ponEfficiency: finite(eff, 0.5, 1),
+    olt: OLT_MODELS.includes(olt as OltModel) ? (olt as OltModel) : null,
+    oltBoards: finite(boards, 1, MA5608T_SLOTS),
+    oltPortsPerBoard: ppb === "8" || ppb === "16" ? Number(ppb) : null,
+    oltUplinkMbps: finite(uplink, 1, 1e6),
+  }
+  if (Object.values(c).some((x) => x === null)) return null
+  return {
+    ponEfficiency: c.ponEfficiency as number,
+    olt: c.olt as OltModel,
+    oltBoards: Math.round(c.oltBoards as number),
+    oltPortsPerBoard: c.oltPortsPerBoard as number,
+    oltUplinkMbps: c.oltUplinkMbps as number,
+  }
+}
 
 /** Capacity settings (`h=`). Links from before the size-based model (`k=`) get the defaults. */
 function decodeCapacity(v: string | null): CapacityState | null {
@@ -277,6 +320,7 @@ function decodeCapacity(v: string | null): CapacityState | null {
   if (Object.values(c).some((x) => x === null)) return null
   if (clients.length !== PRESETS.length || clients.some((x) => x === null)) return null
   return {
+    ...DEFAULT_CAPACITY,
     parentMbps: c.parentMbps as number,
     direction: c.direction as Direction,
     avgDownMbps: c.avgDownMbps as number,
@@ -328,7 +372,7 @@ export function decodeState(hash: string): LabState | null {
     group: decodeGroup(h.get("g")) ?? base.group,
     // Links from before the rule field used the first tested rule.
     rule: decodeRule(h.get("r")) ?? DEFAULT_RULE,
-    capacity: decodeCapacity(h.get("h")) ?? base.capacity,
+    capacity: { ...(decodeCapacity(h.get("h")) ?? base.capacity), ...(decodeOlt(h.get("o")) ?? {}) },
     backgroundMbps: finite(h.get("b") ?? undefined, 0, 1e4) ?? 0,
     queueKind: QUEUE_KINDS.includes(h.get("q") as QueueKind) ? (h.get("q") as QueueKind) : "default",
   }

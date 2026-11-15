@@ -17,7 +17,7 @@ import {
   userManagerPlans,
 } from "./routeros"
 import { parseRateLimit, parseRouterOS } from "./import"
-import { auditExport, migrationScript } from "./audit"
+import { auditExport, migrationScript, speedHints } from "./audit"
 import { bulkScript, fillPasswords, hostTargets, networkOf, parseBulk, parsePlan, parseTarget, randomPassword, splitLine } from "./bulk"
 import { decodeState, DEFAULT_CAPACITY, encodeState, initialState, memberPair, PRESETS, presetState } from "./state"
 
@@ -139,11 +139,37 @@ describe("busiest-hour capacity", () => {
     const heavy = { avgMbps: 30, pon: { tech: "gpon" as const, homesPerPort: 64 } }
     const gpon = simulateCapacity(base(heavy))
     const xgs = simulateCapacity(base({ ...heavy, pon: { tech: "xgspon", homesPerPort: 64 } }))
-    expect(gpon.ports?.capacityMbps).toBeCloseTo(2488.32)
+    // Usable: the line rate × 92 % (GEM framing, FEC).
+    expect(gpon.ports?.capacityMbps).toBeCloseTo(2488.32 * 0.92)
     expect(gpon.plans[2].testP10Mbps).toBeLessThan(xgs.plans[2].testP10Mbps)
     expect(xgs.plans[2].testP10Mbps).toBeCloseTo(1000)
     // GPON upload is half the download.
-    expect(simulateCapacity(base({ direction: "up", avgMbps: 0.2 })).ports?.capacityMbps).toBeCloseTo(1244.16)
+    expect(simulateCapacity(base({ direction: "up", avgMbps: 0.2 })).ports?.capacityMbps).toBeCloseTo(1244.16 * 0.92)
+    // XG-PON: 10G down, 2.5G up.
+    expect(simulateCapacity(base({ pon: { tech: "xgpon", homesPerPort: 64, efficiency: 1 } })).ports?.capacityMbps).toBeCloseTo(9953.28)
+    expect(simulateCapacity(base({ direction: "up", avgMbps: 0.2, pon: { tech: "xgpon", homesPerPort: 64, efficiency: 1 } })).ports?.capacityMbps).toBeCloseTo(2488.32)
+  })
+  it("an OLT's uplink caps everything behind it (Huawei MA5608T, 32 ports)", () => {
+    const ma5608t = (uplinkMbps: number) => base({ parentMbps: 1e9, olt: { portsPerOlt: 32, uplinkMbps } })
+    const ten = simulateCapacity(ma5608t(10_000))
+    const one = simulateCapacity(ma5608t(1_000))
+    expect(ten.olts).toMatchObject({ count: 1, portsPerOlt: 32, uplinkMbps: 10_000 })
+    expect(ten.olts?.saturatedShare).toBe(0)
+    // 180 clients × 3.4 Mbps ≈ 612 Mbps average: a single 1G uplink is often full.
+    expect(one.olts?.saturatedShare).toBeGreaterThan(0)
+    expect(one.plans[2].testP10Mbps).toBeLessThan(ten.plans[2].testP10Mbps)
+    expect(one.parent.p95Mbps).toBeLessThanOrEqual(1000 + 1e-6)
+    // More ports than one OLT has: more OLTs.
+    expect(simulateCapacity(base({ pon: { tech: "gpon", homesPerPort: 4 }, olt: { portsPerOlt: 16, uplinkMbps: 10_000 } })).olts?.count).toBe(3)
+  })
+  it("sizing says when the OLT's uplink is the limit", () => {
+    const { parentMbps: _drop, ...input } = base({ avgMbps: 10, olt: { portsPerOlt: 32, uplinkMbps: 1500 } })
+    void _drop
+    const r = size(input, 0.8)
+    expect(r.uplink.ok).toBe(false)
+    if (!r.uplink.ok) expect(r.uplink.limit).toBe("olt")
+    // Clients per port never go past the 1:128 split.
+    expect(Math.max(r.perPort.gpon, r.perPort.xgpon, r.perPort.xgspon)).toBeLessThanOrEqual(128)
   })
   it("flags demand above the uplink", () => {
     const r = simulateCapacity(base({ parentMbps: 300, durationS: 120 }))
@@ -173,7 +199,7 @@ describe("busiest-hour capacity", () => {
       expect(low.uplink.limit).toBe("queue")
       expect(low.uplink.bestShare).toBeCloseTo(1 / 3, 1)
     }
-    expect(low.perPort).toEqual({ gpon: 0, xgspon: 0 })
+    expect(low.perPort).toEqual({ gpon: 0, xgpon: 0, xgspon: 0 })
     // Heavy homes on a crowded GPON port: the port is the limit.
     const crowded = size({ ...input, avgMbps: 30, pon: { tech: "gpon", homesPerPort: 64 } }, 0.8)
     expect(crowded.uplink.ok).toBe(false)
@@ -338,6 +364,43 @@ describe("audit of a router export", () => {
     // Already on the rule: nothing to do.
     const same = auditExport('/queue simple\nadd max-limit=160M/160M burst-limit=200M/200M burst-threshold=120M/120M burst-time=16s/16s name=x target=10.0.0.5/32', { plans: KNOWN, rule: RULES.s80 })
     expect(migrationScript(same.entries, { plans: KNOWN, rule: RULES.s80 }).changed).toBe(0)
+  })
+})
+
+describe("audit: parents and ambiguous plans", () => {
+  const EXPORT = [
+    "/queue simple",
+    "add max-limit=1000M/1000M name=nodo1 target=10.0.0.0/24",
+    "add burst-limit=1000M/1000M burst-threshold=375M/375M burst-time=16s/16s max-limit=500M/500M name=ana parent=nodo1 target=10.0.0.2/32",
+    'add burst-limit=1000M/1000M burst-threshold=375M/375M burst-time=16s/16s comment="plan 500 Mbps" max-limit=500M/500M name=luis parent=nodo1 target=10.0.0.3/32',
+    "add burst-limit=600M/600M burst-threshold=375M/375M burst-time=16s/16s max-limit=500M/500M name=eva parent=nodo1 target=10.0.0.4/32",
+  ].join("\n")
+  const r = auditExport(EXPORT, { plans: KNOWN, rule: RULES.s80 })
+  const by = Object.fromEntries(r.entries.map((e) => [e.name, e]))
+
+  it("a parent queue isn't a client", () => {
+    expect(by.nodo1.flags).toEqual(["parentQueue"])
+    expect(by.nodo1.planMbps).toBeNull()
+  })
+  it("500M max + 1000M burst: ambiguous unless the name or comment says the plan", () => {
+    expect(by.ana.flags).toContain("ambiguousPlan")
+    expect(by.ana.planMbps).toBeNull()
+    expect(by.luis.planMbps).toBe(500)
+    expect(by.luis.flags).toContain("burstAbovePlan")
+    // Burst to 600M matches no plan: the max-limit says it's the 500 plan.
+    expect(by.eva.planMbps).toBe(500)
+  })
+  it("the migration leaves parents and ambiguous entries alone", () => {
+    const m = migrationScript(r.entries, { plans: KNOWN, rule: RULES.s80 })
+    expect(m.script).not.toContain('name="nodo1"')
+    expect(m.script).not.toContain('name="ana"')
+    expect(m.script).toContain('set [find where name="luis"] max-limit=400M/400M burst-limit=500M/500M')
+    expect(m.skipped).toBe(1)
+  })
+  it("reads speeds from names and comments", () => {
+    expect(speedHints("plan-500M")).toEqual([500])
+    expect(speedHints("plan-1g-down")).toEqual([1000])
+    expect(speedHints("cliente sin plan")).toEqual([])
   })
 })
 

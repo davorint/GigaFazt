@@ -13,9 +13,10 @@
  *   download takes everything its queue allows, so a faster plan finishes
  *   the same file sooner instead of moving more data.
  * - Each client has its own RouterOS burst average, as in `burst.ts`.
- * - Sharing is max-min fair, first inside each PON port (GPON / XGS-PON line
- *   rate), then on the uplink: two passes, an approximation of both
- *   bottlenecks. Same priority, no limit-at.
+ * - Sharing is max-min fair at each bottleneck in turn: every PON port (its
+ *   line rate × an efficiency for GEM framing/FEC), then every OLT's uplink
+ *   (ports grouped per OLT), then the internet uplink. Passes in order are an
+ *   approximation of the real chain. Same priority, no limit-at.
  * - Speed tests: for every plan, a probe client in a different port each
  *   time runs a test of `testS` from a rested line every `PROBE_EVERY_S`,
  *   competing with the others. Its reading is what a customer of that plan
@@ -28,12 +29,25 @@
 import { burstEnabled, stepSeconds, type QueueParams } from "./burst"
 import { plainMean, trimmedMean, type Part } from "./speedtest"
 
-export type PonTech = "none" | "gpon" | "xgspon"
-/** Nominal line rates, Mbps (ITU-T G.984 GPON, G.9807.1 XGS-PON); usable payload is somewhat lower. */
+export type PonTech = "none" | "gpon" | "xgpon" | "xgspon"
+/** Nominal line rates, Mbps (ITU-T G.984 GPON, G.987 XG-PON, G.9807.1 XGS-PON). */
 export const PON_RATES: Record<Exclude<PonTech, "none">, { down: number; up: number }> = {
   gpon: { down: 2488.32, up: 1244.16 },
+  xgpon: { down: 9953.28, up: 2488.32 },
   xgspon: { down: 9953.28, up: 9953.28 },
 }
+/**
+ * Share of the line rate left for Ethernet traffic after GEM framing and FEC.
+ * An assumption: published estimates range from ~92 % (Lightwave's GPON
+ * model) to 95–96 % (4–5 % GEM overhead); the lower one is the safe side.
+ */
+export const DEFAULT_PON_EFFICIENCY = 0.92
+/** Most ONTs per PON port on Huawei GPON boards (1:128 split). */
+export const MAX_HOMES_PER_PORT = 128
+
+export type PonConfig = { tech: PonTech; homesPerPort: number; efficiency?: number }
+/** OLTs: how many PON ports each one has and its uplink to the router. */
+export type OltConfig = { portsPerOlt: number; uplinkMbps: number }
 
 export type Direction = "down" | "up"
 
@@ -52,7 +66,9 @@ export type CapacityInput = {
   videoMbps: number
   /** Mean size of the other downloads, MB. */
   fileMB: number
-  pon: { tech: PonTech; homesPerPort: number }
+  pon: PonConfig
+  /** null/absent = no OLT limit (one big switch). */
+  olt?: OltConfig | null
   /** Speed test length for the probes, s. */
   testS: number
   lineCapMbps?: number | null
@@ -90,10 +106,14 @@ export type CapacityResult = {
   parent: { avgMbps: number; p95Mbps: number; saturatedShare: number }
   /** null without a PON layer. */
   ports: { count: number; capacityMbps: number; p95Mbps: number; saturatedShare: number } | null
+  /** null without an OLT limit. */
+  olts: { count: number; portsPerOlt: number; uplinkMbps: number; p95Mbps: number; saturatedShare: number } | null
   /** Average load the inputs ask for (clients × average), Mbps; above the uplink it can't keep up. */
   offeredMbps: number
   /** Same for one full PON port. null without a PON layer. */
   offeredPerPortMbps: number | null
+  /** Same for one full OLT. null without an OLT limit. */
+  offeredPerOltMbps: number | null
   /** Share of streaming time a stream got less than its bitrate. null without video. */
   videoShortShare: number | null
   /** Mean delivered per client, Mbps (what the run actually moved; compare with avgMbps). */
@@ -179,10 +199,14 @@ function quantile(sorted: ArrayLike<number>, q: number): number {
   return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo)
 }
 
-/** Port capacity for the input's PON layer and direction (Infinity without one). */
+/** Usable port capacity for the input's PON layer and direction (Infinity without one). */
 export function portCapacity(input: Pick<CapacityInput, "pon" | "direction">): number {
-  return input.pon.tech === "none" ? Number.POSITIVE_INFINITY : PON_RATES[input.pon.tech][input.direction]
+  if (input.pon.tech === "none") return Number.POSITIVE_INFINITY
+  const eff = input.pon.efficiency && input.pon.efficiency > 0 ? Math.min(1, input.pon.efficiency) : DEFAULT_PON_EFFICIENCY
+  return PON_RATES[input.pon.tech][input.direction] * eff
 }
+
+const oltOn = (olt: OltConfig | null | undefined): olt is OltConfig => !!olt && olt.portsPerOlt > 0 && olt.uplinkMbps > 0
 
 /**
  * Share a newcomer asking `extra` would get from `capacity` already shared
@@ -255,6 +279,11 @@ export function simulateCapacity(input: CapacityInput): CapacityResult {
   const pon = input.pon.tech !== "none"
   const portCount = pon ? Math.max(1, Math.ceil(total / homes)) : 1
   const portCap = portCapacity(input)
+  const olt = oltOn(input.olt) ? input.olt : null
+  const portsPerOlt = olt ? Math.max(1, Math.round(olt.portsPerOlt)) : portCount
+  const oltCount = Math.max(1, Math.ceil(portCount / portsPerOlt))
+  const oltCap = olt ? olt.uplinkMbps : Number.POSITIVE_INFINITY
+  const oltOfPort = (p: number) => Math.min(oltCount - 1, Math.floor(p / portsPerOlt))
 
   const N = total
   const planOf = new Int32Array(N)
@@ -319,13 +348,19 @@ export function simulateCapacity(input: CapacityInput): CapacityResult {
   const perStepSat: boolean[] = []
   const portLoads: number[] = []
   let portSatSteps = 0
+  const oltLoads: number[] = []
+  let oltSatSteps = 0
 
   // Scratch.
   const ask = new Float64Array(N)
   const videoAsk = new Float64Array(N)
   const given = new Float64Array(N)
   const passed = new Float64Array(N)
+  const passed2 = new Float64Array(N)
   const portMembers: number[][] = Array.from({ length: portCount }, () => [])
+  const oltMembers: number[][] = Array.from({ length: oltCount }, () => [])
+  const oltWant = new Float64Array(oltCount)
+  const oltLoad = new Float64Array(oltCount)
   const portWant = new Float64Array(portCount)
   const portLoad = new Float64Array(portCount)
   const buf: number[] = []
@@ -368,8 +403,11 @@ export function simulateCapacity(input: CapacityInput): CapacityResult {
       }
     }
 
-    // Pass 1: each PON port shares its line rate. Pass 2: the uplink shares what the ports let through.
+    // Pass 1: each PON port shares its usable rate. Pass 2: each OLT's uplink shares what its
+    // ports let through. Pass 3: the internet uplink shares what the OLTs let through.
     const allActive: number[] = []
+    for (const m of oltMembers) m.length = 0
+    oltWant.fill(0)
     for (let p = 0; p < portCount; p++) {
       const members = portMembers[p]
       if (members.length === 0) continue
@@ -377,18 +415,32 @@ export function simulateCapacity(input: CapacityInput): CapacityResult {
       out.length = members.length
       for (let k = 0; k < members.length; k++) buf[k] = ask[members[k]]
       fairShare(portCap, buf, out)
+      const o = oltOfPort(p)
       for (let k = 0; k < members.length; k++) {
         passed[members[k]] = out[k]
+        oltMembers[o].push(members[k])
+        oltWant[o] += out[k]
         allActive.push(members[k])
       }
       if (measuring && pon && portWant[p] > portCap + 1e-6) portSatSteps++
     }
+    for (let o = 0; o < oltCount; o++) {
+      const members = oltMembers[o]
+      if (members.length === 0) continue
+      buf.length = members.length
+      out.length = members.length
+      for (let k = 0; k < members.length; k++) buf[k] = passed[members[k]]
+      fairShare(oltCap, buf, out)
+      for (let k = 0; k < members.length; k++) passed2[members[k]] = out[k]
+      if (measuring && olt && oltWant[o] > oltCap + 1e-6) oltSatSteps++
+    }
     buf.length = allActive.length
     out.length = allActive.length
-    let asked = 0
+    // The uplink only sees what got past the ports and OLTs.
+    let reaching = 0
     for (let k = 0; k < allActive.length; k++) {
-      buf[k] = passed[allActive[k]]
-      asked += ask[allActive[k]]
+      buf[k] = passed2[allActive[k]]
+      reaching += buf[k]
     }
     fairShare(parent, buf, out)
     for (let k = 0; k < allActive.length; k++) given[allActive[k]] = out[k]
@@ -396,6 +448,7 @@ export function simulateCapacity(input: CapacityInput): CapacityResult {
     // Deliver: video first, the rest to the client's downloads in order of arrival.
     let delivered = 0
     portLoad.fill(0)
+    oltLoad.fill(0)
     const stillBusy: number[] = []
     for (const i of activeList) {
       const rate = ask[i] > 0 ? given[i] : 0
@@ -433,6 +486,7 @@ export function simulateCapacity(input: CapacityInput): CapacityResult {
       lastStep[i] = s
       delivered += sent
       portLoad[portOf[i]] += sent
+      oltLoad[oltOfPort(portOf[i])] += sent
       if (measuring) movedMb += sentMb
       given[i] = 0
       if (stream[i] || q.length > 0) stillBusy.push(i)
@@ -457,10 +511,9 @@ export function simulateCapacity(input: CapacityInput): CapacityResult {
       }
     }
     if (probes.length > 0) {
-      let upTotal = 0
-      for (const i of allActive) upTotal += passed[i]
       let nUp = -1
       const portSorted = new Map<number, { s: Float64Array; p: Float64Array; n: number }>()
+      const oltSorted = new Map<number, { s: Float64Array; p: Float64Array; n: number }>()
       for (let k = probes.length - 1; k >= 0; k--) {
         const pr = probes[k]
         const want = ceilingOf(plans[pr.plan].params, pr.w, cap)
@@ -474,10 +527,24 @@ export function simulateCapacity(input: CapacityInput): CapacityResult {
           portSorted.set(pr.port, ps)
         }
         const x = pon && ps ? shareOfNewcomer(ps.s, ps.p, ps.n, portCap, want) : want
-        let y = x
-        if (upTotal + x > parent + EPS) {
-          if (nUp < 0) nUp = sortedWithPrefix(passed, allActive, sorted, prefix)
-          y = shareOfNewcomer(sorted, prefix, nUp, parent, x)
+        // Then its OLT's uplink, then the internet uplink.
+        let z = x
+        const o = oltOfPort(pr.port)
+        if (olt && oltWant[o] + x > oltCap + EPS) {
+          let os = oltSorted.get(o)
+          if (!os) {
+            const members = oltMembers[o]
+            const s2 = new Float64Array(members.length)
+            const p2 = new Float64Array(members.length + 1)
+            os = { s: s2, p: p2, n: sortedWithPrefix(passed, members, s2, p2) }
+            oltSorted.set(o, os)
+          }
+          z = shareOfNewcomer(os.s, os.p, os.n, oltCap, x)
+        }
+        let y = z
+        if (reaching + z > parent + EPS) {
+          if (nUp < 0) nUp = sortedWithPrefix(passed2, allActive, sorted, prefix)
+          y = shareOfNewcomer(sorted, prefix, nUp, parent, z)
         }
         push(pr.w, y)
         pr.parts.push({ v: y, w: dt })
@@ -495,9 +562,10 @@ export function simulateCapacity(input: CapacityInput): CapacityResult {
         busiest = Math.max(busiest, portLoad[p])
         if (pon) portLoads.push(portLoad[p])
       }
+      if (olt) for (let o = 0; o < oltCount; o++) oltLoads.push(oltLoad[o])
       perStepLoad.push(delivered)
       perStepPort.push(busiest)
-      perStepSat.push(asked > parent + 1e-6)
+      perStepSat.push(reaching > parent + 1e-6)
     }
   }
 
@@ -524,6 +592,7 @@ export function simulateCapacity(input: CapacityInput): CapacityResult {
   const loads = Float64Array.from(perStepLoad).sort()
   const avgLoad = perStepLoad.reduce((a, b) => a + b, 0) / Math.max(1, perStepLoad.length)
   const sortedPorts = Float64Array.from(portLoads).sort()
+  const sortedOlts = Float64Array.from(oltLoads).sort()
 
   return {
     stepS: dt,
@@ -545,8 +614,18 @@ export function simulateCapacity(input: CapacityInput): CapacityResult {
           saturatedShare: portSatSteps / Math.max(1, perStepLoad.length * portCount),
         }
       : null,
+    olts: olt
+      ? {
+          count: oltCount,
+          portsPerOlt,
+          uplinkMbps: oltCap,
+          p95Mbps: quantile(sortedOlts, 0.95),
+          saturatedShare: oltSatSteps / Math.max(1, perStepLoad.length * oltCount),
+        }
+      : null,
     offeredMbps: avg * N,
     offeredPerPortMbps: pon ? avg * Math.min(homes, N) : null,
+    offeredPerOltMbps: olt ? avg * Math.min(N, (pon ? homes : N) * portsPerOlt) : null,
     videoShortShare: streamSteps > 0 ? shortSteps / streamSteps : null,
     perClientMbps: N ? movedMb / (measured * N) : 0,
     plans: plans.map((p, k) => {
@@ -589,37 +668,42 @@ export function worstTestShare(r: CapacityResult): { share: number; id: string |
 export type UplinkSizing =
   /** Smallest uplink (rounded up) where 9 of 10 speed tests reach the target in every plan. */
   | { ok: true; parentMbps: number; share: number }
-  /** Not even an unlimited uplink gets there: the PON ports or the queue rule cap it (or no clients). */
-  | { ok: false; limit: "pon" | "queue" | "none"; bestShare: number; id: string | null }
+  /** Not even an unlimited uplink gets there: the OLT's uplink, the PON ports or the queue rule cap it (or no clients). */
+  | { ok: false; limit: "olt" | "pon" | "queue" | "none"; bestShare: number; id: string | null }
 
 export type Sizing = {
   uplink: UplinkSizing
   /**
    * Most clients per port that still reach the target with an unlimited
    * uplink, per PON technology. 0 = not even one (the queue rule caps it);
-   * MAX_HOMES_PER_PORT = at least that many.
+   * MAX_HOMES_PER_PORT (the 1:128 split) = at least that many.
    */
   perPort: Record<Exclude<PonTech, "none">, number>
 }
 
-export const MAX_HOMES_PER_PORT = 256
 /** Sizing runs are shorter than the shown run (they repeat the model ~40 times). */
 const SIZING_DURATION_S = 300
 
 /**
  * Uplink needed for 9 of 10 busiest-hour speed tests to reach `target` ×
- * plan speed in every plan; and how many clients a GPON / XGS-PON port holds
- * for the same target. `onProgress` reports 0..1.
+ * plan speed in every plan (with the OLTs as configured); and how many
+ * clients a GPON / XG-PON / XGS-PON port holds for the same target, up to
+ * the 1:128 split. `onProgress` reports 0..1.
  */
 export function size(input: Omit<CapacityInput, "parentMbps">, target: number, onProgress?: (done: number) => void): Sizing {
   const base = { ...input, durationS: SIZING_DURATION_S }
   const clientsTotal = input.plans.reduce((a, p) => a + Math.max(0, Math.round(p.clients)), 0)
   // Below the average load the backlog only grows: it fails, no need to simulate.
-  const overloaded = (parentMbps: number, pon: CapacityInput["pon"]) =>
-    input.avgMbps * clientsTotal >= parentMbps ||
-    (pon.tech !== "none" && input.avgMbps * Math.min(Math.max(1, Math.round(pon.homesPerPort)), clientsTotal) >= portCapacity({ pon, direction: input.direction }))
-  const share = (parentMbps: number, pon = base.pon) =>
-    overloaded(parentMbps, pon) ? { share: 0, id: null } : worstTestShare(simulateCapacity({ ...base, parentMbps, pon }))
+  const overloaded = (parentMbps: number, pon: PonConfig, olt: OltConfig | null | undefined) => {
+    const homes = Math.min(Math.max(1, Math.round(pon.homesPerPort)), clientsTotal)
+    return (
+      input.avgMbps * clientsTotal >= parentMbps ||
+      (pon.tech !== "none" && input.avgMbps * homes >= portCapacity({ pon, direction: input.direction })) ||
+      (oltOn(olt) && input.avgMbps * Math.min(clientsTotal, (pon.tech !== "none" ? homes : clientsTotal) * olt.portsPerOlt) >= olt.uplinkMbps)
+    )
+  }
+  const share = (parentMbps: number, pon: PonConfig = base.pon, olt: OltConfig | null | undefined = base.olt) =>
+    overloaded(parentMbps, pon, olt) ? { share: 0, id: null } : worstTestShare(simulateCapacity({ ...base, parentMbps, pon, olt }))
   const meets = (s: { share: number }) => s.share + 1e-9 >= target
   let runs = 0
   const EST = 40
@@ -630,11 +714,15 @@ export function size(input: Omit<CapacityInput, "parentMbps">, target: number, o
   const total = input.plans.reduce((a, p) => a + Math.max(0, p.clients), 0)
   const best = share(Number.POSITIVE_INFINITY)
   tick()
-  if (total === 0 || best.id === null) uplink = { ok: false, limit: "none", bestShare: 0, id: null }
+  // An overloaded layer reads as share 0 with no plan: still classify it below.
+  if (total === 0) uplink = { ok: false, limit: "none", bestShare: 0, id: null }
   else if (!meets(best)) {
-    const free = input.pon.tech === "none" ? best : share(Number.POSITIVE_INFINITY, { ...input.pon, tech: "none" })
+    // Remove the bottlenecks one at a time to say which one caps it.
+    let limit: "olt" | "pon" | "queue" = "queue"
+    if (oltOn(input.olt) && meets(share(Number.POSITIVE_INFINITY, input.pon, null))) limit = "olt"
+    else if (input.pon.tech !== "none" && meets(share(Number.POSITIVE_INFINITY, { ...input.pon, tech: "none" }, null))) limit = "pon"
     tick()
-    uplink = { ok: false, limit: input.pon.tech !== "none" && meets(free) ? "pon" : "queue", bestShare: best.share, id: best.id }
+    uplink = { ok: false, limit, bestShare: best.share, id: best.id }
   } else {
     // Above every client's ceiling at once nothing is ever trimmed: same as unlimited.
     const ceilingAll = input.plans.reduce((a, p) => a + Math.max(0, p.clients + 1) * Math.max(p.params.burstLimit, p.params.maxLimit), 0)
@@ -660,18 +748,18 @@ export function size(input: Omit<CapacityInput, "parentMbps">, target: number, o
 
   // Clients per port, both technologies, unlimited uplink. A port only sees its own homes, so
   // these runs use a few ports' worth of clients in the same plan mix (much faster).
-  const perPort = { gpon: 0, xgspon: 0 }
+  const perPort = { gpon: 0, xgpon: 0, xgspon: 0 }
   const SAMPLE_PORTS = 6
   const scaled = (homes: number) => {
     const want = Math.min(clientsTotal, homes * SAMPLE_PORTS)
     return input.plans.map((p) => ({ ...p, clients: p.clients > 0 ? Math.max(1, Math.round((p.clients / clientsTotal) * want)) : 0 }))
   }
-  for (const tech of ["gpon", "xgspon"] as const) {
+  for (const tech of ["gpon", "xgpon", "xgspon"] as const) {
     const ok = (homes: number) => {
       tick()
-      const pon = { tech, homesPerPort: homes }
-      if (overloaded(Number.POSITIVE_INFINITY, pon)) return false
-      return meets(worstTestShare(simulateCapacity({ ...base, plans: scaled(homes), parentMbps: Number.POSITIVE_INFINITY, pon })))
+      const pon = { ...input.pon, tech, homesPerPort: homes }
+      if (overloaded(Number.POSITIVE_INFINITY, pon, null)) return false
+      return meets(worstTestShare(simulateCapacity({ ...base, plans: scaled(homes), parentMbps: Number.POSITIVE_INFINITY, pon, olt: null })))
     }
     if (total === 0 || !ok(1)) continue
     let lo = 1

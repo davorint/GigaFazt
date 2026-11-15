@@ -5,9 +5,13 @@
  * plan it seems to be, the rule it follows and its problems, plus the `set`
  * commands that move them to the current rule. Runs in the browser only.
  *
- * The plan is recognized by the most the queue gives (burst-limit, or
- * max-limit without burst) matching a plan speed; entries that match none
- * are reported and left alone.
+ * The plan is recognized from the queue's values: the most it gives
+ * (burst-limit, or max-limit without burst) or, for a burst above the plan,
+ * its max-limit. When both match different plans (500M max + 1000M burst
+ * could be the 500 plan or the 1 Gbps one), a speed in the name or comment
+ * decides; otherwise it's reported as ambiguous and left alone, like entries
+ * that match no plan. Parent queues (other queues hang from them) aren't
+ * clients: they're listed but never checked against a plan or changed.
  */
 
 import { burstEnabled, check, planDefaults, type IssueCode, type PlanRule, type QueueParams } from "./burst"
@@ -30,6 +34,10 @@ export type AuditFlag =
   | "unknownPlan"
   /** Recognized plan, but not set like the current rule. */
   | "ruleDiffers"
+  /** max-limit and burst-limit match different plans and nothing in the name says which. */
+  | "ambiguousPlan"
+  /** Other queues hang from it: a parent, not a client. */
+  | "parentQueue"
 
 export const FLAG_LEVEL: Record<AuditFlag, "error" | "warn" | "info"> = {
   burstOff: "info",
@@ -50,6 +58,8 @@ export const FLAG_LEVEL: Record<AuditFlag, "error" | "warn" | "info"> = {
   unlimited: "warn",
   unknownPlan: "info",
   ruleDiffers: "info",
+  ambiguousPlan: "warn",
+  parentQueue: "info",
 }
 
 export type AuditEntry = {
@@ -57,6 +67,7 @@ export type AuditEntry = {
   index: number
   kind: AuditKind
   name: string
+  comment: string | null
   target: string | null
   parent: string | null
   /** Download side (simple, ppp) or the only direction (tree, pcq). */
@@ -88,9 +99,29 @@ export type KnownPlan = { id: string; mbps: number }
 const top = (q: QueueParams) => (burstEnabled(q) ? q.burstLimit : q.maxLimit)
 const near = (a: number, b: number) => Math.abs(a - b) <= Math.max(0.001, Math.abs(b) * 0.005)
 
-function planFor(q: QueueParams, plans: KnownPlan[]): KnownPlan | null {
-  const t = top(q)
-  return t > 0 ? (plans.find((p) => near(t, p.mbps)) ?? null) : null
+/** Speeds written in a name or comment: "plan-500M" → 500, "plan-1g-down" → 1000. */
+export function speedHints(text: string): number[] {
+  const out: number[] = []
+  for (const m of text.toLowerCase().matchAll(/(\d+(?:\.\d+)?)\s*(gbps|gb|g|mbps|mb|m)?(?![a-z0-9.])/g)) {
+    const n = Number(m[1])
+    out.push((m[2] ?? "").startsWith("g") ? n * 1000 : n)
+  }
+  return out
+}
+
+/**
+ * The plan of a queue: the most it gives (burst-limit, or max-limit without
+ * burst), or its max-limit when the burst goes above the plan. Two different
+ * matches need a hint from the name/comment, else it's ambiguous.
+ */
+export function resolvePlan(q: QueueParams, plans: KnownPlan[], hints: number[] = []): { plan: KnownPlan | null; ambiguous: boolean } {
+  if (!(q.maxLimit > 0)) return { plan: null, ambiguous: false }
+  const byTop = plans.find((p) => near(top(q), p.mbps))
+  const byMax = burstEnabled(q) ? plans.find((p) => near(q.maxLimit, p.mbps)) : undefined
+  const cands = [...new Set([byTop, byMax].filter((x): x is KnownPlan => !!x))]
+  if (cands.length <= 1) return { plan: cands[0] ?? null, ambiguous: false }
+  const hinted = cands.filter((c) => hints.some((h) => near(h, c.mbps)))
+  return hinted.length === 1 ? { plan: hinted[0], ambiguous: false } : { plan: null, ambiguous: true }
 }
 
 /** The rule a queue follows for its plan speed. */
@@ -106,11 +137,9 @@ const sameValues = (a: QueueParams, b: QueueParams) =>
     ? burstEnabled(a) === burstEnabled(b) && near(a.burstLimit, b.burstLimit) && near(a.burstThreshold, b.burstThreshold) && a.burstTime === b.burstTime
     : true)
 
-/** What the entry should be under `rule` (keeps its limit-at); null when the plan is unknown. */
-function targetFor(q: QueueParams, plans: KnownPlan[], rule: PlanRule, fallback: KnownPlan | null): QueueParams | null {
-  const plan = planFor(q, plans) ?? fallback
-  return plan ? { ...planDefaults(plan.mbps, rule), limitAt: q.limitAt } : null
-}
+/** What a direction should be under `rule` for the entry's plan (keeps its limit-at; no limit stays no limit). */
+const targetFor = (q: QueueParams, planMbps: number, rule: PlanRule): QueueParams =>
+  q.maxLimit > 0 ? { ...planDefaults(planMbps, rule), limitAt: q.limitAt } : q
 
 const DOWN = /(^|[^a-z])(down|download|dl|bajada|descarga|in)([^a-z]|$)/i
 const UP = /(^|[^a-z])(up|upload|ul|subida|carga|out)([^a-z]|$)/i
@@ -164,6 +193,7 @@ export function auditExport(text: string, opts: { plans: KnownPlan[]; rule: Plan
     const base = {
       index,
       kind,
+      comment: p.get("comment") ?? null,
       target: null as string | null,
       parent: null as string | null,
       direction: null as "down" | "up" | null,
@@ -224,6 +254,10 @@ export function auditExport(text: string, opts: { plans: KnownPlan[]; rule: Plan
 
   // Per-entry checks.
   const simpleNames = new Set(entries.filter((e) => e.kind === "simple").map((e) => e.name))
+  // Queues others hang from are parents, not clients (simple queues and queue trees separately).
+  const parents = new Set(
+    entries.filter((e) => e.parent && e.parent !== "none" && (e.kind === "simple" || e.kind === "tree")).map((e) => `${e.kind}:${e.parent}`)
+  )
   const targets = new Map<string, number>()
   for (const e of entries) {
     if (e.kind !== "simple" || e.disabled || !e.target) continue
@@ -232,13 +266,19 @@ export function auditExport(text: string, opts: { plans: KnownPlan[]; rule: Plan
   }
   for (const e of entries) {
     const flags = new Set<AuditFlag>()
-    const plan = planFor(e.down, opts.plans) ?? (e.up ? planFor(e.up, opts.plans) : null)
+    if (parents.has(`${e.kind}:${e.name}`)) {
+      flags.add("parentQueue")
+      if (e.disabled) flags.add("disabled")
+      e.flags = [...flags]
+      continue
+    }
+    const main = e.down.maxLimit > 0 ? e.down : (e.up ?? e.down)
+    const { plan, ambiguous } = resolvePlan(main, opts.plans, speedHints(`${e.name} ${e.comment ?? ""}`))
     if (plan) {
       e.planMbps = plan.mbps
       e.planId = plan.id
-      const main = e.down.maxLimit > 0 ? e.down : (e.up ?? e.down)
       e.rule = ruleOf(main, plan.mbps)
-    } else flags.add("unknownPlan")
+    } else flags.add(ambiguous ? "ambiguousPlan" : "unknownPlan")
     for (const q of e.up ? [e.down, e.up] : [e.down]) {
       if (q.maxLimit === 0) {
         flags.add("unlimited")
@@ -270,7 +310,7 @@ export type Migration = {
   script: string
   /** Entries the script changes. */
   changed: number
-  /** Entries left alone because their plan wasn't recognized. */
+  /** Client entries left alone because their plan wasn't recognized (or was ambiguous). */
   skipped: number
 }
 
@@ -280,28 +320,26 @@ export function migrationScript(entries: AuditEntry[], opts: { plans: KnownPlan[
   let changed = 0
   let skipped = 0
   for (const e of entries) {
+    // Parents aren't clients: never moved to a plan.
+    if (e.flags.includes("parentQueue")) continue
     if (!e.planMbps) {
       skipped++
       continue
     }
     if (!e.flags.includes("ruleDiffers")) continue
-    const plan = opts.plans.find((p) => p.id === e.planId) ?? null
     const find = `[find where name=${rosString(e.name)}]`
+    // Both directions follow the entry's plan (plans are symmetric); a direction without limit stays so.
+    const down = targetFor(e.down, e.planMbps, opts.rule)
     if (e.kind === "simple" || e.kind === "ppp") {
-      const down = targetFor(e.down, opts.plans, opts.rule, plan) ?? e.down
-      const up = e.up ? (e.up.maxLimit > 0 ? (targetFor(e.up, opts.plans, opts.rule, plan) ?? e.up) : e.up) : down
-      const pair: Pair = { down: e.down.maxLimit > 0 ? down : e.down, up }
+      const pair: Pair = { down, up: e.up ? targetFor(e.up, e.planMbps, opts.rule) : down }
       if (e.kind === "simple") {
         const rates = simpleQueueProps(pair, { name: e.name, target: e.target ?? "" }, true).filter((x) => RATE_KEYS.some((k) => x.startsWith(k)))
         blocks.simple.push(`set ${find} ${rates.join(" ")}`)
       } else blocks.ppp.push(`set ${find} rate-limit=${rosString(rateLimit(pair))}`)
-    } else {
-      const q = targetFor(e.down, opts.plans, opts.rule, plan) ?? e.down
-      if (e.kind === "pcq") {
-        const classifier = e.classifier === "src-address" ? "src-address" : "dst-address"
-        blocks.pcq.push(`set ${find} ${pcqProps(e.name, classifier, q, true).filter((x) => x.startsWith("pcq-rate") || x.startsWith("pcq-burst")).join(" ")}`)
-      } else blocks.tree.push(`set ${find} ${treeSetProps(q).join(" ")}`)
-    }
+    } else if (e.kind === "pcq") {
+      const classifier = e.classifier === "src-address" ? "src-address" : "dst-address"
+      blocks.pcq.push(`set ${find} ${pcqProps(e.name, classifier, down, true).filter((x) => x.startsWith("pcq-rate") || x.startsWith("pcq-burst")).join(" ")}`)
+    } else blocks.tree.push(`set ${find} ${treeSetProps(down).join(" ")}`)
     changed++
   }
   const menus: Record<AuditKind, string> = { simple: "/queue simple", ppp: "/ppp profile", pcq: "/queue type", tree: "/queue tree" }
