@@ -1,6 +1,7 @@
 import { plans } from "../plans"
 import { DEFAULT_RULE, KINDS, planDefaults, type Pattern, type PatternKind, type PlanRule, type QueueParams } from "./burst"
-import type { Pair } from "./routeros"
+import type { PonTech } from "./capacity"
+import { QUEUE_KINDS, type Pair, type QueueKind } from "./routeros"
 
 /**
  * State of the /mikrotik burst tool and its share link (#hash, so nothing
@@ -30,6 +31,10 @@ export type LabState = {
   rule: PlanRule
   /** Busiest-hour capacity model. */
   capacity: CapacityState
+  /** Household traffic already running when the customer runs a speed test, Mbps. */
+  backgroundMbps: number
+  /** Queue type the exports give the client queues. */
+  queueKind: QueueKind
 }
 
 export type CapacityState = {
@@ -37,12 +42,19 @@ export type CapacityState = {
   parentMbps: number
   /** Clients per plan, in PRESETS order. */
   clients: number[]
-  /** Share of clients transferring at any moment at the busiest hour, 0..1. */
-  activeShare: number
-  /** Mean length of each active stretch, s. */
-  sessionS: number
-  /** What an active client asks for, Mbps (null = everything its queue allows). */
-  demandMbps: number | null
+  /** Direction modeled. */
+  direction: Direction
+  /** Busy-hour average per client, Mbps (download and upload). */
+  avgDownMbps: number
+  avgUpMbps: number
+  /** Share of the download average that is video, 0..1. */
+  videoShare: number
+  /** Bitrate of one stream, Mbps. */
+  videoMbps: number
+  /** Mean size of the other downloads, MB. */
+  fileMB: number
+  pon: PonTech
+  homesPerPort: number
 }
 
 /** A client in the shared-parent simulation. */
@@ -80,13 +92,24 @@ export type Preset = { id: string; downMbps: number; upMbps: number }
 
 export const PRESETS: Preset[] = plans.map((p) => ({ id: p.id, downMbps: p.downMbps, upMbps: p.upMbps }))
 
-/** Example busiest-hour setup: 600 clients split evenly (the split per plan is not known). */
+/**
+ * Example busiest-hour setup: 600 clients split evenly (the split per plan is
+ * not known), GPON (what the owner runs today) with 32 homes per port
+ * (example split). Averages per client from OpenVault 1Q25 (1.544 GB/h down,
+ * 0.096 GB/h up per residential subscriber at the busiest hour). Video share,
+ * bitrate and download size are assumptions.
+ */
 export const DEFAULT_CAPACITY: CapacityState = {
   parentMbps: 10_000,
   clients: PRESETS.map(() => Math.round(600 / Math.max(1, PRESETS.length))),
-  activeShare: 0.05,
-  sessionS: 30,
-  demandMbps: null,
+  direction: "down",
+  avgDownMbps: 3.4,
+  avgUpMbps: 0.21,
+  videoShare: 0.5,
+  videoMbps: 5,
+  fileMB: 50,
+  pon: "gpon",
+  homesPerPort: 32,
 }
 
 export const DEFAULT_PATTERN: Pattern = {
@@ -116,6 +139,8 @@ export function presetState(preset: Preset, base?: LabState): LabState {
     group: base?.group ?? DEFAULT_GROUP,
     rule,
     capacity: base?.capacity ?? DEFAULT_CAPACITY,
+    backgroundMbps: base?.backgroundMbps ?? 0,
+    queueKind: base?.queueKind ?? "default",
   }
 }
 
@@ -176,7 +201,12 @@ export function encodeState(s: LabState): string {
   h.set("g", [[g.parentMbps, g.durationS].map(num).join(","), ...g.members.map((m) => [m.plan, num(m.limitAt), m.priority, m.kind, num(m.startS)].join(","))].join("~"))
   h.set("r", [s.rule.sustained, s.rule.threshold, s.rule.burstTime].map(num).join(","))
   const c = s.capacity
-  h.set("k", [num(c.parentMbps), num(c.activeShare), num(c.sessionS), c.demandMbps === null ? "" : num(c.demandMbps), ...c.clients.map(num)].join(","))
+  h.set(
+    "h",
+    [num(c.parentMbps), c.direction, num(c.avgDownMbps), num(c.avgUpMbps), num(c.videoShare), num(c.videoMbps), num(c.fileMB), c.pon, num(c.homesPerPort), ...c.clients.map(num)].join(",")
+  )
+  if (s.backgroundMbps > 0) h.set("b", num(s.backgroundMbps))
+  if (s.queueKind !== "default") h.set("q", s.queueKind)
   return h.toString()
 }
 
@@ -226,17 +256,38 @@ function decodeRule(v: string | null): PlanRule | null {
   return { sustained, threshold, burstTime: Math.round(burstTime) }
 }
 
+const PON_TECHS: PonTech[] = ["none", "gpon", "xgspon"]
+
+/** Capacity settings (`h=`). Links from before the size-based model (`k=`) get the defaults. */
 function decodeCapacity(v: string | null): CapacityState | null {
   if (!v) return null
-  const [parent, active, session, demand, ...counts] = v.split(",")
-  const parentMbps = finite(parent, 0.001)
-  const activeShare = finite(active, 0, 1)
-  const sessionS = finite(session, 1, 3600)
-  const demandMbps = demand === "" ? null : finite(demand, 0.001)
+  const [parent, direction, avgDown, avgUp, videoShare, videoMbps, fileMB, pon, homes, ...counts] = v.split(",")
+  const c = {
+    parentMbps: finite(parent, 0.001, 1e7),
+    direction: direction === "up" ? "up" : direction === "down" ? "down" : null,
+    avgDownMbps: finite(avgDown, 0, 1e4),
+    avgUpMbps: finite(avgUp, 0, 1e4),
+    videoShare: finite(videoShare, 0, 1),
+    videoMbps: finite(videoMbps, 0.001, 1e4),
+    fileMB: finite(fileMB, 0.001, 1e6),
+    pon: PON_TECHS.includes(pon as PonTech) ? (pon as PonTech) : null,
+    homesPerPort: finite(homes, 1, 1024),
+  }
   const clients = counts.map((x) => finite(x, 0, MAX_CLIENTS_PER_PLAN))
-  if (parentMbps === null || activeShare === null || sessionS === null || (demand !== "" && demandMbps === null)) return null
+  if (Object.values(c).some((x) => x === null)) return null
   if (clients.length !== PRESETS.length || clients.some((x) => x === null)) return null
-  return { parentMbps, activeShare, sessionS, demandMbps, clients: (clients as number[]).map(Math.round) }
+  return {
+    parentMbps: c.parentMbps as number,
+    direction: c.direction as Direction,
+    avgDownMbps: c.avgDownMbps as number,
+    avgUpMbps: c.avgUpMbps as number,
+    videoShare: c.videoShare as number,
+    videoMbps: c.videoMbps as number,
+    fileMB: c.fileMB as number,
+    pon: c.pon as PonTech,
+    homesPerPort: Math.round(c.homesPerPort as number),
+    clients: (clients as number[]).map(Math.round),
+  }
 }
 
 export const MAX_CLIENTS_PER_PLAN = 2000
@@ -277,7 +328,9 @@ export function decodeState(hash: string): LabState | null {
     group: decodeGroup(h.get("g")) ?? base.group,
     // Links from before the rule field used the first tested rule.
     rule: decodeRule(h.get("r")) ?? DEFAULT_RULE,
-    capacity: decodeCapacity(h.get("k")) ?? base.capacity,
+    capacity: decodeCapacity(h.get("h")) ?? base.capacity,
+    backgroundMbps: finite(h.get("b") ?? undefined, 0, 1e4) ?? 0,
+    queueKind: QUEUE_KINDS.includes(h.get("q") as QueueKind) ? (h.get("q") as QueueKind) : "default",
   }
 }
 

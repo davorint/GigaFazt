@@ -13,15 +13,19 @@ import {
   rosRate,
   simpleQueue,
   userManagerPlans,
+  QUEUE_KINDS,
   type Pair,
+  type QueueKind,
 } from "@/lib/mikrotik/routeros"
 import type { LabState } from "@/lib/mikrotik/state"
+import { Choice } from "./Choice"
 import { CodeBlock as Code } from "./CodeBlock"
 import { SetupChecks } from "./SetupChecks"
 import { TextField } from "./TextField"
 
-export function ExportPanel({ state }: { state: LabState }) {
+export function ExportPanel({ state, onQueueKind }: { state: LabState; onQueueKind: (k: QueueKind) => void }) {
   const t = useTranslations("mikrotik.export")
+  const queue = state.queueKind
   const p: Pair = { down: state.down, up: state.symmetric ? state.down : state.up }
   // Named after the plan speed (the most the client gets), else max-limit.
   const auto = `plan-${rosRate(state.planMbps ?? p.down.maxLimit)}`
@@ -35,8 +39,15 @@ export function ExportPanel({ state }: { state: LabState }) {
   return (
     <div className="surface grid min-w-0 gap-6 rounded-2xl p-5 sm:p-7 [&>*]:min-w-0">
       <SetupChecks />
-      <div className="grid gap-4 sm:max-w-xl sm:grid-cols-2">
-        <TextField label={t("name")} value={name ?? auto} onChange={setName} />
+      <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
+        <div className="w-full sm:w-72">
+          <TextField label={t("name")} value={name ?? auto} onChange={setName} />
+        </div>
+        <div className="grid gap-1.5">
+          <p className="font-mono text-xs text-zinc-300">{t("queueKind")}</p>
+          <Choice label={t("queueKind")} value={queue} onChange={onQueueKind} options={QUEUE_KINDS.map((k) => ({ value: k, label: t(`queueKinds.${k}`) }))} />
+          <p className="max-w-md text-xs leading-snug text-zinc-400">{t(`queueKindHint.${queue}`)}</p>
+        </div>
       </div>
       <Tabs defaultValue="simple" className="min-w-0 gap-5">
         <TabsList className="w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto sm:w-fit">
@@ -51,7 +62,7 @@ export function ExportPanel({ state }: { state: LabState }) {
           <div className="grid gap-4 sm:max-w-xl sm:grid-cols-2">
             <TextField label={t("target")} value={target} onChange={setTarget} />
           </div>
-          <Code label={t("tabs.simple")} code={simpleQueue(p, { name: n, target })} />
+          <Code label={t("tabs.simple")} code={simpleQueue(p, { name: n, target, queue })} />
           <p className="text-sm text-zinc-400">{t("notes.simple")}</p>
         </TabsContent>
 
@@ -61,7 +72,7 @@ export function ExportPanel({ state }: { state: LabState }) {
             <TextField label={t("markDown")} value={markDown} onChange={setMarkDown} />
             <TextField label={t("markUp")} value={markUp} onChange={setMarkUp} />
           </div>
-          <Code label={t("tabs.tree")} code={queueTree(p, { name: n, parent, markDown, markUp })} />
+          <Code label={t("tabs.tree")} code={queueTree(p, { name: n, parent, markDown, markUp, queue })} />
           <p className="text-sm text-zinc-400">{t("notes.tree")}</p>
         </TabsContent>
 
@@ -72,7 +83,7 @@ export function ExportPanel({ state }: { state: LabState }) {
 
         <TabsContent value="ppp" className="grid min-w-0 gap-5">
           <Code label={t("rateLimit")} code={rateLimit(p)} />
-          <Code label="/ppp profile" code={pppProfile(p, { name: n })} />
+          <Code label="/ppp profile" code={pppProfile(p, { name: n, queue })} />
           <Code label="/ip hotspot user profile" code={hotspotProfile(p, { name: n })} />
           <Code label="RADIUS" code={radiusAttribute(p)} />
           <p className="text-sm text-zinc-400">{t("notes.ppp")}</p>

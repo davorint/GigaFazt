@@ -69,7 +69,7 @@ function SharedExport({ state }: { state: LabState }) {
     pair: memberPair(state, m),
     priority: m.priority,
   }))
-  const ppp = sharedPpp({ parent: name, target: net ?? "", maxLimit: g.parentMbps, children })
+  const ppp = sharedPpp({ parent: name, target: net ?? "", maxLimit: g.parentMbps, children, queue: state.queueKind })
 
   return (
     <details className="surface rounded-xl">
@@ -94,7 +94,7 @@ function SharedExport({ state }: { state: LabState }) {
             <TabsContent value="simple" className="grid min-w-0 gap-4">
               <CodeBlock
                 label={t("shared.export.tabs.simple")}
-                code={sharedSimpleQueues({ parent: name, target: net, maxLimit: g.parentMbps, children })}
+                code={sharedSimpleQueues({ parent: name, target: net, maxLimit: g.parentMbps, children, queue: state.queueKind })}
               />
               <p className="text-sm text-zinc-400">{t("shared.export.notes.simple")}</p>
             </TabsContent>
@@ -114,7 +114,7 @@ function SharedExport({ state }: { state: LabState }) {
             {t("shared.export.badNetwork", { count: g.members.length })}
           </p>
         )}
-        <SetupChecks />
+        <SetupChecks compact />
       </div>
     </details>
   )

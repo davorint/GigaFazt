@@ -1,8 +1,23 @@
 import { describe, expect, it } from "vitest"
-import { check, DEFAULT_RULE, planDefaults, RULES, ruleId, type QueueParams } from "./burst"
+import { check, DEFAULT_RULE, longestSingleBurst, planDefaults, RULES, ruleId, solve, type QueueParams } from "./burst"
 import { estimateSpeedTest, plainMean, trimmedMean } from "./speedtest"
-import { fairShare, simulateCapacity, sizeUplink, type CapacityInput } from "./capacity"
-import { planName, rateLimit, sharedPpp, sharedSimpleQueues, simpleQueueLine, userManagerPlans } from "./routeros"
+import { fairShare, simulateCapacity, size, worstTestShare, type CapacityInput } from "./capacity"
+import {
+  asciiName,
+  planName,
+  pppProfile,
+  queueTree,
+  queueTypeSetup,
+  rateLimit,
+  sharedPpp,
+  sharedSimpleQueues,
+  simpleQueue,
+  simpleQueueLine,
+  simpleQueueUpsert,
+  userManagerPlans,
+} from "./routeros"
+import { parseRateLimit, parseRouterOS } from "./import"
+import { auditExport, migrationScript } from "./audit"
 import { bulkScript, fillPasswords, hostTargets, networkOf, parseBulk, parsePlan, parseTarget, randomPassword, splitLine } from "./bulk"
 import { decodeState, DEFAULT_CAPACITY, encodeState, initialState, memberPair, PRESETS, presetState } from "./state"
 
@@ -32,7 +47,9 @@ describe("plan rules", () => {
     expect(ruleId({ ...RULES.s80, burstTime: 10 })).toBe("custom")
   })
   it("a flat plan has no burst and passes the plan check", () => {
-    expect(check(planDefaults(500, RULES.flat), { planMbps: 500 }).map((i) => i.code)).toEqual(["burstOff"])
+    expect(check(planDefaults(500, RULES.flat), { planMbps: 500 }).map((i) => i.code)).toEqual(["burstNone"])
+    // Partly set burst values are still reported as incomplete.
+    expect(check({ ...planDefaults(500, RULES.flat), burstTime: 16 }).map((i) => i.code)).toEqual(["burstOff"])
   })
   it("loading a plan uses the state's rule", () => {
     const s = presetState(PRESETS[1], { ...initialState(), rule: RULES.s80 })
@@ -68,11 +85,14 @@ describe("speed test estimate", () => {
 
 describe("busiest-hour capacity", () => {
   const base = (over: Partial<CapacityInput> = {}): CapacityInput => ({
-    parentMbps: 1e9,
-    plans: PRESETS.map((p) => ({ id: p.id, planMbps: p.downMbps, clients: 40, params: planDefaults(p.downMbps, RULES.flat) })),
-    activeShare: 0.1,
-    sessionS: 20,
-    demandMbps: null,
+    parentMbps: Number.POSITIVE_INFINITY,
+    plans: PRESETS.map((p) => ({ id: p.id, planMbps: p.downMbps, clients: 60, params: planDefaults(p.downMbps, RULES.flat) })),
+    direction: "down",
+    avgMbps: 3.4,
+    videoShare: 0.5,
+    videoMbps: 5,
+    fileMB: 50,
+    pon: { tech: "gpon", homesPerPort: 32 },
     testS: 15,
     durationS: 300,
     ...over,
@@ -85,39 +105,257 @@ describe("busiest-hour capacity", () => {
     fairShare(1000, [10, 80, 80], out)
     expect(out).toEqual([10, 80, 80])
   })
-  it("with a huge uplink every speed test shows the plan", () => {
+  it("moves about the average per client it's given", () => {
+    const r = simulateCapacity(base({ plans: PRESETS.map((p) => ({ id: p.id, planMbps: p.downMbps, clients: 400, params: planDefaults(p.downMbps, RULES.flat) })) }))
+    expect(r.perClientMbps).toBeGreaterThan(3.4 * 0.85)
+    expect(r.perClientMbps).toBeLessThan(3.4 * 1.15)
+    expect(r.offeredMbps).toBeCloseTo(3.4 * 1200)
+  })
+  it("with room to spare every speed test and download gets the plan", () => {
     const r = simulateCapacity(base())
     for (const p of r.plans) {
-      expect(p.tests).toBeGreaterThan(5)
-      expect(p.testMbps).toBeCloseTo(p.planMbps)
-      expect(p.activeAvgMbps).toBeCloseTo(p.planMbps)
+      expect(p.tests).toBeGreaterThan(40)
+      expect(p.testP10Mbps).toBeCloseTo(p.planMbps)
+      // A download never beats the plan (it can start mid-step).
+      expect(p.transferMbps).toBeLessThanOrEqual(p.planMbps + 1e-6)
+      expect(p.transferMbps).toBeGreaterThan(p.planMbps * 0.9)
     }
     expect(r.parent.saturatedShare).toBe(0)
+    expect(r.videoShortShare).toBe(0)
+  })
+  it("speed tests read the network without loading it", () => {
+    const quiet = simulateCapacity(base({ avgMbps: 0 }))
+    expect(quiet.parent.avgMbps).toBe(0)
+    expect(quiet.plans[2].testMbps).toBeCloseTo(1000)
   })
   it("a small uplink saturates and the tests drop", () => {
-    const r = simulateCapacity(base({ parentMbps: 2000 }))
-    expect(r.parent.saturatedShare).toBeGreaterThan(0.5)
-    expect(r.parent.p95Mbps).toBeLessThanOrEqual(2000 + 1e-6)
-    expect(r.plans[2].testMbps).toBeLessThan(800)
+    const r = simulateCapacity(base({ parentMbps: 700 }))
+    expect(r.parent.saturatedShare).toBeGreaterThan(0.05)
+    expect(r.parent.p95Mbps).toBeLessThanOrEqual(700 + 1e-6)
+    expect(r.plans[2].testP10Mbps).toBeLessThan(700)
+  })
+  it("a full PON port caps what the tests get; XGS-PON doesn't", () => {
+    // 64 heavy homes per port: ~1.9 Gbps average on a 2.5 Gbps GPON port.
+    const heavy = { avgMbps: 30, pon: { tech: "gpon" as const, homesPerPort: 64 } }
+    const gpon = simulateCapacity(base(heavy))
+    const xgs = simulateCapacity(base({ ...heavy, pon: { tech: "xgspon", homesPerPort: 64 } }))
+    expect(gpon.ports?.capacityMbps).toBeCloseTo(2488.32)
+    expect(gpon.plans[2].testP10Mbps).toBeLessThan(xgs.plans[2].testP10Mbps)
+    expect(xgs.plans[2].testP10Mbps).toBeCloseTo(1000)
+    // GPON upload is half the download.
+    expect(simulateCapacity(base({ direction: "up", avgMbps: 0.2 })).ports?.capacityMbps).toBeCloseTo(1244.16)
+  })
+  it("flags demand above the uplink", () => {
+    const r = simulateCapacity(base({ parentMbps: 300, durationS: 120 }))
+    expect(r.offeredMbps).toBeGreaterThan(300)
   })
   it("is repeatable (seeded)", () => {
-    const a = simulateCapacity(base({ parentMbps: 3000 }))
-    const b = simulateCapacity(base({ parentMbps: 3000 }))
+    const a = simulateCapacity(base({ parentMbps: 1500 }))
+    const b = simulateCapacity(base({ parentMbps: 1500 }))
     expect(a.parent).toEqual(b.parent)
     expect(a.plans).toEqual(b.plans)
   })
-  it("sizes the uplink, or says the queue rule is the limit", () => {
-    const input: Omit<CapacityInput, "parentMbps"> = base()
-    const flat = sizeUplink(input, 0.8)
-    expect(flat.ok).toBe(true)
-    if (flat.ok) {
-      expect(flat.share).toBeGreaterThanOrEqual(0.8 - 1e-9)
-      const below = simulateCapacity({ ...input, parentMbps: flat.parentMbps * 0.5 })
-      expect(Math.min(...below.plans.map((p) => p.testMbps / p.planMbps))).toBeLessThan(0.8)
+  it("sizes the uplink and the clients per port, or says what limits it", () => {
+    const { parentMbps: _drop, ...input } = base()
+    void _drop
+    const flat = size(input, 0.8)
+    expect(flat.uplink.ok).toBe(true)
+    if (flat.uplink.ok) {
+      expect(flat.uplink.share).toBeGreaterThanOrEqual(0.8 - 1e-9)
+      // Well below the answer, 9 of 10 tests don't reach 80 %.
+      expect(worstTestShare(simulateCapacity({ ...input, parentMbps: flat.uplink.parentMbps * 0.5 })).share).toBeLessThan(0.8)
     }
-    const low = sizeUplink({ ...input, plans: input.plans.map((p) => ({ ...p, params: planDefaults(p.planMbps, RULES.s20) })) }, 0.8)
-    expect(low.ok).toBe(false)
-    if (!low.ok) expect(low.bestShare).toBeCloseTo(1 / 3, 1)
+    expect(flat.perPort.xgspon).toBeGreaterThanOrEqual(flat.perPort.gpon)
+    // 20 % rule: the queue is the limit, at about a third of the plan.
+    const low = size({ ...input, plans: input.plans.map((p) => ({ ...p, params: planDefaults(p.planMbps, RULES.s20) })) }, 0.8)
+    expect(low.uplink.ok).toBe(false)
+    if (!low.uplink.ok) {
+      expect(low.uplink.limit).toBe("queue")
+      expect(low.uplink.bestShare).toBeCloseTo(1 / 3, 1)
+    }
+    expect(low.perPort).toEqual({ gpon: 0, xgspon: 0 })
+    // Heavy homes on a crowded GPON port: the port is the limit.
+    const crowded = size({ ...input, avgMbps: 30, pon: { tech: "gpon", homesPerPort: 64 } }, 0.8)
+    expect(crowded.uplink.ok).toBe(false)
+    if (!crowded.uplink.ok) expect(crowded.uplink.limit).toBe("pon")
+    expect(crowded.perPort.gpon).toBeLessThan(64)
+  })
+})
+
+describe("calculator", () => {
+  it("counts whole sub-windows", () => {
+    // threshold 75 of burst 500: ⌈2.4⌉ = 3 sub-windows → burst-time 43 s gives 8.06 s.
+    const r = solve({ maxLimit: 100, burstLimit: 500, targetS: 8, solveFor: "burstTime", burstThreshold: 75 })
+    expect(r).toEqual({ burstThreshold: 75, burstTime: 43, durationS: (3 * 43) / 16 })
+    // Fixed burst-time: the largest threshold that still gives the target.
+    expect(solve({ maxLimit: 100, burstLimit: 500, targetS: 8, solveFor: "burstThreshold", burstTime: 16 })).toEqual({
+      burstThreshold: 250,
+      burstTime: 16,
+      durationS: 8,
+    })
+  })
+  it("knows the longest burst that doesn't repeat", () => {
+    expect(longestSingleBurst(100, 500, 16)).toBe(4)
+    expect(longestSingleBurst(2, 4, 16)).toBe(8)
+    expect(longestSingleBurst(500, 500, 16)).toBe(0)
+  })
+})
+
+describe("import defaults", () => {
+  it("rate-limit with a burst but no threshold or time: RouterOS uses the rate and 1 s", () => {
+    const r = parseRateLimit("10M/20M 20M/40M")
+    expect(r.ok && r.down).toEqual({ maxLimit: 20, burstLimit: 40, burstThreshold: 20, burstTime: 1, limitAt: 0 })
+    expect(r.ok && r.notes).toEqual(["burstDefaults"])
+    const t = parseRateLimit("10M/20M 20M/40M 15M/30M")
+    expect(t.ok && t.up).toEqual({ maxLimit: 10, burstLimit: 20, burstThreshold: 15, burstTime: 1, limitAt: 0 })
+  })
+  it("PCQ with a burst but no pcq-burst-time: 10 s", () => {
+    const r = parseRouterOS('/queue type\nadd kind=pcq name=p-down pcq-classifier=dst-address pcq-rate=100M pcq-burst-rate=500M pcq-burst-threshold=75M')
+    expect(r.ok && r.down.burstTime).toBe(10)
+    expect(r.ok && r.notes).toContain("pcqTimeDefault")
+  })
+})
+
+describe("speed test with household traffic", () => {
+  it("a 4K stream running all but cancels the burst of the 20 % rule", () => {
+    expect(estimateSpeedTest(planDefaults(200), { backgroundMbps: 25 }).first.trimmedMbps).toBeCloseTo(15, 0)
+    expect(estimateSpeedTest(planDefaults(200, RULES.s80), { backgroundMbps: 25 }).first.trimmedMbps).toBeGreaterThan(160)
+    expect(estimateSpeedTest(planDefaults(500, RULES.flat), { backgroundMbps: 25 }).first.trimmedMbps).toBeCloseTo(475)
+  })
+  it("no background = the same as from rest", () => {
+    expect(estimateSpeedTest(planDefaults(500), { backgroundMbps: 0 })).toEqual(estimateSpeedTest(planDefaults(500)))
+  })
+})
+
+describe("queue types and re-runnable scripts", () => {
+  const q = planDefaults(500, RULES.s80)
+  it("fq-codel / CAKE: the type is created once and the queues use it", () => {
+    const s = simpleQueue(sym(q), { name: "c", target: "10.0.0.2/32", queue: "fq-codel" })
+    expect(s.split("\n")[0]).toBe(':if ([:len [/queue type find where name="fq-codel"]] = 0) do={/queue type add name="fq-codel" kind=fq-codel}')
+    expect(s).toContain('queue="fq-codel/fq-codel"')
+    expect(queueTree(sym(q), { name: "c", parent: "global", markUp: "u", markDown: "d", queue: "cake" })).toContain('queue="cake"')
+    expect(pppProfile(sym(q), { name: "p", queue: "cake" })).toContain('queue-type="cake"')
+    expect(queueTypeSetup("default")).toBeNull()
+  })
+  it("upsert updates by name and clears what the new plan doesn't use", () => {
+    const flat = planDefaults(500, RULES.flat)
+    expect(simpleQueueUpsert(sym(flat), { name: "Juan", target: "10.0.0.2/32" })).toBe(
+      ':if ([:len [/queue simple find where name="Juan"]] > 0) do={/queue simple set [find where name="Juan"] target=10.0.0.2/32 max-limit=500M/500M burst-limit=0/0 burst-threshold=0/0 burst-time=0s/0s limit-at=0/0} else={/queue simple add name="Juan" target=10.0.0.2/32 max-limit=500M/500M}'
+    )
+    expect(asciiName("José Ñúñez")).toBe("Jose Nunez")
+  })
+})
+
+describe("bulk: PCQ per plan and updates", () => {
+  const rows = (text: string, m: "simple" | "pcq" | "pppoe" | "usermanager") => parseBulk(text, m, KNOWN).rows
+  it("PCQ: types, trees, mangle and address lists per plan", () => {
+    const script = bulkScript(rows("Juan, 10.0.0.2, 500\nAna, 10.0.0.3, 500\nLuis, 10.0.0.4, 1G", "pcq"), "pcq", { rule: RULES.s80 })
+    const lines = script.split("\n")
+    expect(lines).toContain('add name="plan-500M-down" kind=pcq pcq-classifier=dst-address pcq-rate=400M pcq-burst-rate=500M pcq-burst-threshold=300M pcq-burst-time=16s')
+    expect(lines).toContain('add name="plan-1000M-up" parent=global packet-mark="plan-1000M-up" queue="plan-1000M-up"')
+    expect(lines).toContain('add chain=forward dst-address-list="plan-500M" action=mark-packet new-packet-mark="plan-500M-down" passthrough=yes comment="plan-500M-down"')
+    expect(lines).toContain('add list="plan-500M" address=10.0.0.2 comment="Juan"')
+    expect(lines.filter((l) => l.startsWith("add list=")).length).toBe(3)
+  })
+  it("PCQ upsert moves an IP between plan lists and doesn't duplicate mangle", () => {
+    const script = bulkScript(rows("Juan, 10.0.0.2, 500", "pcq"), "pcq", { rule: RULES.s80, upsert: true })
+    expect(script).toContain('remove [find where address="10.0.0.2" and list~"^plan-"]')
+    expect(script).toContain(':if ([:len [/ip firewall mangle find where new-packet-mark="plan-500M-down"]] = 0) do={/ip firewall mangle add ')
+    expect(script).toContain(':if ([:len [/queue type find where name="plan-500M-down"]] > 0) do={/queue type set [find where name="plan-500M-down"] kind=pcq')
+  })
+  it("simple queues: names without accents, the full name in comment, queue type", () => {
+    const script = bulkScript(rows("José Pérez, 10.0.0.2, 200", "simple"), "simple", { rule: RULES.s80, queue: "fq-codel" })
+    expect(script).toContain('add name="Jose Perez" target=10.0.0.2/32 queue="fq-codel/fq-codel" max-limit=160M/160M')
+    expect(script).toContain('comment="José Pérez"')
+    expect(parseBulk("José, 10.0.0.2, 200\nJose, 10.0.0.3, 200", "simple", KNOWN).errors).toEqual([{ line: 2, code: "duplicateName" }])
+  })
+  it("PPPoE upsert keeps passwords; User Manager re-assigns profiles", () => {
+    const ppp = bulkScript(rows("Juan, juan, 500, s3cr3t", "pppoe"), "pppoe", { rule: RULES.s80, upsert: true })
+    expect(ppp).toContain(':if ([:len [/ppp secret find where name="juan"]] > 0) do={/ppp secret set [find where name="juan"] profile="plan-500M"} else={/ppp secret add name="juan" password="s3cr3t" service=pppoe profile="plan-500M" comment="Juan"}')
+    const um = bulkScript(rows("Juan, juan, 500, s3cr3t", "usermanager"), "usermanager", { rule: RULES.flat, upsert: true })
+    expect(um).toContain('remove [find where user="juan"]')
+    expect(um).toContain(':if ([:len [/user-manager user find where name="juan"]] = 0) do={/user-manager user add name="juan"')
+    expect(um).toContain("rate-limit-burst-rx=0")
+  })
+})
+
+describe("audit of a router export", () => {
+  const EXPORT = [
+    "# nov/15/2026 by RouterOS 7.20",
+    "/queue simple",
+    'add burst-limit=200M/200M burst-threshold=30M/30M burst-time=16s/16s max-limit=40M/40M name=juan target=10.0.0.2/32',
+    'add max-limit=500M/500M name="ana lopez" target=10.0.0.3/32',
+    "add burst-limit=600M/600M burst-threshold=200M/200M burst-time=16s/16s max-limit=100M/100M name=luis \\",
+    "    parent=nodo1 target=10.0.0.2/32",
+    "add max-limit=0/300M name=raro target=10.0.0.9/32",
+    "/queue type",
+    "add kind=pcq name=plan-1g-down pcq-classifier=dst-address pcq-rate=200M pcq-burst-rate=1G pcq-burst-threshold=150M pcq-burst-time=16s",
+    "add kind=fq-codel name=fq",
+    "/ppp profile",
+    'set [ find default=yes ] rate-limit=200M/200M',
+    'add name=plan-500 rate-limit="100M/100M 500M/500M 75M/75M 16/16"',
+    "/ip address",
+    "add address=10.0.0.1/24 interface=bridge",
+  ].join("\n")
+
+  it("reads every queue and profile, recognizes plans and flags problems", () => {
+    const r = auditExport(EXPORT, { plans: KNOWN, rule: RULES.s80 })
+    expect(r.entries.map((e) => `${e.kind}:${e.name}`)).toEqual([
+      "simple:juan",
+      "simple:ana lopez",
+      "simple:luis",
+      "simple:raro",
+      "pcq:plan-1g-down",
+      "ppp:default",
+      "ppp:plan-500",
+    ])
+    expect(r.ignored).toBe(1)
+    const by = Object.fromEntries(r.entries.map((e) => [e.name, e]))
+    expect(by.juan.planMbps).toBe(200)
+    expect(by.juan.rule).toEqual({ sustained: 0.2, threshold: 0.75, burstTime: 16 })
+    expect(by.juan.flags).toEqual(["duplicateTarget", "ruleDiffers"])
+    expect(by["ana lopez"].flags).toEqual(["ruleDiffers"])
+    expect(by.luis.flags).toContain("duplicateTarget")
+    expect(by.luis.flags).toContain("parentMissing")
+    expect(by.luis.flags).toContain("thresholdAboveMax")
+    expect(by.luis.flags).toContain("unknownPlan")
+    expect(by.raro.flags).toContain("unlimited")
+    expect(by["plan-1g-down"].direction).toBe("down")
+    expect(by["plan-1g-down"].planMbps).toBe(1000)
+    expect(by.default.planMbps).toBe(200)
+  })
+  it("writes set commands to the current rule, leaving unknown plans alone", () => {
+    const r = auditExport(EXPORT, { plans: KNOWN, rule: RULES.s80 })
+    const m = migrationScript(r.entries, { plans: KNOWN, rule: RULES.s80 })
+    // luis (600M) and raro (300M) match no plan.
+    expect(m.skipped).toBe(2)
+    const lines = m.script.split("\n")
+    expect(lines).toContain('set [find where name="juan"] max-limit=160M/160M burst-limit=200M/200M burst-threshold=120M/120M burst-time=16s/16s limit-at=0/0')
+    expect(lines).toContain('set [find where name="ana lopez"] max-limit=400M/400M burst-limit=500M/500M burst-threshold=300M/300M burst-time=16s/16s limit-at=0/0')
+    expect(lines).toContain('set [find where name="plan-1g-down"] pcq-rate=800M pcq-burst-rate=1000M pcq-burst-threshold=600M pcq-burst-time=16s')
+    expect(lines).toContain('set [find where name="plan-500"] rate-limit="400M/400M 500M/500M 300M/300M 16/16"')
+    expect(lines[0]).toBe("/queue simple")
+    // Already on the rule: nothing to do.
+    const same = auditExport('/queue simple\nadd max-limit=160M/160M burst-limit=200M/200M burst-threshold=120M/120M burst-time=16s/16s name=x target=10.0.0.5/32', { plans: KNOWN, rule: RULES.s80 })
+    expect(migrationScript(same.entries, { plans: KNOWN, rule: RULES.s80 }).changed).toBe(0)
+  })
+})
+
+describe("state: background, queue type and capacity", () => {
+  it("round-trips through the share hash", () => {
+    const s = {
+      ...initialState(),
+      backgroundMbps: 25,
+      queueKind: "cake" as const,
+      capacity: { ...DEFAULT_CAPACITY, direction: "up" as const, pon: "xgspon" as const, homesPerPort: 64, avgUpMbps: 0.5, clients: [10, 0, 7] },
+    }
+    expect(decodeState(encodeState(s))).toEqual(s)
+  })
+  it("old links (activity-based capacity) get the new defaults", () => {
+    const old = decodeState("#p=fibra-500&d=100,500,75,16,0&k=10000,0.05,30,,200,200,200")
+    expect(old?.capacity).toEqual(DEFAULT_CAPACITY)
+    expect(old?.backgroundMbps).toBe(0)
+    expect(old?.queueKind).toBe("default")
   })
 })
 
@@ -255,7 +493,7 @@ describe("bulk client list", () => {
 
 describe("state with rule and capacity", () => {
   it("round-trips through the share hash", () => {
-    const s = { ...initialState(), rule: { sustained: 0.65, threshold: 0.9, burstTime: 12 }, capacity: { ...DEFAULT_CAPACITY, clients: [10, 0, 7], demandMbps: 25, activeShare: 0.12 } }
+    const s = { ...initialState(), rule: { sustained: 0.65, threshold: 0.9, burstTime: 12 }, capacity: { ...DEFAULT_CAPACITY, clients: [10, 0, 7], avgDownMbps: 5.5, videoShare: 0.3 } }
     expect(decodeState(encodeState(s))).toEqual(s)
   })
   it("old links use the default rule and capacity; bad values fall back", () => {
@@ -263,7 +501,7 @@ describe("state with rule and capacity", () => {
     expect(old?.rule).toEqual(DEFAULT_RULE)
     expect(old?.capacity).toEqual(DEFAULT_CAPACITY)
     expect(decodeState("#d=100,500,75,16,0&r=0,0.75,16")?.rule).toEqual(DEFAULT_RULE)
-    expect(decodeState("#d=100,500,75,16,0&k=1000,2,30,,1,2,3")?.capacity).toEqual(DEFAULT_CAPACITY)
+    expect(decodeState("#d=100,500,75,16,0&h=1000,sideways,3,0.2,0.5,5,50,gpon,32,1,2,3")?.capacity).toEqual(DEFAULT_CAPACITY)
   })
   it("shared-parent clients export both directions with their limit-at", () => {
     const s = { ...initialState(), rule: RULES.s80 }

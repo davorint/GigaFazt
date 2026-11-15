@@ -14,6 +14,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Vendor MapLibre worker copied from node_modules (scripts/copy-maplibre-worker.mjs).
     "public/maplibre-gl-worker-*.mjs",
+    "public/capacity-worker.js",
   ]),
 ]);
 

@@ -78,9 +78,9 @@ export function ComparePanel({ state }: { state: LabState }) {
     return list.map((r) => ({
       ...r,
       result: simulate(r.params, pattern, durationS, { lineCapMbps }),
-      testMbps: estimateSpeedTest(r.params, { testS: pattern.testS, lineCapMbps }).first.trimmedMbps,
+      testMbps: estimateSpeedTest(r.params, { testS: pattern.testS, lineCapMbps, backgroundMbps: state.backgroundMbps }).first.trimmedMbps,
     }))
-  }, [mode, plan, rule, ownRule, custom, current, state.planMbps, pattern, durationS, lineCapMbps, t])
+  }, [mode, plan, rule, ownRule, custom, current, state.planMbps, state.backgroundMbps, pattern, durationS, lineCapMbps, t])
 
   const dt = Math.min(...runs.map((r) => r.result.stats.stepS))
   const steps = Math.max(1, Math.ceil(durationS / dt - 1e-9))
@@ -180,7 +180,11 @@ export function ComparePanel({ state }: { state: LabState }) {
             <tr className="border-b border-white/10">
               {([mode === "plans" ? "plan" : "rule", "maxLimit", "burstLimit", "burstThreshold", "burstTime", "firstBurst", "total", "activeAvg", "test"] as const).map((c) => (
                 <th key={c} scope="col" className="px-3 py-2.5 font-normal whitespace-nowrap">
-                  {c === "test" ? t("compare.cols.test", { s: fmtSec(pattern.testS) }) : t(`compare.cols.${c}`)}
+                  {c === "test"
+                    ? state.backgroundMbps > 0
+                      ? t("compare.cols.testBg", { s: fmtSec(pattern.testS), bg: fmtRate(state.backgroundMbps) })
+                      : t("compare.cols.test", { s: fmtSec(pattern.testS) })
+                    : t(`compare.cols.${c}`)}
                 </th>
               ))}
               {transferCol && (

@@ -1,10 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Check } from "lucide-react"
+import { Check, RotateCcw } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
-import { solve } from "@/lib/mikrotik/burst"
+import { burstEnabled, longestSingleBurst, solve, type SolveResult } from "@/lib/mikrotik/burst"
 import { rosRate } from "@/lib/mikrotik/routeros"
 import { fmtRate, fmtSec } from "@/lib/mikrotik/format"
 import { viewParams, type LabState } from "@/lib/mikrotik/state"
@@ -12,25 +12,27 @@ import { Choice } from "./Choice"
 import { NumberField } from "./NumberField"
 
 type Mode = "burstTime" | "burstThreshold"
+type Applied = { burstThreshold: number; burstTime: number }
 
-export function SolverPanel({
-  state,
-  onApply,
-}: {
-  state: LabState
-  onApply: (v: { burstThreshold: number; burstTime: number }) => void
-}) {
+export function SolverPanel({ state, onApply }: { state: LabState; onApply: (v: Applied) => void }) {
   const t = useTranslations("mikrotik")
   const p = viewParams(state)
   const [targetS, setTargetS] = useState(8)
-  const [mode, setMode] = useState<Mode>("burstThreshold")
-  const [threshold, setThreshold] = useState(p.burstThreshold || Math.round(p.maxLimit * 0.75))
-  const [time, setTime] = useState(p.burstTime || 16)
-  const [applied, setApplied] = useState(false)
+  // Fixing the threshold keeps it where it is (under max-limit), so the default always has an answer.
+  const [mode, setMode] = useState<Mode>("burstTime")
+  // null = follow the queue above until the user types a value.
+  const [thresholdEdit, setThreshold] = useState<number | null>(null)
+  const [timeEdit, setTime] = useState<number | null>(null)
+  const [applied, setApplied] = useState<string | null>(null)
+
+  const queueThreshold = burstEnabled(p) ? p.burstThreshold : Math.round(p.maxLimit * 0.75)
+  const threshold = thresholdEdit ?? queueThreshold
+  const time = timeEdit ?? (burstEnabled(p) ? p.burstTime : 16)
+  const edited = thresholdEdit !== null || timeEdit !== null
 
   useEffect(() => {
     if (!applied) return
-    const id = window.setTimeout(() => setApplied(false), 1800)
+    const id = window.setTimeout(() => setApplied(null), 1800)
     return () => window.clearTimeout(id)
   }, [applied])
 
@@ -38,15 +40,23 @@ export function SolverPanel({
     mode === "burstTime"
       ? solve({ maxLimit: p.maxLimit, burstLimit: p.burstLimit, targetS, solveFor: "burstTime", burstThreshold: threshold })
       : solve({ maxLimit: p.maxLimit, burstLimit: p.burstLimit, targetS, solveFor: "burstThreshold", burstTime: time })
+  const repeats = r !== null && r.burstThreshold > p.maxLimit + 1e-9
+  // With the threshold at most max-limit, the longest burst this burst-time can give.
+  const longest = longestSingleBurst(p.maxLimit, p.burstLimit, time)
+  // A threshold that stays under max-limit (75 % of it) and the burst-time that gives the target with it.
+  const safeThreshold = Math.min(queueThreshold, p.maxLimit)
+  const alternative = repeats ? solve({ maxLimit: p.maxLimit, burstLimit: p.burstLimit, targetS, solveFor: "burstTime", burstThreshold: safeThreshold }) : null
 
   const dir = state.symmetric ? "" : ` · ${t(`params.${state.view}`)}`
+  const apply = (v: SolveResult, key: string) => {
+    onApply({ burstThreshold: v.burstThreshold, burstTime: v.burstTime })
+    setApplied(key)
+  }
 
   return (
     <div className="surface grid gap-7 rounded-2xl p-5 sm:p-7 lg:grid-cols-[1fr_1fr] lg:gap-10 [&>*]:min-w-0">
       <div className="grid content-start gap-5">
-        <p className="text-sm text-zinc-300">
-          {t("solver.using", { max: fmtRate(p.maxLimit), burst: fmtRate(p.burstLimit), direction: dir })}
-        </p>
+        <p className="text-sm text-zinc-300">{t("solver.using", { max: fmtRate(p.maxLimit), burst: fmtRate(p.burstLimit), direction: dir })}</p>
         <NumberField
           label={t("solver.target")}
           unit={t("params.unitS")}
@@ -63,8 +73,8 @@ export function SolverPanel({
             value={mode}
             onChange={setMode}
             options={[
-              { value: "burstThreshold", label: t("solver.modes.burstThreshold") },
               { value: "burstTime", label: t("solver.modes.burstTime") },
+              { value: "burstThreshold", label: t("solver.modes.burstThreshold") },
             ]}
             className="sm:w-full"
           />
@@ -76,6 +86,7 @@ export function SolverPanel({
             value={threshold}
             min={0.001}
             onChange={(v) => v !== null && setThreshold(v)}
+            hint={t("solver.fixedThresholdHint", { max: rosRate(p.maxLimit) })}
             className="max-w-xs"
           />
         ) : (
@@ -87,8 +98,25 @@ export function SolverPanel({
             max={3600}
             integer
             onChange={(v) => v !== null && setTime(v)}
+            hint={longest > 0 ? t("solver.longest", { value: fmtSec(longest), time: `${time}` }) : undefined}
             className="max-w-xs"
           />
+        )}
+        {edited && (
+          <div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setThreshold(null)
+                setTime(null)
+              }}
+            >
+              <RotateCcw aria-hidden />
+              {t("solver.follow")}
+            </Button>
+          </div>
         )}
         <p className="font-mono text-xs text-zinc-500">{t("solver.formula")}</p>
       </div>
@@ -108,19 +136,30 @@ export function SolverPanel({
               </div>
             </dl>
             <p className="text-sm text-zinc-300">{t("solver.real", { value: fmtSec(r.durationS) })}</p>
-            {r.burstThreshold > p.maxLimit && <p className="text-sm text-amber-300">{t("solver.warnAboveMax")}</p>}
+            {repeats && <p className="text-sm text-amber-300">{t("solver.warnAboveMax", { longest: fmtSec(longest), time: `${time}` })}</p>}
             <div>
-              <Button
-                type="button"
-                onClick={() => {
-                  onApply({ burstThreshold: r.burstThreshold, burstTime: r.burstTime })
-                  setApplied(true)
-                }}
-              >
-                {applied && <Check aria-hidden />}
-                {applied ? t("solver.applied") : t("solver.apply")}
+              <Button type="button" variant={repeats ? "outline" : "default"} onClick={() => apply(r, "main")}>
+                {applied === "main" && <Check aria-hidden />}
+                {applied === "main" ? t("solver.applied") : t("solver.apply")}
               </Button>
             </div>
+            {alternative && (
+              <div className="grid gap-3 border-t border-white/10 pt-4">
+                <p className="text-sm text-zinc-200">
+                  {t("solver.alternative", {
+                    threshold: rosRate(alternative.burstThreshold),
+                    time: `${alternative.burstTime}`,
+                    value: fmtSec(alternative.durationS),
+                  })}
+                </p>
+                <div>
+                  <Button type="button" onClick={() => apply(alternative, "alt")}>
+                    {applied === "alt" && <Check aria-hidden />}
+                    {applied === "alt" ? t("solver.applied") : t("solver.applyAlternative")}
+                  </Button>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <p className="text-sm text-amber-300">{t("solver.impossible")}</p>

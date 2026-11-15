@@ -56,7 +56,7 @@ function RuleFields({ rule, onRule }: { rule: PlanRule; onRule: (rule: PlanRule)
               onChange={(v) => v !== null && onRule({ ...rule, threshold: v / 100 })}
             />
             <NumberField
-              label={t("burstTime")}
+              label={t("ruleBurstTime")}
               unit={t("unitS")}
               value={rule.burstTime}
               integer

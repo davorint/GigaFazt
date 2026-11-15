@@ -21,7 +21,8 @@
         "export": "Exportar",
         "bulk": "Varios clientes",
         "how": "Cómo funciona"
-      }
+      },
+      "navLabel": "Secciones de la herramienta"
     },
     "params": {
       "title": "Parámetros de la cola",
@@ -69,7 +70,8 @@
       },
       "customRule": "Personalizada",
       "ruleSustainedHint": "del plan",
-      "ruleThresholdHint": "de max-limit"
+      "ruleThresholdHint": "de max-limit",
+      "ruleBurstTime": "burst-time (regla)"
     },
     "import": {
       "title": "Importar desde RouterOS",
@@ -122,7 +124,10 @@
       "test": "Prueba de velocidad de {s}",
       "again": "Si la repite {s} después",
       "testSub": "promedio simple {plain}",
-      "testNote": "Estimación con el método que se atribuye a Ookla: descarta el 10 % de las muestras más rápidas y el 30 % de las más lentas y promedia el resto. La primera prueba empieza con la línea en reposo. Cada herramienta mide distinto; no incluye TCP ni latencia."
+      "testNote": "Estimación con el método que se atribuye a Ookla: descarta el 10 % de las muestras más rápidas y el 30 % de las más lentas y promedia el resto. Sin tráfico de fondo, la primera prueba empieza con la línea en reposo. Cada herramienta mide distinto; no incluye TCP ni latencia.",
+      "background": "Tráfico de fondo en la casa",
+      "backgroundHint": "Lo que ya se usa al hacer la prueba (5 ≈ un video HD, 25 ≈ uno 4K). Supone que ese tráfico conserva su velocidad.",
+      "testBg": "Prueba de {s} con {bg} de fondo"
     },
     "issues": {
       "title": "Revisión",
@@ -142,7 +147,8 @@
         "error": "Error",
         "warn": "Atención",
         "info": "Nota"
-      }
+      },
+      "burstNone": "Sin ráfaga: el cliente siempre recibe max-limit."
     },
     "sim": {
       "title": "Simulación",
@@ -230,7 +236,8 @@
         "video": "Arranque · búfer vacío",
         "web": "Por página",
         "rule": "Regla",
-        "test": "Prueba de {s}"
+        "test": "Prueba de {s}",
+        "testBg": "Prueba de {s} con {bg} de fondo"
       },
       "never": "no termina",
       "noBurst": "sin ráfaga",
@@ -375,13 +382,18 @@
       },
       "fixedThreshold": "burst-threshold fijo",
       "fixedTime": "burst-time fijo",
-      "formula": "duración ≈ burst-threshold × burst-time ÷ burst-limit",
+      "formula": "duración = ⌈16 × burst-threshold ÷ burst-limit⌉ × burst-time ÷ 16 (≈ burst-threshold × burst-time ÷ burst-limit)",
       "result": "Propuesta",
       "real": "Duración real con valores redondeados: {value}",
       "impossible": "Con estos valores no hay ráfaga: burst-limit tiene que ser mayor que max-limit y la duración mayor que 0.",
-      "warnAboveMax": "El threshold calculado queda arriba de max-limit: la ráfaga se repetiría sin fin. Sube burst-time o baja la duración.",
+      "warnAboveMax": "El threshold queda arriba de max-limit: la ráfaga se repetiría sin fin. Con burst-time {time} s, lo más que dura sin repetirse es {longest}.",
       "apply": "Aplicar a los parámetros",
-      "applied": "Aplicado"
+      "applied": "Aplicado",
+      "fixedThresholdHint": "Lo usual es dejarlo debajo de max-limit ({max}) para que la ráfaga no se repita.",
+      "longest": "Con burst-time {time} s, la ráfaga más larga que no se repite dura {value} (threshold = max-limit).",
+      "alternative": "Mejor: threshold {threshold} y burst-time {time} s dan {value} sin que la ráfaga se repita.",
+      "applyAlternative": "Aplicar esta",
+      "follow": "Usar los valores de la cola"
     },
     "export": {
       "title": "Exportar a RouterOS",
@@ -404,10 +416,21 @@
         "simple": "En simple queues cada valor va como subida/bajada del target (target-upload/target-download).",
         "tree": "Necesita las marcas de paquete en /ip firewall mangle (no se generan aquí). Un queue tree por dirección.",
         "pcq": "Cada sub-stream (cada cliente de la cola) recibe la misma tasa y su propia ráfaga. Usa los tipos en una cola, p. ej. queue=NOMBRE-up/NOMBRE-down en una simple queue con el target de la red de clientes.",
-        "ppp": "Formato rate-limit visto desde el router: rx = subida del cliente, tx = bajada. Sirve igual en /ppp profile, en perfiles de Hotspot y en el atributo RADIUS Mikrotik-Rate-Limit. burst-time va en segundos.",
+        "ppp": "Formato rate-limit visto desde el router: rx = subida del cliente, tx = bajada. Sirve igual en /ppp profile, en perfiles de Hotspot y en el atributo RADIUS Mikrotik-Rate-Limit. burst-time va en segundos. El tipo de cola va en queue-type del perfil (desde 7.19 acepta subida/bajada por separado).",
         "um": "RouterOS v7. rx = subida del cliente, tx = bajada; velocidades en bps (el manual solo dice que son números). Hace falta User Manager activo con perfiles (enabled y use-profiles) y que el router de los clientes use RADIUS hacia él. Asigna el perfil a cada usuario en /user-manager user-profile."
       },
-      "rateLimit": "Cadena rate-limit"
+      "rateLimit": "Cadena rate-limit",
+      "queueKind": "Tipo de cola",
+      "queueKinds": {
+        "default": "Por defecto",
+        "fq-codel": "fq-codel",
+        "cake": "CAKE"
+      },
+      "queueKindHint": {
+        "default": "La de RouterOS para colas (default-small).",
+        "fq-codel": "Mantiene baja la latencia con la línea llena y usa menos CPU que CAKE. El script crea el tipo si no existe.",
+        "cake": "Latencia baja y reparto por flujo; usa más CPU. El manual de RouterOS 7.25 lo permite dentro de colas: revisa tu versión."
+      }
     },
     "how": {
       "title": "Cómo funciona el burst",
@@ -421,65 +444,91 @@
       "example": "limit-at 1M, max-limit 2M, burst-threshold 1500k, burst-limit 4M, burst-time 16s: el cliente descarga a 4 Mbps durante 6 s (1.5 × 16 ÷ 4) y luego queda en 2 Mbps.",
       "loadExample": "Cargar este ejemplo",
       "modelTitle": "Qué no modela",
-      "model": "La simulación principal modela una cola sola; la cola padre compartida agrega la competencia entre clientes (limit-at y prioridad) con una aproximación de HTB, y la hora pico, un modelo estadístico de muchos clientes. Ninguna incluye el arranque lento de TCP, la latencia ni la ráfaga dentro de cada sub-ventana: los tiempos de página y de video son de ancho de banda puro, y la prueba de velocidad es una estimación. El comportamiento por paso de 1/16 viene del manual clásico de MikroTik (Manual:Queue); la documentación actual describe los mismos parámetros sin ese detalle."
+      "model": "La simulación principal modela una cola sola; la cola padre compartida agrega la competencia entre clientes (limit-at y prioridad) con una aproximación de HTB, y la hora pico, un modelo estadístico de muchos clientes calibrado con el promedio por cliente. Ninguna incluye el arranque lento de TCP, la latencia ni la ráfaga dentro de cada sub-ventana: los tiempos de página y de video son de ancho de banda puro, y la prueba de velocidad es una estimación. El comportamiento por paso de 1/16 viene del manual clásico de MikroTik (Manual:Queue); la documentación actual describe los mismos parámetros sin ese detalle."
     },
     "capacity": {
       "title": "Capacidad en hora pico",
-      "lead": "Muchos clientes bajo un mismo enlace a la hora de más uso: cuánto recibe cada uno, qué marca una prueba de velocidad a esa hora y qué tan grande tiene que ser el enlace.",
+      "lead": "Muchos clientes detrás de puertos PON y un mismo enlace, a la hora de más uso: cuánto se usa, qué marca una prueba de velocidad a esa hora, y qué enlace y cuántos clientes por puerto necesitas.",
+      "direction": "Dirección",
+      "pon": "Red de acceso",
+      "pons": {
+        "gpon": "GPON",
+        "xgspon": "XGS-PON",
+        "none": "Sin PON"
+      },
       "parent": "Enlace",
       "parentHint": "max-limit de la cola padre: lo que puede dar el enlace de subida.",
-      "active": "Clientes activos a la vez",
-      "activeHint": "Porcentaje de clientes descargando en el mismo instante, en la hora pico.",
-      "session": "Duración media de cada descarga",
-      "sessionHint": "Cuánto dura en promedio cada tramo activo.",
-      "demand": "Demanda por cliente activo",
-      "demandHint": "Opcional. Vacío = pide todo lo que su cola le dé (una descarga). Un video 4K ≈ 25 Mbps.",
+      "avg": "Promedio por cliente en hora pico",
+      "avgHintDown": "OpenVault (1T 2025): 1.544 GB/h por cliente residencial a las 9 p. m. ≈ 3.4 Mbps. Usa tus datos si los tienes: es lo que más pesa en el resultado.",
+      "avgHintUp": "OpenVault (1T 2025): 0.096 GB/h por cliente residencial a las 9 p. m. ≈ 0.21 Mbps de subida.",
+      "homes": "Clientes por puerto PON",
+      "homesHint": "Según el divisor (1:32, 1:64…). Cada puerto {tech} da {cap} nominal en esta dirección.",
+      "fileMB": "Tamaño medio de las descargas",
+      "fileHint": "Supuesto. Lo que no es video llega como descargas de tamaño aleatorio con este promedio; más grande = tráfico más a ráfagas.",
+      "videoShare": "Parte que es video",
+      "videoShareHint": "Supuesto. Qué parte del promedio de bajada es video en streaming.",
+      "videoMbps": "Bitrate del video",
       "clients": "Clientes por plan · {total} en total",
       "clientsOf": "Con {plan}",
       "unitClients": "clientes",
       "clientsHint": "Reparto de ejemplo: cambia los números por los reales.",
       "using": "Colas con la regla «{rule}» de Parámetros · pruebas de velocidad de {test}.",
+      "overUplink": "La demanda promedio ({offered}) pasa del enlace ({parent}): las descargas se acumulan sin parar y los resultados de abajo no se estabilizan.",
+      "overPort": "Un puerto con {homes} clientes pide en promedio {offered}, más que su capacidad ({cap}): ese puerto se satura sin remedio.",
+      "running": "Calculando…",
       "stats": {
         "avg": "Uso promedio del enlace",
         "avgSub": "{pct} de su capacidad",
         "p95": "Uso en los momentos más altos",
         "p95Sub": "percentil 95 de la carga",
         "saturated": "Enlace saturado",
-        "saturatedSub": "del tiempo, los clientes pidieron más de lo que hay"
+        "saturatedSub": "del tiempo, los clientes pidieron más de lo que hay",
+        "port": "Puerto PON más cargado",
+        "portSub": "percentil 95 por puerto ({pct} de su capacidad) · {ports} puertos · saturados {saturated} del tiempo",
+        "video": "Video con cortes",
+        "videoSub": "del tiempo de video, un stream recibió menos de su bitrate",
+        "perClient": "Promedio movido por cliente",
+        "perClientSub": "lo que movió la simulación (pediste {avg})"
       },
       "chart": {
-        "asked": "Demanda",
-        "delivered": "Entregado",
+        "uplink": "Enlace",
+        "port": "Puerto PON más cargado",
         "parentRef": "enlace {value}",
-        "label": "Gráfica de la carga del enlace en la hora pico",
+        "ponRef": "PON {value}",
+        "saturated": "Enlace saturado",
+        "label": "Gráfica de la carga del enlace y del puerto PON más cargado en la hora pico",
         "summary": "{clients} clientes bajo un enlace de {parent}. Carga promedio de {avg}; saturado {saturated} del tiempo. {lines} Usa las flechas izquierda y derecha para recorrer la gráfica.",
-        "line": "{plan}: prueba de velocidad ≈ {test}.",
+        "line": "{plan}: 9 de cada 10 pruebas dan al menos {test}.",
         "table": "Ver los datos en tabla",
-        "tableCaption": "Carga del enlace, un renglón por tramo de {step}"
+        "tableCaption": "Carga del enlace y del puerto más cargado, un renglón por tramo de {step}"
       },
       "resultsCaption": "Resultados por plan en la hora pico",
       "cols": {
         "plan": "Plan",
         "clients": "Clientes",
         "queue": "max-limit · burst-limit",
-        "active": "Recibe un cliente activo",
+        "transfers": "Descargas (velocidad media)",
         "test": "Prueba de {s} (promedio)",
-        "worst": "Peor 10 % de las pruebas",
+        "worst": "9 de cada 10 pruebas, al menos",
         "plain": "Promedio simple de las pruebas"
       },
       "sizing": {
-        "title": "¿Qué enlace necesito?",
+        "title": "¿Qué enlace y cuántos clientes por puerto?",
         "target": "Meta de la prueba",
-        "run": "Calcular enlace mínimo",
-        "busy": "Calculando…",
-        "hint": "Busca el enlace más chico con el que la prueba de velocidad en hora pico llega, en promedio, a ese porcentaje del plan en todos los planes.",
-        "ok": "Con un enlace de {parent} o más, la prueba de velocidad en hora pico da en promedio al menos el {target} del plan en todos los planes (el más bajo queda en {share}).",
+        "targetHint": "% del plan en 9 de cada 10 pruebas en hora pico",
+        "run": "Calcular",
+        "busy": "Calculando… {pct}",
+        "hint": "Busca el enlace más chico con el que 9 de cada 10 pruebas de velocidad en hora pico llegan a ese porcentaje del plan en todos los planes, y cuántos clientes aguanta cada puerto GPON y XGS-PON con la misma meta.",
+        "ok": "Con un enlace de {parent} o más, 9 de cada 10 pruebas en hora pico dan al menos el {target} del plan en todos los planes.",
         "use": "Usar {parent} como enlace",
-        "impossible": "No se llega al {target} ni con un enlace ilimitado: con esta regla la prueba de velocidad da como mucho el {best} del plan ({plan}). Lo limita la cola, no el enlace.",
+        "limitPon": "No se llega al {target} ni con un enlace ilimitado: lo limita el puerto PON ({homes} clientes por puerto en {tech}).",
+        "limitQueue": "No se llega al {target} ni con un enlace ilimitado: con esta regla la prueba da como mucho el {best} del plan ({plan}). Lo limita la cola, no la red.",
         "noClients": "No hay clientes en el modelo.",
-        "targetHint": "% del plan, en promedio, en hora pico"
+        "perPort": "Clientes por puerto para la meta del {target}, con enlace de sobra: GPON {gpon} · XGS-PON {xgspon}. El divisor óptico pone su propio límite (1:32, 1:64…).",
+        "perPortNone": "ninguno (lo limita la cola)",
+        "perPortMax": "{n} o más"
       },
-      "model": "Modelo estadístico: cada cliente alterna tramos activos e inactivos de duración aleatoria (exponencial) y tiene la ráfaga de su propia cola. El enlace se reparte en partes iguales entre los activos (lo que uno no usa pasa a los demás), sin prioridades ni limit-at. Para cada plan se corre una prueba de velocidad desde reposo cada 30 s, compitiendo con los demás. Se descarta un calentamiento y se miden 10 minutos con una semilla fija, así cada cambio se compara con las mismas sesiones. Los lineamientos de calidad del servicio fijo del IFT (DOF 13/11/2019, lineamiento décimo cuarto) piden que la velocidad anunciada sea el promedio de descarga en hora pico («Y Mbps en promedio en hora pico») y no «hasta X Mbps»; la última columna se parece a ese promedio (datos ÷ tiempo de cada prueba). Confirma con un abogado si siguen vigentes."
+      "model": "Modelo estadístico calibrado con el promedio por cliente: una parte es video (streams continuos al bitrate indicado, en las casas necesarias para dar ese promedio) y el resto, descargas de tamaño aleatorio que llegan al azar y toman todo lo que su cola permite; así un plan más rápido termina antes el mismo archivo en vez de mover más datos. Cada cliente tiene la ráfaga de su cola. La capacidad se reparte en partes iguales, primero dentro de cada puerto PON (GPON {gponDown} de bajada y {gponUp} de subida, XGS-PON {xgs}; valores nominales, el útil es algo menor) y luego en el enlace, sin prioridades ni limit-at. Para cada plan se lanza una prueba de velocidad desde reposo cada 5 s en otro puerto; las pruebas miden sin cargar la red. Se descarta un calentamiento y se miden 10 minutos con semilla fija, así cada cambio se compara con las mismas sesiones. Los lineamientos de calidad del servicio fijo del IFT (DOF 13/11/2019, lineamiento décimo cuarto) piden anunciar «Y Mbps en promedio en hora pico» y no «hasta X Mbps»; la última columna se parece a ese promedio (datos ÷ tiempo de cada prueba). Confirma con un abogado si siguen vigentes."
     },
     "setup": {
       "title": "Antes de pegar",
@@ -490,32 +539,34 @@
       "bridge": {
         "title": "Bridge.",
         "body": "Si los clientes pasan por un bridge (capa 2, sin ruteo), las simple queues y los queue tree con parent=global solo ven ese tráfico con use-ip-firewall activo. Sube el uso de CPU."
-      }
+      },
+      "compact": "FastTrack o un bridge pueden hacer que estas colas no limiten nada.",
+      "compactLink": "Cómo revisarlo"
     },
     "bulk": {
       "title": "Varios clientes",
-      "lead": "Pega una lista de clientes y obtén el script para todos: simple queues, secrets de PPPoE o usuarios de User Manager, con los planes y la regla de Parámetros.",
+      "lead": "Para tus clientes de hoy y los de las nuevas zonas: genera el script para muchos clientes a la vez, o revisa lo que ya está en el router y pásalo a la regla de Parámetros.",
       "method": "Cómo se configuran",
       "methods": {
         "simple": "Simple queues",
         "pppoe": "PPPoE",
-        "usermanager": "User Manager"
+        "usermanager": "User Manager",
+        "pcq": "PCQ por plan"
       },
       "methodHint": {
         "simple": "Una simple queue por cliente, con su IP como target.",
         "pppoe": "Un perfil por plan con su rate-limit y un secret por cliente.",
-        "usermanager": "Una limitación y un perfil por plan, y un usuario por cliente con su perfil asignado."
+        "usermanager": "Una limitación y un perfil por plan, y un usuario por cliente con su perfil asignado.",
+        "pcq": "Una cola PCQ por plan y dirección; cada cliente entra a la address list de su plan. Escala mejor con muchos clientes."
       },
       "label": "Lista de clientes",
       "placeholder": {
-        "simple": "nombre, ip, plan\nJuan Pérez, 10.0.0.2, 500\nTienda Centro, 10.0.0.3, 1G",
-        "pppoe": "nombre, usuario, plan, contraseña\nJuan Pérez, juan.perez, 500\nTienda Centro, tienda-centro, 1G",
-        "usermanager": "nombre, usuario, plan, contraseña\nJuan Pérez, juan.perez, 500\nTienda Centro, tienda-centro, 1G"
+        "ip": "nombre, ip, plan\nJuan Pérez, 10.0.0.2, 500\nTienda Centro, 10.0.0.3, 1G",
+        "user": "nombre, usuario, plan, contraseña\nJuan Pérez, juan.perez, 500\nTienda Centro, tienda-centro, 1G"
       },
       "columns": {
-        "simple": "Columnas: nombre, IP (o red con /prefijo) y plan (200, 500M, 1G…), separadas por coma, punto y coma o tabulador. La primera línea puede ser encabezado.",
-        "pppoe": "Columnas: nombre, usuario, plan (200, 500M, 1G…) y contraseña, separadas por coma, punto y coma o tabulador. La primera línea puede ser encabezado.",
-        "usermanager": "Columnas: nombre, usuario, plan (200, 500M, 1G…) y contraseña, separadas por coma, punto y coma o tabulador. La primera línea puede ser encabezado."
+        "ip": "Columnas: nombre, IP (o red con /prefijo) y plan (200, 500M, 1G…), separadas por coma, punto y coma o tabulador. La primera línea puede ser encabezado.",
+        "user": "Columnas: nombre, usuario, plan (200, 500M, 1G…) y contraseña, separadas por coma, punto y coma o tabulador. La primera línea puede ser encabezado."
       },
       "privacy": "Se procesa en tu navegador: no se envía a ningún lado ni se guarda en el enlace.",
       "parent": "Cola padre (opcional)",
@@ -537,9 +588,138 @@
       "more": "{count, plural, one {# error más} other {# errores más}}.",
       "fill": "{count, plural, one {Generar la contraseña que falta} other {Generar las # contraseñas que faltan}}",
       "notes": {
-        "simple": "Si escribiste una cola padre, tiene que existir antes y su target debe incluir las IP de los clientes.",
+        "simple": "Si escribiste una cola padre, tiene que existir antes y su target debe incluir las IP de los clientes. Los nombres de cola van sin acentos; el nombre completo queda en comment.",
         "pppoe": "Los perfiles solo llevan el rate-limit: agrega local-address y remote-address (o tu pool) como en tu perfil actual. Guarda las contraseñas antes de cerrar la página.",
-        "usermanager": "Hace falta User Manager activo con perfiles y que el router de los clientes use RADIUS hacia él. Velocidades en bps. Guarda las contraseñas antes de cerrar la página."
+        "usermanager": "Hace falta User Manager activo con perfiles y que el router de los clientes use RADIUS hacia él. Velocidades en bps. Guarda las contraseñas antes de cerrar la página.",
+        "pcq": "Las reglas de mangle van al final de la cadena forward con passthrough=yes; si antes hay reglas con passthrough=no que agarren este tráfico, muévelas. Cada IP es un sub-stream con su propia ráfaga. Las colas usan parent=global; para un padre por enlace, crea uno por dirección y cámbialo."
+      },
+      "mode": "Qué quieres hacer",
+      "modes": {
+        "new": "Clientes nuevos",
+        "audit": "Revisar lo que ya tienes"
+      },
+      "upsert": "Si ya existe, actualizarlo",
+      "upsertHint": {
+        "simple": "Cada línea actualiza la cola con ese nombre o la crea: sirve para volver a correr el script o cambiar a todos de regla.",
+        "pppoe": "Actualiza los perfiles; a los secrets que ya existen solo les cambia el perfil (la contraseña se queda).",
+        "usermanager": "Actualiza las limitaciones, crea lo que falte y reasigna el perfil de cada usuario (los que ya existen conservan su contraseña).",
+        "pcq": "Actualiza los tipos y las colas, no duplica las reglas de mangle y mueve cada IP a la lista de su plan."
+      },
+      "queueKind": "Tipo de cola: {kind}.",
+      "queueKindLink": "Cambiar en Exportar",
+      "errorCount": "{count, plural, one {# línea con error} other {# líneas con error}}.",
+      "guide": {
+        "title": "¿Qué método usar?",
+        "lead": "Cómo se comporta cada forma de aplicar los planes en un MikroTik. Las tres manejan la misma ráfaga; cambian la carga del router, lo que ves por cliente y cómo das de alta o cambias de plan.",
+        "cols": {
+          "simple": "Simple queue por cliente",
+          "ppp": "PPPoE + perfil o RADIUS",
+          "pcq": "PCQ por plan"
+        },
+        "rows": {
+          "how": {
+            "label": "Cómo funciona",
+            "simple": "Una cola por cliente con su IP como target.",
+            "ppp": "El router crea una cola dinámica por sesión con el rate-limit del perfil o de RADIUS (User Manager).",
+            "pcq": "Una cola por plan y dirección; el cliente entra a la address list de su plan."
+          },
+          "burst": {
+            "label": "Ráfaga por cliente",
+            "simple": "Sí.",
+            "ppp": "Sí (en el rate-limit).",
+            "pcq": "Sí: cada cliente es un sub-stream con su propia ráfaga."
+          },
+          "limitAt": {
+            "label": "limit-at y prioridad por cliente",
+            "simple": "Sí.",
+            "ppp": "Sí (en el rate-limit).",
+            "pcq": "No: todos los del plan tienen la misma tasa."
+          },
+          "stats": {
+            "label": "Tráfico por cliente en el router",
+            "simple": "Sí, en cada cola.",
+            "ppp": "Sí, en la cola dinámica y en la sesión.",
+            "pcq": "No directo: solo el total por plan (Torch o accounting para cada IP)."
+          },
+          "cpu": {
+            "label": "Carga del router con muchos clientes",
+            "simple": "Crece con cada cola.",
+            "ppp": "Igual: una cola dinámica por sesión activa.",
+            "pcq": "Menor: pocas colas sin importar cuántos clientes."
+          },
+          "change": {
+            "label": "Alta y cambio de plan",
+            "simple": "Crear o editar su cola.",
+            "ppp": "Crear el secret (o el usuario en RADIUS) o cambiarle el perfil.",
+            "pcq": "Agregar su IP a la lista del plan o moverla de lista."
+          },
+          "auth": {
+            "label": "Usuario, contraseña y corte",
+            "simple": "No: se identifica por IP. Cortar = deshabilitar la cola o bloquear la IP.",
+            "ppp": "Sí: usuario y contraseña. Cortar = deshabilitar el secret o el usuario.",
+            "pcq": "No: por IP. Cortar = sacarla de la lista o bloquearla."
+          },
+          "fasttrack": {
+            "label": "FastTrack",
+            "simple": "Hay que desactivarlo para este tráfico.",
+            "ppp": "Igual: las colas dinámicas son simple queues.",
+            "pcq": "Igual: el mangle y la cola con parent=global no ven el tráfico con FastTrack."
+          }
+        },
+        "note": "Sobre la carga del router: reportes de la comunidad de MikroTik dicen que con más de 200–300 clientes activos conviene queue tree con PCQ en lugar de muchas simple queues, y que una estructura de colas corre en un solo núcleo. Depende del equipo: mídelo en el tuyo en hora pico.",
+        "aspect": "Qué se compara"
+      },
+      "audit": {
+        "lead": "En la terminal del router, corre estos comandos, copia lo que muestran y pégalo abajo (puedes juntar varios). Se lee cada cola y perfil, se reconoce su plan por lo máximo que da y se revisa contra la regla de Parámetros.",
+        "commands": "Comandos para exportar",
+        "label": "Exportación del router",
+        "placeholder": "/queue simple\nadd max-limit=100M/100M burst-limit=500M/500M burst-threshold=75M/75M burst-time=16s/16s name=juan target=10.0.0.2/32",
+        "summary": "{count, plural, =0 {Ninguna cola leída} one {# cola leída} other {# colas leídas}} · {recognized} con plan reconocido · {problems, plural, =0 {sin problemas} one {# con problemas} other {# con problemas}}.",
+        "unreadable": "{count, plural, one {# no se pudo leer} other {# no se pudieron leer}}.",
+        "onlyIssues": "Solo las que tienen problemas",
+        "tableCaption": "Colas y perfiles leídos",
+        "cols": {
+          "name": "Nombre",
+          "kind": "Tipo",
+          "plan": "Plan",
+          "values": "max-limit · burst-limit",
+          "rule": "Regla que sigue",
+          "review": "Revisión"
+        },
+        "kinds": {
+          "simple": "Simple queue",
+          "tree": "Queue tree",
+          "pcq": "Tipo PCQ",
+          "ppp": "Perfil PPP"
+        },
+        "ruleLine": "max-limit {sustained} del plan · threshold {threshold} · {time} s",
+        "ruleFlat": "Sin ráfaga · max-limit {sustained} del plan",
+        "ok": "Bien",
+        "flags": {
+          "burstOff": "Ráfaga incompleta",
+          "burstNone": "Sin ráfaga",
+          "burstLimitNotAbove": "burst-limit no pasa de max-limit",
+          "thresholdAboveMax": "threshold arriba de max-limit (la ráfaga se repite)",
+          "thresholdBelowLimitAt": "threshold debajo de limit-at",
+          "limitAtAboveMax": "limit-at mayor que max-limit",
+          "burstAboveLineCap": "burst-limit arriba del tope físico",
+          "maxAboveLineCap": "max-limit arriba del tope físico",
+          "shortBurst": "Ráfaga de menos de 1 s",
+          "neverEnds": "La ráfaga no termina",
+          "burstAbovePlan": "burst-limit arriba del plan",
+          "maxAbovePlan": "max-limit arriba del plan",
+          "duplicateTarget": "Mismo target que otra cola: solo limita la primera",
+          "parentMissing": "Su parent no está en la exportación",
+          "disabled": "Deshabilitada",
+          "unlimited": "Sin límite en una dirección (max-limit 0)",
+          "unknownPlan": "No coincide con ningún plan",
+          "ruleDiffers": "No sigue la regla «{rule}»"
+        },
+        "truncated": "Se muestran {shown} de {total}.",
+        "migrateTitle": "Pasar todo a la regla «{rule}»",
+        "migrateSummary": "{changed, plural, =0 {Nada que cambiar} one {Cambia # entrada} other {Cambia # entradas}} · {skipped, plural, =0 {todas tienen plan reconocido} one {# sin plan reconocido se queda igual} other {# sin plan reconocido se quedan igual}}.",
+        "migrateLabel": "Comandos set",
+        "migrateNote": "Cambia max-limit y la ráfaga; limit-at, target, parent y nombres se quedan. Las colas quedan simétricas, como los planes. Pruébalo primero con un cliente."
       }
     }
   }

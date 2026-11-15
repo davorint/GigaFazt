@@ -21,6 +21,10 @@ export type ImportNote =
   | "oneDirection"
   /** limit-at / burst values were missing: taken as 0 (off). */
   | "noBurst"
+  /** rate-limit with a burst rate but no threshold/time: RouterOS uses the rate and 1 s. */
+  | "burstDefaults"
+  /** PCQ with a burst rate but no pcq-burst-time: RouterOS uses 10 s. */
+  | "pcqTimeDefault"
 
 export type ImportError = "empty" | "unrecognized" | "badValue" | "noMaxLimit"
 
@@ -52,7 +56,7 @@ export function parseTime(text: string): number | null {
 }
 
 /** key=value pairs of one RouterOS line; quoted values unescaped. */
-function props(line: string): Map<string, string> {
+export function props(line: string): Map<string, string> {
   const out = new Map<string, string>()
   for (const m of line.matchAll(/([a-z][a-z0-9-]*)=("(?:[^"\\]|\\.)*"|[^\s"]+)/gi)) {
     const raw = m[2]
@@ -86,9 +90,16 @@ export const sameQueue = (a: QueueParams, b: QueueParams) =>
 
 // ── Rate-limit string ───────────────────────────────────────────────────────
 
+/** Default burst-time of a rate-limit string when it gives a burst rate but no time (RouterOS docs). */
+export const RATE_LIMIT_DEFAULT_TIME = 1
+/** Default pcq-burst-time of PCQ queue types (RouterOS docs). */
+export const PCQ_DEFAULT_BURST_TIME = 10
+
 /**
  * rx-rate[/tx-rate] [rx-burst[/tx-burst] [rx-threshold[/tx-threshold] [rx-time[/tx-time] [priority [rx-min[/tx-min]]]]]]
- * Seen from the router: rx = client upload, tx = client download.
+ * Seen from the router: rx = client upload, tx = client download. When the
+ * burst rate is given without a threshold, RouterOS uses the rate as the
+ * threshold; without a time, 1 s (Mikrotik-Rate-Limit docs).
  */
 export function parseRateLimit(text: string): ImportResult {
   const parts = text.trim().split(/\s+/).filter(Boolean)
@@ -106,12 +117,13 @@ export function parseRateLimit(text: string): ImportResult {
     normalize({
       maxLimit: rate[d],
       burstLimit: burst?.[d] ?? 0,
-      burstThreshold: thr?.[d] ?? 0,
-      burstTime: time?.[d] ?? 0,
+      burstThreshold: thr?.[d] ?? (burst ? rate[d] : 0),
+      burstTime: time?.[d] ?? (burst ? RATE_LIMIT_DEFAULT_TIME : 0),
       limitAt: min?.[d] ?? 0,
     })
   const notes: ImportNote[] = []
   if (!burst) notes.push("noBurst")
+  else if (!thr || !time) notes.push("burstDefaults")
   return { ok: true, source: "rateLimit", up: side("up"), down: side("down"), notes }
 }
 
@@ -130,8 +142,11 @@ function hint(p: Map<string, string>): "down" | "up" | null {
   return d === u ? null : d ? "down" : "up"
 }
 
-/** One direction of a queue tree or PCQ line. */
-function oneWay(p: Map<string, string>, keys: { rate: string; burst: string; thr: string; time: string; min?: string }): QueueParams | null | "noMax" {
+/** One direction of a queue tree or PCQ line. `defaultTime` applies when a burst rate is set without a time. */
+export function oneWay(
+  p: Map<string, string>,
+  keys: { rate: string; burst: string; thr: string; time: string; min?: string; defaultTime?: number }
+): QueueParams | null | "noMax" {
   const read = (k: string | undefined, parse: (s: string) => number | null) => {
     if (!k) return 0
     const v = p.get(k)
@@ -141,7 +156,7 @@ function oneWay(p: Map<string, string>, keys: { rate: string; burst: string; thr
   const maxLimit = read(keys.rate, parseRate)
   const burstLimit = read(keys.burst, parseRate)
   const burstThreshold = read(keys.thr, parseRate)
-  const burstTime = read(keys.time, parseTime)
+  const burstTime = keys.defaultTime !== undefined && !p.has(keys.time) && p.has(keys.burst) ? keys.defaultTime : read(keys.time, parseTime)
   const limitAt = read(keys.min, parseRate)
   if ([maxLimit, burstLimit, burstThreshold, burstTime, limitAt].some((v) => v === null)) return null
   if (!((maxLimit as number) > 0)) return "noMax"
@@ -157,6 +172,8 @@ function twoLines(lines: Map<string, string>[], source: "tree" | "pcq", keys: Pa
     parsed.push({ dir: hint(p), q })
   }
   const notes: ImportNote[] = []
+  const burstNoTime = (p: Map<string, string>) => (parseRate(p.get(keys.burst) ?? "0") ?? 0) > 0 && !p.has(keys.time)
+  if (keys.defaultTime !== undefined && lines.slice(0, 2).some(burstNoTime)) notes.push("pcqTimeDefault")
   if (lines.length > 2) notes.push("firstOnly")
   if (parsed.length === 1) {
     notes.push("oneDirection")
@@ -168,9 +185,31 @@ function twoLines(lines: Map<string, string>[], source: "tree" | "pcq", keys: Pa
   return { ok: true, source, down: a.q, up: b.q, notes }
 }
 
+/**
+ * Both directions of one `/queue simple` line (upload/download pairs). A
+ * missing max-limit or a 0 (no limit in that direction) comes back as 0.
+ * null if a value can't be read.
+ */
+export function readSimple(p: Map<string, string>): { up: QueueParams; down: QueueParams; burst: boolean } | null {
+  const max = pair(p.get("max-limit") ?? "0/0", parseRate)
+  const burst = pair(p.get("burst-limit"), parseRate)
+  const thr = pair(p.get("burst-threshold"), parseRate)
+  const time = pair(p.get("burst-time"), parseTime)
+  const min = pair(p.get("limit-at"), parseRate)
+  if (!max || burst === null || thr === null || time === null || min === null) return null
+  const side = (d: "up" | "down"): QueueParams =>
+    normalize({ maxLimit: max[d], burstLimit: burst?.[d] ?? 0, burstThreshold: thr?.[d] ?? 0, burstTime: time?.[d] ?? 0, limitAt: min?.[d] ?? 0 })
+  return { up: side("up"), down: side("down"), burst: !!burst }
+}
+
+/** Joins RouterOS line continuations (a backslash at the end of a line) and drops comment lines. */
+export function cleanExport(text: string): string {
+  return text.replace(/\\\r?\n\s*/g, "").replace(/^\s*#.*$/gm, "")
+}
+
 export function parseRouterOS(text: string): ImportResult {
   // Join RouterOS line continuations and drop comments.
-  const clean = text.replace(/\\\r?\n\s*/g, "").replace(/^\s*#.*$/gm, "")
+  const clean = cleanExport(text)
   if (!clean.trim()) return { ok: false, error: "empty" }
 
   // RADIUS attribute or a bare quoted/unquoted rate-limit string.
@@ -188,27 +227,27 @@ export function parseRouterOS(text: string): ImportResult {
   if (rl) return parseRateLimit(rl.get("rate-limit") as string)
 
   const pcq = lines.filter((p) => p.has("pcq-rate"))
-  if (pcq.length) return twoLines(pcq, "pcq", { rate: "pcq-rate", burst: "pcq-burst-rate", thr: "pcq-burst-threshold", time: "pcq-burst-time" })
+  if (pcq.length)
+    return twoLines(pcq, "pcq", {
+      rate: "pcq-rate",
+      burst: "pcq-burst-rate",
+      thr: "pcq-burst-threshold",
+      time: "pcq-burst-time",
+      defaultTime: PCQ_DEFAULT_BURST_TIME,
+    })
 
   const queues = lines.filter((p) => p.has("max-limit"))
   if (queues.length) {
     // Simple queues carry upload/download pairs (or a target); queue tree lines a parent.
     const simple = queues.some((p) => p.has("target") || (p.get("max-limit") ?? "").includes("/"))
     if (!simple) return twoLines(queues, "tree", { rate: "max-limit", burst: "burst-limit", thr: "burst-threshold", time: "burst-time", min: "limit-at" })
-    const p = queues[0]
-    const max = pair(p.get("max-limit"), parseRate)
-    const burst = pair(p.get("burst-limit"), parseRate)
-    const thr = pair(p.get("burst-threshold"), parseRate)
-    const time = pair(p.get("burst-time"), parseTime)
-    const min = pair(p.get("limit-at"), parseRate)
-    if (!max || burst === null || thr === null || time === null || min === null) return { ok: false, error: "badValue" }
-    if (!(max.up > 0) || !(max.down > 0)) return { ok: false, error: "noMaxLimit" }
-    const side = (d: "up" | "down"): QueueParams =>
-      normalize({ maxLimit: max[d], burstLimit: burst?.[d] ?? 0, burstThreshold: thr?.[d] ?? 0, burstTime: time?.[d] ?? 0, limitAt: min?.[d] ?? 0 })
+    const q = readSimple(queues[0])
+    if (q === null) return { ok: false, error: "badValue" }
+    if (!(q.up.maxLimit > 0) || !(q.down.maxLimit > 0)) return { ok: false, error: "noMaxLimit" }
     const notes: ImportNote[] = []
     if (queues.length > 1) notes.push("firstOnly")
-    if (!burst) notes.push("noBurst")
-    return { ok: true, source: "simple", up: side("up"), down: side("down"), notes }
+    if (!q.burst) notes.push("noBurst")
+    return { ok: true, source: "simple", up: q.up, down: q.down, notes }
   }
 
   // A bare rate-limit string ("10M/20M 20M/40M …").

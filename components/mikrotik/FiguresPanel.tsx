@@ -7,17 +7,26 @@ import { fmtData, fmtPct, fmtRate, fmtSec } from "@/lib/mikrotik/format"
 import { estimateSpeedTest } from "@/lib/mikrotik/speedtest"
 import { viewParams, type Direction, type LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
+import { NumberField } from "./NumberField"
 
 const ICON = { error: CircleX, warn: AlertTriangle, info: Info } as const
 const TONE = { error: "text-red-300", warn: "text-amber-300", info: "text-zinc-400" } as const
 
-export function FiguresPanel({ state, onView }: { state: LabState; onView: (d: Direction) => void }) {
+export function FiguresPanel({
+  state,
+  onView,
+  onBackground,
+}: {
+  state: LabState
+  onView: (d: Direction) => void
+  onBackground: (mbps: number) => void
+}) {
   const t = useTranslations("mikrotik")
   const p = viewParams(state)
   const opts = { demandMbps: effectiveDemand(state.pattern), lineCapMbps: state.lineCapMbps, planMbps: state.planMbps }
   const f = figures(p, opts)
   // What the customer sees: a speed test from a rested line, then again shortly after.
-  const test = estimateSpeedTest(p, { testS: state.pattern.testS, lineCapMbps: state.lineCapMbps })
+  const test = estimateSpeedTest(p, { testS: state.pattern.testS, lineCapMbps: state.lineCapMbps, backgroundMbps: state.backgroundMbps })
   const plan = state.planMbps && state.planMbps > 0 ? state.planMbps : null
   const ofPlan = (v: number) => (plan ? ` · ${t("figures.ofPlan", { pct: fmtPct(v / plan) })}` : "")
 
@@ -85,9 +94,20 @@ export function FiguresPanel({ state, onView }: { state: LabState; onView: (d: D
 
       <div className="grid gap-3">
         <h4 className="text-xs text-zinc-400">{t("figures.customer")}</h4>
+        <NumberField
+          label={t("figures.background")}
+          unit={t("params.unitMbps")}
+          value={state.backgroundMbps}
+          max={1e4}
+          onChange={(v) => v !== null && onBackground(v)}
+          hint={t("figures.backgroundHint")}
+          className="max-w-xs"
+        />
         <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/10">
           <div className="surface-cell p-4">
-            <dt className="text-xs text-zinc-400">{t("figures.test", { s: fmtSec(test.testS) })}</dt>
+            <dt className="text-xs text-zinc-400">
+              {test.backgroundMbps > 0 ? t("figures.testBg", { s: fmtSec(test.testS), bg: fmtRate(test.backgroundMbps) }) : t("figures.test", { s: fmtSec(test.testS) })}
+            </dt>
             <dd className="mt-1 font-mono text-xl tabular-nums text-foreground">{fmtRate(test.first.trimmedMbps)}</dd>
             <dd className="mt-1 text-xs leading-snug text-zinc-500">
               {t("figures.testSub", { plain: fmtRate(test.first.plainMbps) })}

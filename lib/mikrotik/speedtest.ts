@@ -9,8 +9,7 @@
  * differently, and none of this models TCP ramp-up or latency: estimates.
  */
 
-import { simulate, type QueueParams, type SimResult } from "./burst"
-import type { Pattern } from "./traffic"
+import { burstEnabled, stepSeconds, WINDOWS, type QueueParams, type SimResult } from "./burst"
 
 /** Share of the samples dropped from the fast end and from the slow end. */
 export const TRIM_FAST = 0.1
@@ -69,29 +68,64 @@ export function measure(result: SimResult, t0: number, t1: number): Measure {
 export type SpeedTestEstimate = {
   testS: number
   gapS: number
-  /** First test, from a rested line. */
+  /** Household traffic already running (a video stream…), Mbps. */
+  backgroundMbps: number
+  /** First test. With no background the line starts at rest (empty burst window). */
   first: Measure
   /** Same test again `gapS` after the first one ends. */
   again: Measure
 }
 
-const TEST_PATTERN: Omit<Pattern, "onS" | "offS"> = {
-  kind: "intermittent",
-  demandMbps: null,
-  startS: 0,
-  testS: SPEEDTEST_S,
-  fileMB: 0,
-  videoMbps: 0,
-  pageMB: 0,
-}
-
-/** A speed test from a rested line (empty burst window), then the same test again shortly after. */
+/**
+ * A speed test, then the same test again `gapS` later, as RouterOS would
+ * shape it (same sub-window logic as `simulate`). With `backgroundMbps` the
+ * household already uses that much: the burst window starts in that steady
+ * state and, during the test, the background keeps its rate (a video stream
+ * isn't elastic) while the test gets the rest of the queue. That makes the
+ * reading the low end of what a customer would see.
+ */
 export function estimateSpeedTest(
   p: QueueParams,
-  opts: { testS?: number; gapS?: number; lineCapMbps?: number | null } = {}
+  opts: { testS?: number; gapS?: number; lineCapMbps?: number | null; backgroundMbps?: number | null } = {}
 ): SpeedTestEstimate {
   const testS = opts.testS && opts.testS > 0 ? opts.testS : SPEEDTEST_S
   const gapS = opts.gapS !== undefined && opts.gapS >= 0 ? opts.gapS : REPEAT_GAP_S
-  const run = simulate(p, { ...TEST_PATTERN, onS: testS, offS: gapS }, 2 * testS + gapS, { lineCapMbps: opts.lineCapMbps })
-  return { testS, gapS, first: measure(run, 0, testS), again: measure(run, testS + gapS, 2 * testS + gapS) }
+  const bg = opts.backgroundMbps && opts.backgroundMbps > 0 ? opts.backgroundMbps : 0
+  const cap = opts.lineCapMbps && opts.lineCapMbps > 0 ? opts.lineCapMbps : Number.POSITIVE_INFINITY
+  const dt = stepSeconds(p)
+  const canBurst = burstEnabled(p)
+  const len = p.burstTime > 0 ? WINDOWS : 1
+  const window = new Array<number>(len).fill(0)
+  let sum = 0
+  let head = 0
+  const step = (demandAll: boolean) => {
+    const allowed = canBurst && sum / len < p.burstThreshold
+    const ceiling = Math.min(allowed ? p.burstLimit : p.maxLimit, cap)
+    const background = Math.min(bg, ceiling)
+    const total = demandAll ? ceiling : background
+    sum += total - window[head]
+    window[head] = total
+    head = (head + 1) % len
+    if (Math.abs(sum) < 1e-9) sum = 0
+    return total - background
+  }
+
+  // Background alone long enough to reach its steady state (none: the line is at rest).
+  if (bg > 0) for (let i = 0, n = Math.ceil((4 * Math.max(p.burstTime, 1)) / dt); i < n; i++) step(false)
+
+  const first: Part[] = []
+  const again: Part[] = []
+  const end = 2 * testS + gapS
+  for (let i = 0; i * dt < end - 1e-9; i++) {
+    const t = i * dt
+    // Demand is decided at the start of each sub-window, as in `simulate`.
+    const testing = t < testS - 1e-9 || (t >= testS + gapS - 1e-9 && t < end - 1e-9)
+    const rate = step(testing)
+    const w1 = Math.min(t + dt, testS) - Math.max(t, 0)
+    const w2 = Math.min(t + dt, end) - Math.max(t, testS + gapS)
+    if (w1 > 1e-9) first.push({ v: rate, w: w1 })
+    if (w2 > 1e-9) again.push({ v: rate, w: w2 })
+  }
+  const read = (parts: Part[]): Measure => ({ plainMbps: plainMean(parts), trimmedMbps: trimmedMean(parts) })
+  return { testS, gapS, backgroundMbps: bg, first: read(first), again: read(again) }
 }

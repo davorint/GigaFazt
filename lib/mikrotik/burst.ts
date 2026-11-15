@@ -255,11 +255,26 @@ export type SolveResult = {
   durationS: number
 }
 
+/** Sub-windows (burst-time ÷ 16) a burst at `burstLimit` lasts from idle with this threshold. */
+export function burstSteps(burstThreshold: number, burstLimit: number): number {
+  return Math.max(1, Math.ceil((WINDOWS * burstThreshold) / burstLimit - 1e-9))
+}
+
 /**
- * duration ≈ threshold × burst-time / burst-limit, so
- * burst-time = duration × burst-limit / threshold, or
- * threshold = duration × burst-limit / burst-time.
- * burst-time is rounded to whole seconds and the threshold to whole Mbps;
+ * Longest burst from idle that doesn't keep coming back with this burst-time:
+ * the threshold can go up to max-limit, no higher.
+ */
+export function longestSingleBurst(maxLimit: number, burstLimit: number, burstTime: number): number {
+  if (!(burstLimit > maxLimit) || !(burstTime > 0)) return 0
+  return (burstSteps(maxLimit, burstLimit) * burstTime) / WINDOWS
+}
+
+/**
+ * RouterOS measures the burst in whole sub-windows: from idle it lasts
+ * k × burst-time ÷ 16, with k = ⌈16 × threshold ÷ burst-limit⌉. So
+ * burst-time = duration × 16 ÷ k for a fixed threshold, or, for a fixed
+ * burst-time, k = duration × 16 ÷ burst-time and the threshold is the largest
+ * value that still gives k sub-windows (whole Mbps when possible).
  * `durationS` reports the real result after rounding. null when the inputs
  * can't produce a burst.
  */
@@ -271,10 +286,14 @@ export function solve(input: SolveInput): SolveResult | null {
   if (input.solveFor === "burstTime") {
     burstThreshold = input.burstThreshold
     if (!(burstThreshold > 0)) return null
-    burstTime = Math.max(1, Math.round((targetS * burstLimit) / burstThreshold))
+    burstTime = Math.max(1, Math.round((targetS * WINDOWS) / burstSteps(burstThreshold, burstLimit)))
   } else {
     burstTime = Math.max(1, Math.round(input.burstTime))
-    burstThreshold = Math.max(1, Math.round((targetS * burstLimit) / burstTime))
+    const k = Math.max(1, Math.round((targetS * WINDOWS) / burstTime))
+    const top = (k * burstLimit) / WINDOWS
+    const floor = ((k - 1) * burstLimit) / WINDOWS
+    const whole = Math.floor(top + 1e-9)
+    burstThreshold = whole > floor + 1e-9 ? whole : Math.floor(top * 1000 + 1e-6) / 1000
   }
   const f = figures({ maxLimit, burstLimit, burstThreshold, burstTime, limitAt: 0 })
   return { burstThreshold, burstTime, durationS: f.durationS }
@@ -284,6 +303,7 @@ export function solve(input: SolveInput): SolveResult | null {
 
 export type IssueCode =
   | "burstOff"
+  | "burstNone"
   | "burstLimitNotAbove"
   | "thresholdAboveMax"
   | "thresholdBelowLimitAt"
@@ -310,6 +330,9 @@ export function check(
   if (p.limitAt > p.maxLimit) out.push({ code: "limitAtAboveMax", level: "error" })
   if (p.burstLimit > 0 && p.burstLimit <= p.maxLimit) {
     out.push({ code: "burstLimitNotAbove", level: "error" })
+  } else if (p.burstLimit === 0 && p.burstThreshold === 0 && p.burstTime === 0) {
+    // Burst switched off on purpose (e.g. the "Sin ráfaga" rule).
+    out.push({ code: "burstNone", level: "info" })
   } else if (!burstEnabled(p)) {
     out.push({ code: "burstOff", level: "info" })
   }

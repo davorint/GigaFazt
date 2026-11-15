@@ -1,18 +1,41 @@
 /**
  * Many clients at once: a pasted list (CSV, semicolons or tabs) becomes a
- * RouterOS script for simple queues, PPPoE secrets or User Manager users.
+ * RouterOS script for simple queues, PPPoE secrets, User Manager users or
+ * PCQ per plan (address lists).
  *
- * Columns: name, IP (simple queues) or username (PPPoE / User Manager),
+ * Columns: name, IP (simple queues, PCQ) or username (PPPoE / User Manager),
  * plan speed, password (PPPoE / User Manager). A first line that doesn't
  * parse as a client is taken as a header. Runs in the browser only: the list
  * is never sent anywhere or put in the share link.
  */
 
 import { planDefaults, type PlanRule } from "./burst"
-import { pppProfiles, rosString, simpleQueueLine, userManagerPlans, type Pair } from "./routeros"
+import {
+  addIfMissing,
+  asciiName,
+  pcqProps,
+  planName,
+  pppProfiles,
+  queueTypeSetup,
+  rosString,
+  simpleQueueLine,
+  simpleQueueUpsert,
+  upsert,
+  userManagerPlans,
+  type Pair,
+  type QueueKind,
+} from "./routeros"
 
-export type BulkMethod = "simple" | "pppoe" | "usermanager"
-export const BULK_METHODS: BulkMethod[] = ["simple", "pppoe", "usermanager"]
+/**
+ * simple: one simple queue per client (target = its IP).
+ * pppoe: one PPP profile per plan + a secret per client (dynamic queue per session).
+ * usermanager: User Manager limitation/profile per plan + a user per client.
+ * pcq: one PCQ queue pair per plan; clients go into a per-plan address list.
+ */
+export type BulkMethod = "simple" | "pppoe" | "usermanager" | "pcq"
+export const BULK_METHODS: BulkMethod[] = ["simple", "pppoe", "usermanager", "pcq"]
+/** Methods whose second column is an IP (the rest take a username). */
+export const byIp = (m: BulkMethod) => m === "simple" || m === "pcq"
 export const MAX_ROWS = 5000
 
 export type BulkRow = { line: number; name: string; id: string; planMbps: number; password: string | null }
@@ -105,16 +128,17 @@ export function parseBulk(text: string, method: BulkMethod, known: { id: string;
     if (cols.length < 3 || !name || !id) return void errors.push({ line, code: "columns" })
     if (planMbps === null) return void errors.push({ line, code: "plan" })
     let target = id
-    if (method === "simple") {
+    if (byIp(method)) {
       const t = parseTarget(id)
       if (!t) return void errors.push({ line, code: "ip" })
       target = t
     } else if (/\s|"/.test(id)) return void errors.push({ line, code: "user" })
-    // Queue names must be unique; for PPPoE and User Manager the name is only a comment.
-    if (method === "simple" && names.has(name.toLowerCase())) return void errors.push({ line, code: "duplicateName" })
+    // Queue names must be unique (and go without accents); otherwise the name is only a comment.
+    const queueName = asciiName(name).toLowerCase()
+    if (method === "simple" && names.has(queueName)) return void errors.push({ line, code: "duplicateName" })
     if (ids.has(target.toLowerCase())) return void errors.push({ line, code: "duplicateId" })
-    if (method !== "simple" && !password) return void errors.push({ line, code: "password" })
-    names.add(name.toLowerCase())
+    if (!byIp(method) && !password) return void errors.push({ line, code: "password" })
+    names.add(queueName)
     ids.add(target.toLowerCase())
     rows.push({ line, name, id: target, planMbps, password: password || null })
   })
@@ -142,7 +166,7 @@ export function randomPassword(length = 12, random: (n: number) => Uint8Array = 
  */
 export function fillPasswords(text: string, method: BulkMethod, known: { id: string; mbps: number }[], make: () => string): string {
   const sep = delimiter(text)
-  const parsed = parseBulk(text, method === "simple" ? "pppoe" : method, known)
+  const parsed = parseBulk(text, byIp(method) ? "pppoe" : method, known)
   const missing = new Set(parsed.errors.filter((e) => e.code === "password").map((e) => e.line))
   const gap = sep === "\t" ? "\t" : `${sep} `
   return text
@@ -164,34 +188,104 @@ const planPair = (mbps: number, rule: PlanRule): Pair => {
   return { up: q, down: q }
 }
 
+export type BulkOptions = {
+  rule: PlanRule
+  /** Parent simple queue (simple queues) or parent-queue (PPPoE). Not used by PCQ. */
+  parent?: string
+  /** Update entries that already exist instead of only adding (safe to run again). */
+  upsert?: boolean
+  /** Queue type for simple queues and PPPoE dynamic queues. */
+  queue?: QueueKind
+}
+
+/** "10.0.0.2/32" → "10.0.0.2" (address lists show single hosts without the prefix). */
+const listAddress = (target: string) => target.replace(/\/32$/, "")
+
 /** The RouterOS script for the parsed clients. */
-export function bulkScript(rows: BulkRow[], method: BulkMethod, o: { rule: PlanRule; parent?: string }): string {
+export function bulkScript(rows: BulkRow[], method: BulkMethod, o: BulkOptions): string {
   if (rows.length === 0) return ""
   const parent = o.parent?.trim() || undefined
+  const kind = method === "simple" || method === "pppoe" ? o.queue : undefined
+  const setup = queueTypeSetup(kind)
+  const out: string[] = setup ? [setup] : []
+
   if (method === "simple") {
-    return ["/queue simple", ...rows.map((r) => simpleQueueLine(planPair(r.planMbps, o.rule), { name: r.name, target: r.id, parent }))].join("\n")
+    out.push("/queue simple")
+    for (const r of rows) {
+      const name = asciiName(r.name)
+      const opts = { name, target: r.id, parent, queue: kind, comment: name !== r.name ? r.name : undefined }
+      const pair = planPair(r.planMbps, o.rule)
+      out.push(o.upsert ? simpleQueueUpsert(pair, opts) : simpleQueueLine(pair, opts))
+    }
+    return out.join("\n")
   }
 
-  // One profile per plan speed.
+  // One profile (or PCQ pair) per plan speed.
   const speeds = [...new Set(rows.map((r) => r.planMbps))].sort((a, b) => a - b)
+  const nameOf = new Map(speeds.map((s) => [s, planName(planPair(s, o.rule))]))
+
+  if (method === "pcq") {
+    const types: string[] = []
+    const trees: string[] = []
+    const mangle: string[] = []
+    for (const s of speeds) {
+      const name = nameOf.get(s) ?? ""
+      const pair = planPair(s, o.rule)
+      for (const [dir, classifier, q, listKey] of [
+        ["down", "dst-address", pair.down, "dst-address-list"],
+        ["up", "src-address", pair.up, "src-address-list"],
+      ] as const) {
+        const qname = `${name}-${dir}`
+        const typeProps = pcqProps(qname, classifier, q)
+        types.push(o.upsert ? upsert("/queue type", qname, pcqProps(qname, classifier, q, true).slice(1), typeProps) : `add ${typeProps.join(" ")}`)
+        const treeProps = [`name=${rosString(qname)}`, "parent=global", `packet-mark=${rosString(qname)}`, `queue=${rosString(qname)}`]
+        trees.push(o.upsert ? upsert("/queue tree", qname, treeProps.slice(1), treeProps) : `add ${treeProps.join(" ")}`)
+        const markProps = [
+          "chain=forward",
+          `${listKey}=${rosString(name)}`,
+          "action=mark-packet",
+          `new-packet-mark=${rosString(qname)}`,
+          "passthrough=yes",
+          `comment=${rosString(qname)}`,
+        ]
+        mangle.push(o.upsert ? addIfMissing("/ip firewall mangle", `new-packet-mark=${rosString(qname)}`, markProps) : `add ${markProps.join(" ")}`)
+      }
+    }
+    const lists = rows.flatMap((r) => {
+      const address = listAddress(r.id)
+      const add = `add list=${rosString(nameOf.get(r.planMbps) ?? "")} address=${address} comment=${rosString(r.name)}`
+      // Moving a client between plans: take it out of any other plan list first.
+      return o.upsert ? [`remove [find where address=${rosString(address)} and list~"^plan-"]`, add] : [add]
+    })
+    return ["/queue type", ...types, "/queue tree", ...trees, "/ip firewall mangle", ...mangle, "/ip firewall address-list", ...lists].join("\n")
+  }
+
   const { lines, names } = pppProfiles(
     speeds.map((s) => ({ pair: planPair(s, o.rule) })),
-    { parentQueue: parent }
+    { parentQueue: parent, queue: kind, upsert: o.upsert }
   )
   const profileOf = new Map(speeds.map((s, i) => [s, names[i]]))
 
   if (method === "pppoe") {
-    const secrets = rows.map(
-      (r) =>
-        `add name=${rosString(r.id)} password=${rosString(r.password ?? "")} service=pppoe profile=${rosString(profileOf.get(r.planMbps) ?? "")} comment=${rosString(r.name)}`
-    )
-    return ["/ppp profile", ...lines, "/ppp secret", ...secrets].join("\n")
+    const secrets = rows.map((r) => {
+      const profile = `profile=${rosString(profileOf.get(r.planMbps) ?? "")}`
+      const add = [`name=${rosString(r.id)}`, `password=${rosString(r.password ?? "")}`, "service=pppoe", profile, `comment=${rosString(r.name)}`]
+      // An existing secret keeps its password; only the plan changes.
+      return o.upsert ? upsert("/ppp secret", r.id, [profile], add) : `add ${add.join(" ")}`
+    })
+    return [...out, "/ppp profile", ...lines, "/ppp secret", ...secrets].join("\n")
   }
 
   const plans = speeds.map((s) => ({ name: profileOf.get(s) ?? "", pair: planPair(s, o.rule) }))
-  const users = rows.map((r) => `add name=${rosString(r.id)} password=${rosString(r.password ?? "")} comment=${rosString(r.name)}`)
-  const links = rows.map((r) => `add user=${rosString(r.id)} profile=${rosString(profileOf.get(r.planMbps) ?? "")}`)
-  return [userManagerPlans(plans), "/user-manager user", ...users, "/user-manager user-profile", ...links].join("\n")
+  const users = rows.map((r) => {
+    const add = [`name=${rosString(r.id)}`, `password=${rosString(r.password ?? "")}`, `comment=${rosString(r.name)}`]
+    return o.upsert ? addIfMissing("/user-manager user", `name=${rosString(r.id)}`, add) : `add ${add.join(" ")}`
+  })
+  const links = rows.flatMap((r) => {
+    const add = `add user=${rosString(r.id)} profile=${rosString(profileOf.get(r.planMbps) ?? "")}`
+    return o.upsert ? [`remove [find where user=${rosString(r.id)}]`, add] : [add]
+  })
+  return [userManagerPlans(plans, { upsert: o.upsert }), "/user-manager user", ...users, "/user-manager user-profile", ...links].join("\n")
 }
 
 /**

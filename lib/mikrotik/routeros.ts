@@ -27,8 +27,47 @@ const pair = (up: string, down: string) => `${up}/${down}`
 const anyBurst = (p: Pair) => burstEnabled(p.up) || burstEnabled(p.down)
 const anyLimitAt = (p: Pair) => p.up.limitAt > 0 || p.down.limitAt > 0
 
-/** HTB properties shared by simple queues and queue tree (one direction). */
-function htbProps(q: QueueParams): string[] {
+/**
+ * Queue type for the client queues: RouterOS's default, or an AQM that keeps
+ * latency low under load. RouterOS v7 runs fq-codel and CAKE as the leaf
+ * queue under the HTB limits of a simple queue or queue tree (manual 7.25);
+ * fq-codel costs less CPU than CAKE.
+ */
+export type QueueKind = "default" | "fq-codel" | "cake"
+export const QUEUE_KINDS: QueueKind[] = ["default", "fq-codel", "cake"]
+
+/** Creates the queue type once (safe to run again); null for RouterOS's default. */
+export function queueTypeSetup(kind: QueueKind | undefined): string | null {
+  if (!kind || kind === "default") return null
+  const name = rosString(kind)
+  return `:if ([:len [/queue type find where name=${name}]] = 0) do={/queue type add name=${name} kind=${kind}}`
+}
+
+/** RouterOS one-liner: update the entry with this name if it exists, else add it. */
+export function upsert(menu: string, name: string, setProps: string[], addProps: string[]): string {
+  const q = rosString(name)
+  return `:if ([:len [${menu} find where name=${q}]] > 0) do={${menu} set [find where name=${q}] ${setProps.join(" ")}} else={${menu} add ${addProps.join(" ")}}`
+}
+
+/** RouterOS one-liner: add only if nothing matches `where`. */
+export function addIfMissing(menu: string, where: string, addProps: string[]): string {
+  return `:if ([:len [${menu} find where ${where}]] = 0) do={${menu} add ${addProps.join(" ")}}`
+}
+
+/** Queue names without accents or other non-ASCII characters (comments keep the original). */
+export function asciiName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x20-\x7e]/g, "-")
+    .trim()
+}
+
+/**
+ * HTB properties shared by simple queues and queue tree (one direction).
+ * `full` also writes the values that are off (0), so a `set` clears an old burst.
+ */
+function htbProps(q: QueueParams, full = false): string[] {
   const out = [`max-limit=${rosRate(q.maxLimit)}`]
   if (burstEnabled(q)) {
     out.push(
@@ -36,22 +75,26 @@ function htbProps(q: QueueParams): string[] {
       `burst-threshold=${rosRate(q.burstThreshold)}`,
       `burst-time=${rosTime(q.burstTime)}`
     )
-  }
-  if (q.limitAt > 0) out.push(`limit-at=${rosRate(q.limitAt)}`)
+  } else if (full) out.push("burst-limit=0", "burst-threshold=0", "burst-time=0s")
+  if (q.limitAt > 0 || full) out.push(`limit-at=${rosRate(q.limitAt)}`)
   return out
 }
 
 /** Default simple queue / rate-limit priority (RouterOS: 1 highest … 8 lowest). */
 export const DEFAULT_PRIORITY = 8
 
+export type SimpleOpts = { name: string; target: string; parent?: string; priority?: number; comment?: string; queue?: QueueKind }
+
 /**
- * One `add` line of `/queue simple`: every value is target-upload/target-download.
+ * Properties of a `/queue simple` entry: every value is target-upload/target-download.
  * `parent` and `priority` only when given (priority only works on child queues).
+ * `full` also writes the values that are off, so a `set` clears an old burst or limit-at.
  */
-export function simpleQueueLine(p: Pair, o: { name: string; target: string; parent?: string; priority?: number; comment?: string }): string {
+export function simpleQueueProps(p: Pair, o: SimpleOpts, full = false): string[] {
   const props = [`name=${rosString(o.name)}`, `target=${o.target.trim() || "0.0.0.0/0"}`]
   if (o.parent?.trim()) props.push(`parent=${rosString(o.parent.trim())}`)
   if (o.priority !== undefined && o.priority !== DEFAULT_PRIORITY) props.push(`priority=${o.priority}/${o.priority}`)
+  if (o.queue && o.queue !== "default") props.push(`queue=${rosString(`${o.queue}/${o.queue}`)}`)
   props.push(`max-limit=${pair(rosRate(p.up.maxLimit), rosRate(p.down.maxLimit))}`)
   if (anyBurst(p)) {
     // A direction without burst gets 0 (RouterOS: burst off for that side).
@@ -61,39 +104,63 @@ export function simpleQueueLine(p: Pair, o: { name: string; target: string; pare
       `burst-threshold=${pair(b(p.up, (q) => rosRate(q.burstThreshold)), b(p.down, (q) => rosRate(q.burstThreshold)))}`,
       `burst-time=${pair(b(p.up, (q) => rosTime(q.burstTime), "0s"), b(p.down, (q) => rosTime(q.burstTime), "0s"))}`
     )
-  }
-  if (anyLimitAt(p)) props.push(`limit-at=${pair(rosRate(p.up.limitAt), rosRate(p.down.limitAt))}`)
+  } else if (full) props.push("burst-limit=0/0", "burst-threshold=0/0", "burst-time=0s/0s")
+  if (anyLimitAt(p) || full) props.push(`limit-at=${pair(rosRate(p.up.limitAt), rosRate(p.down.limitAt))}`)
   if (o.comment?.trim()) props.push(`comment=${rosString(o.comment.trim())}`)
-  return `add ${props.join(" ")}`
+  return props
+}
+
+/** One `add` line of `/queue simple`. */
+export function simpleQueueLine(p: Pair, o: SimpleOpts): string {
+  return `add ${simpleQueueProps(p, o).join(" ")}`
+}
+
+/** One line that updates the simple queue with this name if it exists, else adds it. */
+export function simpleQueueUpsert(p: Pair, o: SimpleOpts): string {
+  const set = simpleQueueProps(p, o, true).filter((x) => !x.startsWith("name="))
+  return upsert("/queue simple", o.name, set, simpleQueueProps(p, o))
+}
+
+const withSetup = (kind: QueueKind | undefined, lines: string[]) => {
+  const setup = queueTypeSetup(kind)
+  return (setup ? [setup, ...lines] : lines).join("\n")
 }
 
 /** `/queue simple` for one client. */
-export function simpleQueue(p: Pair, o: { name: string; target: string }): string {
-  return `/queue simple\n${simpleQueueLine(p, o)}`
+export function simpleQueue(p: Pair, o: { name: string; target: string; queue?: QueueKind }): string {
+  return withSetup(o.queue, ["/queue simple", simpleQueueLine(p, o)])
 }
 
 /** `/queue tree`: one queue per direction, matched by packet mark. */
-export function queueTree(p: Pair, o: { name: string; parent: string; markUp: string; markDown: string }): string {
+export function queueTree(p: Pair, o: { name: string; parent: string; markUp: string; markDown: string; queue?: QueueKind }): string {
   const parent = o.parent.trim() || "global"
+  const kind = o.queue && o.queue !== "default" ? [`queue=${rosString(o.queue)}`] : []
   const line = (suffix: string, mark: string, q: QueueParams) =>
-    `add ${[`name=${rosString(`${o.name}-${suffix}`)}`, `parent=${parent}`, `packet-mark=${rosString(mark)}`, ...htbProps(q)].join(" ")}`
-  return ["/queue tree", line("down", o.markDown, p.down), line("up", o.markUp, p.up)].join("\n")
+    `add ${[`name=${rosString(`${o.name}-${suffix}`)}`, `parent=${parent}`, `packet-mark=${rosString(mark)}`, ...kind, ...htbProps(q)].join(" ")}`
+  return withSetup(o.queue, ["/queue tree", line("down", o.markDown, p.down), line("up", o.markUp, p.up)])
+}
+
+/** One `/queue type` PCQ line (one direction). `full` writes burst 0 when off, for `set`. */
+export function pcqProps(name: string, classifier: "dst-address" | "src-address", q: QueueParams, full = false): string[] {
+  const props = [`name=${rosString(name)}`, "kind=pcq", `pcq-classifier=${classifier}`, `pcq-rate=${rosRate(q.maxLimit)}`]
+  if (burstEnabled(q)) {
+    props.push(`pcq-burst-rate=${rosRate(q.burstLimit)}`, `pcq-burst-threshold=${rosRate(q.burstThreshold)}`, `pcq-burst-time=${rosTime(q.burstTime)}`)
+  } else if (full) props.push("pcq-burst-rate=0", "pcq-burst-threshold=0")
+  return props
 }
 
 /** `/queue type` PCQ: the same rate and burst for every sub-stream (each client). */
 export function pcqTypes(p: Pair, o: { name: string }): string {
-  const line = (suffix: string, classifier: string, q: QueueParams) => {
-    const props = [`name=${rosString(`${o.name}-${suffix}`)}`, "kind=pcq", `pcq-classifier=${classifier}`, `pcq-rate=${rosRate(q.maxLimit)}`]
-    if (burstEnabled(q)) {
-      props.push(
-        `pcq-burst-rate=${rosRate(q.burstLimit)}`,
-        `pcq-burst-threshold=${rosRate(q.burstThreshold)}`,
-        `pcq-burst-time=${rosTime(q.burstTime)}`
-      )
-    }
-    return `add ${props.join(" ")}`
-  }
-  return ["/queue type", line("down", "dst-address", p.down), line("up", "src-address", p.up)].join("\n")
+  return [
+    "/queue type",
+    `add ${pcqProps(`${o.name}-down`, "dst-address", p.down).join(" ")}`,
+    `add ${pcqProps(`${o.name}-up`, "src-address", p.up).join(" ")}`,
+  ].join("\n")
+}
+
+/** Queue tree properties (one direction) for a `set`, clearing what's off. */
+export function treeSetProps(q: QueueParams): string[] {
+  return htbProps(q, true)
 }
 
 /**
@@ -119,8 +186,11 @@ export function rateLimit(p: Pair, priority = DEFAULT_PRIORITY): string {
   return parts.join(" ")
 }
 
-export function pppProfile(p: Pair, o: { name: string }): string {
-  return `/ppp profile\nadd name=${rosString(o.name)} rate-limit=${rosString(rateLimit(p))}`
+/** `queue-type` of a PPP profile (one value for both directions; 7.19+ also takes rx/tx). */
+const pppQueueType = (kind: QueueKind | undefined) => (kind && kind !== "default" ? ` queue-type=${rosString(kind)}` : "")
+
+export function pppProfile(p: Pair, o: { name: string; queue?: QueueKind }): string {
+  return withSetup(o.queue, ["/ppp profile", `add name=${rosString(o.name)} rate-limit=${rosString(rateLimit(p))}${pppQueueType(o.queue)}`])
 }
 
 export function hotspotProfile(p: Pair, o: { name: string }): string {
@@ -145,9 +215,9 @@ const parentLine = (name: string, target: string, maxLimit: number) =>
   `add name=${rosString(name)} target=${target.trim() || "0.0.0.0/0"} max-limit=${pair(rosRate(maxLimit), rosRate(maxLimit))}`
 
 /** Parent simple queue (the shared link) and one child queue per client. */
-export function sharedSimpleQueues(o: { parent: string; target: string; maxLimit: number; children: Child[] }): string {
-  const lines = o.children.map((c) => simpleQueueLine(c.pair, { name: c.name, target: c.target, parent: o.parent, priority: c.priority }))
-  return ["/queue simple", parentLine(o.parent, o.target, o.maxLimit), ...lines].join("\n")
+export function sharedSimpleQueues(o: { parent: string; target: string; maxLimit: number; children: Child[]; queue?: QueueKind }): string {
+  const lines = o.children.map((c) => simpleQueueLine(c.pair, { name: c.name, target: c.target, parent: o.parent, priority: c.priority, queue: o.queue }))
+  return withSetup(o.queue, ["/queue simple", parentLine(o.parent, o.target, o.maxLimit), ...lines])
 }
 
 /**
@@ -155,7 +225,10 @@ export function sharedSimpleQueues(o: { parent: string; target: string; maxLimit
  * (-2, -3… when two plans share a speed but differ). Returns the profile
  * lines (without the menu) and each input's profile name.
  */
-export function pppProfiles(items: { pair: Pair; priority?: number }[], o: { parentQueue?: string } = {}): { lines: string[]; names: string[] } {
+export function pppProfiles(
+  items: { pair: Pair; priority?: number }[],
+  o: { parentQueue?: string; queue?: QueueKind; upsert?: boolean } = {}
+): { lines: string[]; names: string[] } {
   const byLimit = new Map<string, string>()
   const used = new Set<string>()
   const names = items.map((it) => {
@@ -171,19 +244,22 @@ export function pppProfiles(items: { pair: Pair; priority?: number }[], o: { par
     return name
   })
   const parent = o.parentQueue?.trim()
-  const lines = [...byLimit.entries()].map(
-    ([limit, name]) => `add name=${rosString(name)} rate-limit=${rosString(limit)}${parent ? ` parent-queue=${rosString(parent)}` : ""}`
-  )
+  const lines = [...byLimit.entries()].map(([limit, name]) => {
+    const props = [`rate-limit=${rosString(limit)}`]
+    if (parent) props.push(`parent-queue=${rosString(parent)}`)
+    if (o.queue && o.queue !== "default") props.push(`queue-type=${rosString(o.queue)}`)
+    return o.upsert ? upsert("/ppp profile", name, props, [`name=${rosString(name)}`, ...props]) : `add name=${rosString(name)} ${props.join(" ")}`
+  })
   return { lines, names }
 }
 
 /** Parent simple queue + PPP profiles whose dynamic queues hang from it (`parent-queue`). */
-export function sharedPpp(o: { parent: string; target: string; maxLimit: number; children: { pair: Pair; priority: number }[] }): {
+export function sharedPpp(o: { parent: string; target: string; maxLimit: number; children: { pair: Pair; priority: number }[]; queue?: QueueKind }): {
   script: string
   names: string[]
 } {
-  const { lines, names } = pppProfiles(o.children, { parentQueue: o.parent })
-  return { script: ["/queue simple", parentLine(o.parent, o.target, o.maxLimit), "/ppp profile", ...lines].join("\n"), names }
+  const { lines, names } = pppProfiles(o.children, { parentQueue: o.parent, queue: o.queue })
+  return { script: withSetup(o.queue, ["/queue simple", parentLine(o.parent, o.target, o.maxLimit), "/ppp profile", ...lines]), names }
 }
 
 /** Rate in bits per second (User Manager limitation fields are plain numbers). */
@@ -217,11 +293,31 @@ function limitationProps(p: Pair, priority: number): string[] {
 
 export type UmPlan = { name: string; pair: Pair; priority?: number }
 
-/** User Manager v7: a limitation, a profile and the link between them, per plan. */
-export function userManagerPlans(plans: UmPlan[]): string {
-  const lim = plans.map((pl) => `add name=${rosString(pl.name)} ${limitationProps(pl.pair, pl.priority ?? DEFAULT_PRIORITY).join(" ")}`)
-  const prof = plans.map((pl) => `add name=${rosString(pl.name)} name-for-users=${rosString(pl.name)} validity=unlimited`)
-  const link = plans.map((pl) => `add profile=${rosString(pl.name)} limitation=${rosString(pl.name)}`)
+/**
+ * User Manager v7: a limitation, a profile and the link between them, per
+ * plan. With `upsert`, existing limitations are updated and the rest only
+ * added when missing, so the script can run again.
+ */
+export function userManagerPlans(plans: UmPlan[], o: { upsert?: boolean } = {}): string {
+  const lim = plans.map((pl) => {
+    const props = limitationProps(pl.pair, pl.priority ?? DEFAULT_PRIORITY)
+    if (!o.upsert) return `add name=${rosString(pl.name)} ${props.join(" ")}`
+    // On update, clear burst / min values the new plan doesn't use.
+    const clear = ["rate-limit-burst-rx", "rate-limit-burst-tx", "rate-limit-burst-threshold-rx", "rate-limit-burst-threshold-tx", "rate-limit-min-rx", "rate-limit-min-tx"]
+      .filter((k) => !props.some((p) => p.startsWith(`${k}=`)))
+      .map((k) => `${k}=0`)
+    return upsert("/user-manager limitation", pl.name, [...props, ...clear], [`name=${rosString(pl.name)}`, ...props])
+  })
+  const profProps = (pl: UmPlan) => [`name=${rosString(pl.name)}`, `name-for-users=${rosString(pl.name)}`, "validity=unlimited"]
+  const prof = plans.map((pl) =>
+    o.upsert ? addIfMissing("/user-manager profile", `name=${rosString(pl.name)}`, profProps(pl)) : `add ${profProps(pl).join(" ")}`
+  )
+  const linkProps = (pl: UmPlan) => [`profile=${rosString(pl.name)}`, `limitation=${rosString(pl.name)}`]
+  const link = plans.map((pl) =>
+    o.upsert
+      ? addIfMissing("/user-manager profile-limitation", `profile=${rosString(pl.name)} and limitation=${rosString(pl.name)}`, linkProps(pl))
+      : `add ${linkProps(pl).join(" ")}`
+  )
   return ["/user-manager limitation", ...lim, "/user-manager profile", ...prof, "/user-manager profile-limitation", ...link].join("\n")
 }
 
