@@ -2,7 +2,7 @@
 
 import { AlertTriangle, CircleCheck, CircleX, Info } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { check, figures, type Issue } from "@/lib/mikrotik/burst"
+import { check, effectiveDemand, figures, type Issue } from "@/lib/mikrotik/burst"
 import { fmtData, fmtRate, fmtSec } from "@/lib/mikrotik/format"
 import { viewParams, type Direction, type LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
@@ -13,7 +13,7 @@ const TONE = { error: "text-red-300", warn: "text-amber-300", info: "text-zinc-4
 export function FiguresPanel({ state, onView }: { state: LabState; onView: (d: Direction) => void }) {
   const t = useTranslations("mikrotik")
   const p = viewParams(state)
-  const opts = { demandMbps: state.pattern.demandMbps, lineCapMbps: state.lineCapMbps }
+  const opts = { demandMbps: effectiveDemand(state.pattern), lineCapMbps: state.lineCapMbps }
   const f = figures(p, opts)
 
   const dirs: Direction[] = state.symmetric ? ["down"] : ["down", "up"]

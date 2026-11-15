@@ -7,13 +7,15 @@
       "eyebrow": "Herramienta interna",
       "private": "Uso interno · sin enlaces · no indexada",
       "title": "Simulador de burst MikroTik",
-      "lead": "Calcula y prueba la ráfaga de una cola de RouterOS antes de configurarla: cuánto dura, cuántos datos extra entrega, cuándo vuelve y qué pasa con distintos tipos de tráfico. Al final copias el comando listo.",
+      "lead": "Calcula y prueba la ráfaga de una cola de RouterOS antes de configurarla: cuánto dura, cuántos datos extra entrega, cuándo vuelve y qué pasa con distintos tipos de tráfico. Compara los planes, prueba varios clientes bajo una misma cola padre, importa la configuración que ya tienes y copia el comando listo.",
       "share": "Copiar enlace con esta configuración",
       "shared": "Enlace copiado",
       "reset": "Restablecer",
       "jump": {
         "params": "Parámetros",
         "sim": "Simulación",
+        "compare": "Comparar",
+        "shared": "Cola compartida",
         "solver": "Calculadora",
         "export": "Exportar",
         "how": "Cómo funciona"
@@ -43,6 +45,34 @@
       "unitS": "s",
       "ros": "RouterOS: {value}",
       "invalid": "Valor no válido"
+    },
+    "import": {
+      "title": "Importar desde RouterOS",
+      "lead": "Pega una simple queue, un queue tree, tipos PCQ, una cadena rate-limit (PPP o Hotspot) o el atributo RADIUS Mikrotik-Rate-Limit. Se lee en tu navegador; no se envía a ningún lado.",
+      "label": "Configuración de RouterOS",
+      "placeholder": "/queue simple add name=cliente target=10.0.0.2/32 max-limit=100M/500M burst-limit=200M/1000M burst-threshold=75M/375M burst-time=16s/16s",
+      "sources": {
+        "simple": "simple queue",
+        "tree": "queue tree",
+        "pcq": "tipos PCQ",
+        "rateLimit": "cadena rate-limit"
+      },
+      "read": "Leído como {source}",
+      "line": "max-limit {max} · burst-limit {burst} · threshold {threshold} · burst-time {time} · limit-at {limitAt}",
+      "lineNoBurst": "max-limit {max} · sin ráfaga · limit-at {limitAt}",
+      "notes": {
+        "firstOnly": "Había más de una cola: se leyó solo la primera.",
+        "assumedOrder": "Sin pista de dirección en los nombres: la primera línea se tomó como bajada y la segunda como subida.",
+        "oneDirection": "Solo había una dirección: se usa para bajada y subida.",
+        "noBurst": "No trae valores de ráfaga: queda desactivada."
+      },
+      "errors": {
+        "unrecognized": "No reconozco este texto. Pega una línea de /queue simple, /queue tree o /queue type (PCQ), una cadena rate-limit o el atributo RADIUS.",
+        "badValue": "Hay un valor que no se puede leer. Velocidades como 10M, 512k o 1G; tiempos como 16s o 1m30s.",
+        "noMaxLimit": "Falta max-limit o vale 0 (sin límite): no hay nada que simular."
+      },
+      "apply": "Aplicar a los parámetros",
+      "applied": "Aplicado"
     },
     "figures": {
       "title": "Resultado",
@@ -89,12 +119,18 @@
       "kinds": {
         "sustained": "Descarga continua",
         "intermittent": "Intermitente",
-        "speedtest": "Prueba de velocidad"
+        "speedtest": "Prueba de velocidad",
+        "web": "Navegación",
+        "video": "Video en streaming",
+        "download": "Descarga de archivo"
       },
       "kindsHint": {
         "sustained": "Pide sin parar desde el inicio.",
         "intermittent": "Ciclos de actividad y pausa, como navegar o sincronizar.",
-        "speedtest": "Una prueba de unos segundos y luego nada."
+        "speedtest": "Una prueba de unos segundos y luego nada.",
+        "web": "Páginas de {size} con pausas de lectura de 3 a 14 s. Cada página baja a toda la velocidad que dé la cola.",
+        "video": "El reproductor llena un búfer de 30 s en segmentos de 4 s y después pide un segmento cada vez que el búfer baja.",
+        "download": "Un archivo de tamaño fijo a toda la velocidad que dé la cola, como un juego o una actualización."
       },
       "saturate": "Pide todo lo que la cola le dé",
       "demand": "Demanda del cliente",
@@ -112,8 +148,110 @@
         "burst": "Tiempo en ráfaga",
         "burstSub": "{count, plural, =0 {ninguna ráfaga} one {# ráfaga} other {# ráfagas}}",
         "peak": "Pico",
-        "peakSub": "tasa máxima entregada"
-      }
+        "peakSub": "tasa máxima entregada",
+        "finish": "Descarga completa",
+        "finishSub": "{base} sin ráfaga ({saved} antes)",
+        "finishSubSame": "igual que sin ráfaga",
+        "finishSubNoBase": "sin ráfaga no termina en el tiempo simulado",
+        "finishNever": "No termina",
+        "finishNeverSub": "falta tiempo simulado para el archivo completo",
+        "startup": "Arranque del video",
+        "startupSub": "{stall} con el búfer vacío",
+        "startupNever": "No arranca",
+        "pageLoad": "Transferencia por página",
+        "pageLoadSub": "{count, plural, =0 {ninguna página} one {# página} other {# páginas}} · solo ancho de banda, sin latencia"
+      },
+      "fileMB": "Tamaño del archivo",
+      "videoMbps": "Bitrate del video",
+      "videoHint": "4K ≈ 25 Mbps, 1080p ≈ 5 Mbps (valores típicos de streaming).",
+      "pageMB": "Tamaño de cada página",
+      "unitMB": "MB"
+    },
+    "compare": {
+      "title": "Comparar planes",
+      "lead": "Los tres planes con los valores de ráfaga iniciales (burst-limit al doble, threshold al 75 %, burst-time de 16 s) bajo el mismo tráfico de la simulación. Si cambiaste los parámetros, tu configuración aparece como línea punteada.",
+      "traffic": "Tráfico: {kind} · {duration} simulados{direction}",
+      "current": "Tus parámetros",
+      "label": "Gráfica comparativa de la tasa entregada por plan",
+      "summary": "Tasa entregada por cada plan con el mismo tráfico. {lines} Usa las flechas izquierda y derecha para recorrer la gráfica.",
+      "summaryLine": "{plan}: primera ráfaga de {burst}, {total} transferidos.",
+      "table": "Ver los datos en tabla",
+      "tableCaption": "Tasa entregada por plan, un renglón por paso de {step}",
+      "resultsCaption": "Resultados por plan con el mismo tráfico",
+      "cols": {
+        "plan": "Plan",
+        "maxLimit": "max-limit",
+        "burstLimit": "burst-limit",
+        "burstThreshold": "threshold",
+        "burstTime": "burst-time",
+        "firstBurst": "Primera ráfaga",
+        "total": "Transferido",
+        "activeAvg": "Promedio mientras pide",
+        "download": "Descarga completa",
+        "video": "Arranque · búfer vacío",
+        "web": "Por página"
+      },
+      "never": "no termina",
+      "noBurst": "sin ráfaga"
+    },
+    "shared": {
+      "title": "Cola padre compartida",
+      "lead": "Varios clientes bajo una misma cola padre, como un enlace o un nodo. Cada cliente tiene su propia ráfaga; cuando el padre se llena, primero se respeta limit-at y el resto se reparte por prioridad.",
+      "parent": "max-limit de la cola padre",
+      "parentHint": "Lo que puede dar el enlace o la cola padre.",
+      "duration": "Tiempo simulado",
+      "member": "Cliente {n}",
+      "plan": "Plan",
+      "planCurrent": "Parámetros de arriba",
+      "limitAt": "limit-at",
+      "priority": "Prioridad",
+      "priorityHint": "1 = más alta, 8 = más baja",
+      "traffic": "Tráfico",
+      "start": "Empieza en",
+      "add": "Agregar cliente",
+      "remove": "Quitar cliente {n}",
+      "limit": "Hasta {max} clientes.",
+      "sizes": "Los tamaños de descarga, video y página, y los tiempos de los patrones, son los de la simulación de arriba.",
+      "overbooked": "La suma de limit-at ({sum}) pasa del max-limit del padre ({parent}): RouterOS no puede garantizarlos todos y aquí se reparten en proporción.",
+      "label": "Gráfica de la tasa de cada cliente apilada bajo la cola padre",
+      "summary": "{count, plural, one {# cliente} other {# clientes}} bajo un padre de {parent}. El padre está saturado {congested} de {duration}. {lines} Usa las flechas izquierda y derecha para recorrer la gráfica.",
+      "summaryLine": "{client}: {total} transferidos, {burst} en ráfaga.",
+      "parentRef": "padre {value}",
+      "congested": "Padre saturado",
+      "total": "Total",
+      "tip": {
+        "trimmed": "recortado",
+        "bursting": "en ráfaga"
+      },
+      "table": "Ver los datos en tabla",
+      "tableCaption": "Tasa de cada cliente, un renglón por paso de {step}",
+      "stats": {
+        "parentAvg": "Uso promedio del padre",
+        "parentAvgSub": "{pct} de su max-limit",
+        "parentPeak": "Pico del padre",
+        "parentPeakSub": "suma de los clientes",
+        "congested": "Padre saturado",
+        "congestedSub": "los clientes pidieron más de lo que hay"
+      },
+      "resultsCaption": "Resultados por cliente",
+      "cols": {
+        "client": "Cliente",
+        "setup": "Plan · prioridad · limit-at",
+        "activeAvg": "Promedio mientras pide",
+        "total": "Transferido",
+        "burst": "En ráfaga",
+        "guarantee": "limit-at cumplido",
+        "result": "Resultado"
+      },
+      "result": {
+        "download": "Descarga en {value}",
+        "downloadNever": "Descarga sin terminar",
+        "video": "Arranque {startup} · {stall} búfer vacío",
+        "videoNever": "El video no arranca",
+        "web": "{value} por página",
+        "none": "—"
+      },
+      "model": "Aproximación de HTB: con la misma prioridad el sobrante se reparte en partes iguales (RouterOS lo pondera por quantum) y la capacidad que un cliente no usa dentro de un paso no pasa a otro. El paso es el burst-time ÷ 16 más corto de los clientes."
     },
     "chart": {
       "label": "Gráfica de tasa contra tiempo, {direction}",
@@ -123,7 +261,8 @@
         "avg": "Promedio (ventana burst-time)",
         "allowed": "Ráfaga permitida",
         "demand": "Demanda",
-        "demandSaturating": "Demanda: todo lo posible"
+        "demandSaturating": "Demanda: todo lo posible",
+        "demandTransfer": "Demanda: todo hasta terminar"
       },
       "ref": {
         "maxLimit": "max-limit",
@@ -214,7 +353,7 @@
       "example": "limit-at 1M, max-limit 2M, burst-threshold 1500k, burst-limit 4M, burst-time 16s: el cliente descarga a 4 Mbps durante 6 s (1.5 × 16 ÷ 4) y luego queda en 2 Mbps.",
       "loadExample": "Cargar este ejemplo",
       "modelTitle": "Qué no modela",
-      "model": "La simulación modela una sola cola. No incluye la competencia con otras colas bajo el mismo padre (ahí entran limit-at y la prioridad), el arranque lento de TCP ni la ráfaga dentro de cada sub-ventana. El comportamiento por paso de 1/16 viene del manual clásico de MikroTik (Manual:Queue); la documentación actual describe los mismos parámetros sin ese detalle."
+      "model": "La simulación principal modela una cola sola; la cola padre compartida agrega la competencia entre clientes (limit-at y prioridad) con una aproximación de HTB. Ninguna incluye el arranque lento de TCP, la latencia ni la ráfaga dentro de cada sub-ventana: los tiempos de página y de video son de ancho de banda puro. El comportamiento por paso de 1/16 viene del manual clásico de MikroTik (Manual:Queue); la documentación actual describe los mismos parámetros sin ese detalle."
     }
   }
 }

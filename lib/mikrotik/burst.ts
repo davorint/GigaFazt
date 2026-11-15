@@ -13,6 +13,8 @@
  * All rates are in Mbps, times in seconds. Pure functions, no I/O.
  */
 
+import { isTransfer, makeSource, type Pattern, type TransferStats } from "./traffic"
+
 export type QueueParams = {
   maxLimit: number
   burstLimit: number
@@ -35,48 +37,17 @@ export function stepSeconds(p: QueueParams): number {
   return p.burstTime > 0 ? p.burstTime / WINDOWS : 0.5
 }
 
-// ── Traffic patterns ────────────────────────────────────────────────────────
+// ── Traffic ─────────────────────────────────────────────────────────────────
 
-export type PatternKind = "sustained" | "intermittent" | "speedtest"
-
-export type Pattern = {
-  kind: PatternKind
-  /** What the client asks for while active, Mbps. null = as much as it gets. */
-  demandMbps: number | null
-  /** Idle seconds before the traffic starts. */
-  startS: number
-  /** intermittent: seconds on / seconds off. */
-  onS: number
-  offS: number
-  /** speedtest: test length. */
-  testS: number
-}
-
-/** Demand at time t (Mbps). `Infinity` = saturating. */
-export function demandAt(pattern: Pattern, t: number): number {
-  const rate = pattern.demandMbps ?? Number.POSITIVE_INFINITY
-  const local = t - pattern.startS
-  if (local < 0) return 0
-  switch (pattern.kind) {
-    case "sustained":
-      return rate
-    case "speedtest":
-      return local < pattern.testS ? rate : 0
-    case "intermittent": {
-      const period = pattern.onS + pattern.offS
-      if (pattern.onS <= 0) return 0
-      if (period <= 0) return rate
-      return local % period < pattern.onS ? rate : 0
-    }
-  }
-}
+export { demandAt, effectiveDemand, isTransfer, KINDS, makeSource, RATE_KINDS, TRANSFER_KINDS } from "./traffic"
+export type { Pattern, PatternKind, RateKind, TransferKind, TransferStats } from "./traffic"
 
 // ── Simulation ──────────────────────────────────────────────────────────────
 
 export type Sample = {
   /** Start of the step, s. */
   t: number
-  /** Requested rate (Infinity = saturating). */
+  /** Requested rate (Infinity = saturating; transfers ask for everything until done). */
   demand: number
   /** Average over the last burst-time at the start of the step (what RouterOS compares). */
   avg: number
@@ -107,6 +78,8 @@ export type SimStats = {
   /** Length of the first stretch above max-limit (0 if none). */
   firstBurstS: number
   peakMbps: number
+  /** Transfer patterns (web, video, download): completion figures. */
+  transfer: TransferStats | null
 }
 
 export type SimResult = { samples: Sample[]; stats: SimStats }
@@ -127,6 +100,8 @@ export function simulate(p: QueueParams, pattern: Pattern, durationS: number, op
   const window = new Array<number>(windowLen).fill(0)
   let sum = 0
   let head = 0
+  const source = makeSource(pattern)
+  const transfer = isTransfer(pattern.kind)
 
   const samples: Sample[] = []
   let totalMb = 0
@@ -144,8 +119,10 @@ export function simulate(p: QueueParams, pattern: Pattern, durationS: number, op
     const avg = sum / windowLen
     const burstAllowed = canBurst && avg < p.burstThreshold
     const ceiling = Math.min(burstAllowed ? p.burstLimit : p.maxLimit, cap)
-    const demand = demandAt(pattern, t)
-    const rate = Math.max(0, Math.min(demand, ceiling))
+    const want = source.want(t, dt)
+    const rate = source.serve(t, dt, ceiling) / dt
+    // A transfer that can use the whole ceiling reads as "everything".
+    const demand = transfer && want >= ceiling - 1e-9 ? Number.POSITIVE_INFINITY : want
     const inBurst = rate > p.maxLimit + 1e-9
 
     samples.push({ t, demand, avg, ceiling, rate, burstAllowed, inBurst })
@@ -186,6 +163,7 @@ export function simulate(p: QueueParams, pattern: Pattern, durationS: number, op
       burstCount,
       firstBurstS,
       peakMbps: peak,
+      transfer: source.stats(),
     },
   }
 }

@@ -12,12 +12,17 @@ import {
   PRESETS,
   presetState,
   type Direction,
+  type GroupState,
   type LabState,
 } from "@/lib/mikrotik/state"
+import { sameQueue } from "@/lib/mikrotik/import"
+import { ComparePanel } from "./ComparePanel"
 import { CopyButton } from "./CopyButton"
 import { ExportPanel } from "./ExportPanel"
 import { FiguresPanel } from "./FiguresPanel"
+import { ImportPanel } from "./ImportPanel"
 import { ParamsPanel } from "./ParamsPanel"
+import { SharedPanel } from "./SharedPanel"
 import { SimPanel } from "./SimPanel"
 import { SolverPanel } from "./SolverPanel"
 
@@ -69,6 +74,11 @@ export function BurstLab() {
   const setSymmetric = (on: boolean) => setState((s) => (on ? { ...s, symmetric: true, up: s.down, view: "down" } : { ...s, symmetric: false }))
   const setPattern = (patch: Partial<Pattern>) => setState((s) => ({ ...s, pattern: { ...s.pattern, ...patch } }))
   const applySolver = (v: { burstThreshold: number; burstTime: number }) => setQueue(state.symmetric ? "down" : state.view, v)
+  const applyImport = ({ down, up }: { down: QueueParams; up: QueueParams }) => {
+    const symmetric = sameQueue(down, up)
+    setState((s) => ({ ...s, preset: "custom", symmetric, down, up: symmetric ? down : up, view: "down" }))
+  }
+  const setGroup = (group: GroupState) => set({ group })
   const loadClassic = () => {
     setState((s) => ({
       ...s,
@@ -96,10 +106,12 @@ export function BurstLab() {
     return url
   }
 
-  const jump = ["params", "sim", "solver", "export", "how"] as const
+  const jump = ["params", "sim", "compare", "shared", "solver", "export", "how"] as const
   const anchors: Record<(typeof jump)[number], string> = {
     params: "parametros",
     sim: "simulacion",
+    compare: "comparar",
+    shared: "compartida",
     solver: "calculadora",
     export: "exportar",
     how: "como-funciona",
@@ -133,6 +145,9 @@ export function BurstLab() {
       </section>
 
       <Section id="parametros" name="mk-params" title={t("params.title")} lead={t("params.lead")}>
+        <div className="mb-6">
+          <ImportPanel onApply={applyImport} />
+        </div>
         <div className="grid items-start gap-6 lg:grid-cols-[1.25fr_1fr] [&>*]:min-w-0">
           <ParamsPanel
             state={state}
@@ -147,6 +162,14 @@ export function BurstLab() {
 
       <Section id="simulacion" name="mk-sim" title={t("sim.title")} lead={t("sim.lead")}>
         <SimPanel state={state} onPattern={setPattern} onDuration={(durationS) => set({ durationS })} onView={(view) => set({ view })} />
+      </Section>
+
+      <Section id="comparar" name="mk-compare" title={t("compare.title")} lead={t("compare.lead")}>
+        <ComparePanel state={state} />
+      </Section>
+
+      <Section id="compartida" name="mk-shared" title={t("shared.title")} lead={t("shared.lead")}>
+        <SharedPanel state={state} onGroup={setGroup} />
       </Section>
 
       <Section id="calculadora" name="mk-solver" title={t("solver.title")} lead={t("solver.lead")}>

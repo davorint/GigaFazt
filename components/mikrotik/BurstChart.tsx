@@ -2,9 +2,10 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react"
 import { useTranslations } from "next-intl"
-import { burstEnabled, type Pattern, type QueueParams, type Sample, type SimResult } from "@/lib/mikrotik/burst"
+import { burstEnabled, effectiveDemand, isTransfer, type Pattern, type QueueParams, type Sample, type SimResult } from "@/lib/mikrotik/burst"
 import { rosRate } from "@/lib/mikrotik/routeros"
 import { fmtData, fmtNum, fmtRate, fmtSec } from "@/lib/mikrotik/format"
+import { niceStep } from "./ticks"
 
 /** Validated against the dark surface (dataviz validate_palette: band, chroma, CVD, contrast). */
 const RATE = "#0aa5c2"
@@ -16,14 +17,6 @@ type Props = {
   pattern: Pattern
   lineCapMbps: number | null
   direction: string
-}
-
-function niceStep(range: number, target: number): number {
-  const raw = range / Math.max(1, target)
-  const mag = 10 ** Math.floor(Math.log10(raw))
-  const norm = raw / mag
-  const f = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10
-  return f * mag
 }
 
 type StateKey = "bursting" | "allowed" | "limited" | "idle"
@@ -59,6 +52,8 @@ export function BurstChart({ result, params, pattern, lineCapMbps, direction }: 
   const iw = width - M.l - M.r
   const ih = H - M.t - M.b
   const enabled = burstEnabled(params)
+  // A demand line only for rate patterns with a set demand; transfers take everything.
+  const showDemand = effectiveDemand(pattern) !== null
 
   const refs = useMemo(() => {
     const list: { key: string; v: number; dash: string; color: string }[] = [
@@ -96,7 +91,7 @@ export function BurstChart({ result, params, pattern, lineCapMbps, direction }: 
     const avg = samples.map((s, i) => `${i ? "L" : "M"}${x(s.t)},${y(s.avg)}`).join("")
 
     let demand = ""
-    if (pattern.demandMbps !== null) {
+    if (showDemand) {
       samples.forEach((s, i) => {
         demand += i === 0 ? `M${x(s.t)},${y(s.demand)}` : `V${y(s.demand)}`
         demand += `H${x(s.t + dt)}`
@@ -130,7 +125,7 @@ export function BurstChart({ result, params, pattern, lineCapMbps, direction }: 
     // Leave room for the axis title at the right end.
     for (let v = 0; v <= xMax + 1e-9; v += xStep) if (narrow || x(v) < ml + iw - 56) xTicks.push(v)
     return { x, y, rate, area, avg, demand, bands, labels, yTicks, xTicks }
-  }, [refs, samples, narrow, xMax, iw, ih, ml, mt, dt, pattern.demandMbps])
+  }, [refs, samples, narrow, xMax, iw, ih, ml, mt, dt, showDemand])
 
   const pick = (e: PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect()
@@ -186,7 +181,7 @@ export function BurstChart({ result, params, pattern, lineCapMbps, direction }: 
         </li>
         <li className="flex items-center gap-2">
           <span aria-hidden className="w-4 border-t-2 border-dotted border-zinc-400" />
-          {pattern.demandMbps === null ? t("legend.demandSaturating") : t("legend.demand")}
+          {isTransfer(pattern.kind) ? t("legend.demandTransfer") : showDemand ? t("legend.demand") : t("legend.demandSaturating")}
         </li>
       </ul>
 
