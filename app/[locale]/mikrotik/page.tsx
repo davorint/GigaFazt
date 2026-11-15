@@ -7,8 +7,8 @@ import internal from "@/messages/internal/mikrotik.es.json"
 
 /**
  * Internal MikroTik burst calculator/simulator, served at /mikrotik.
- * proxy.ts puts every /mikrotik and /{locale}/mikrotik URL behind Basic Auth
- * and rewrites /mikrotik here. It sits inside [locale] on purpose: a static
+ * Open (no password, owner 2026-11-15); proxy.ts rewrites /mikrotik (any
+ * capitalization) here. It sits inside [locale] on purpose: a static
  * folder at the app root is listed in every public page's router payload
  * (static siblings of [locale]), which would leak the name. Spanish only, not
  * linked, not in the sitemap, noindex; its copy lives in messages/internal/

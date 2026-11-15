@@ -3,7 +3,7 @@ import { check, defaultsFor, demandAt, figures, simulate, solve, type Pattern, t
 import { hotspotProfile, pcqTypes, pppProfile, queueTree, radiusAttribute, rateLimit, rosRate, simpleQueue } from "./routeros"
 import { decodeState, encodeState, initialState, PRESETS, presetState } from "./state"
 import { fmtData, fmtRate, fmtSec } from "./format"
-import { internalCredentials, isAuthorized, matchInternal, parseBasicAuth, safeEqual } from "../internal-auth"
+import { matchInternal } from "../internal-pages"
 
 const sustained: Pattern = { kind: "sustained", demandMbps: null, startS: 0, onS: 1, offS: 1, testS: 1 }
 /** MikroTik's classic example (Mbps): limit-at 1M, max-limit 2M, threshold 1.5M, burst 4M, 16 s. */
@@ -200,8 +200,7 @@ describe("format", () => {
   })
 })
 
-describe("internal auth", () => {
-  const b64 = (s: string) => btoa(String.fromCharCode(...new TextEncoder().encode(s)))
+describe("internal pages", () => {
   it("matches only internal paths", () => {
     expect(matchInternal("/mikrotik")).toEqual({ rewriteTo: "/es/mikrotik" })
     expect(matchInternal("/mikrotik.rsc")).toEqual({ rewriteTo: "/es/mikrotik.rsc" })
@@ -210,24 +209,10 @@ describe("internal auth", () => {
     expect(matchInternal("/en/mikrotik.segments/a")).toEqual({ rewriteTo: null })
     expect(["/", "/es", "/mikrotikx", "/es/mikrotikx", "/es/planes", "/x/y/mikrotik"].map(matchInternal)).toEqual([null, null, null, null, null, null])
   })
-  it("needs both env vars", () => {
-    expect(internalCredentials({})).toBeNull()
-    expect(internalCredentials({ MIKROTIK_USER: "a" })).toBeNull()
-    expect(internalCredentials({ MIKROTIK_USER: "a", MIKROTIK_PASS: "b" })).toEqual({ user: "a", pass: "b" })
-  })
-  it("parses Basic headers, UTF-8 and colons in the password", () => {
-    expect(parseBasicAuth(`Basic ${b64("noc:pá:ss")}`)).toEqual({ user: "noc", pass: "pá:ss" })
-    expect(parseBasicAuth(null)).toBeNull()
-    expect(parseBasicAuth("Bearer x")).toBeNull()
-    expect(parseBasicAuth(`Basic ${b64("nocolon")}`)).toBeNull()
-  })
-  it("authorizes only the exact credentials", () => {
-    const exp = { user: "noc", pass: "s3cret" }
-    expect(isAuthorized(`Basic ${b64("noc:s3cret")}`, exp)).toBe(true)
-    expect(isAuthorized(`Basic ${b64("noc:s3cre")}`, exp)).toBe(false)
-    expect(isAuthorized(`Basic ${b64("NOC:s3cret")}`, exp)).toBe(false)
-    expect(isAuthorized(null, exp)).toBe(false)
-    expect(safeEqual("", "")).toBe(true)
-    expect(safeEqual("a", "ab")).toBe(false)
+  it("maps any capitalization to the lowercase route", () => {
+    expect(matchInternal("/MIKROTIK")).toEqual({ rewriteTo: "/es/mikrotik" })
+    expect(matchInternal("/MikroTik/x")).toEqual({ rewriteTo: "/es/mikrotik/x" })
+    expect(matchInternal("/es/MIKROTIK")).toEqual({ rewriteTo: "/es/mikrotik" })
+    expect(matchInternal("/ES/Mikrotik.rsc")).toEqual({ rewriteTo: "/es/mikrotik.rsc" })
   })
 })

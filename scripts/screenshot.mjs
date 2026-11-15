@@ -4,7 +4,6 @@
 //
 // Usage: node scripts/screenshot.mjs [url] [outDir]
 //   SECTIONS=hero,plans node scripts/screenshot.mjs
-//   SHOT_USER=… SHOT_PASS=… node scripts/screenshot.mjs http://localhost:3000/mikrotik  (Basic Auth)
 import { chromium } from "@playwright/test"
 import { mkdir } from "node:fs/promises"
 import path from "node:path"
@@ -40,10 +39,6 @@ async function main() {
         viewport: { width: viewport.width, height: viewport.height },
         reducedMotion: motion,
         deviceScaleFactor: 1,
-        // Internal pages (/mikrotik) sit behind Basic Auth.
-        ...(process.env.SHOT_USER && process.env.SHOT_PASS
-          ? { httpCredentials: { username: process.env.SHOT_USER, password: process.env.SHOT_PASS } }
-          : {}),
       })
       // Scroll-driven reveals depend on scroll position, and element captures
       // taller than the viewport would show their lower parts mid-reveal.
