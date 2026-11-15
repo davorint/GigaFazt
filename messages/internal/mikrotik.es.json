@@ -23,9 +23,11 @@
     },
     "params": {
       "title": "Parámetros de la cola",
-      "lead": "Valores en Mbps y segundos, como en Winbox. Cargar un plan pone su velocidad como max-limit y valores de ráfaga iniciales: burst-limit al doble, burst-threshold al 75 % y burst-time de 16 s.",
+      "lead": "Valores en Mbps y segundos, como en Winbox. La velocidad del plan es lo máximo que recibe el cliente: cargar un plan la pone como burst-limit, max-limit al {sustained} del plan, burst-threshold al {threshold} de max-limit y burst-time de {time} s.",
       "preset": "Plan",
       "custom": "Personalizado",
+      "plan": "Velocidad del plan",
+      "planHint": "Lo máximo que puede recibir el cliente. burst-limit y max-limit no deben pasar de aquí. Vacío = sin revisar.",
       "symmetric": "Mismos valores de subida y bajada",
       "down": "Bajada (download)",
       "up": "Subida (upload)",
@@ -96,6 +98,8 @@
     "issues": {
       "title": "Revisión",
       "ok": "Configuración coherente.",
+      "maxAbovePlan": "max-limit pasa la velocidad del plan: el cliente recibiría más de lo contratado todo el tiempo.",
+      "burstAbovePlan": "burst-limit pasa la velocidad del plan: en la ráfaga el cliente recibiría más de lo contratado.",
       "burstOff": "Ráfaga desactivada: hacen falta burst-limit, burst-threshold y burst-time mayores que 0.",
       "burstLimitNotAbove": "burst-limit debe ser mayor que max-limit; si no, la ráfaga no hace nada.",
       "thresholdAboveMax": "burst-threshold está arriba de max-limit: con tráfico continuo el promedio nunca lo alcanza de forma estable y la ráfaga vuelve una y otra vez. El cliente sostiene ≈ el threshold, no max-limit. MikroTik recomienda el threshold entre limit-at y max-limit.",
@@ -169,7 +173,7 @@
     },
     "compare": {
       "title": "Comparar planes",
-      "lead": "Los tres planes con los valores de ráfaga iniciales (burst-limit al doble, threshold al 75 %, burst-time de 16 s) bajo el mismo tráfico de la simulación. Si cambiaste los parámetros, tu configuración aparece como línea punteada.",
+      "lead": "Los tres planes con sus valores iniciales (burst-limit = velocidad del plan, max-limit al {sustained}, threshold al {threshold} de max-limit, burst-time de {time} s) bajo el mismo tráfico de la simulación. Si cambiaste los parámetros, tu configuración aparece como línea punteada.",
       "traffic": "Tráfico: {kind} · {duration} simulados{direction}",
       "current": "Tus parámetros",
       "label": "Gráfica comparativa de la tasa entregada por plan",

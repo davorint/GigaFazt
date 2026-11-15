@@ -1,5 +1,5 @@
 import { plans } from "../plans"
-import { defaultsFor, KINDS, type Pattern, type PatternKind, type QueueParams } from "./burst"
+import { KINDS, planDefaults, type Pattern, type PatternKind, type QueueParams } from "./burst"
 
 /**
  * State of the /mikrotik burst tool and its share link (#hash, so nothing
@@ -11,6 +11,8 @@ export type Direction = "down" | "up"
 export type LabState = {
   /** Plan id from lib/plans.ts, or "custom". */
   preset: string
+  /** Plan speed: the most the client may get (burst-limit and max-limit stay at or under it). null = not checked. */
+  planMbps: number | null
   /** One set of values for both directions. */
   symmetric: boolean
   down: QueueParams
@@ -49,10 +51,10 @@ export const DEFAULT_GROUP: GroupState = {
   parentMbps: 1000,
   durationS: 60,
   members: [
-    { plan: "fibra-500", limitAt: 250, priority: 8, kind: "download", startS: 0 },
+    { plan: "fibra-500", limitAt: 50, priority: 8, kind: "download", startS: 0 },
     { plan: "fibra-500", limitAt: 0, priority: 8, kind: "video", startS: 4 },
     { plan: "fibra-1g", limitAt: 0, priority: 8, kind: "speedtest", startS: 12 },
-    { plan: "fibra-200", limitAt: 50, priority: 8, kind: "web", startS: 0 },
+    { plan: "fibra-200", limitAt: 20, priority: 8, kind: "web", startS: 0 },
   ],
 }
 
@@ -75,9 +77,10 @@ export const DEFAULT_PATTERN: Pattern = {
 export function presetState(preset: Preset, base?: LabState): LabState {
   return {
     preset: preset.id,
+    planMbps: preset.downMbps,
     symmetric: preset.downMbps === preset.upMbps,
-    down: defaultsFor(preset.downMbps),
-    up: defaultsFor(preset.upMbps),
+    down: planDefaults(preset.downMbps),
+    up: planDefaults(preset.upMbps),
     view: base?.view ?? "down",
     pattern: base?.pattern ?? DEFAULT_PATTERN,
     durationS: base?.durationS ?? 60,
@@ -96,10 +99,10 @@ export function viewParams(s: LabState): QueueParams {
   return s.symmetric || s.view === "down" ? s.down : s.up
 }
 
-/** Burst values a plan preset starts with (download speed). */
+/** Queue values a plan preset starts with (download speed). */
 export function presetParams(id: string): QueueParams | null {
   const preset = PRESETS.find((p) => p.id === id)
-  return preset ? defaultsFor(preset.downMbps) : null
+  return preset ? planDefaults(preset.downMbps) : null
 }
 
 /** Queue and traffic of one shared-parent client. */
@@ -119,6 +122,7 @@ const q = (p: QueueParams) => [p.maxLimit, p.burstLimit, p.burstThreshold, p.bur
 export function encodeState(s: LabState): string {
   const h = new URLSearchParams()
   h.set("p", s.preset)
+  h.set("m", s.planMbps ? num(s.planMbps) : "")
   h.set("d", q(s.down))
   if (!s.symmetric) h.set("u", q(s.up))
   h.set("v", s.view)
@@ -189,8 +193,12 @@ export function decodeState(hash: string): LabState | null {
     pageMB: finite(pageMB, 0.001, 1e4) ?? base.pattern.pageMB,
   }
   const preset = h.get("p") ?? "custom"
+  const known = PRESETS.find((p) => p.id === preset)
+  // Links from before the plan field: take the plan's speed.
+  const planMbps = h.has("m") ? finite(h.get("m") ?? undefined, 0.001) : (known?.downMbps ?? null)
   return {
-    preset: preset === "custom" || PRESETS.some((p) => p.id === preset) ? preset : "custom",
+    preset: preset === "custom" || known ? preset : "custom",
+    planMbps,
     symmetric: !up,
     down,
     up: up ?? down,

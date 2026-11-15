@@ -4,7 +4,8 @@ import { useState, useSyncExternalStore, type ReactNode } from "react"
 import { RotateCcw } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
-import type { Pattern, QueueParams } from "@/lib/mikrotik/burst"
+import { PRESET_BURST_TIME, SUSTAINED_SHARE, THRESHOLD_SHARE, type Pattern, type QueueParams } from "@/lib/mikrotik/burst"
+import { fmtPct } from "@/lib/mikrotik/format"
 import {
   decodeState,
   encodeState,
@@ -106,6 +107,9 @@ export function BurstLab() {
     return url
   }
 
+  // The plan preset rule, written from the constants it uses.
+  const presetRule = { sustained: fmtPct(SUSTAINED_SHARE), threshold: fmtPct(THRESHOLD_SHARE), time: PRESET_BURST_TIME }
+
   const jump = ["params", "sim", "compare", "shared", "solver", "export", "how"] as const
   const anchors: Record<(typeof jump)[number], string> = {
     params: "parametros",
@@ -144,7 +148,7 @@ export function BurstLab() {
         </nav>
       </section>
 
-      <Section id="parametros" name="mk-params" title={t("params.title")} lead={t("params.lead")}>
+      <Section id="parametros" name="mk-params" title={t("params.title")} lead={t("params.lead", presetRule)}>
         <div className="mb-6">
           <ImportPanel onApply={applyImport} />
         </div>
@@ -155,6 +159,7 @@ export function BurstLab() {
             onSymmetric={setSymmetric}
             onQueue={setQueue}
             onLineCap={(v) => set({ lineCapMbps: v })}
+            onPlan={(v) => set({ planMbps: v })}
           />
           <FiguresPanel state={state} onView={(view) => set({ view })} />
         </div>
@@ -164,7 +169,7 @@ export function BurstLab() {
         <SimPanel state={state} onPattern={setPattern} onDuration={(durationS) => set({ durationS })} onView={(view) => set({ view })} />
       </Section>
 
-      <Section id="comparar" name="mk-compare" title={t("compare.title")} lead={t("compare.lead")}>
+      <Section id="comparar" name="mk-compare" title={t("compare.title")} lead={t("compare.lead", presetRule)}>
         <ComparePanel state={state} />
       </Section>
 

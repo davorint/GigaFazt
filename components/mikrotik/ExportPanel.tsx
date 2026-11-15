@@ -67,7 +67,8 @@ function Code({ code, label }: { code: string; label: string }) {
 export function ExportPanel({ state }: { state: LabState }) {
   const t = useTranslations("mikrotik.export")
   const p: Pair = { down: state.down, up: state.symmetric ? state.down : state.up }
-  const auto = `plan-${rosRate(p.down.maxLimit)}`
+  // Named after the plan speed (the most the client gets), else max-limit.
+  const auto = `plan-${rosRate(state.planMbps ?? p.down.maxLimit)}`
   const [name, setName] = useState<string | null>(null)
   const [target, setTarget] = useState("10.0.0.2/32")
   const [parent, setParent] = useState("global")

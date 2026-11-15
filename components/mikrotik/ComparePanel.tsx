@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import { useTranslations } from "next-intl"
-import { burstEnabled, defaultsFor, simulate, type QueueParams, type SimResult, type TransferStats } from "@/lib/mikrotik/burst"
+import { burstEnabled, planDefaults, simulate, type QueueParams, type SimResult, type TransferStats } from "@/lib/mikrotik/burst"
 import { fmtData, fmtRate, fmtSec } from "@/lib/mikrotik/format"
 import { rosRate, rosTime } from "@/lib/mikrotik/routeros"
 import { PRESETS, viewParams, type LabState } from "@/lib/mikrotik/state"
@@ -29,7 +29,7 @@ export function ComparePanel({ state }: { state: LabState }) {
       key: p.id,
       label: speedLabel(p.downMbps),
       color: SERIES_COLORS[i % SERIES_COLORS.length],
-      params: defaultsFor(p.downMbps),
+      params: planDefaults(p.downMbps),
     }))
     if (custom) list.push({ key: "current", label: t("compare.current"), color: NEUTRAL_SERIES, dash: "5 3", params: current })
     return list.map((r) => ({ ...r, result: simulate(r.params, pattern, durationS, { lineCapMbps }) }))

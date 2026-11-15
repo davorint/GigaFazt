@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { check, defaultsFor, demandAt, figures, simulate, solve, type Pattern, type QueueParams } from "./burst"
+import { check, demandAt, figures, planDefaults, simulate, solve, type Pattern, type QueueParams } from "./burst"
 import { hotspotProfile, pcqTypes, pppProfile, queueTree, radiusAttribute, rateLimit, rosRate, simpleQueue } from "./routeros"
 import { decodeState, encodeState, initialState, PRESETS, presetState } from "./state"
 import { fmtData, fmtRate, fmtSec } from "./format"
@@ -9,6 +9,8 @@ import { allocate, simulateShared } from "./shared"
 import { DEFAULT_GROUP, memberSetup } from "./state"
 
 const SIZES = { fileMB: 2000, videoMbps: 25, pageMB: 3 }
+/** Generic queue for model tests: burst at 2×, threshold at 75 %, 16 s (a 6 s burst from idle). */
+const twoX = (max: number): QueueParams => ({ maxLimit: max, burstLimit: max * 2, burstThreshold: Math.round(max * 0.75), burstTime: 16, limitAt: 0 })
 const sustained: Pattern = { kind: "sustained", demandMbps: null, startS: 0, onS: 1, offS: 1, testS: 1, ...SIZES }
 /** MikroTik's classic example (Mbps): limit-at 1M, max-limit 2M, threshold 1.5M, burst 4M, 16 s. */
 const classic: QueueParams = { limitAt: 1, maxLimit: 2, burstThreshold: 1.5, burstLimit: 4, burstTime: 16 }
@@ -34,7 +36,7 @@ describe("burst model", () => {
     expect(f.sustainedMbps).toBe(2)
     expect(f.repeats).toBe(false)
     // Rounds up to whole sub-windows: 16·375/1000 = 6 steps of 1 s; 16·400/1000 = 6.4 → 7.
-    const p = { ...defaultsFor(500), burstLimit: 1000, burstThreshold: 400 }
+    const p = { ...twoX(500), burstLimit: 1000, burstThreshold: 400 }
     expect(figures(p).durationS).toBe(7)
     expect(simulate(p, sustained, 30).stats.firstBurstS).toBe(7)
   })
@@ -51,7 +53,7 @@ describe("burst model", () => {
   })
 
   it("demand below burst-limit stretches the burst; demand below threshold never ends it", () => {
-    const p = defaultsFor(500) // 1000 burst, 375 threshold, 16 s
+    const p = twoX(500) // 1000 burst, 375 threshold, 16 s
     expect(figures(p, { demandMbps: 750 }).durationS).toBe(8)
     expect(figures(p, { demandMbps: 600 }).durationS).toBe(10) // 16·375/600 = 10 steps of 1 s
     expect(figures(p, { demandMbps: 400 }).durationS).toBe(0) // below max-limit: no burst used
@@ -61,7 +63,7 @@ describe("burst model", () => {
   })
 
   it("a line cap limits the burst rate", () => {
-    const p = defaultsFor(500)
+    const p = twoX(500)
     const f = figures(p, { lineCapMbps: 940 })
     expect(f.burstRate).toBe(940)
     expect(check(p, { lineCapMbps: 940 }).map((i) => i.code)).toContain("burstAboveLineCap")
@@ -70,16 +72,16 @@ describe("burst model", () => {
   })
 
   it("burst off or burst-limit not above max-limit does nothing", () => {
-    const off = { ...defaultsFor(200), burstTime: 0 }
+    const off = { ...twoX(200), burstTime: 0 }
     expect(simulate(off, sustained, 10).stats.peakMbps).toBe(200)
     expect(check(off).map((i) => i.code)).toEqual(["burstOff"])
-    const flat = { ...defaultsFor(200), burstLimit: 200 }
+    const flat = { ...twoX(200), burstLimit: 200 }
     expect(check(flat).map((i) => i.code)).toEqual(["burstLimitNotAbove"])
     expect(figures(flat).durationS).toBe(0)
   })
 
   it("refills after burst-time of idle", () => {
-    const p = defaultsFor(500)
+    const p = twoX(500)
     const test: Pattern = { kind: "intermittent", demandMbps: null, startS: 0, onS: 10, offS: 16, testS: 1, ...SIZES }
     const { samples } = simulate(p, test, 52)
     expect(samples.filter((s) => s.t >= 26 && s.t < 32).every((s) => s.rate === 1000)).toBe(true)
@@ -95,7 +97,7 @@ describe("burst model", () => {
 })
 
 describe("transfer traffic", () => {
-  const p500 = defaultsFor(500)
+  const p500 = twoX(500)
   const pt = (kind: Pattern["kind"], extra: Partial<Pattern> = {}): Pattern => ({ ...sustained, kind, ...extra })
 
   it("a download finishes sooner with burst: 6 s at 1 Gbps, then 500 Mbps", () => {
@@ -141,7 +143,7 @@ describe("shared parent", () => {
   })
 
   it("a full parent eats the burst", () => {
-    const m = { params: defaultsFor(500), priority: 8, pattern: sustained }
+    const m = { params: twoX(500), priority: 8, pattern: sustained }
     const alone = simulateShared(1000, [m], 30)
     expect(alone.members[0].burstS).toBe(6)
     const two = simulateShared(1000, [m, m], 30)
@@ -151,17 +153,17 @@ describe("shared parent", () => {
   })
 
   it("limit-at holds against a higher-priority client", () => {
-    const a = { params: { ...defaultsFor(500), limitAt: 250 }, priority: 8, pattern: sustained }
-    const b = { params: defaultsFor(1000), priority: 1, pattern: sustained }
+    const a = { params: { ...twoX(500), limitAt: 250 }, priority: 8, pattern: sustained }
+    const b = { params: twoX(1000), priority: 1, pattern: sustained }
     const r = simulateShared(500, [a, b], 20)
     expect(r.members[0].guaranteeMet).toBe(1)
     expect(r.samples.every((s) => s.rates[0] >= 250 - 1e-6)).toBe(true)
-    expect(simulateShared(500, [{ ...a, params: defaultsFor(500) }, b], 20).members[0].guaranteeMet).toBeNull()
+    expect(simulateShared(500, [{ ...a, params: twoX(500) }, b], 20).members[0].guaranteeMet).toBeNull()
   })
 
   it("a web page under a busy parent loads at its fair share, not over the whole step", () => {
-    const web = { params: defaultsFor(500), priority: 8, pattern: { ...sustained, kind: "web" as const } }
-    const dl = { params: defaultsFor(1000), priority: 8, pattern: { ...sustained, kind: "download" as const, fileMB: 50000 } }
+    const web = { params: twoX(500), priority: 8, pattern: { ...sustained, kind: "web" as const } }
+    const dl = { params: twoX(1000), priority: 8, pattern: { ...sustained, kind: "download" as const, fileMB: 50000 } }
     const r = simulateShared(1000, [dl, web], 30)
     expect(r.members[1].transfer?.meanS).toBeLessThan(0.1)
     expect(r.parent.congestedS).toBeGreaterThan(0)
@@ -172,15 +174,15 @@ describe("shared parent", () => {
   it("builds members from the lab state", () => {
     const s = initialState()
     const first = memberSetup(s, DEFAULT_GROUP.members[0])
-    expect(first.params).toMatchObject({ maxLimit: 500, limitAt: 250 })
+    expect(first.params).toMatchObject({ maxLimit: 100, burstLimit: 500, limitAt: 50 })
     expect(first.pattern).toMatchObject({ kind: "download", demandMbps: null })
     expect(memberSetup(s, { ...DEFAULT_GROUP.members[0], plan: "current", limitAt: 0 }).params).toEqual(s.down)
   })
 })
 
 describe("import from RouterOS", () => {
-  const p500 = { ...defaultsFor(500), limitAt: 250 }
-  const up = { ...defaultsFor(100), limitAt: 50 }
+  const p500 = { ...twoX(500), limitAt: 250 }
+  const up = { ...twoX(100), limitAt: 50 }
 
   it("parses rates and times", () => {
     expect(["512k", "10M", "1G", "2000000", "1.5m", "x", ""].map(parseRate)).toEqual([0.512, 10, 1000, 2, 1.5, null, null])
@@ -197,7 +199,7 @@ describe("import from RouterOS", () => {
     expect(parseRouterOS(hotspotProfile(pair, { name: "plan" }))).toMatchObject({ ...want, source: "rateLimit" })
     expect(parseRouterOS(radiusAttribute(pair))).toMatchObject({ ...want, source: "rateLimit" })
     expect(parseRouterOS(rateLimit(pair))).toMatchObject({ ...want, source: "rateLimit" })
-    const off = { ...defaultsFor(500), burstLimit: 0, burstThreshold: 0, burstTime: 0, limitAt: 100 }
+    const off = { ...twoX(500), burstLimit: 0, burstThreshold: 0, burstTime: 0, limitAt: 100 }
     expect(parseRouterOS(rateLimit({ up: off, down: { ...off, limitAt: 0 } }))).toMatchObject({ ok: true, up: off, down: { ...off, limitAt: 0 } })
   })
 
@@ -217,6 +219,26 @@ describe("import from RouterOS", () => {
   })
 })
 
+describe("plan presets", () => {
+  it("the plan speed is the burst-limit; max-limit 20 %, threshold 75 % of it, 16 s", () => {
+    expect(planDefaults(500)).toEqual({ maxLimit: 100, burstLimit: 500, burstThreshold: 75, burstTime: 16, limitAt: 0 })
+    expect(planDefaults(200)).toEqual({ maxLimit: 40, burstLimit: 200, burstThreshold: 30, burstTime: 16, limitAt: 0 })
+    expect(planDefaults(1000)).toEqual({ maxLimit: 200, burstLimit: 1000, burstThreshold: 150, burstTime: 16, limitAt: 0 })
+    // 16 × 75 / 500 = 2.4 → 3 sub-windows of 1 s.
+    expect(figures(planDefaults(500)).durationS).toBe(3)
+    expect(simulate(planDefaults(500), sustained, 30).stats.peakMbps).toBe(500)
+  })
+  it("flags anything above the plan speed", () => {
+    const codes = (q: QueueParams, plan: number | null) => check(q, { planMbps: plan }).map((i) => i.code)
+    expect(codes(planDefaults(500), 500)).toEqual([])
+    expect(codes({ ...planDefaults(500), burstLimit: 600 }, 500)).toContain("burstAbovePlan")
+    expect(codes({ ...planDefaults(500), maxLimit: 600, burstLimit: 1200 }, 500)).toContain("maxAbovePlan")
+    expect(codes({ ...planDefaults(500), burstLimit: 600 }, null)).not.toContain("burstAbovePlan")
+    // Burst off: only max-limit counts.
+    expect(codes({ ...planDefaults(500), burstLimit: 0 }, 50)).toContain("maxAbovePlan")
+  })
+})
+
 describe("solver", () => {
   it("solves burst-time for a fixed threshold", () => {
     const r = solve({ maxLimit: 500, burstLimit: 1000, targetS: 8, solveFor: "burstTime", burstThreshold: 375 })
@@ -233,7 +255,7 @@ describe("solver", () => {
 })
 
 describe("RouterOS export", () => {
-  const p500 = defaultsFor(500)
+  const p500 = twoX(500)
   const sym = { up: p500, down: p500 }
 
   it("formats rates with k/M only", () => {
@@ -245,7 +267,7 @@ describe("RouterOS export", () => {
   })
 
   it("simple queue is upload/download", () => {
-    const up = { ...defaultsFor(100), burstTime: 8 }
+    const up = { ...twoX(100), burstTime: 8 }
     expect(simpleQueue({ up, down: p500 }, { name: "cliente", target: "10.0.0.2/32" })).toBe(
       '/queue simple\nadd name="cliente" target=10.0.0.2/32 max-limit=100M/500M burst-limit=200M/1000M burst-threshold=75M/375M burst-time=8s/16s'
     )
@@ -277,7 +299,7 @@ describe("RouterOS export", () => {
   })
 
   it("rate-limit string: rx (client upload) first", () => {
-    const up = defaultsFor(100)
+    const up = twoX(100)
     expect(rateLimit({ up, down: p500 })).toBe("100M/500M 200M/1000M 75M/375M 16/16")
     expect(rateLimit({ up: { ...up, limitAt: 50 }, down: { ...p500, limitAt: 250 } })).toBe(
       "100M/500M 200M/1000M 75M/375M 16/16 8 50M/250M"
@@ -298,15 +320,20 @@ describe("RouterOS export", () => {
 describe("state", () => {
   it("presets come from the plans", () => {
     expect(PRESETS.map((p) => p.downMbps)).toEqual([200, 500, 1000])
-    expect(initialState().down.maxLimit).toBe(500)
+    expect(initialState().down).toEqual(planDefaults(500))
+    expect(initialState().planMbps).toBe(500)
   })
   it("round-trips through the share hash", () => {
-    const s = { ...presetState(PRESETS[2]), symmetric: false, up: { ...defaultsFor(300), limitAt: 10 }, view: "up" as const, lineCapMbps: 940 }
+    const s = { ...presetState(PRESETS[2]), symmetric: false, up: { ...twoX(300), limitAt: 10 }, view: "up" as const, lineCapMbps: 940 }
     s.pattern = { ...s.pattern, kind: "speedtest", demandMbps: 1500, testS: 12, fileMB: 50000, videoMbps: 8, pageMB: 2.5 }
     s.group = { parentMbps: 2500, durationS: 90, members: [{ plan: "current", limitAt: 100, priority: 3, kind: "video", startS: 7.5 }] }
     expect(decodeState(`#${encodeState(s)}`)).toEqual(s)
     const sym = initialState()
     expect(decodeState(encodeState(sym))).toEqual(sym)
+    const noPlan = { ...initialState(), planMbps: null }
+    expect(decodeState(encodeState(noPlan))).toEqual(noPlan)
+    // Links from before the plan field take the preset's speed.
+    expect(decodeState("#p=fibra-1g&d=200,1000,150,16,0")?.planMbps).toBe(1000)
   })
   it("rejects malformed hashes", () => {
     expect(decodeState("")).toBeNull()

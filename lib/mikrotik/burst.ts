@@ -292,12 +292,21 @@ export type IssueCode =
   | "maxAboveLineCap"
   | "shortBurst"
   | "neverEnds"
+  | "burstAbovePlan"
+  | "maxAbovePlan"
 
 export type Issue = { code: IssueCode; level: "error" | "warn" | "info" }
 
-export function check(p: QueueParams, opts: { lineCapMbps?: number | null; demandMbps?: number | null } = {}): Issue[] {
+export function check(
+  p: QueueParams,
+  opts: { lineCapMbps?: number | null; demandMbps?: number | null; planMbps?: number | null } = {}
+): Issue[] {
   const out: Issue[] = []
   const cap = opts.lineCapMbps && opts.lineCapMbps > 0 ? opts.lineCapMbps : null
+  // The plan speed is the most a client may get (owner rule).
+  const plan = opts.planMbps && opts.planMbps > 0 ? opts.planMbps : null
+  if (plan !== null && p.maxLimit > plan + 1e-9) out.push({ code: "maxAbovePlan", level: "error" })
+  else if (plan !== null && burstEnabled(p) && p.burstLimit > plan + 1e-9) out.push({ code: "burstAbovePlan", level: "error" })
   if (p.limitAt > p.maxLimit) out.push({ code: "limitAtAboveMax", level: "error" })
   if (p.burstLimit > 0 && p.burstLimit <= p.maxLimit) {
     out.push({ code: "burstLimitNotAbove", level: "error" })
@@ -316,13 +325,24 @@ export function check(p: QueueParams, opts: { lineCapMbps?: number | null; deman
   return out
 }
 
-/** Starting burst values for a plan speed: 2× burst, threshold at 3/4, 16 s window (6 s burst). */
-export function defaultsFor(maxLimit: number): QueueParams {
+/**
+ * Plan presets (owner, 2026-11-15): the plan speed is the most a client can
+ * get, so it is the burst-limit; the client keeps SUSTAINED_SHARE of it
+ * after the burst (max-limit), the threshold sits at THRESHOLD_SHARE of
+ * max-limit and the window is PRESET_BURST_TIME.
+ */
+export const SUSTAINED_SHARE = 0.2
+export const THRESHOLD_SHARE = 0.75
+export const PRESET_BURST_TIME = 16
+
+/** Starting queue values for a plan speed (see SUSTAINED_SHARE). */
+export function planDefaults(planMbps: number): QueueParams {
+  const maxLimit = Math.round(planMbps * SUSTAINED_SHARE)
   return {
     maxLimit,
-    burstLimit: maxLimit * 2,
-    burstThreshold: Math.round(maxLimit * 0.75),
-    burstTime: 16,
+    burstLimit: planMbps,
+    burstThreshold: Math.round(maxLimit * THRESHOLD_SHARE),
+    burstTime: PRESET_BURST_TIME,
     limitAt: 0,
   }
 }

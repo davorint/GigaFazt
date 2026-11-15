@@ -16,9 +16,10 @@ type Props = {
   onSymmetric: (on: boolean) => void
   onQueue: (dir: Direction, patch: Partial<QueueParams>) => void
   onLineCap: (v: number | null) => void
+  onPlan: (v: number | null) => void
 }
 
-export function ParamsPanel({ state, onPreset, onSymmetric, onQueue, onLineCap }: Props) {
+export function ParamsPanel({ state, onPreset, onSymmetric, onQueue, onLineCap, onPlan }: Props) {
   const t = useTranslations("mikrotik.params")
   const dirs: Direction[] = state.symmetric ? ["down"] : ["down", "up"]
   const ros = (v: number) => t("ros", { value: rosRate(v) })
@@ -39,6 +40,17 @@ export function ParamsPanel({ state, onPreset, onSymmetric, onQueue, onLineCap }
           ]}
         />
       </div>
+
+      <NumberField
+        label={t("plan")}
+        unit={t("unitMbps")}
+        value={state.planMbps}
+        optional
+        min={0.001}
+        onChange={onPlan}
+        hint={t("planHint")}
+        className="max-w-sm"
+      />
 
       <label className="flex cursor-pointer items-center gap-3 text-sm text-zinc-200">
         <Switch checked={state.symmetric} onCheckedChange={onSymmetric} />

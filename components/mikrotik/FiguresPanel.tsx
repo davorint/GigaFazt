@@ -13,7 +13,7 @@ const TONE = { error: "text-red-300", warn: "text-amber-300", info: "text-zinc-4
 export function FiguresPanel({ state, onView }: { state: LabState; onView: (d: Direction) => void }) {
   const t = useTranslations("mikrotik")
   const p = viewParams(state)
-  const opts = { demandMbps: effectiveDemand(state.pattern), lineCapMbps: state.lineCapMbps }
+  const opts = { demandMbps: effectiveDemand(state.pattern), lineCapMbps: state.lineCapMbps, planMbps: state.planMbps }
   const f = figures(p, opts)
 
   const dirs: Direction[] = state.symmetric ? ["down"] : ["down", "up"]
