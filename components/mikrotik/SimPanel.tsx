@@ -3,15 +3,19 @@
 import { useMemo } from "react"
 import { useTranslations } from "next-intl"
 import { Switch } from "@/components/ui/switch"
-import { isTransfer, KINDS, simulate, type Pattern, type SimStats } from "@/lib/mikrotik/burst"
+import { burstEnabled, isTransfer, KINDS, simulate, type Pattern, type SimStats } from "@/lib/mikrotik/burst"
 import { fmtData, fmtNum, fmtPct, fmtRate, fmtSec } from "@/lib/mikrotik/format"
-import { MAX_DURATION_S, viewParams, type Direction, type LabState } from "@/lib/mikrotik/state"
+import { rosRate, rosTime } from "@/lib/mikrotik/routeros"
+import { MAX_DURATION_S, PRESETS, viewParams, type Direction, type LabState } from "@/lib/mikrotik/state"
+import { speedLabel } from "@/lib/format"
 import { BurstChart } from "./BurstChart"
 import { Choice } from "./Choice"
 import { NumberField } from "./NumberField"
 
 type Props = {
   state: LabState
+  /** Same plan presets as Parámetros: picking one loads its queue values. */
+  onPreset: (id: string) => void
   onPattern: (patch: Partial<Pattern>) => void
   onDuration: (s: number) => void
   onView: (d: Direction) => void
@@ -50,7 +54,7 @@ function transferTile(t: ReturnType<typeof useTranslations<"mikrotik">>, stats: 
   }
 }
 
-export function SimPanel({ state, onPattern, onDuration, onView }: Props) {
+export function SimPanel({ state, onPreset, onPattern, onDuration, onView }: Props) {
   const t = useTranslations("mikrotik")
   const p = viewParams(state)
   const { pattern } = state
@@ -85,6 +89,27 @@ export function SimPanel({ state, onPattern, onDuration, onView }: Props) {
   return (
     <div className="surface grid min-w-0 gap-7 rounded-2xl p-5 sm:p-7 [&>*]:min-w-0">
       <div className="grid gap-5">
+        <div className="grid gap-2">
+          <p className="font-mono text-xs text-zinc-300">{t("sim.plan")}</p>
+          <Choice
+            label={t("sim.plan")}
+            value={state.preset}
+            onChange={onPreset}
+            options={[
+              ...PRESETS.map((pr) => ({ value: pr.id, label: speedLabel(pr.downMbps) })),
+              { value: "custom", label: t("params.custom") },
+            ]}
+          />
+          <p className="max-w-2xl text-xs text-zinc-400">
+            {burstEnabled(p)
+              ? t("sim.queue", { max: rosRate(p.maxLimit), burst: rosRate(p.burstLimit), threshold: rosRate(p.burstThreshold), time: rosTime(p.burstTime) })
+              : t("sim.queueNoBurst", { max: rosRate(p.maxLimit) })}{" "}
+            <a href="#parametros" className="text-zinc-200 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+              {t("sim.edit")}
+            </a>
+          </p>
+        </div>
+
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="grid gap-2">
             <p className="font-mono text-xs text-zinc-300">{t("sim.pattern")}</p>

@@ -119,6 +119,10 @@
       "title": "Simulación",
       "lead": "Paso a paso, como lo mide RouterOS: cada burst-time ÷ 16 compara el promedio de la ventana con el threshold y decide el tope del siguiente tramo.",
       "tag": "SIMULACIÓN",
+      "plan": "Plan simulado",
+      "queue": "Cola: max-limit {max} · burst-limit {burst} · burst-threshold {threshold} · burst-time {time}.",
+      "queueNoBurst": "Cola: max-limit {max}, sin ráfaga.",
+      "edit": "Editar valores",
       "pattern": "Tráfico del cliente",
       "kinds": {
         "sustained": "Descarga continua",

@@ -166,7 +166,7 @@ export function BurstLab() {
       </Section>
 
       <Section id="simulacion" name="mk-sim" title={t("sim.title")} lead={t("sim.lead")}>
-        <SimPanel state={state} onPattern={setPattern} onDuration={(durationS) => set({ durationS })} onView={(view) => set({ view })} />
+        <SimPanel state={state} onPreset={setPreset} onPattern={setPattern} onDuration={(durationS) => set({ durationS })} onView={(view) => set({ view })} />
       </Section>
 
       <Section id="comparar" name="mk-compare" title={t("compare.title")} lead={t("compare.lead", presetRule)}>
