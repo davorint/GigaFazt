@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { IslandFrame } from "@/components/layout/IslandFrame"
 import { WhenVisible } from "@/components/layout/WhenVisible"
+import type { Wan } from "@/lib/mikrotik/balance"
 import type { Pattern, PlanRule, QueueParams } from "@/lib/mikrotik/burst"
 import type { QueueKind } from "@/lib/mikrotik/routeros"
 import {
@@ -15,6 +16,7 @@ import {
   initialState,
   PRESETS,
   presetState,
+  type BalanceState,
   type CapacityState,
   type Direction,
   type GroupState,
@@ -35,7 +37,8 @@ const frame = (className: string) =>
   }
 const ComparePanel = dynamic(() => import("./ComparePanel").then((m) => m.ComparePanel), { ssr: false, loading: frame("min-h-[60rem] sm:min-h-[56rem]") })
 const SharedPanel = dynamic(() => import("./SharedPanel").then((m) => m.SharedPanel), { ssr: false, loading: frame("min-h-[110rem] sm:min-h-[100rem]") })
-const CapacityPanel = dynamic(() => import("./CapacityPanel").then((m) => m.CapacityPanel), { ssr: false, loading: frame("min-h-[140rem] sm:min-h-[110rem]") })
+const CapacityPanel = dynamic(() => import("./CapacityPanel").then((m) => m.CapacityPanel), { ssr: false, loading: frame("min-h-[160rem] sm:min-h-[130rem]") })
+const BalancePanel = dynamic(() => import("./BalancePanel").then((m) => m.BalancePanel), { ssr: false, loading: frame("min-h-[120rem] sm:min-h-[90rem]") })
 const ExportPanel = dynamic(() => import("./ExportPanel").then((m) => m.ExportPanel), { ssr: false, loading: frame("min-h-[60rem] sm:min-h-[48rem]") })
 const BulkPanel = dynamic(() => import("./BulkPanel").then((m) => m.BulkPanel), { ssr: false, loading: frame("min-h-[100rem] sm:min-h-[70rem]") })
 
@@ -54,13 +57,14 @@ const subscribeHash = (cb: () => void) => {
 }
 const readHash = () => window.location.hash
 
-const JUMP = ["params", "sim", "compare", "shared", "capacity", "solver", "export", "bulk", "how"] as const
+const JUMP = ["params", "sim", "compare", "shared", "capacity", "links", "solver", "export", "bulk", "how"] as const
 const ANCHORS: Record<(typeof JUMP)[number], string> = {
   params: "parametros",
   sim: "simulacion",
   compare: "comparar",
   shared: "compartida",
   capacity: "hora-pico",
+  links: "enlaces",
   solver: "calculadora",
   export: "exportar",
   bulk: "varios-clientes",
@@ -117,6 +121,9 @@ export function BurstLab() {
   const setBackground = (backgroundMbps: number) => set({ backgroundMbps })
   const setQueueKind = (queueKind: QueueKind) => set({ queueKind })
   const setCapacity = (capacity: CapacityState) => set({ capacity })
+  const setDeployment = (deployment: string) => set({ deployment })
+  const setWans = (wans: Wan[]) => set({ wans })
+  const setBalance = (balance: BalanceState) => set({ balance })
   // A new rule reloads the current plan with it; custom values stay as they are.
   const setRule = (rule: PlanRule) =>
     setState((s) => {
@@ -210,8 +217,14 @@ export function BurstLab() {
       </Section>
 
       <Section id="hora-pico" name="mk-capacity" title={t("capacity.title")} lead={t("capacity.lead")}>
-        <Lazy fallback="min-h-[140rem] sm:min-h-[110rem]">
-          <CapacityPanel state={state} onCapacity={setCapacity} />
+        <Lazy fallback="min-h-[160rem] sm:min-h-[130rem]">
+          <CapacityPanel state={state} onCapacity={setCapacity} onDeployment={setDeployment} />
+        </Lazy>
+      </Section>
+
+      <Section id="enlaces" name="mk-links" title={t("links.title")} lead={t("links.lead")}>
+        <Lazy fallback="min-h-[120rem] sm:min-h-[90rem]">
+          <BalancePanel state={state} onWans={setWans} onBalance={setBalance} />
         </Lazy>
       </Section>
 
@@ -284,10 +297,17 @@ function SectionNav({ label, items }: { label: string; items: { id: string; labe
     return () => io.disconnect()
   }, [items])
 
-  // Keep the current link visible in the scrolling row.
+  // Keep the current link visible in the scrolling row. Only the row moves: scrollIntoView would also
+  // scroll the page back to the menu when it isn't sticky (screenshot captures).
   useEffect(() => {
     if (!active) return
-    document.querySelector(`[data-nav-link="${active}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest" })
+    const link = document.querySelector<HTMLElement>(`[data-nav-link="${active}"]`)
+    const row = link?.closest("ul")
+    if (!link || !row) return
+    const l = link.getBoundingClientRect()
+    const r = row.getBoundingClientRect()
+    if (l.left < r.left) row.scrollLeft -= r.left - l.left
+    else if (l.right > r.right) row.scrollLeft += l.right - r.right
   }, [active])
 
   return (

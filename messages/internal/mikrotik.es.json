@@ -7,7 +7,7 @@
       "eyebrow": "Herramienta interna",
       "private": "Uso interno · sin enlaces · no indexada",
       "title": "Simulador de burst MikroTik",
-      "lead": "Calcula y prueba la ráfaga de una cola de RouterOS antes de configurarla: cuánto dura, qué ve el cliente en una prueba de velocidad, cuándo vuelve y qué pasa con distintos tipos de tráfico. Compara planes y reglas, prueba clientes bajo una misma cola padre, estima la hora pico y el enlace que necesitas, y copia los comandos para un cliente o para todos.",
+      "lead": "Calcula y prueba la ráfaga de una cola de RouterOS antes de configurarla: cuánto dura, qué ve el cliente en una prueba de velocidad, cuándo vuelve y qué pasa con distintos tipos de tráfico. Compara planes y reglas, prueba clientes bajo una misma cola padre, estima la hora pico de un despliegue y cuántos enlaces necesita, arma el balanceo entre sus proveedores y copia los comandos para un cliente o para todos.",
       "share": "Copiar enlace con esta configuración",
       "shared": "Enlace copiado",
       "reset": "Restablecer",
@@ -17,6 +17,7 @@
         "compare": "Comparar",
         "shared": "Cola compartida",
         "capacity": "Hora pico",
+        "links": "Varios enlaces",
         "solver": "Calculadora",
         "export": "Exportar",
         "bulk": "Varios clientes",
@@ -127,7 +128,8 @@
       "testNote": "Estimación con el método que se atribuye a Ookla: descarta el 10 % de las muestras más rápidas y el 30 % de las más lentas y promedia el resto. Sin tráfico de fondo, la primera prueba empieza con la línea en reposo. Cada herramienta mide distinto; no incluye TCP ni latencia.",
       "background": "Tráfico de fondo en la casa",
       "backgroundHint": "Lo que ya se usa al hacer la prueba (5 ≈ un video HD, 25 ≈ uno 4K). Supone que ese tráfico conserva su velocidad.",
-      "testBg": "Prueba de {s} con {bg} de fondo"
+      "testBg": "Prueba de {s} con {bg} de fondo",
+      "overhead": "Además, las apps cuentan solo los datos útiles: por los encabezados de TCP/IP marcan ≈ 3–5 % menos que la cola (1 Gbps en un puerto gigabit ≈ 940 Mbps)."
     },
     "issues": {
       "title": "Revisión",
@@ -448,21 +450,22 @@
     },
     "capacity": {
       "title": "Capacidad en hora pico",
-      "lead": "Muchos clientes detrás de puertos PON y un mismo enlace, a la hora de más uso: cuánto se usa, qué marca una prueba de velocidad a esa hora, y qué enlace y cuántos clientes por puerto necesitas.",
+      "lead": "Un despliegue (una OLT y su router, con sus propios proveedores de internet) a la hora de más uso: cuánto se usa cada tramo, qué marca una prueba de velocidad a esa hora, y cuántos enlaces y clientes por puerto necesitas.",
       "direction": "Dirección",
       "pon": "Red de acceso",
       "pons": {
         "gpon": "GPON",
+        "xgpon": "XG-PON",
         "xgspon": "XGS-PON",
         "none": "Sin PON"
       },
-      "parent": "Enlace",
-      "parentHint": "max-limit de la cola padre: lo que puede dar el enlace de subida.",
+      "parent": "Enlace a internet",
+      "parentHint": "Un solo enlace (por ejemplo, uno dedicado de 10 Gbps) o el max-limit de la cola padre.",
       "avg": "Promedio por cliente en hora pico",
       "avgHintDown": "OpenVault (1T 2025): 1.544 GB/h por cliente residencial a las 9 p. m. ≈ 3.4 Mbps. Usa tus datos si los tienes: es lo que más pesa en el resultado.",
       "avgHintUp": "OpenVault (1T 2025): 0.096 GB/h por cliente residencial a las 9 p. m. ≈ 0.21 Mbps de subida.",
       "homes": "Clientes por puerto PON",
-      "homesHint": "Según el divisor (1:32, 1:64…; hasta 1:128). Cada puerto {tech} da {cap} útiles en esta dirección (92 % de la nominal).",
+      "homesHint": "Según el divisor (1:32, 1:64…; hasta 1:128). Cada puerto {tech} da {cap} útiles en esta dirección ({eff} de la nominal).",
       "fileMB": "Tamaño medio de las descargas",
       "fileHint": "Supuesto. Lo que no es video llega como descargas de tamaño aleatorio con este promedio; más grande = tráfico más a ráfagas.",
       "videoShare": "Parte que es video",
@@ -477,30 +480,35 @@
       "overPort": "Un puerto con {homes} clientes pide en promedio {offered}, más que su capacidad ({cap}): ese puerto se satura sin remedio.",
       "running": "Calculando…",
       "stats": {
-        "avg": "Uso promedio del enlace",
-        "avgSub": "{pct} de su capacidad",
+        "avg": "Uso promedio de internet",
+        "avgSub": "{pct} de {cap}",
         "p95": "Uso en los momentos más altos",
         "p95Sub": "percentil 95 de la carga",
-        "saturated": "Enlace saturado",
-        "saturatedSub": "del tiempo, los clientes pidieron más de lo que hay",
+        "saturated": "Enlace lleno",
+        "saturatedSub": "del tiempo, los clientes pidieron más de lo que da",
         "port": "Puerto PON más cargado",
         "portSub": "percentil 95 por puerto ({pct} de su capacidad) · {ports} puertos · saturados {saturated} del tiempo",
         "video": "Video con cortes",
         "videoSub": "del tiempo de video, un stream recibió menos de su bitrate",
         "perClient": "Promedio movido por cliente",
-        "perClientSub": "lo que movió la simulación (pediste {avg})"
+        "perClientSub": "lo que movió la simulación (pediste {avg})",
+        "saturatedLinks": "Enlaces llenos",
+        "saturatedLinksSub": "del tiempo de cada enlace, en promedio, sus clientes pidieron más de lo que da",
+        "olt": "Enlace de la OLT al router",
+        "oltSub": "percentil 95 ({pct} de {cap}) · lleno {saturated} del tiempo"
       },
       "chart": {
-        "uplink": "Enlace",
+        "uplink": "Internet",
         "port": "Puerto PON más cargado",
-        "parentRef": "enlace {value}",
+        "parentRef": "internet {value}",
         "ponRef": "PON {value}",
-        "saturated": "Enlace saturado",
-        "label": "Gráfica de la carga del enlace y del puerto PON más cargado en la hora pico",
-        "summary": "{clients} clientes bajo un enlace de {parent}. Carga promedio de {avg}; saturado {saturated} del tiempo. {lines} Usa las flechas izquierda y derecha para recorrer la gráfica.",
+        "saturated": "Algún enlace lleno",
+        "label": "Gráfica de la carga de internet y del puerto PON más cargado en la hora pico",
+        "summary": "{clients} clientes con {cap} de internet. Carga promedio de {avg}; enlaces llenos {saturated} del tiempo. {lines} Usa las flechas izquierda y derecha para recorrer la gráfica.",
         "line": "{plan}: 9 de cada 10 pruebas dan al menos {test}.",
         "table": "Ver los datos en tabla",
-        "tableCaption": "Carga del enlace y del puerto más cargado, un renglón por tramo de {step}"
+        "tableCaption": "Carga de internet y del puerto más cargado, un renglón por tramo de {step}",
+        "oltRef": "OLT {value}"
       },
       "resultsCaption": "Resultados por plan en la hora pico",
       "cols": {
@@ -513,22 +521,153 @@
         "plain": "Promedio simple de las pruebas"
       },
       "sizing": {
-        "title": "¿Qué enlace y cuántos clientes por puerto?",
+        "title": "¿Cuántos enlaces y cuántos clientes por puerto?",
         "target": "Meta de la prueba",
         "targetHint": "% del plan en 9 de cada 10 pruebas en hora pico",
         "run": "Calcular",
         "busy": "Calculando… {pct}",
-        "hint": "Busca el enlace más chico con el que 9 de cada 10 pruebas de velocidad en hora pico llegan a ese porcentaje del plan en todos los planes, y cuántos clientes aguanta cada puerto GPON y XGS-PON con la misma meta.",
+        "hint": "Busca lo mínimo de internet (cuántos enlaces como los tuyos, o el tamaño de un solo enlace) con lo que 9 de cada 10 pruebas de velocidad en hora pico llegan a ese porcentaje del plan en todos los planes, y cuántos clientes aguanta cada puerto GPON, XG-PON y XGS-PON con la misma meta.",
         "ok": "Con un enlace de {parent} o más, 9 de cada 10 pruebas en hora pico dan al menos el {target} del plan en todos los planes.",
         "use": "Usar {parent} como enlace",
-        "limitPon": "No se llega al {target} ni con un enlace ilimitado: lo limita el puerto PON ({homes} clientes por puerto en {tech}).",
-        "limitQueue": "No se llega al {target} ni con un enlace ilimitado: con esta regla la prueba da como mucho el {best} del plan ({plan}). Lo limita la cola, no la red.",
+        "limitPon": "No se llega al {target} ni con internet ilimitado: lo limita el puerto PON ({homes} clientes por puerto en {tech}).",
+        "limitQueue": "No se llega al {target} ni con internet ilimitado: con esta regla la prueba da como mucho el {best} del plan ({plan}). Lo limita la cola, no la red.",
         "noClients": "No hay clientes en el modelo.",
-        "perPort": "Clientes por puerto para la meta del {target}, con enlace de sobra: GPON {gpon} · XGS-PON {xgspon}. El divisor óptico pone su propio límite (1:32, 1:64…).",
+        "perPort": "Clientes por puerto para la meta del {target}, con internet de sobra: GPON {gpon} · XG-PON {xgpon} · XGS-PON {xgspon}. El divisor óptico pone su propio límite (1:32, 1:64…).",
         "perPortNone": "ninguno (lo limita la cola)",
-        "perPortMax": "{n} o más"
+        "perPortMax": "{n} o más",
+        "okLinks": "{n, plural, one {Con # enlace} other {Con # enlaces}} de {link} (balanceo {mode}), 9 de cada 10 pruebas en hora pico dan al menos el {target} del plan en todos los planes.",
+        "enough": "{have, plural, one {Tu enlace alcanza.} other {Tus # enlaces alcanzan.}}",
+        "missing": "Tienes {have}: {missing, plural, one {falta # enlace} other {faltan # enlaces}}.",
+        "limitOlt": "No se llega al {target} ni con internet ilimitado: lo limita el enlace de la OLT al router ({cap}).",
+        "limitLink": "No se llega al {target} con enlaces de {link} balanceados {mode}: cada prueba de {plan} usa un solo enlace y no le alcanza, aunque tengas muchos. Hace falta un enlace más rápido, o balancear por conexión (con sus riesgos)."
       },
-      "model": "Modelo estadístico calibrado con el promedio por cliente: una parte es video (streams continuos al bitrate indicado, en las casas necesarias para dar ese promedio) y el resto, descargas de tamaño aleatorio que llegan al azar y toman todo lo que su cola permite; así un plan más rápido termina antes el mismo archivo en vez de mover más datos. Cada cliente tiene la ráfaga de su cola. La capacidad se reparte en partes iguales, primero dentro de cada puerto PON (GPON {gponDown} de bajada y {gponUp} de subida, XGS-PON {xgs}; valores nominales, el útil es algo menor) y luego en el enlace, sin prioridades ni limit-at. Para cada plan se lanza una prueba de velocidad desde reposo cada 5 s en otro puerto; las pruebas miden sin cargar la red. Se descarta un calentamiento y se miden 10 minutos con semilla fija, así cada cambio se compara con las mismas sesiones. Los lineamientos de calidad del servicio fijo del IFT (DOF 13/11/2019, lineamiento décimo cuarto) piden anunciar «Y Mbps en promedio en hora pico» y no «hasta X Mbps»; la última columna se parece a ese promedio (datos ÷ tiempo de cada prueba). Confirma con un abogado si siguen vigentes."
+      "model": "Modelo estadístico calibrado con el promedio por cliente: una parte es video (streams continuos al bitrate indicado, en las casas necesarias para dar ese promedio) y el resto, descargas de tamaño aleatorio que llegan al azar y toman todo lo que su cola permite; así un plan más rápido termina antes el mismo archivo en vez de mover más datos. Cada cliente tiene la ráfaga de su cola. La capacidad se reparte en partes iguales en cada tramo: primero cada puerto PON (GPON {gponDown} de bajada y {gponUp} de subida, XG-PON {xgDown} y {xgUp}, XGS-PON {xgs} en ambas; valores nominales, se usa la parte útil), luego el enlace de la OLT al router y al final internet. Con varios enlaces balanceados por cliente, cada cliente y su prueba usan un solo enlace (por cliente y destino se calcula igual: una prueba va a un solo servidor); por conexión, los enlaces se suman. Sin prioridades ni limit-at. Para cada plan se lanza una prueba de velocidad desde reposo cada 5 s en otro puerto; las pruebas miden sin cargar la red. Se descarta un calentamiento y se miden 10 minutos con semilla fija, así cada cambio se compara con las mismas sesiones. Los lineamientos de calidad del servicio fijo del IFT (DOF 13/11/2019, lineamiento décimo cuarto) piden anunciar «Y Mbps en promedio en hora pico» y no «hasta X Mbps»; la última columna se parece a ese promedio (datos ÷ tiempo de cada prueba). Confirma con un abogado si siguen vigentes.",
+      "traffic": "Tráfico en hora pico",
+      "deployment": {
+        "title": "Despliegue",
+        "lead": "Una OLT y su router, con sus propios proveedores de internet. Cada despliegue se calcula por separado.",
+        "name": "Nombre del despliegue",
+        "nameHint": "Opcional. Para tener uno por despliegue, guarda el enlace de cada uno con «Copiar enlace con esta configuración», arriba.",
+        "model": "Modelo de OLT",
+        "models": {
+          "ma5608t": "Huawei MA5608T",
+          "ma5683t": "Huawei MA5683T",
+          "ma5800x2": "Huawei MA5800-X2",
+          "ma5800x7": "Huawei MA5800-X7",
+          "ma5800x15": "Huawei MA5800-X15",
+          "ma5800x17": "Huawei MA5800-X17",
+          "other": "Otra"
+        },
+        "uplink": "Enlace de la OLT al router",
+        "uplinkHint": "Sus puertos de subida al router, sumados (ejemplo: un puerto 10GE). 0 = sin límite.",
+        "efficiency": "Parte útil del PON",
+        "efficiencyHint": "Lo que queda de la velocidad nominal después del encapsulado GEM y la corrección de errores (FEC). 92 % es una estimación.",
+        "ports": "{need} puertos {tech} en uso, de {max} que admite la {model}.",
+        "portsAny": "{need} puertos {tech} en uso.",
+        "internet": "Internet del router",
+        "internets": {
+          "links": "Sus enlaces ({count})",
+          "single": "Un solo enlace"
+        },
+        "linksLabel": "Enlaces del router",
+        "linksSummary": "{total} en {count, plural, one {# enlace} other {# enlaces}}, balanceo {mode}.",
+        "linksEdit": "Editar en Varios enlaces",
+        "issues": {
+          "unsupported": "La {model} no tiene tarjetas {tech}: el XGS-PON es de la serie MA5800.",
+          "unconfirmed": "XG-PON en la {model}: solo la lista de un distribuidor menciona tarjetas (XGBC de 4 puertos, XGBD de 8). Confírmalo con Huawei o tu proveedor antes de contar con ellas.",
+          "tooManyPorts": "Con {homes} clientes por puerto se necesitan {need} puertos y la {model} admite como mucho {max} {tech}: no caben en una OLT.",
+          "tooManyHomes": "Más de {max} clientes por puerto: el divisor más grande que se toma en cuenta es 1:{max}.",
+          "tooManyUsers": "Más de {max} clientes: lo más que admite la {model}.",
+          "noUplink": "Sin límite en el enlace de la OLT: el cálculo no lo toma en cuenta."
+        }
+      },
+      "overLinks": "{n, plural, one {# de tus {count} enlaces recibe} other {# de tus {count} enlaces reciben}} en promedio más de lo que da (el más cargado: {offered} en {cap}): sus descargas se acumulan sin parar y los resultados de abajo no se estabilizan.",
+      "overPooled": "La demanda promedio ({offered}) pasa de lo que suman los enlaces ({cap}): las descargas se acumulan sin parar y los resultados de abajo no se estabilizan.",
+      "overOlt": "Los clientes piden en promedio {offered}, más que el enlace de la OLT al router ({cap}): ese enlace se satura sin remedio.",
+      "linksCaption": "Carga de cada enlace a internet en la hora pico",
+      "linkCols": {
+        "link": "Enlace",
+        "mbps": "Velocidad",
+        "clients": "Clientes",
+        "offered": "Piden en promedio",
+        "p95": "Percentil 95",
+        "full": "Lleno"
+      },
+      "pooled": "Balanceo por conexión: las conexiones de todos se reparten entre los {count} enlaces, que suman {cap}."
+    },
+    "links": {
+      "title": "Varios enlaces a internet",
+      "lead": "Balanceo de carga entre los proveedores del router de un despliegue: reparte a los clientes entre los enlaces según su velocidad, con respaldo si uno se cae. Script para RouterOS v7.",
+      "wansTitle": "Enlaces del router",
+      "total": "{count, plural, one {# enlace} other {# enlaces}} · {total}",
+      "slots": "{n} de {total} partes del reparto",
+      "remove": "Quitar {name}",
+      "name": "Nombre",
+      "iface": "Interfaz",
+      "gateway": "Gateway del proveedor",
+      "gatewayHint": "Vacío = la interfaz misma (PPPoE).",
+      "mbps": "Velocidad",
+      "monitor": "IP a vigilar",
+      "monitorHint": "Una IP pública distinta por enlace; se vigila a través de ese enlace.",
+      "add": "Agregar enlace",
+      "addHint": "Hasta {max}.",
+      "classifier": "Reparto",
+      "classifiers": {
+        "src-address": "Por cliente",
+        "both-addresses": "Por cliente y destino",
+        "both-addresses-and-ports": "Por conexión"
+      },
+      "classifiersShort": {
+        "src-address": "por cliente",
+        "both-addresses": "por cliente y destino",
+        "both-addresses-and-ports": "por conexión"
+      },
+      "classifierHint": {
+        "src-address": "Cada cliente sale siempre por el mismo enlace: los bancos, juegos y sitios que atan la sesión a la IP pública siguen funcionando. Un cliente nunca pasa de la velocidad de un enlace.",
+        "both-addresses": "Cada par cliente-servidor va por un enlace: reparte mejor, pero un cliente puede salir con IPs distintas hacia sitios distintos.",
+        "both-addresses-and-ports": "Cada conexión puede ir por otro enlace: el reparto más parejo, pero un mismo sitio puede ver al cliente con IPs distintas y cortar la sesión (bancos, juegos, algunas apps)."
+      },
+      "failover": "Respaldo",
+      "failovers": {
+        "recursive": "Vigilar una IP pública",
+        "gateway": "Vigilar el gateway"
+      },
+      "failoverHint": {
+        "recursive": "Cada enlace hace ping a una IP pública a través de sí mismo: también detecta una falla más allá del gateway del proveedor.",
+        "gateway": "Solo hace ping al gateway del proveedor: no ve fallas más adentro de su red. Con PPPoE, la ruta cae cuando cae la sesión."
+      },
+      "clients": "Redes de los clientes",
+      "clientsHint": "Una por renglón (CIDR). El tráfico entre redes privadas no se balancea.",
+      "nat": "NAT (masquerade) en cada enlace",
+      "issues": {
+        "oneLink": "Con un solo enlace no hay nada que balancear; el script igual crea su tabla y sus rutas.",
+        "missingIface": "Falta la interfaz.",
+        "duplicateIface": "La interfaz {value} ya está en otro enlace.",
+        "missingMonitor": "Falta la IP a vigilar.",
+        "duplicateMonitor": "Otro enlace ya vigila {value}: cada enlace necesita la suya.",
+        "badMonitor": "{value} no es una IP válida.",
+        "badGateway": "{value} no es una IP válida.",
+        "badClients": "{value} no es una red válida (CIDR).",
+        "noClients": "Falta al menos una red de clientes.",
+        "unevenSlots": "Las velocidades no se dividen bien en partes enteras: el reparto queda aproximado."
+      },
+      "script": "Script de balanceo (RouterOS v7)",
+      "notes": [
+        "Pruébalo primero en una ventana de mantenimiento: cambia por dónde sale todo el tráfico del router.",
+        "Antes, quita las rutas por defecto que ya tengas y apaga add-default-route en los clientes DHCP o PPPoE de los proveedores; si no, competirán con estas.",
+        "El script supone que cada enlace ya tiene su IP o su sesión PPPoE; solo agrega tablas de ruteo, listas, marcas, NAT y rutas.",
+        "FastTrack y el balanceo no se llevan bien: agrega connection-mark=no-mark a la regla de FastTrack (o desactívala) para que las conexiones balanceadas sigan su marca.",
+        "Cada IP vigilada queda fija a su enlace: si el router la usa como DNS, solo la alcanzará por ese enlace.",
+        "Con reparto por cliente, un cliente nunca pasa de la velocidad de un enlace: con enlaces de 1 Gbps, un plan de 1 Gbps llega al plan solo si su enlace va libre.",
+        "PCC no funciona junto con Hotspot.",
+        "Si los clientes entran por PPPoE en este router, sus pools de IP van en «Redes de los clientes»."
+      ],
+      "undoTitle": "Quitar el balanceo",
+      "undoHint": "Todo lo que agrega el script lleva un comentario que empieza con «LB: »; estos comandos lo quitan.",
+      "undo": "Comandos para quitarlo",
+      "capacity": "¿Te alcanzan estos enlaces en hora pico?",
+      "capacityLink": "Calcúlalo en Hora pico",
+      "fixFirst": "Corrige los errores de arriba para ver el script."
     },
     "setup": {
       "title": "Antes de pegar",
@@ -540,8 +679,12 @@
         "title": "Bridge.",
         "body": "Si los clientes pasan por un bridge (capa 2, sin ruteo), las simple queues y los queue tree con parent=global solo ven ese tráfico con use-ip-firewall activo. Sube el uso de CPU."
       },
-      "compact": "FastTrack o un bridge pueden hacer que estas colas no limiten nada.",
-      "compactLink": "Cómo revisarlo"
+      "compact": "FastTrack o un bridge pueden hacer que estas colas no limiten nada, y la OLT puede limitar antes que ellas.",
+      "compactLink": "Cómo revisarlo",
+      "olt": {
+        "title": "OLT.",
+        "body": "En la OLT, el perfil DBA del ONT (subida) y su tabla de tráfico o perfil de velocidad (bajada) deben dar al menos la velocidad del plan; si son menores, la OLT limita antes que la cola y la ráfaga no se nota."
+      }
     },
     "bulk": {
       "title": "Varios clientes",

@@ -123,7 +123,9 @@ export function FiguresPanel({
             </dd>
           </div>
         </dl>
-        <p className="text-xs leading-snug text-zinc-500">{t("figures.testNote")}</p>
+        <p className="text-xs leading-snug text-zinc-500">
+          {t("figures.testNote")} {t("figures.overhead")}
+        </p>
       </div>
 
       <div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useId, useMemo, useState, type ReactNode } from "react"
+import { useMemo, useState } from "react"
 import { AlertTriangle, Plus, X } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
@@ -25,34 +25,12 @@ import { speedLabel } from "@/lib/format"
 import { CodeBlock } from "./CodeBlock"
 import { MultiChart, type ChartSeries } from "./MultiChart"
 import { NumberField } from "./NumberField"
+import { SelectField } from "./SelectField"
 import { SetupChecks } from "./SetupChecks"
 import { TextField } from "./TextField"
 import { SERIES_COLORS } from "./ticks"
 
 const PRIORITIES = [1, 2, 3, 4, 5, 6, 7, 8]
-const SELECT =
-  "h-10 w-full rounded-md border border-input bg-zinc-950 px-2.5 text-base text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
-
-type SelectProps = { label: string; value: string; onChange: (v: string) => void; hint?: string; className?: string; children: ReactNode }
-
-function Select({ label, value, onChange, hint, className, children }: SelectProps) {
-  const id = useId()
-  return (
-    <div className={`grid content-start gap-1.5 ${className ?? ""}`}>
-      <label htmlFor={id} className="font-mono text-xs text-zinc-300">
-        {label}
-      </label>
-      <select id={id} value={value} onChange={(e) => onChange(e.target.value)} aria-describedby={hint ? `${id}-hint` : undefined} className={SELECT}>
-        {children}
-      </select>
-      {hint && (
-        <p id={`${id}-hint`} className="text-xs leading-snug text-zinc-400">
-          {hint}
-        </p>
-      )}
-    </div>
-  )
-}
 
 /** The scenario as RouterOS config: a parent simple queue with one child per client, or PPP profiles under it. */
 function SharedExport({ state }: { state: LabState }) {
@@ -238,7 +216,7 @@ export function SharedPanel({ state, onGroup }: { state: LabState; onGroup: (g: 
               </Button>
             </div>
             <div className="grid grid-cols-2 items-start gap-3 sm:grid-cols-3">
-              <Select
+              <SelectField
                 label={t("shared.traffic")}
                 value={m.kind}
                 onChange={(kind) => setMember(i, { kind: kind as PatternKind })}
@@ -249,15 +227,15 @@ export function SharedPanel({ state, onGroup }: { state: LabState; onGroup: (g: 
                     {t(`sim.kinds.${k}`)}
                   </option>
                 ))}
-              </Select>
-              <Select label={t("shared.plan")} value={m.plan} onChange={(plan) => setMember(i, { plan })}>
+              </SelectField>
+              <SelectField label={t("shared.plan")} value={m.plan} onChange={(plan) => setMember(i, { plan })}>
                 {PRESETS.map((p) => (
                   <option key={p.id} value={p.id}>
                     {speedLabel(p.downMbps)}
                   </option>
                 ))}
                 <option value="current">{t("shared.planCurrent")}</option>
-              </Select>
+              </SelectField>
               <NumberField
                 label={t("shared.start")}
                 unit={t("params.unitS")}
@@ -271,7 +249,7 @@ export function SharedPanel({ state, onGroup }: { state: LabState; onGroup: (g: 
                 value={m.limitAt}
                 onChange={(v) => v !== null && setMember(i, { limitAt: v })}
               />
-              <Select
+              <SelectField
                 label={t("shared.priority")}
                 value={String(m.priority)}
                 onChange={(v) => setMember(i, { priority: Number(v) })}
@@ -282,7 +260,7 @@ export function SharedPanel({ state, onGroup }: { state: LabState; onGroup: (g: 
                     {p}
                   </option>
                 ))}
-              </Select>
+              </SelectField>
             </div>
           </li>
         ))}

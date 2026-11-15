@@ -1,6 +1,8 @@
 import { plans } from "../plans"
 import { DEFAULT_RULE, KINDS, planDefaults, type Pattern, type PatternKind, type PlanRule, type QueueParams } from "./burst"
+import { CLASSIFIERS, DEFAULT_MONITORS, defaultWans, type Classifier, type Failover, type Wan } from "./balance"
 import { DEFAULT_PON_EFFICIENCY, type PonTech } from "./capacity"
+import { OLT_MODELS, type OltModelId } from "./olt"
 import { QUEUE_KINDS, type Pair, type QueueKind } from "./routeros"
 
 /**
@@ -35,6 +37,26 @@ export type LabState = {
   backgroundMbps: number
   /** Queue type the exports give the client queues. */
   queueKind: QueueKind
+  /** Name of the deployment modeled: one OLT and its router, with its own internet providers. */
+  deployment: string
+  /** That router's internet links (load balancing and the capacity model). */
+  wans: Wan[]
+  balance: BalanceState
+}
+
+export type BalanceState = {
+  classifier: Classifier
+  failover: Failover
+  nat: boolean
+  /** Client networks to balance, CIDR. */
+  clients: string[]
+}
+
+export const DEFAULT_BALANCE: BalanceState = {
+  classifier: "src-address",
+  failover: "recursive",
+  nat: true,
+  clients: ["10.0.0.0/8", "100.64.0.0/10"],
 }
 
 export type CapacityState = {
@@ -53,24 +75,17 @@ export type CapacityState = {
   videoMbps: number
   /** Mean size of the other downloads, MB. */
   fileMB: number
+  /** PON type of the deployment's OLT; "none" = no PON layer (the internet side alone). */
   pon: PonTech
   homesPerPort: number
   /** Usable share of the PON line rate, 0..1. */
   ponEfficiency: number
-  /** OLT: the owner's Huawei MA5608T (2026-11-15), or no OLT limit. */
-  olt: OltModel
-  /** PON boards in the OLT (the MA5608T has 2 service slots). */
-  oltBoards: number
-  /** Ports per board: 16 (GPFD, GPHF) or 8 (GPBD, GPBH). */
-  oltPortsPerBoard: number
-  /** OLT uplink to the router, Mbps (the ports in use added up). */
+  /** The deployment's OLT (limits in olt.ts) and its uplink to the router, Mbps (0 = no limit). */
+  oltModel: OltModelId
   oltUplinkMbps: number
+  /** Internet side: the router's links (wans) or one uplink of parentMbps. */
+  internet: "links" | "single"
 }
-
-export type OltModel = "ma5608t" | "none"
-export const OLT_MODELS: OltModel[] = ["ma5608t", "none"]
-/** Huawei MA5608T: 2 service slots for PON boards. */
-export const MA5608T_SLOTS = 2
 
 /** A client in the shared-parent simulation. */
 export type GroupMember = {
@@ -126,11 +141,10 @@ export const DEFAULT_CAPACITY: CapacityState = {
   pon: "gpon",
   homesPerPort: 32,
   ponEfficiency: DEFAULT_PON_EFFICIENCY,
-  // The owner's OLT. Boards and uplink are an example (two 16-port GPFD, one 10GE on MCUD1).
-  olt: "ma5608t",
-  oltBoards: 2,
-  oltPortsPerBoard: 16,
+  // One OLT and one router per deployment (owner, 2026-11-15). The uplink is an example (one 10GE port).
+  oltModel: "ma5608t",
   oltUplinkMbps: 10_000,
+  internet: "links",
 }
 
 export const DEFAULT_PATTERN: Pattern = {
@@ -162,6 +176,9 @@ export function presetState(preset: Preset, base?: LabState): LabState {
     capacity: base?.capacity ?? DEFAULT_CAPACITY,
     backgroundMbps: base?.backgroundMbps ?? 0,
     queueKind: base?.queueKind ?? "default",
+    deployment: base?.deployment ?? "",
+    wans: base?.wans ?? defaultWans(3),
+    balance: base?.balance ?? DEFAULT_BALANCE,
   }
 }
 
@@ -226,7 +243,11 @@ export function encodeState(s: LabState): string {
     "h",
     [num(c.parentMbps), c.direction, num(c.avgDownMbps), num(c.avgUpMbps), num(c.videoShare), num(c.videoMbps), num(c.fileMB), c.pon, num(c.homesPerPort), ...c.clients.map(num)].join(",")
   )
-  h.set("o", [num(c.ponEfficiency), c.olt, num(c.oltBoards), num(c.oltPortsPerBoard), num(c.oltUplinkMbps)].join(","))
+  // Rows split by "|", fields by ",": both are always escaped inside URI-encoded text.
+  h.set("o", [num(c.ponEfficiency), c.internet, c.oltModel, num(c.oltUplinkMbps)].join(","))
+  if (s.deployment) h.set("n", s.deployment)
+  const enc = encodeURIComponent
+  h.set("w", [s.balance.classifier, s.balance.failover, s.balance.nat ? "1" : "0", s.balance.clients.map(enc).join(","), ...s.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor)].join(","))].join("|"))
   if (s.backgroundMbps > 0) h.set("b", num(s.backgroundMbps))
   if (s.queueKind !== "default") h.set("q", s.queueKind)
   return h.toString()
@@ -280,25 +301,54 @@ function decodeRule(v: string | null): PlanRule | null {
 
 const PON_TECHS: PonTech[] = ["none", "gpon", "xgpon", "xgspon"]
 
-/** OLT settings (`o=`): links without it keep the defaults. */
-function decodeOlt(v: string | null): Pick<CapacityState, "ponEfficiency" | "olt" | "oltBoards" | "oltPortsPerBoard" | "oltUplinkMbps"> | null {
+/** OLT and internet side (`o=`). */
+function decodeOlt(v: string | null): Pick<CapacityState, "ponEfficiency" | "internet" | "oltModel" | "oltUplinkMbps"> | null {
   if (!v) return null
-  const [eff, olt, boards, ppb, uplink] = v.split(",")
-  const c = {
-    ponEfficiency: finite(eff, 0.5, 1),
-    olt: OLT_MODELS.includes(olt as OltModel) ? (olt as OltModel) : null,
-    oltBoards: finite(boards, 1, MA5608T_SLOTS),
-    oltPortsPerBoard: ppb === "8" || ppb === "16" ? Number(ppb) : null,
-    oltUplinkMbps: finite(uplink, 1, 1e6),
+  const [eff, internet, model, uplink] = v.split(",")
+  const ponEfficiency = finite(eff, 0.5, 1)
+  const oltUplinkMbps = finite(uplink, 0, 1e6)
+  if (ponEfficiency === null || oltUplinkMbps === null || (internet !== "links" && internet !== "single") || !OLT_MODELS.includes(model as OltModelId)) return null
+  return { ponEfficiency, internet, oltModel: model as OltModelId, oltUplinkMbps }
+}
+
+/** Internet links and balancing (`w=`). */
+function decodeWans(v: string | null): { wans: Wan[]; balance: BalanceState } | null {
+  if (!v) return null
+  const [classifier, failover, nat, clients, ...rows] = v.split("|")
+  if (!CLASSIFIERS.includes(classifier as Classifier) || (failover !== "recursive" && failover !== "gateway") || (nat !== "0" && nat !== "1")) return null
+  if (rows.length === 0 || rows.length > MAX_WANS) return null
+  const dec = (x: string | undefined) => {
+    try {
+      return decodeURIComponent(x ?? "")
+    } catch {
+      return null
+    }
   }
-  if (Object.values(c).some((x) => x === null)) return null
+  const wans: Wan[] = []
+  for (const [k, row] of rows.entries()) {
+    const [name, iface, gateway, mbps, monitor] = row.split(",")
+    const w = { name: dec(name), iface: dec(iface), gateway: dec(gateway), mbps: finite(mbps, 1, 1e6), monitor: dec(monitor) }
+    if (Object.values(w).some((x) => x === null)) return null
+    wans.push({
+      name: (w.name as string).slice(0, 24) || `WAN${k + 1}`,
+      iface: (w.iface as string).slice(0, 64),
+      gateway: (w.gateway as string).slice(0, 64),
+      mbps: w.mbps as number,
+      monitor: (w.monitor as string).slice(0, 64),
+    })
+  }
+  const nets = (clients ?? "").split(",").map(dec)
+  if (nets.some((x) => x === null)) return null
   return {
-    ponEfficiency: c.ponEfficiency as number,
-    olt: c.olt as OltModel,
-    oltBoards: Math.round(c.oltBoards as number),
-    oltPortsPerBoard: c.oltPortsPerBoard as number,
-    oltUplinkMbps: c.oltUplinkMbps as number,
+    wans,
+    balance: { classifier: classifier as Classifier, failover: failover as Failover, nat: nat === "1", clients: (nets as string[]).filter(Boolean).slice(0, 32) },
   }
+}
+
+export const MAX_WANS = 16
+/** Public IP to watch for a new link (the next unused default). */
+export function nextMonitor(wans: Wan[]): string {
+  return DEFAULT_MONITORS.find((m) => !wans.some((w) => w.monitor === m)) ?? ""
 }
 
 /** Capacity settings (`h=`). Links from before the size-based model (`k=`) get the defaults. */
@@ -335,6 +385,19 @@ function decodeCapacity(v: string | null): CapacityState | null {
 }
 
 export const MAX_CLIENTS_PER_PLAN = 2000
+/** Longest deployment name. */
+export const MAX_NAME = 40
+
+/**
+ * `h=` + `o=`. Links from before the OLT and the links (`h=` without `o=`)
+ * modeled one uplink of parentMbps and no OLT limit: they keep that.
+ */
+function decodeCapacityAll(h: URLSearchParams, base: CapacityState): CapacityState {
+  const cap = decodeCapacity(h.get("h"))
+  const olt = decodeOlt(h.get("o"))
+  if (cap) return { ...cap, ...(olt ?? { internet: "single", oltUplinkMbps: 0 }) }
+  return { ...base, ...(olt ?? {}) }
+}
 
 /** Reads a share hash; anything malformed falls back to the defaults. */
 export function decodeState(hash: string): LabState | null {
@@ -372,7 +435,9 @@ export function decodeState(hash: string): LabState | null {
     group: decodeGroup(h.get("g")) ?? base.group,
     // Links from before the rule field used the first tested rule.
     rule: decodeRule(h.get("r")) ?? DEFAULT_RULE,
-    capacity: { ...(decodeCapacity(h.get("h")) ?? base.capacity), ...(decodeOlt(h.get("o")) ?? {}) },
+    capacity: decodeCapacityAll(h, base.capacity),
+    deployment: (h.get("n") ?? "").slice(0, MAX_NAME),
+    ...(decodeWans(h.get("w")) ?? { wans: base.wans, balance: base.balance }),
     backgroundMbps: finite(h.get("b") ?? undefined, 0, 1e4) ?? 0,
     queueKind: QUEUE_KINDS.includes(h.get("q") as QueueKind) ? (h.get("q") as QueueKind) : "default",
   }

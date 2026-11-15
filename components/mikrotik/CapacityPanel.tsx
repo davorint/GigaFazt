@@ -5,24 +5,39 @@ import { AlertTriangle, Check, Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { burstEnabled, planDefaults, ruleId } from "@/lib/mikrotik/burst"
-import { MAX_HOMES_PER_PORT, PON_RATES, portCapacity, type CapacityInput, type CapacityResult, type PonTech, type Sizing } from "@/lib/mikrotik/capacity"
+import {
+  MAX_HOMES_PER_PORT,
+  PON_RATES,
+  portCapacity,
+  type CapacityInput,
+  type CapacityResult,
+  type Links,
+  type OltConfig,
+  type PonTech,
+  type Sizing,
+} from "@/lib/mikrotik/capacity"
 import { CapacityClient } from "@/lib/mikrotik/capacity-client"
 import { fmtNum, fmtPct, fmtRate, fmtSec } from "@/lib/mikrotik/format"
+import { checkOlt, OLT_MODELS, OLT_SPECS, portsNeeded, type OltModelId } from "@/lib/mikrotik/olt"
 import { rosRate } from "@/lib/mikrotik/routeros"
-import { MAX_CLIENTS_PER_PLAN, PRESETS, type CapacityState, type LabState } from "@/lib/mikrotik/state"
+import { MAX_CLIENTS_PER_PLAN, MAX_NAME, PRESETS, type CapacityState, type LabState } from "@/lib/mikrotik/state"
 import { speedLabel } from "@/lib/format"
 import { Choice } from "./Choice"
+import { IssueList } from "./IssueList"
 import { MultiChart, type ChartSeries } from "./MultiChart"
 import { NumberField } from "./NumberField"
+import { SelectField } from "./SelectField"
+import { TextField } from "./TextField"
 import { SERIES_COLORS } from "./ticks"
 
-type Props = { state: LabState; onCapacity: (c: CapacityState) => void }
-type SimInput = CapacityInput
+type Props = { state: LabState; onCapacity: (c: CapacityState) => void; onDeployment: (name: string) => void }
 type SizeInput = Omit<CapacityInput, "parentMbps">
 
-const TECHS: PonTech[] = ["gpon", "xgspon", "none"]
+const TECHS: PonTech[] = ["gpon", "xgpon", "xgspon", "none"]
+const LINK = "text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white"
 
-export function CapacityPanel({ state, onCapacity }: Props) {
+/** One deployment (an OLT and its router, with its own internet providers) at the busiest hour. */
+export function CapacityPanel({ state, onCapacity, onDeployment }: Props) {
   const t = useTranslations("mikrotik")
   const c = state.capacity
   const set = (patch: Partial<CapacityState>) => onCapacity({ ...c, ...patch })
@@ -30,6 +45,13 @@ export function CapacityPanel({ state, onCapacity }: Props) {
   const testS = state.pattern.testS
   const down = c.direction === "down"
   const avg = down ? c.avgDownMbps : c.avgUpMbps
+  const ponOn = c.pon !== "none"
+
+  // The router's links, balanced as in "Varios enlaces": per client unless PCC also hashes the ports.
+  const mode: Links["mode"] = state.balance.classifier === "both-addresses-and-ports" ? "connection" : "client"
+  const speeds = c.internet === "links" ? state.wans.map((w) => w.mbps).join(",") : ""
+  const links = useMemo<Links | null>(() => (speeds ? { mbps: speeds.split(",").map(Number), mode } : null), [speeds, mode])
+  const olt = useMemo<OltConfig | null>(() => (ponOn && c.oltUplinkMbps > 0 ? { uplinkMbps: c.oltUplinkMbps } : null), [ponOn, c.oltUplinkMbps])
 
   const sizeInput = useMemo<SizeInput>(
     () => ({
@@ -44,13 +66,15 @@ export function CapacityPanel({ state, onCapacity }: Props) {
       videoShare: c.videoShare,
       videoMbps: c.videoMbps,
       fileMB: c.fileMB,
-      pon: { tech: c.pon, homesPerPort: c.homesPerPort },
+      pon: { tech: c.pon, homesPerPort: c.homesPerPort, efficiency: c.ponEfficiency },
+      olt,
+      links,
       testS,
       lineCapMbps: state.lineCapMbps,
     }),
-    [c.clients, c.direction, down, avg, c.videoShare, c.videoMbps, c.fileMB, c.pon, c.homesPerPort, rule, testS, state.lineCapMbps]
+    [c.clients, c.direction, down, avg, c.videoShare, c.videoMbps, c.fileMB, c.pon, c.homesPerPort, c.ponEfficiency, olt, links, rule, testS, state.lineCapMbps]
   )
-  const simInput = useMemo<SimInput>(() => ({ ...sizeInput, parentMbps: c.parentMbps }), [sizeInput, c.parentMbps])
+  const simInput = useMemo<CapacityInput>(() => ({ ...sizeInput, parentMbps: links ? Number.POSITIVE_INFINITY : c.parentMbps }), [sizeInput, links, c.parentMbps])
   const simKey = useMemo(() => JSON.stringify(simInput), [simInput])
   const sizeKey = useMemo(() => JSON.stringify(sizeInput), [sizeInput])
 
@@ -100,8 +124,17 @@ export function CapacityPanel({ state, onCapacity }: Props) {
   const total = c.clients.reduce((a, b) => a + b, 0)
   const rid = ruleId(rule)
   const ruleName = rid === "custom" ? t("compare.ownRule") : t(`params.rules.${rid}`)
-  const portCap = portCapacity({ pon: { tech: c.pon, homesPerPort: c.homesPerPort }, direction: c.direction })
-  const pon = c.pon !== "none"
+  const portCap = portCapacity({ pon: { tech: c.pon, homesPerPort: c.homesPerPort, efficiency: c.ponEfficiency }, direction: c.direction })
+  const techName = t(`capacity.pons.${c.pon}`)
+  const modelName = t(`capacity.deployment.models.${c.oltModel}`)
+  const netCap = links ? links.mbps.reduce((a, b) => a + b, 0) : c.parentMbps
+  const modeName = t(`links.classifiersShort.${state.balance.classifier}`)
+
+  // The OLT against its model: PON type, ports the clients need, split, users.
+  const oltTech = c.pon === "none" ? null : c.pon
+  const oltIssues = oltTech ? checkOlt({ model: c.oltModel, tech: oltTech, homesPerPort: c.homesPerPort, uplinkMbps: c.oltUplinkMbps }, total) : []
+  const need = portsNeeded(total, c.homesPerPort)
+  const maxPorts = oltTech ? OLT_SPECS[c.oltModel].maxPorts[oltTech] : null
 
   const series = useMemo<ChartSeries[]>(() => {
     if (!r) return []
@@ -110,28 +143,44 @@ export function CapacityPanel({ state, onCapacity }: Props) {
     return list
   }, [r, t])
 
-  const offeredOver = r !== null && r.offeredMbps >= c.parentMbps
-  const portOver = r !== null && r.offeredPerPortMbps !== null && r.ports !== null && r.offeredPerPortMbps >= r.ports.capacityMbps
+  // Stages whose clients ask on average for more than they carry: results never settle.
+  const warnings: string[] = []
+  if (r) {
+    if (!r.links && r.offeredMbps >= c.parentMbps) warnings.push(t("capacity.overUplink", { offered: fmtRate(r.offeredMbps), parent: fmtRate(c.parentMbps) }))
+    if (r.links && r.overLinks > 0) {
+      if (r.links.perClient) {
+        const worst = r.links.each.reduce((a, b) => (b.offeredMbps / b.mbps > a.offeredMbps / a.mbps ? b : a))
+        warnings.push(t("capacity.overLinks", { n: r.overLinks, count: r.links.count, offered: fmtRate(worst.offeredMbps), cap: fmtRate(worst.mbps) }))
+      } else warnings.push(t("capacity.overPooled", { offered: fmtRate(r.offeredMbps), cap: fmtRate(netCap) }))
+    }
+    if (r.overOlt && r.olt) warnings.push(t("capacity.overOlt", { offered: fmtRate(r.offeredMbps), cap: fmtRate(r.olt.uplinkMbps) }))
+    if (r.ports && r.offeredPerPortMbps !== null && r.offeredPerPortMbps >= r.ports.capacityMbps)
+      warnings.push(t("capacity.overPort", { offered: fmtRate(r.offeredPerPortMbps), cap: fmtRate(r.ports.capacityMbps), homes: fmtNum(c.homesPerPort, 0) }))
+  }
 
+  const linkNames = state.wans.map((w, k) => w.name || `WAN${k + 1}`)
   const tiles = r
     ? [
-        {
-          k: "avg",
-          v: fmtRate(r.parent.avgMbps),
-          sub: t("capacity.stats.avgSub", { pct: fmtPct(r.parent.avgMbps / Math.max(1e-9, c.parentMbps)) }),
-        },
+        { k: "avg", v: fmtRate(r.parent.avgMbps), sub: t("capacity.stats.avgSub", { pct: fmtPct(r.parent.avgMbps / Math.max(1e-9, netCap)), cap: fmtRate(netCap) }) },
         { k: "p95", v: fmtRate(r.parent.p95Mbps), sub: t("capacity.stats.p95Sub") },
-        { k: "saturated", v: fmtPct(r.parent.saturatedShare), sub: t("capacity.stats.saturatedSub") },
+        r.links && r.links.count > 1
+          ? { k: "saturatedLinks", v: fmtPct(r.parent.saturatedShare), sub: t("capacity.stats.saturatedLinksSub") }
+          : { k: "saturated", v: fmtPct(r.parent.saturatedShare), sub: t("capacity.stats.saturatedSub") },
+        ...(r.olt
+          ? [
+              {
+                k: "olt",
+                v: fmtRate(r.olt.p95Mbps),
+                sub: t("capacity.stats.oltSub", { pct: fmtPct(r.olt.p95Mbps / r.olt.uplinkMbps), cap: fmtRate(r.olt.uplinkMbps), saturated: fmtPct(r.olt.saturatedShare) }),
+              },
+            ]
+          : []),
         ...(r.ports
           ? [
               {
                 k: "port",
                 v: fmtRate(r.ports.p95Mbps),
-                sub: t("capacity.stats.portSub", {
-                  pct: fmtPct(r.ports.p95Mbps / r.ports.capacityMbps),
-                  ports: fmtNum(r.ports.count, 0),
-                  saturated: fmtPct(r.ports.saturatedShare),
-                }),
+                sub: t("capacity.stats.portSub", { pct: fmtPct(r.ports.p95Mbps / r.ports.capacityMbps), ports: fmtNum(r.ports.count, 0), saturated: fmtPct(r.ports.saturatedShare) }),
               },
             ]
           : []),
@@ -143,7 +192,7 @@ export function CapacityPanel({ state, onCapacity }: Props) {
   const summary = r
     ? t("capacity.chart.summary", {
         clients: fmtNum(r.clients, 0),
-        parent: fmtRate(c.parentMbps),
+        cap: fmtRate(netCap),
         avg: fmtRate(r.parent.avgMbps),
         saturated: fmtPct(r.parent.saturatedShare),
         lines: r.plans
@@ -156,39 +205,159 @@ export function CapacityPanel({ state, onCapacity }: Props) {
   const perPortText = (n: number) =>
     n === 0 ? t("capacity.sizing.perPortNone") : n >= MAX_HOMES_PER_PORT ? t("capacity.sizing.perPortMax", { n: MAX_HOMES_PER_PORT }) : fmtNum(n, 0)
   const planName = (id: string | null) => speedLabel(PRESETS.find((p) => p.id === id)?.[down ? "downMbps" : "upMbps"] ?? 0)
+  const targetPct = fmtPct(target / 100)
+
+  const sizingText = (s: Sizing): string => {
+    const u = s.uplink
+    if (u.ok) return u.links !== null && u.linkMbps !== null ? t("capacity.sizing.okLinks", { n: u.links, link: fmtRate(u.linkMbps), mode: modeName, target: targetPct }) : t("capacity.sizing.ok", { parent: fmtRate(u.parentMbps), target: targetPct })
+    switch (u.limit) {
+      case "none":
+        return t("capacity.sizing.noClients")
+      case "olt":
+        return t("capacity.sizing.limitOlt", { target: targetPct, cap: fmtRate(c.oltUplinkMbps) })
+      case "pon":
+        return t("capacity.sizing.limitPon", { target: targetPct, homes: fmtNum(c.homesPerPort, 0), tech: techName })
+      case "link":
+        return t("capacity.sizing.limitLink", { target: targetPct, link: fmtRate(Math.max(...(links?.mbps ?? [0]))), mode: modeName, plan: planName(u.id) })
+      default:
+        return t("capacity.sizing.limitQueue", { target: targetPct, best: fmtPct(u.bestShare), plan: planName(u.id) })
+    }
+  }
 
   return (
     <div className="surface grid min-w-0 gap-7 rounded-2xl p-5 sm:p-7 [&>*]:min-w-0">
-      <div className="grid gap-5">
-        <div className="flex flex-wrap items-end gap-x-6 gap-y-4">
+      {/* The deployment: one OLT and its router, with its own internet providers. */}
+      <div className="grid gap-5 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
+        <div className="grid gap-1">
+          <h3 className="text-sm font-medium text-foreground">{t("capacity.deployment.title")}</h3>
+          <p className="text-xs leading-snug text-zinc-400">{t("capacity.deployment.lead")}</p>
+        </div>
+        <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="sm:col-span-2">
+            <TextField label={t("capacity.deployment.name")} value={state.deployment} onChange={(v) => onDeployment(v.slice(0, MAX_NAME))} hint={t("capacity.deployment.nameHint")} />
+          </div>
+          <SelectField label={t("capacity.deployment.model")} value={c.oltModel} onChange={(v) => set({ oltModel: v as OltModelId })} className="sm:col-span-2 lg:col-span-1">
+            {OLT_MODELS.map((m) => (
+              <option key={m} value={m}>
+                {t(`capacity.deployment.models.${m}`)}
+              </option>
+            ))}
+          </SelectField>
+        </div>
+        <div className="grid gap-2">
+          <p className="font-mono text-xs text-zinc-300">{t("capacity.pon")}</p>
+          <Choice label={t("capacity.pon")} value={c.pon} onChange={(pon) => set({ pon })} options={TECHS.map((k) => ({ value: k, label: t(`capacity.pons.${k}`) }))} />
+        </div>
+        {ponOn && (
+          <>
+            <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <NumberField
+                label={t("capacity.homes")}
+                unit={t("capacity.unitClients")}
+                value={c.homesPerPort}
+                integer
+                min={1}
+                max={1024}
+                hint={t("capacity.homesHint", { cap: fmtRate(portCap), tech: techName, eff: fmtPct(c.ponEfficiency) })}
+                onChange={(v) => v !== null && set({ homesPerPort: v })}
+              />
+              <NumberField
+                label={t("capacity.deployment.uplink")}
+                unit={t("params.unitMbps")}
+                value={c.oltUplinkMbps}
+                max={1e6}
+                hint={t("capacity.deployment.uplinkHint")}
+                onChange={(v) => v !== null && set({ oltUplinkMbps: v })}
+              />
+              <NumberField
+                label={t("capacity.deployment.efficiency")}
+                unit="%"
+                value={Math.round(c.ponEfficiency * 1000) / 10}
+                min={50}
+                max={100}
+                hint={t("capacity.deployment.efficiencyHint")}
+                onChange={(v) => v !== null && set({ ponEfficiency: v / 100 })}
+              />
+            </div>
+            <p className="text-sm text-zinc-300">
+              {maxPorts !== null && maxPorts > 0
+                ? t("capacity.deployment.ports", { need: fmtNum(need, 0), max: fmtNum(maxPorts, 0), tech: techName, model: modelName })
+                : t("capacity.deployment.portsAny", { need: fmtNum(need, 0), tech: techName })}
+            </p>
+            <IssueList
+              items={oltIssues.map((i) => ({
+                key: i.code,
+                level: i.level,
+                text: t(`capacity.deployment.issues.${i.code}`, {
+                  model: modelName,
+                  tech: techName,
+                  max: fmtNum(i.max ?? 0, 0),
+                  need: fmtNum(i.need ?? 0, 0),
+                  homes: fmtNum(c.homesPerPort, 0),
+                }),
+              }))}
+            />
+          </>
+        )}
+        <div className="grid gap-3">
           <div className="grid gap-2">
-            <p className="font-mono text-xs text-zinc-300">{t("capacity.direction")}</p>
+            <p className="font-mono text-xs text-zinc-300">{t("capacity.deployment.internet")}</p>
             <Choice
-              label={t("capacity.direction")}
-              value={c.direction}
-              onChange={(direction) => set({ direction })}
+              label={t("capacity.deployment.internet")}
+              value={c.internet}
+              onChange={(internet) => set({ internet })}
               options={[
-                { value: "down", label: t("params.down") },
-                { value: "up", label: t("params.up") },
+                { value: "links", label: t("capacity.deployment.internets.links", { count: state.wans.length }) },
+                { value: "single", label: t("capacity.deployment.internets.single") },
               ]}
             />
           </div>
-          <div className="grid gap-2">
-            <p className="font-mono text-xs text-zinc-300">{t("capacity.pon")}</p>
-            <Choice label={t("capacity.pon")} value={c.pon} onChange={(pon) => set({ pon })} options={TECHS.map((k) => ({ value: k, label: t(`capacity.pons.${k}`) }))} />
-          </div>
+          {c.internet === "links" ? (
+            <div className="grid gap-2">
+              <ul className="flex flex-wrap gap-2" aria-label={t("capacity.deployment.linksLabel")}>
+                {state.wans.map((w, k) => (
+                  <li key={k} className="rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 font-mono text-xs text-zinc-200">
+                    {linkNames[k]} · {fmtRate(w.mbps)}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-sm text-zinc-300">
+                {t("capacity.deployment.linksSummary", { total: fmtRate(netCap), count: state.wans.length, mode: modeName })}{" "}
+                <a href="#enlaces" className={LINK}>
+                  {t("capacity.deployment.linksEdit")}
+                </a>
+              </p>
+            </div>
+          ) : (
+            <NumberField
+              label={t("capacity.parent")}
+              unit={t("params.unitMbps")}
+              value={c.parentMbps}
+              min={1}
+              max={1e7}
+              hint={t("capacity.parentHint")}
+              onChange={(v) => v !== null && set({ parentMbps: v })}
+              className="sm:max-w-xs"
+            />
+          )}
         </div>
+      </div>
 
-        <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <NumberField
-            label={t("capacity.parent")}
-            unit={t("params.unitMbps")}
-            value={c.parentMbps}
-            min={1}
-            max={1e7}
-            hint={t("capacity.parentHint")}
-            onChange={(v) => v !== null && set({ parentMbps: v })}
+      <div className="grid gap-5">
+        <h3 className="text-sm font-medium text-foreground">{t("capacity.traffic")}</h3>
+        <div className="grid gap-2">
+          <p className="font-mono text-xs text-zinc-300">{t("capacity.direction")}</p>
+          <Choice
+            label={t("capacity.direction")}
+            value={c.direction}
+            onChange={(direction) => set({ direction })}
+            options={[
+              { value: "down", label: t("params.down") },
+              { value: "up", label: t("params.up") },
+            ]}
           />
+        </div>
+        <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <NumberField
             label={t("capacity.avg")}
             unit={t("params.unitMbps")}
@@ -197,18 +366,6 @@ export function CapacityPanel({ state, onCapacity }: Props) {
             hint={t(down ? "capacity.avgHintDown" : "capacity.avgHintUp")}
             onChange={(v) => v !== null && set(down ? { avgDownMbps: v } : { avgUpMbps: v })}
           />
-          {pon && (
-            <NumberField
-              label={t("capacity.homes")}
-              unit={t("capacity.unitClients")}
-              value={c.homesPerPort}
-              integer
-              min={1}
-              max={1024}
-              hint={t("capacity.homesHint", { cap: fmtRate(portCap), tech: t(`capacity.pons.${c.pon}`) })}
-              onChange={(v) => v !== null && set({ homesPerPort: v })}
-            />
-          )}
           <NumberField
             label={t("capacity.fileMB")}
             unit={t("sim.unitMB")}
@@ -270,20 +427,14 @@ export function CapacityPanel({ state, onCapacity }: Props) {
         <span className="rounded border border-amber-400/30 px-1.5 py-0.5 font-mono text-[10px] tracking-[0.18em] text-amber-300">{t("sim.tag")}</span>
       </div>
 
-      {(offeredOver || portOver) && r && (
+      {warnings.length > 0 && (
         <div className="grid gap-2">
-          {offeredOver && (
-            <p className="flex gap-2.5 text-sm leading-snug text-zinc-200">
+          {warnings.map((w) => (
+            <p key={w} className="flex gap-2.5 text-sm leading-snug text-zinc-200">
               <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-amber-300" />
-              {t("capacity.overUplink", { offered: fmtRate(r.offeredMbps), parent: fmtRate(c.parentMbps) })}
+              {w}
             </p>
-          )}
-          {portOver && r.ports && (
-            <p className="flex gap-2.5 text-sm leading-snug text-zinc-200">
-              <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-amber-300" />
-              {t("capacity.overPort", { offered: fmtRate(r.offeredPerPortMbps ?? 0), cap: fmtRate(r.ports.capacityMbps), homes: fmtNum(c.homesPerPort, 0) })}
-            </p>
-          )}
+          ))}
         </div>
       )}
 
@@ -299,6 +450,40 @@ export function CapacityPanel({ state, onCapacity }: Props) {
             ))}
           </dl>
 
+          {r.links?.perClient && (
+            <div className="overflow-x-auto rounded-xl border border-white/10" tabIndex={0} role="region" aria-label={t("capacity.linksCaption")}>
+              <table className="w-full min-w-[40rem] text-left text-sm">
+                <caption className="sr-only">{t("capacity.linksCaption")}</caption>
+                <thead className="text-xs text-zinc-400">
+                  <tr className="border-b border-white/10">
+                    {(["link", "mbps", "clients", "offered", "p95", "full"] as const).map((k) => (
+                      <th key={k} scope="col" className="px-3 py-2.5 font-normal whitespace-nowrap">
+                        {t(`capacity.linkCols.${k}`)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="font-mono text-xs tabular-nums">
+                  {r.links.each.map((l, k) => (
+                    <tr key={k} className="border-t border-white/5">
+                      <th scope="row" className="px-3 py-2.5 text-left font-sans text-sm font-normal whitespace-nowrap text-foreground">
+                        {linkNames[k] ?? `WAN${k + 1}`}
+                      </th>
+                      <td className="px-3 py-2.5 whitespace-nowrap">{fmtRate(l.mbps)}</td>
+                      <td className="px-3 py-2.5">{fmtNum(l.clients, 0)}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">{`${fmtRate(l.offeredMbps)} (${fmtPct(l.offeredMbps / l.mbps)})`}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-zinc-100">{fmtRate(l.p95Mbps)}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-zinc-100">{fmtPct(l.saturatedShare)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {r.links && !r.links.perClient && state.wans.length > 1 && (
+            <p className="text-sm text-zinc-300">{t("capacity.pooled", { count: state.wans.length, cap: fmtRate(netCap) })}</p>
+          )}
+
           <MultiChart
             mode="line"
             label={t("capacity.chart.label")}
@@ -309,7 +494,10 @@ export function CapacityPanel({ state, onCapacity }: Props) {
             durationS={r.delivered.length * r.bucketS}
             series={series}
             refs={[
-              { key: "parent", label: t("capacity.chart.parentRef", { value: rosRate(c.parentMbps) }), v: c.parentMbps, dash: "", color: "rgb(244 244 245 / 0.6)" },
+              { key: "parent", label: t("capacity.chart.parentRef", { value: rosRate(netCap) }), v: netCap, dash: "", color: "rgb(244 244 245 / 0.6)" },
+              ...(r.olt && r.olt.uplinkMbps < netCap
+                ? [{ key: "olt", label: t("capacity.chart.oltRef", { value: rosRate(r.olt.uplinkMbps) }), v: r.olt.uplinkMbps, dash: "8 4", color: "rgb(244 244 245 / 0.5)" }]
+                : []),
               ...(r.ports
                 ? [{ key: "pon", label: t("capacity.chart.ponRef", { value: rosRate(Math.round(r.ports.capacityMbps)) }), v: r.ports.capacityMbps, dash: "4 4", color: "rgb(244 244 245 / 0.45)" }]
                 : []),
@@ -394,35 +582,33 @@ export function CapacityPanel({ state, onCapacity }: Props) {
             </div>
           ) : fresh ? (
             <div className="grid gap-3">
-              {fresh.uplink.ok ? (
-                <>
-                  <p>{t("capacity.sizing.ok", { parent: fmtRate(fresh.uplink.parentMbps), target: fmtPct(target / 100) })}</p>
-                  <div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => fresh.uplink.ok && set({ parentMbps: fresh.uplink.parentMbps })}
-                      disabled={c.parentMbps === fresh.uplink.parentMbps}
-                    >
-                      {c.parentMbps === fresh.uplink.parentMbps && <Check aria-hidden />}
-                      {t("capacity.sizing.use", { parent: rosRate(fresh.uplink.parentMbps) })}
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <p>
-                  {fresh.uplink.limit === "none"
-                    ? t("capacity.sizing.noClients")
-                    : fresh.uplink.limit === "pon"
-                      ? t("capacity.sizing.limitPon", { target: fmtPct(target / 100), homes: fmtNum(c.homesPerPort, 0), tech: t(`capacity.pons.${c.pon}`) })
-                      : t("capacity.sizing.limitQueue", { target: fmtPct(target / 100), best: fmtPct(fresh.uplink.bestShare), plan: planName(fresh.uplink.id) })}
+              <p>{sizingText(fresh)}</p>
+              {fresh.uplink.ok && fresh.uplink.links !== null && (
+                <p className="text-zinc-300">
+                  {fresh.uplink.links <= state.wans.length
+                    ? t("capacity.sizing.enough", { have: state.wans.length })
+                    : t("capacity.sizing.missing", { have: state.wans.length, missing: fresh.uplink.links - state.wans.length })}
                 </p>
+              )}
+              {fresh.uplink.ok && fresh.uplink.links === null && (
+                <div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fresh.uplink.ok && set({ parentMbps: fresh.uplink.parentMbps })}
+                    disabled={c.parentMbps === fresh.uplink.parentMbps}
+                  >
+                    {c.parentMbps === fresh.uplink.parentMbps && <Check aria-hidden />}
+                    {t("capacity.sizing.use", { parent: rosRate(fresh.uplink.parentMbps) })}
+                  </Button>
+                </div>
               )}
               {(fresh.uplink.ok || fresh.uplink.limit !== "none") && (
                 <p className="text-zinc-300">
                   {t("capacity.sizing.perPort", {
-                    target: fmtPct(target / 100),
+                    target: targetPct,
                     gpon: perPortText(fresh.perPort.gpon),
+                    xgpon: perPortText(fresh.perPort.xgpon),
                     xgspon: perPortText(fresh.perPort.xgspon),
                   })}
                 </p>
@@ -435,7 +621,7 @@ export function CapacityPanel({ state, onCapacity }: Props) {
       </div>
 
       <p className="max-w-3xl text-xs leading-relaxed text-zinc-400">
-        {t("capacity.model", { gponDown: fmtRate(PON_RATES.gpon.down), gponUp: fmtRate(PON_RATES.gpon.up), xgs: fmtRate(PON_RATES.xgspon.down) })}
+        {t("capacity.model", { gponDown: fmtRate(PON_RATES.gpon.down), gponUp: fmtRate(PON_RATES.gpon.up), xgDown: fmtRate(PON_RATES.xgpon.down), xgUp: fmtRate(PON_RATES.xgpon.up), xgs: fmtRate(PON_RATES.xgspon.down) })}
       </p>
     </div>
   )

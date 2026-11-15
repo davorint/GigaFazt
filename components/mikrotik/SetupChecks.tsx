@@ -6,9 +6,9 @@ import { BRIDGE_FIREWALL, FASTTRACK_CHECK } from "@/lib/mikrotik/routeros"
 import { CopyButton } from "./CopyButton"
 
 /**
- * Two router settings that silently stop queues from limiting anything. The
- * full box lives in Exportar (id `antes-de-pegar`); other exports show the
- * compact line that links to it.
+ * Two router settings that silently stop queues from limiting anything, and
+ * the OLT profiles that can limit before them. The full box lives in Exportar
+ * (id `antes-de-pegar`); other exports show the compact line that links to it.
  */
 export function SetupChecks({ compact = false }: { compact?: boolean }) {
   const t = useTranslations("mikrotik.setup")
@@ -28,10 +28,12 @@ export function SetupChecks({ compact = false }: { compact?: boolean }) {
     )
   }
 
-  const items = [
+  // The OLT check has no command: Huawei's CLI and profile names vary by setup.
+  const items: { k: "fasttrack" | "bridge" | "olt"; cmd?: string }[] = [
     { k: "fasttrack", cmd: FASTTRACK_CHECK },
     { k: "bridge", cmd: BRIDGE_FIREWALL },
-  ] as const
+    { k: "olt" },
+  ]
 
   return (
     <div id="antes-de-pegar" className="grid scroll-mt-20 gap-4 rounded-xl border border-amber-400/25 bg-amber-400/[0.04] p-4 sm:p-5">
@@ -45,16 +47,18 @@ export function SetupChecks({ compact = false }: { compact?: boolean }) {
             <p className="text-sm leading-relaxed text-zinc-200">
               <span className="font-medium text-foreground">{t(`${k}.title`)}</span> {t(`${k}.body`)}
             </p>
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              {/* Scrolls sideways on phones instead of breaking the command mid-word. */}
-              <code
-                tabIndex={0}
-                className="max-w-full min-w-0 overflow-x-auto rounded-md border border-white/10 bg-black/40 px-2.5 py-1.5 font-mono text-xs whitespace-nowrap text-zinc-100 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                {cmd}
-              </code>
-              <CopyButton text={cmd} label={te("copy")} done={te("copied")} />
-            </div>
+            {cmd && (
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                {/* Scrolls sideways on phones instead of breaking the command mid-word. */}
+                <code
+                  tabIndex={0}
+                  className="max-w-full min-w-0 overflow-x-auto rounded-md border border-white/10 bg-black/40 px-2.5 py-1.5 font-mono text-xs whitespace-nowrap text-zinc-100 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  {cmd}
+                </code>
+                <CopyButton text={cmd} label={te("copy")} done={te("copied")} />
+              </div>
+            )}
           </li>
         ))}
       </ul>

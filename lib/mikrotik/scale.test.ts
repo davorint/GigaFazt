@@ -149,21 +149,21 @@ describe("busiest-hour capacity", () => {
     expect(simulateCapacity(base({ pon: { tech: "xgpon", homesPerPort: 64, efficiency: 1 } })).ports?.capacityMbps).toBeCloseTo(9953.28)
     expect(simulateCapacity(base({ direction: "up", avgMbps: 0.2, pon: { tech: "xgpon", homesPerPort: 64, efficiency: 1 } })).ports?.capacityMbps).toBeCloseTo(2488.32)
   })
-  it("an OLT's uplink caps everything behind it (Huawei MA5608T, 32 ports)", () => {
-    const ma5608t = (uplinkMbps: number) => base({ parentMbps: 1e9, olt: { portsPerOlt: 32, uplinkMbps } })
-    const ten = simulateCapacity(ma5608t(10_000))
-    const one = simulateCapacity(ma5608t(1_000))
-    expect(ten.olts).toMatchObject({ count: 1, portsPerOlt: 32, uplinkMbps: 10_000 })
-    expect(ten.olts?.saturatedShare).toBe(0)
+  it("the OLT's uplink caps everything behind it", () => {
+    const olt = (uplinkMbps: number) => base({ parentMbps: 1e9, olt: { uplinkMbps } })
+    const ten = simulateCapacity(olt(10_000))
+    const one = simulateCapacity(olt(1_000))
+    // 180 clients at 32 per port use 6 ports.
+    expect(ten.olt).toMatchObject({ ports: 6, uplinkMbps: 10_000 })
+    expect(ten.olt?.saturatedShare).toBe(0)
     // 180 clients × 3.4 Mbps ≈ 612 Mbps average: a single 1G uplink is often full.
-    expect(one.olts?.saturatedShare).toBeGreaterThan(0)
+    expect(one.olt?.saturatedShare).toBeGreaterThan(0)
     expect(one.plans[2].testP10Mbps).toBeLessThan(ten.plans[2].testP10Mbps)
     expect(one.parent.p95Mbps).toBeLessThanOrEqual(1000 + 1e-6)
-    // More ports than one OLT has: more OLTs.
-    expect(simulateCapacity(base({ pon: { tech: "gpon", homesPerPort: 4 }, olt: { portsPerOlt: 16, uplinkMbps: 10_000 } })).olts?.count).toBe(3)
+    expect(simulateCapacity(base({ olt: null })).olt).toBeNull()
   })
   it("sizing says when the OLT's uplink is the limit", () => {
-    const { parentMbps: _drop, ...input } = base({ avgMbps: 10, olt: { portsPerOlt: 32, uplinkMbps: 1500 } })
+    const { parentMbps: _drop, ...input } = base({ avgMbps: 10, olt: { uplinkMbps: 1500 } })
     void _drop
     const r = size(input, 0.8)
     expect(r.uplink.ok).toBe(false)
