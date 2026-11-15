@@ -326,23 +326,56 @@ export function check(
 }
 
 /**
- * Plan presets (owner, 2026-11-15): the plan speed is the most a client can
- * get, so it is the burst-limit; the client keeps SUSTAINED_SHARE of it
- * after the burst (max-limit), the threshold sits at THRESHOLD_SHARE of
- * max-limit and the window is PRESET_BURST_TIME.
+ * How a plan speed becomes queue values. The plan speed is the most a client
+ * gets (owner, 2026-11-15), so it is the burst-limit, or max-limit when there
+ * is no burst. The rule sets the rest: max-limit as a share of the plan,
+ * burst-threshold as a share of max-limit, and burst-time. The owner is
+ * still testing which rule to use, so it is a setting, not a constant.
  */
-export const SUSTAINED_SHARE = 0.2
-export const THRESHOLD_SHARE = 0.75
-export const PRESET_BURST_TIME = 16
+export type PlanRule = {
+  /** max-limit as a share of the plan speed. 1 = no burst (max-limit = plan). */
+  sustained: number
+  /** burst-threshold as a share of max-limit. */
+  threshold: number
+  /** burst-time, s. */
+  burstTime: number
+}
 
-/** Starting queue values for a plan speed (see SUSTAINED_SHARE). */
-export function planDefaults(planMbps: number): QueueParams {
-  const maxLimit = Math.round(planMbps * SUSTAINED_SHARE)
+export const RULE_IDS = ["flat", "s80", "s50", "s20"] as const
+export type RuleId = (typeof RULE_IDS)[number]
+
+export const RULES: Record<RuleId, PlanRule> = {
+  flat: { sustained: 1, threshold: 0.75, burstTime: 16 },
+  s80: { sustained: 0.8, threshold: 0.75, burstTime: 16 },
+  s50: { sustained: 0.5, threshold: 0.75, burstTime: 16 },
+  s20: { sustained: 0.2, threshold: 0.75, burstTime: 16 },
+}
+
+/** The rule the tool starts with (the scenario the owner tested first). */
+export const DEFAULT_RULE: PlanRule = RULES.s20
+
+/** Named rule these values match, or "custom". Any rule at 100 % is "flat" (no burst). */
+export function ruleId(rule: PlanRule): RuleId | "custom" {
+  if (rule.sustained >= 1) return "flat"
+  const id = RULE_IDS.find((k) => {
+    const r = RULES[k]
+    return r.sustained === rule.sustained && r.threshold === rule.threshold && r.burstTime === rule.burstTime
+  })
+  return id ?? "custom"
+}
+
+/** Whole Mbps from 10 Mbps up, kbps precision below (small custom plans). */
+const roundRate = (v: number) => (v >= 10 ? Math.round(v) : Math.round(v * 1000) / 1000)
+
+/** Starting queue values for a plan speed under a rule. */
+export function planDefaults(planMbps: number, rule: PlanRule = DEFAULT_RULE): QueueParams {
+  if (rule.sustained >= 1) return { maxLimit: planMbps, burstLimit: 0, burstThreshold: 0, burstTime: 0, limitAt: 0 }
+  const maxLimit = roundRate(planMbps * rule.sustained)
   return {
     maxLimit,
     burstLimit: planMbps,
-    burstThreshold: Math.round(maxLimit * THRESHOLD_SHARE),
-    burstTime: PRESET_BURST_TIME,
+    burstThreshold: roundRate(maxLimit * rule.threshold),
+    burstTime: Math.max(1, Math.round(rule.burstTime)),
     limitAt: 0,
   }
 }

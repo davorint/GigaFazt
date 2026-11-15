@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch"
 import { burstEnabled, isTransfer, KINDS, simulate, type Pattern, type SimStats } from "@/lib/mikrotik/burst"
 import { fmtData, fmtNum, fmtPct, fmtRate, fmtSec } from "@/lib/mikrotik/format"
 import { rosRate, rosTime } from "@/lib/mikrotik/routeros"
+import { measure } from "@/lib/mikrotik/speedtest"
 import { MAX_DURATION_S, PRESETS, viewParams, type Direction, type LabState } from "@/lib/mikrotik/state"
 import { speedLabel } from "@/lib/format"
 import { BurstChart } from "./BurstChart"
@@ -69,7 +70,17 @@ export function SimPanel({ state, onPreset, onPattern, onDuration, onView }: Pro
   const direction = state.symmetric ? `${t("params.down")} / ${t("params.up")}` : t(`params.${state.view}`)
 
   const transfer = isTransfer(pattern.kind)
-  const special = transferTile(t, stats, base.stats)
+  // A speed test: what the customer's tool would report (Ookla-style trim).
+  const test =
+    pattern.kind === "speedtest" ? measure(result, pattern.startS, Math.min(pattern.startS + pattern.testS, stats.durationS)) : null
+  const special: Tile | null = test
+    ? {
+        k: "test",
+        label: t("sim.stats.test"),
+        v: fmtRate(test.trimmedMbps),
+        sub: t("sim.stats.testSub", { plain: fmtRate(test.plainMbps) }),
+      }
+    : transferTile(t, stats, base.stats)
   const tiles: Tile[] = [
     { k: "activeAvg", label: t("sim.stats.activeAvg"), v: fmtRate(stats.activeAvgMbps), sub: t("sim.stats.activeAvgSub") },
     {

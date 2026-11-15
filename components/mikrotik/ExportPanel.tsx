@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useTranslations } from "next-intl"
-import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   hotspotProfile,
@@ -13,56 +12,13 @@ import {
   rateLimit,
   rosRate,
   simpleQueue,
+  userManagerPlans,
   type Pair,
 } from "@/lib/mikrotik/routeros"
 import type { LabState } from "@/lib/mikrotik/state"
-import { CopyButton } from "./CopyButton"
-
-function TextField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <label className="grid gap-1.5">
-      <span className="font-mono text-xs text-zinc-300">{label}</span>
-      <Input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        spellCheck={false}
-        autoComplete="off"
-        className="h-10 bg-white/[0.03] font-mono text-base md:text-sm"
-      />
-    </label>
-  )
-}
-
-function Code({ code, label }: { code: string; label: string }) {
-  const t = useTranslations("mikrotik.export")
-  return (
-    <div className="grid min-w-0 gap-2">
-      <div className="flex items-center justify-between gap-3">
-        <p className="font-mono text-xs text-zinc-400">{label}</p>
-        <CopyButton text={code} label={t("copy")} done={t("copied")} />
-      </div>
-      <pre
-        tabIndex={0}
-        aria-label={label}
-        className="overflow-x-auto rounded-lg border border-white/10 bg-black/40 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-100 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-      >
-        {/* Wrap between parameters only, never inside a key=value. */}
-        <code>
-          {code.split("\n").map((line, i) => (
-            <span key={i} className="block">
-              {line.split(" ").map((token, j) => (
-                <span key={j}>
-                  {j > 0 && " "}
-                  <span className="whitespace-nowrap">{token}</span>
-                </span>
-              ))}
-            </span>
-          ))}
-        </code>
-      </pre>
-    </div>
-  )
-}
+import { CodeBlock as Code } from "./CodeBlock"
+import { SetupChecks } from "./SetupChecks"
+import { TextField } from "./TextField"
 
 export function ExportPanel({ state }: { state: LabState }) {
   const t = useTranslations("mikrotik.export")
@@ -78,12 +34,13 @@ export function ExportPanel({ state }: { state: LabState }) {
 
   return (
     <div className="surface grid min-w-0 gap-6 rounded-2xl p-5 sm:p-7 [&>*]:min-w-0">
+      <SetupChecks />
       <div className="grid gap-4 sm:max-w-xl sm:grid-cols-2">
         <TextField label={t("name")} value={name ?? auto} onChange={setName} />
       </div>
       <Tabs defaultValue="simple" className="min-w-0 gap-5">
         <TabsList className="w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto sm:w-fit">
-            {(["simple", "tree", "pcq", "ppp"] as const).map((k) => (
+            {(["simple", "tree", "pcq", "ppp", "um"] as const).map((k) => (
               <TabsTrigger key={k} value={k} className="h-8 flex-none px-3">
                 {t(`tabs.${k}`)}
               </TabsTrigger>
@@ -119,6 +76,11 @@ export function ExportPanel({ state }: { state: LabState }) {
           <Code label="/ip hotspot user profile" code={hotspotProfile(p, { name: n })} />
           <Code label="RADIUS" code={radiusAttribute(p)} />
           <p className="text-sm text-zinc-400">{t("notes.ppp")}</p>
+        </TabsContent>
+
+        <TabsContent value="um" className="grid min-w-0 gap-4">
+          <Code label={t("tabs.um")} code={userManagerPlans([{ name: n, pair: p }])} />
+          <p className="text-sm text-zinc-400">{t("notes.um")}</p>
         </TabsContent>
       </Tabs>
     </div>

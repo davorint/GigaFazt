@@ -1,17 +1,32 @@
 "use client"
 
-import { useId, useMemo, type ReactNode } from "react"
+import { useId, useMemo, useState, type ReactNode } from "react"
 import { AlertTriangle, Plus, X } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { KINDS, type PatternKind, type TransferStats } from "@/lib/mikrotik/burst"
 import { fmtData, fmtPct, fmtRate, fmtSec } from "@/lib/mikrotik/format"
-import { rosRate } from "@/lib/mikrotik/routeros"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { hostTargets, networkOf } from "@/lib/mikrotik/bulk"
+import { rosRate, sharedPpp, sharedSimpleQueues } from "@/lib/mikrotik/routeros"
 import { simulateShared } from "@/lib/mikrotik/shared"
-import { DEFAULT_GROUP, MAX_DURATION_S, MAX_MEMBERS, memberSetup, PRESETS, type GroupMember, type GroupState, type LabState } from "@/lib/mikrotik/state"
+import {
+  DEFAULT_GROUP,
+  MAX_DURATION_S,
+  MAX_MEMBERS,
+  memberPair,
+  memberSetup,
+  PRESETS,
+  type GroupMember,
+  type GroupState,
+  type LabState,
+} from "@/lib/mikrotik/state"
 import { speedLabel } from "@/lib/format"
+import { CodeBlock } from "./CodeBlock"
 import { MultiChart, type ChartSeries } from "./MultiChart"
 import { NumberField } from "./NumberField"
+import { SetupChecks } from "./SetupChecks"
+import { TextField } from "./TextField"
 import { SERIES_COLORS } from "./ticks"
 
 const PRIORITIES = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -36,6 +51,72 @@ function Select({ label, value, onChange, hint, className, children }: SelectPro
         </p>
       )}
     </div>
+  )
+}
+
+/** The scenario as RouterOS config: a parent simple queue with one child per client, or PPP profiles under it. */
+function SharedExport({ state }: { state: LabState }) {
+  const t = useTranslations("mikrotik")
+  const g = state.group
+  const [parent, setParent] = useState("padre")
+  const [network, setNetwork] = useState("10.0.0.0/24")
+  const name = parent.trim() || "padre"
+  const net = networkOf(network)
+  const targets = hostTargets(network, g.members.length)
+  const children = g.members.map((m, i) => ({
+    name: `cliente-${i + 1}`,
+    target: targets?.[i] ?? "",
+    pair: memberPair(state, m),
+    priority: m.priority,
+  }))
+  const ppp = sharedPpp({ parent: name, target: net ?? "", maxLimit: g.parentMbps, children })
+
+  return (
+    <details className="surface rounded-xl">
+      <summary className="cursor-pointer rounded-xl p-4 text-sm font-medium text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-5">
+        {t("shared.export.title")}
+      </summary>
+      <div className="grid min-w-0 gap-5 px-4 pb-5 sm:px-5">
+        <p className="max-w-3xl text-sm leading-relaxed text-zinc-400">{t("shared.export.lead")}</p>
+        <div className="grid gap-4 sm:max-w-xl sm:grid-cols-2">
+          <TextField label={t("shared.export.parent")} value={parent} onChange={setParent} />
+          <TextField label={t("shared.export.network")} value={network} onChange={setNetwork} hint={t("shared.export.networkHint")} />
+        </div>
+        {net && targets ? (
+          <Tabs defaultValue="simple" className="min-w-0 gap-5">
+            <TabsList className="w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto sm:w-fit">
+              {(["simple", "ppp"] as const).map((k) => (
+                <TabsTrigger key={k} value={k} className="h-8 flex-none px-3">
+                  {t(`shared.export.tabs.${k}`)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            <TabsContent value="simple" className="grid min-w-0 gap-4">
+              <CodeBlock
+                label={t("shared.export.tabs.simple")}
+                code={sharedSimpleQueues({ parent: name, target: net, maxLimit: g.parentMbps, children })}
+              />
+              <p className="text-sm text-zinc-400">{t("shared.export.notes.simple")}</p>
+            </TabsContent>
+            <TabsContent value="ppp" className="grid min-w-0 gap-4">
+              <CodeBlock label={t("shared.export.tabs.ppp")} code={ppp.script} />
+              <ul className="grid gap-1 font-mono text-xs text-zinc-300">
+                {ppp.names.map((profile, i) => (
+                  <li key={i}>{t("shared.export.profileOf", { client: t("shared.member", { n: i + 1 }), profile })}</li>
+                ))}
+              </ul>
+              <p className="text-sm text-zinc-400">{t("shared.export.notes.ppp")}</p>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <p className="flex gap-2.5 text-sm leading-snug text-zinc-200">
+            <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-amber-300" />
+            {t("shared.export.badNetwork", { count: g.members.length })}
+          </p>
+        )}
+        <SetupChecks />
+      </div>
+    </details>
   )
 }
 
@@ -300,6 +381,8 @@ export function SharedPanel({ state, onGroup }: { state: LabState; onGroup: (g: 
       </div>
 
       <p className="max-w-3xl text-xs leading-relaxed text-zinc-400">{t("shared.model")}</p>
+
+      <SharedExport state={state} />
     </div>
   )
 }

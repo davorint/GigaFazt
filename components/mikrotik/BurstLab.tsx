@@ -4,19 +4,21 @@ import { useState, useSyncExternalStore, type ReactNode } from "react"
 import { RotateCcw } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
-import { PRESET_BURST_TIME, SUSTAINED_SHARE, THRESHOLD_SHARE, type Pattern, type QueueParams } from "@/lib/mikrotik/burst"
-import { fmtPct } from "@/lib/mikrotik/format"
+import type { Pattern, PlanRule, QueueParams } from "@/lib/mikrotik/burst"
 import {
   decodeState,
   encodeState,
   initialState,
   PRESETS,
   presetState,
+  type CapacityState,
   type Direction,
   type GroupState,
   type LabState,
 } from "@/lib/mikrotik/state"
 import { sameQueue } from "@/lib/mikrotik/import"
+import { BulkPanel } from "./BulkPanel"
+import { CapacityPanel } from "./CapacityPanel"
 import { ComparePanel } from "./ComparePanel"
 import { CopyButton } from "./CopyButton"
 import { ExportPanel } from "./ExportPanel"
@@ -80,6 +82,14 @@ export function BurstLab() {
     setState((s) => ({ ...s, preset: "custom", symmetric, down, up: symmetric ? down : up, view: "down" }))
   }
   const setGroup = (group: GroupState) => set({ group })
+  const setCapacity = (capacity: CapacityState) => set({ capacity })
+  // A new rule reloads the current plan with it; custom values stay as they are.
+  const setRule = (rule: PlanRule) =>
+    setState((s) => {
+      const preset = PRESETS.find((p) => p.id === s.preset)
+      const next = { ...s, rule }
+      return preset ? presetState(preset, next) : next
+    })
   const loadClassic = () => {
     setState((s) => ({
       ...s,
@@ -107,17 +117,16 @@ export function BurstLab() {
     return url
   }
 
-  // The plan preset rule, written from the constants it uses.
-  const presetRule = { sustained: fmtPct(SUSTAINED_SHARE), threshold: fmtPct(THRESHOLD_SHARE), time: PRESET_BURST_TIME }
-
-  const jump = ["params", "sim", "compare", "shared", "solver", "export", "how"] as const
+  const jump = ["params", "sim", "compare", "shared", "capacity", "solver", "export", "bulk", "how"] as const
   const anchors: Record<(typeof jump)[number], string> = {
     params: "parametros",
     sim: "simulacion",
     compare: "comparar",
     shared: "compartida",
+    capacity: "hora-pico",
     solver: "calculadora",
     export: "exportar",
+    bulk: "varios-clientes",
     how: "como-funciona",
   }
 
@@ -148,7 +157,7 @@ export function BurstLab() {
         </nav>
       </section>
 
-      <Section id="parametros" name="mk-params" title={t("params.title")} lead={t("params.lead", presetRule)}>
+      <Section id="parametros" name="mk-params" title={t("params.title")} lead={t("params.lead")}>
         <div className="mb-6">
           <ImportPanel onApply={applyImport} />
         </div>
@@ -160,6 +169,7 @@ export function BurstLab() {
             onQueue={setQueue}
             onLineCap={(v) => set({ lineCapMbps: v })}
             onPlan={(v) => set({ planMbps: v })}
+            onRule={setRule}
           />
           <FiguresPanel state={state} onView={(view) => set({ view })} />
         </div>
@@ -169,12 +179,16 @@ export function BurstLab() {
         <SimPanel state={state} onPreset={setPreset} onPattern={setPattern} onDuration={(durationS) => set({ durationS })} onView={(view) => set({ view })} />
       </Section>
 
-      <Section id="comparar" name="mk-compare" title={t("compare.title")} lead={t("compare.lead", presetRule)}>
+      <Section id="comparar" name="mk-compare" title={t("compare.title")} lead={t("compare.lead")}>
         <ComparePanel state={state} />
       </Section>
 
       <Section id="compartida" name="mk-shared" title={t("shared.title")} lead={t("shared.lead")}>
         <SharedPanel state={state} onGroup={setGroup} />
+      </Section>
+
+      <Section id="hora-pico" name="mk-capacity" title={t("capacity.title")} lead={t("capacity.lead")}>
+        <CapacityPanel state={state} onCapacity={setCapacity} />
       </Section>
 
       <Section id="calculadora" name="mk-solver" title={t("solver.title")} lead={t("solver.lead")}>
@@ -183,6 +197,10 @@ export function BurstLab() {
 
       <Section id="exportar" name="mk-export" title={t("export.title")} lead={t("export.lead")}>
         <ExportPanel state={state} />
+      </Section>
+
+      <Section id="varios-clientes" name="mk-bulk" title={t("bulk.title")} lead={t("bulk.lead")}>
+        <BulkPanel state={state} />
       </Section>
 
       <Section id="como-funciona" name="mk-how" title={t("how.title")}>

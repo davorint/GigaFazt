@@ -3,7 +3,8 @@
 import { AlertTriangle, CircleCheck, CircleX, Info } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { check, effectiveDemand, figures, type Issue } from "@/lib/mikrotik/burst"
-import { fmtData, fmtRate, fmtSec } from "@/lib/mikrotik/format"
+import { fmtData, fmtPct, fmtRate, fmtSec } from "@/lib/mikrotik/format"
+import { estimateSpeedTest } from "@/lib/mikrotik/speedtest"
 import { viewParams, type Direction, type LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
 
@@ -15,6 +16,10 @@ export function FiguresPanel({ state, onView }: { state: LabState; onView: (d: D
   const p = viewParams(state)
   const opts = { demandMbps: effectiveDemand(state.pattern), lineCapMbps: state.lineCapMbps, planMbps: state.planMbps }
   const f = figures(p, opts)
+  // What the customer sees: a speed test from a rested line, then again shortly after.
+  const test = estimateSpeedTest(p, { testS: state.pattern.testS, lineCapMbps: state.lineCapMbps })
+  const plan = state.planMbps && state.planMbps > 0 ? state.planMbps : null
+  const ofPlan = (v: number) => (plan ? ` · ${t("figures.ofPlan", { pct: fmtPct(v / plan) })}` : "")
 
   const dirs: Direction[] = state.symmetric ? ["down"] : ["down", "up"]
   const issues: { dir: Direction; issue: Issue }[] = dirs.flatMap((dir) =>
@@ -36,7 +41,7 @@ export function FiguresPanel({ state, onView }: { state: LabState; onView: (d: D
     {
       k: "sustained",
       v: fmtRate(f.sustainedMbps),
-      sub: f.repeats ? t("figures.sustainedRepeats") : t("figures.sustainedSub"),
+      sub: `${f.repeats ? t("figures.sustainedRepeats") : t("figures.sustainedSub")}${ofPlan(f.sustainedMbps)}`,
     },
     { k: "step", v: fmtSec(f.stepS), sub: t("figures.stepSub") },
   ] as const
@@ -77,6 +82,29 @@ export function FiguresPanel({ state, onView }: { state: LabState; onView: (d: D
           </div>
         ))}
       </dl>
+
+      <div className="grid gap-3">
+        <h4 className="text-xs text-zinc-400">{t("figures.customer")}</h4>
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/10">
+          <div className="surface-cell p-4">
+            <dt className="text-xs text-zinc-400">{t("figures.test", { s: fmtSec(test.testS) })}</dt>
+            <dd className="mt-1 font-mono text-xl tabular-nums text-foreground">{fmtRate(test.first.trimmedMbps)}</dd>
+            <dd className="mt-1 text-xs leading-snug text-zinc-500">
+              {t("figures.testSub", { plain: fmtRate(test.first.plainMbps) })}
+              {ofPlan(test.first.trimmedMbps)}
+            </dd>
+          </div>
+          <div className="surface-cell p-4">
+            <dt className="text-xs text-zinc-400">{t("figures.again", { s: fmtSec(test.gapS) })}</dt>
+            <dd className="mt-1 font-mono text-xl tabular-nums text-foreground">{fmtRate(test.again.trimmedMbps)}</dd>
+            <dd className="mt-1 text-xs leading-snug text-zinc-500">
+              {t("figures.testSub", { plain: fmtRate(test.again.plainMbps) })}
+              {ofPlan(test.again.trimmedMbps)}
+            </dd>
+          </div>
+        </dl>
+        <p className="text-xs leading-snug text-zinc-500">{t("figures.testNote")}</p>
+      </div>
 
       <div>
         <h4 className="mb-2 text-xs text-zinc-400">{t("issues.title")}</h4>

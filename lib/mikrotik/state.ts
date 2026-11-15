@@ -1,5 +1,6 @@
 import { plans } from "../plans"
-import { KINDS, planDefaults, type Pattern, type PatternKind, type QueueParams } from "./burst"
+import { DEFAULT_RULE, KINDS, planDefaults, type Pattern, type PatternKind, type PlanRule, type QueueParams } from "./burst"
+import type { Pair } from "./routeros"
 
 /**
  * State of the /mikrotik burst tool and its share link (#hash, so nothing
@@ -25,6 +26,23 @@ export type LabState = {
   lineCapMbps: number | null
   /** Several clients under one parent queue. */
   group: GroupState
+  /** How a plan speed becomes queue values (plan presets, compare, shared, capacity, bulk). */
+  rule: PlanRule
+  /** Busiest-hour capacity model. */
+  capacity: CapacityState
+}
+
+export type CapacityState = {
+  /** Uplink (parent queue) max-limit, Mbps. */
+  parentMbps: number
+  /** Clients per plan, in PRESETS order. */
+  clients: number[]
+  /** Share of clients transferring at any moment at the busiest hour, 0..1. */
+  activeShare: number
+  /** Mean length of each active stretch, s. */
+  sessionS: number
+  /** What an active client asks for, Mbps (null = everything its queue allows). */
+  demandMbps: number | null
 }
 
 /** A client in the shared-parent simulation. */
@@ -62,6 +80,15 @@ export type Preset = { id: string; downMbps: number; upMbps: number }
 
 export const PRESETS: Preset[] = plans.map((p) => ({ id: p.id, downMbps: p.downMbps, upMbps: p.upMbps }))
 
+/** Example busiest-hour setup: 600 clients split evenly (the split per plan is not known). */
+export const DEFAULT_CAPACITY: CapacityState = {
+  parentMbps: 10_000,
+  clients: PRESETS.map(() => Math.round(600 / Math.max(1, PRESETS.length))),
+  activeShare: 0.05,
+  sessionS: 30,
+  demandMbps: null,
+}
+
 export const DEFAULT_PATTERN: Pattern = {
   kind: "sustained",
   demandMbps: null,
@@ -75,17 +102,20 @@ export const DEFAULT_PATTERN: Pattern = {
 }
 
 export function presetState(preset: Preset, base?: LabState): LabState {
+  const rule = base?.rule ?? DEFAULT_RULE
   return {
     preset: preset.id,
     planMbps: preset.downMbps,
     symmetric: preset.downMbps === preset.upMbps,
-    down: planDefaults(preset.downMbps),
-    up: planDefaults(preset.upMbps),
+    down: planDefaults(preset.downMbps, rule),
+    up: planDefaults(preset.upMbps, rule),
     view: base?.view ?? "down",
     pattern: base?.pattern ?? DEFAULT_PATTERN,
     durationS: base?.durationS ?? 60,
     lineCapMbps: base?.lineCapMbps ?? null,
     group: base?.group ?? DEFAULT_GROUP,
+    rule,
+    capacity: base?.capacity ?? DEFAULT_CAPACITY,
   }
 }
 
@@ -99,19 +129,31 @@ export function viewParams(s: LabState): QueueParams {
   return s.symmetric || s.view === "down" ? s.down : s.up
 }
 
-/** Queue values a plan preset starts with (download speed). */
-export function presetParams(id: string): QueueParams | null {
+/** Queue values a plan preset starts with under a rule (download speed). */
+export function presetParams(id: string, rule: PlanRule = DEFAULT_RULE): QueueParams | null {
   const preset = PRESETS.find((p) => p.id === id)
-  return preset ? planDefaults(preset.downMbps) : null
+  return preset ? planDefaults(preset.downMbps, rule) : null
 }
 
 /** Queue and traffic of one shared-parent client. */
 export function memberSetup(s: LabState, m: GroupMember): { params: QueueParams; pattern: Pattern } {
-  const base = (m.plan === "current" ? null : presetParams(m.plan)) ?? viewParams(s)
+  const base = (m.plan === "current" ? null : presetParams(m.plan, s.rule)) ?? viewParams(s)
   return {
     params: { ...base, limitAt: m.limitAt },
     pattern: { ...s.pattern, kind: m.kind, startS: m.startS, demandMbps: null },
   }
+}
+
+/** Both directions of a shared-parent client, for the export (limit-at on both). */
+export function memberPair(s: LabState, m: GroupMember): Pair {
+  const preset = PRESETS.find((p) => p.id === m.plan)
+  if (preset) {
+    return {
+      down: { ...planDefaults(preset.downMbps, s.rule), limitAt: m.limitAt },
+      up: { ...planDefaults(preset.upMbps, s.rule), limitAt: m.limitAt },
+    }
+  }
+  return { down: { ...s.down, limitAt: m.limitAt }, up: { ...(s.symmetric ? s.down : s.up), limitAt: m.limitAt } }
 }
 
 // ── Share link ──────────────────────────────────────────────────────────────
@@ -132,6 +174,9 @@ export function encodeState(s: LabState): string {
   if (s.lineCapMbps) h.set("c", num(s.lineCapMbps))
   const g = s.group
   h.set("g", [[g.parentMbps, g.durationS].map(num).join(","), ...g.members.map((m) => [m.plan, num(m.limitAt), m.priority, m.kind, num(m.startS)].join(","))].join("~"))
+  h.set("r", [s.rule.sustained, s.rule.threshold, s.rule.burstTime].map(num).join(","))
+  const c = s.capacity
+  h.set("k", [num(c.parentMbps), num(c.activeShare), num(c.sessionS), c.demandMbps === null ? "" : num(c.demandMbps), ...c.clients.map(num)].join(","))
   return h.toString()
 }
 
@@ -173,6 +218,29 @@ function decodeGroup(v: string | null): GroupState | null {
   return { parentMbps, durationS, members }
 }
 
+function decodeRule(v: string | null): PlanRule | null {
+  if (!v) return null
+  const [sustained, threshold, burstTime] = v.split(",").map((x) => finite(x))
+  if (sustained === null || threshold === null || burstTime === null) return null
+  if (!(sustained >= 0.01 && sustained <= 1) || !(threshold >= 0.01 && threshold <= 2) || !(burstTime >= 1 && burstTime <= 3600)) return null
+  return { sustained, threshold, burstTime: Math.round(burstTime) }
+}
+
+function decodeCapacity(v: string | null): CapacityState | null {
+  if (!v) return null
+  const [parent, active, session, demand, ...counts] = v.split(",")
+  const parentMbps = finite(parent, 0.001)
+  const activeShare = finite(active, 0, 1)
+  const sessionS = finite(session, 1, 3600)
+  const demandMbps = demand === "" ? null : finite(demand, 0.001)
+  const clients = counts.map((x) => finite(x, 0, MAX_CLIENTS_PER_PLAN))
+  if (parentMbps === null || activeShare === null || sessionS === null || (demand !== "" && demandMbps === null)) return null
+  if (clients.length !== PRESETS.length || clients.some((x) => x === null)) return null
+  return { parentMbps, activeShare, sessionS, demandMbps, clients: (clients as number[]).map(Math.round) }
+}
+
+export const MAX_CLIENTS_PER_PLAN = 2000
+
 /** Reads a share hash; anything malformed falls back to the defaults. */
 export function decodeState(hash: string): LabState | null {
   const h = new URLSearchParams(hash.replace(/^#/, ""))
@@ -207,6 +275,9 @@ export function decodeState(hash: string): LabState | null {
     durationS: finite(h.get("s") ?? undefined, 1, MAX_DURATION_S) ?? base.durationS,
     lineCapMbps: finite(h.get("c") ?? undefined, 0.001),
     group: decodeGroup(h.get("g")) ?? base.group,
+    // Links from before the rule field used the first tested rule.
+    rule: decodeRule(h.get("r")) ?? DEFAULT_RULE,
+    capacity: decodeCapacity(h.get("k")) ?? base.capacity,
   }
 }
 

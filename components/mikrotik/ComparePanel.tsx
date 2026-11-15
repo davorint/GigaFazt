@@ -1,16 +1,29 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
-import { burstEnabled, planDefaults, simulate, type QueueParams, type SimResult, type TransferStats } from "@/lib/mikrotik/burst"
-import { fmtData, fmtRate, fmtSec } from "@/lib/mikrotik/format"
+import {
+  burstEnabled,
+  planDefaults,
+  RULE_IDS,
+  RULES,
+  ruleId,
+  simulate,
+  type QueueParams,
+  type SimResult,
+  type TransferStats,
+} from "@/lib/mikrotik/burst"
+import { fmtData, fmtPct, fmtRate, fmtSec } from "@/lib/mikrotik/format"
 import { rosRate, rosTime } from "@/lib/mikrotik/routeros"
+import { estimateSpeedTest } from "@/lib/mikrotik/speedtest"
 import { PRESETS, viewParams, type LabState } from "@/lib/mikrotik/state"
 import { speedLabel } from "@/lib/format"
+import { Choice } from "./Choice"
 import { MultiChart, type ChartSeries } from "./MultiChart"
 import { NEUTRAL_SERIES, SERIES_COLORS } from "./ticks"
 
-type Run = { key: string; label: string; color: string; dash?: string; params: QueueParams; result: SimResult }
+type Run = { key: string; label: string; color: string; dash?: string; params: QueueParams; planMbps: number | null; result: SimResult; testMbps: number }
+type Mode = "plans" | "rules"
 
 /** Value of a run at time t (runs can step at different burst-time ÷ 16). */
 function at(result: SimResult, t: number): number {
@@ -21,19 +34,53 @@ function at(result: SimResult, t: number): number {
 export function ComparePanel({ state }: { state: LabState }) {
   const t = useTranslations("mikrotik")
   const current = viewParams(state)
-  const { pattern, durationS, lineCapMbps } = state
+  const { pattern, durationS, lineCapMbps, rule } = state
   const custom = state.preset === "custom"
+  const [mode, setMode] = useState<Mode>("plans")
+  // Rules mode compares one plan; start from the plan loaded above.
+  const [rulePlan, setRulePlan] = useState<string | null>(null)
+  const planId = rulePlan ?? (PRESETS.some((p) => p.id === state.preset) ? state.preset : (PRESETS[1] ?? PRESETS[0]).id)
+  const plan = PRESETS.find((p) => p.id === planId) ?? PRESETS[0]
+  const ownRule = ruleId(rule) === "custom"
 
   const runs = useMemo<Run[]>(() => {
-    const list: Omit<Run, "result">[] = PRESETS.map((p, i) => ({
-      key: p.id,
-      label: speedLabel(p.downMbps),
-      color: SERIES_COLORS[i % SERIES_COLORS.length],
-      params: planDefaults(p.downMbps),
+    type Spec = Omit<Run, "result" | "testMbps">
+    const list: Spec[] =
+      mode === "plans"
+        ? PRESETS.map((p, i) => ({
+            key: p.id,
+            label: speedLabel(p.downMbps),
+            color: SERIES_COLORS[i % SERIES_COLORS.length],
+            params: planDefaults(p.downMbps, rule),
+            planMbps: p.downMbps,
+          }))
+        : [
+            ...RULE_IDS.map((id, i) => ({
+              key: id,
+              label: t(`params.rules.${id}`),
+              color: SERIES_COLORS[i % SERIES_COLORS.length],
+              params: planDefaults(plan.downMbps, RULES[id]),
+              planMbps: plan.downMbps,
+            })),
+            ...(ownRule
+              ? [
+                  {
+                    key: "rule",
+                    label: t("compare.ownRule"),
+                    color: SERIES_COLORS[RULE_IDS.length % SERIES_COLORS.length],
+                    params: planDefaults(plan.downMbps, rule),
+                    planMbps: plan.downMbps,
+                  },
+                ]
+              : []),
+          ]
+    if (custom) list.push({ key: "current", label: t("compare.current"), color: NEUTRAL_SERIES, dash: "5 3", params: current, planMbps: state.planMbps })
+    return list.map((r) => ({
+      ...r,
+      result: simulate(r.params, pattern, durationS, { lineCapMbps }),
+      testMbps: estimateSpeedTest(r.params, { testS: pattern.testS, lineCapMbps }).first.trimmedMbps,
     }))
-    if (custom) list.push({ key: "current", label: t("compare.current"), color: NEUTRAL_SERIES, dash: "5 3", params: current })
-    return list.map((r) => ({ ...r, result: simulate(r.params, pattern, durationS, { lineCapMbps }) }))
-  }, [custom, current, pattern, durationS, lineCapMbps, t])
+  }, [mode, plan, rule, ownRule, custom, current, state.planMbps, pattern, durationS, lineCapMbps, t])
 
   const dt = Math.min(...runs.map((r) => r.result.stats.stepS))
   const steps = Math.max(1, Math.ceil(durationS / dt - 1e-9))
@@ -58,17 +105,54 @@ export function ComparePanel({ state }: { state: LabState }) {
     if (tr.kind === "video") return tr.startupS === null ? t("compare.never") : `${fmtSec(tr.startupS)} · ${fmtSec(tr.stallS)}`
     return tr.meanS === null ? "—" : fmtSec(tr.meanS)
   }
+  const testCell = (r: Run) => `${fmtRate(r.testMbps)}${r.planMbps ? ` (${fmtPct(r.testMbps / r.planMbps)})` : ""}`
 
   const summary = t("compare.summary", {
     lines: runs
-      .map((r) => t("compare.summaryLine", { plan: r.label, burst: fmtSec(r.result.stats.firstBurstS), total: fmtData(r.result.stats.totalMb) }))
+      .map((r) =>
+        t("compare.summaryLine", {
+          plan: r.label,
+          burst: fmtSec(r.result.stats.firstBurstS),
+          total: fmtData(r.result.stats.totalMb),
+          test: fmtRate(r.testMbps),
+        })
+      )
       .join(" "),
   })
 
   return (
     <div className="surface grid min-w-0 gap-6 rounded-2xl p-5 sm:p-7 [&>*]:min-w-0">
+      <div className="flex flex-wrap items-end gap-x-6 gap-y-4">
+        <div className="grid gap-2">
+          <p className="font-mono text-xs text-zinc-300">{t("compare.mode")}</p>
+          <Choice
+            label={t("compare.mode")}
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: "plans", label: t("compare.modes.plans") },
+              { value: "rules", label: t("compare.modes.rules") },
+            ]}
+          />
+        </div>
+        {mode === "rules" && (
+          <div className="grid gap-2">
+            <p className="font-mono text-xs text-zinc-300">{t("compare.plan")}</p>
+            <Choice
+              label={t("compare.plan")}
+              value={plan.id}
+              onChange={setRulePlan}
+              options={PRESETS.map((p) => ({ value: p.id, label: speedLabel(p.downMbps) }))}
+            />
+          </div>
+        )}
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-zinc-300">{t("compare.traffic", { kind, duration: fmtSec(durationS), direction })}</p>
+        <p className="text-sm text-zinc-300">
+          {mode === "plans" ? t("compare.byRule", { rule: t(ownRule ? "compare.ownRule" : `params.rules.${ruleId(rule)}`) }) : ""}
+          {t("compare.traffic", { kind, duration: fmtSec(durationS), direction })}
+        </p>
         <span className="rounded border border-amber-400/30 px-1.5 py-0.5 font-mono text-[10px] tracking-[0.18em] text-amber-300">
           {t("sim.tag")}
         </span>
@@ -90,13 +174,13 @@ export function ComparePanel({ state }: { state: LabState }) {
       />
 
       <div className="overflow-x-auto rounded-xl border border-white/10" tabIndex={0} role="region" aria-label={t("compare.resultsCaption")}>
-        <table className="w-full min-w-[46rem] text-left text-sm">
+        <table className="w-full min-w-[52rem] text-left text-sm">
           <caption className="sr-only">{t("compare.resultsCaption")}</caption>
           <thead className="text-xs text-zinc-400">
             <tr className="border-b border-white/10">
-              {(["plan", "maxLimit", "burstLimit", "burstThreshold", "burstTime", "firstBurst", "total", "activeAvg"] as const).map((c) => (
+              {([mode === "plans" ? "plan" : "rule", "maxLimit", "burstLimit", "burstThreshold", "burstTime", "firstBurst", "total", "activeAvg", "test"] as const).map((c) => (
                 <th key={c} scope="col" className="px-3 py-2.5 font-normal whitespace-nowrap">
-                  {t(`compare.cols.${c}`)}
+                  {c === "test" ? t("compare.cols.test", { s: fmtSec(pattern.testS) }) : t(`compare.cols.${c}`)}
                 </th>
               ))}
               {transferCol && (
@@ -125,6 +209,7 @@ export function ComparePanel({ state }: { state: LabState }) {
                   <td className="px-3 py-2.5 text-zinc-100">{fmtSec(st.firstBurstS)}</td>
                   <td className="px-3 py-2.5 text-zinc-100">{fmtData(st.totalMb)}</td>
                   <td className="px-3 py-2.5 text-zinc-100">{fmtRate(st.activeAvgMbps)}</td>
+                  <td className="px-3 py-2.5 whitespace-nowrap text-zinc-100">{testCell(r)}</td>
                   {transferCol && <td className="px-3 py-2.5 text-zinc-100">{result(st.transfer)}</td>}
                 </tr>
               )
