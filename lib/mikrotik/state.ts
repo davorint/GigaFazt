@@ -39,10 +39,17 @@ export type LabState = {
   queueKind: QueueKind
   /** Name of the deployment modeled: one OLT and its router, with its own internet providers. */
   deployment: string
+  /** Whether it already serves clients (measured data) or is being planned. */
+  status: DeploymentStatus
   /** That router's internet links (load balancing and the capacity model). */
   wans: Wan[]
   balance: BalanceState
 }
+
+export type DeploymentStatus = "existing" | "planned"
+
+/** What belongs to one deployment (saved in the browser, carried by the share link). */
+export type DeploymentFields = Pick<LabState, "deployment" | "status" | "capacity" | "wans" | "balance">
 
 export type BalanceState = {
   classifier: Classifier
@@ -85,6 +92,11 @@ export type CapacityState = {
   oltUplinkMbps: number
   /** Internet side: the router's links (wans) or one uplink of parentMbps. */
   internet: "links" | "single"
+  /** Deployments that already run: PON ports in use (null = from the clients per port). */
+  portsInUse: number | null
+  /** Deployments that already run: all the router's traffic at the busy hour, Mbps (null = not measured: the average per client is an input). */
+  measuredDownMbps: number | null
+  measuredUpMbps: number | null
 }
 
 /** A client in the shared-parent simulation. */
@@ -145,6 +157,9 @@ export const DEFAULT_CAPACITY: CapacityState = {
   oltModel: "ma5608t",
   oltUplinkMbps: 10_000,
   internet: "links",
+  portsInUse: null,
+  measuredDownMbps: null,
+  measuredUpMbps: null,
 }
 
 export const DEFAULT_PATTERN: Pattern = {
@@ -177,6 +192,7 @@ export function presetState(preset: Preset, base?: LabState): LabState {
     backgroundMbps: base?.backgroundMbps ?? 0,
     queueKind: base?.queueKind ?? "default",
     deployment: base?.deployment ?? "",
+    status: base?.status ?? "planned",
     wans: base?.wans ?? defaultWans(3),
     balance: base?.balance ?? DEFAULT_BALANCE,
   }
@@ -238,20 +254,50 @@ export function encodeState(s: LabState): string {
   const g = s.group
   h.set("g", [[g.parentMbps, g.durationS].map(num).join(","), ...g.members.map((m) => [m.plan, num(m.limitAt), m.priority, m.kind, num(m.startS)].join(","))].join("~"))
   h.set("r", [s.rule.sustained, s.rule.threshold, s.rule.burstTime].map(num).join(","))
-  const c = s.capacity
+  setDeploymentParams(h, s)
+  if (s.backgroundMbps > 0) h.set("b", num(s.backgroundMbps))
+  if (s.queueKind !== "default") h.set("q", s.queueKind)
+  return h.toString()
+}
+
+const opt = (v: number | null) => (v === null ? "" : num(v))
+
+/** The deployment's part of the share link: `h=`, `o=`, `n=`, `st=`, `w=`. */
+function setDeploymentParams(h: URLSearchParams, f: DeploymentFields) {
+  const c = f.capacity
   h.set(
     "h",
     [num(c.parentMbps), c.direction, num(c.avgDownMbps), num(c.avgUpMbps), num(c.videoShare), num(c.videoMbps), num(c.fileMB), c.pon, num(c.homesPerPort), ...c.clients.map(num)].join(",")
   )
   // Rows split by "|", fields by ",": both are always escaped inside URI-encoded text.
-  h.set("o", [num(c.ponEfficiency), c.internet, c.oltModel, num(c.oltUplinkMbps)].join(","))
-  if (s.deployment) h.set("n", s.deployment)
+  h.set("o", [num(c.ponEfficiency), c.internet, c.oltModel, num(c.oltUplinkMbps), opt(c.portsInUse), opt(c.measuredDownMbps), opt(c.measuredUpMbps)].join(","))
+  if (f.deployment) h.set("n", f.deployment)
+  if (f.status === "existing") h.set("st", "existing")
   const enc = encodeURIComponent
-  h.set("w", [s.balance.classifier, s.balance.failover, s.balance.nat ? "1" : "0", s.balance.clients.map(enc).join(","), ...s.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor)].join(","))].join("|"))
-  if (s.backgroundMbps > 0) h.set("b", num(s.backgroundMbps))
-  if (s.queueKind !== "default") h.set("q", s.queueKind)
+  h.set("w", [f.balance.classifier, f.balance.failover, f.balance.nat ? "1" : "0", f.balance.clients.map(enc).join(","), ...f.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor)].join(","))].join("|"))
+}
+
+export function deploymentFields(s: LabState): DeploymentFields {
+  return { deployment: s.deployment, status: s.status, capacity: s.capacity, wans: s.wans, balance: s.balance }
+}
+
+/** A deployment as text (how the browser and the backup file keep it). */
+export function encodeDeployment(f: DeploymentFields): string {
+  const h = new URLSearchParams()
+  setDeploymentParams(h, f)
   return h.toString()
 }
+
+/** A saved deployment back; null when the text isn't one. */
+export function decodeDeployment(text: string): DeploymentFields | null {
+  const h = new URLSearchParams(text)
+  const lines = decodeWans(h.get("w"))
+  if (!decodeCapacity(h.get("h")) || !lines) return null
+  return { capacity: decodeCapacityAll(h, DEFAULT_CAPACITY), deployment: nameOf(h), status: statusOf(h), ...lines }
+}
+
+const nameOf = (h: URLSearchParams) => (h.get("n") ?? "").slice(0, MAX_NAME)
+const statusOf = (h: URLSearchParams): DeploymentStatus => (h.get("st") === "existing" ? "existing" : "planned")
 
 const finite = (v: string | undefined, min = 0, max = 1e6): number | null => {
   if (v === undefined || v.trim() === "") return null
@@ -301,14 +347,25 @@ function decodeRule(v: string | null): PlanRule | null {
 
 const PON_TECHS: PonTech[] = ["none", "gpon", "xgpon", "xgspon"]
 
-/** OLT and internet side (`o=`). */
-function decodeOlt(v: string | null): Pick<CapacityState, "ponEfficiency" | "internet" | "oltModel" | "oltUplinkMbps"> | null {
+/** OLT and internet side (`o=`). Ports in use and measured traffic came later: absent or empty = not set. */
+function decodeOlt(
+  v: string | null
+): Pick<CapacityState, "ponEfficiency" | "internet" | "oltModel" | "oltUplinkMbps" | "portsInUse" | "measuredDownMbps" | "measuredUpMbps"> | null {
   if (!v) return null
-  const [eff, internet, model, uplink] = v.split(",")
+  const [eff, internet, model, uplink, ports, measuredDown, measuredUp] = v.split(",")
   const ponEfficiency = finite(eff, 0.5, 1)
   const oltUplinkMbps = finite(uplink, 0, 1e6)
   if (ponEfficiency === null || oltUplinkMbps === null || (internet !== "links" && internet !== "single") || !OLT_MODELS.includes(model as OltModelId)) return null
-  return { ponEfficiency, internet, oltModel: model as OltModelId, oltUplinkMbps }
+  const portsInUse = finite(ports, 1, MAX_PORTS)
+  return {
+    ponEfficiency,
+    internet,
+    oltModel: model as OltModelId,
+    oltUplinkMbps,
+    portsInUse: portsInUse === null ? null : Math.round(portsInUse),
+    measuredDownMbps: finite(measuredDown, 0, 1e6),
+    measuredUpMbps: finite(measuredUp, 0, 1e6),
+  }
 }
 
 /** Internet links and balancing (`w=`). */
@@ -387,6 +444,8 @@ function decodeCapacity(v: string | null): CapacityState | null {
 export const MAX_CLIENTS_PER_PLAN = 2000
 /** Longest deployment name. */
 export const MAX_NAME = 40
+/** Most PON ports a deployment's OLT can have in use (the biggest MA5800 takes 272). */
+export const MAX_PORTS = 512
 
 /**
  * `h=` + `o=`. Links from before the OLT and the links (`h=` without `o=`)
@@ -436,7 +495,8 @@ export function decodeState(hash: string): LabState | null {
     // Links from before the rule field used the first tested rule.
     rule: decodeRule(h.get("r")) ?? DEFAULT_RULE,
     capacity: decodeCapacityAll(h, base.capacity),
-    deployment: (h.get("n") ?? "").slice(0, MAX_NAME),
+    deployment: nameOf(h),
+    status: statusOf(h),
     ...(decodeWans(h.get("w")) ?? { wans: base.wans, balance: base.balance }),
     backgroundMbps: finite(h.get("b") ?? undefined, 0, 1e4) ?? 0,
     queueKind: QUEUE_KINDS.includes(h.get("q") as QueueKind) ? (h.get("q") as QueueKind) : "default",

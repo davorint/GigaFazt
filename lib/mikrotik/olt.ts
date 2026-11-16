@@ -57,11 +57,12 @@ export type OltIssue = { code: OltIssueCode; level: "error" | "warn" | "info"; m
 /** PON ports the clients use at `homesPerPort` each. */
 export const portsNeeded = (clients: number, homesPerPort: number) => (clients > 0 ? Math.ceil(clients / Math.max(1, Math.round(homesPerPort))) : 0)
 
-export function checkOlt(o: OltEntry, clients: number): OltIssue[] {
+/** `ports`: the ports in use when known (a deployment that already runs); otherwise what the clients need. */
+export function checkOlt(o: OltEntry, clients: number, ports?: number): OltIssue[] {
   const spec = OLT_SPECS[o.model]
   const out: OltIssue[] = []
   const max = spec.maxPorts[o.tech]
-  const need = portsNeeded(clients, o.homesPerPort)
+  const need = ports ?? portsNeeded(clients, o.homesPerPort)
   if (max === 0) out.push({ code: "unsupported", level: "error" })
   else {
     if (o.tech === "xgpon" && spec.xgponUnconfirmed) out.push({ code: "unconfirmed", level: "warn" })

@@ -17,12 +17,14 @@ import {
   type Sizing,
 } from "@/lib/mikrotik/capacity"
 import { CapacityClient } from "@/lib/mikrotik/capacity-client"
+import { averageOf, homesPerPortOf, portsOf } from "@/lib/mikrotik/deployments"
 import { fmtNum, fmtPct, fmtRate, fmtSec } from "@/lib/mikrotik/format"
-import { checkOlt, OLT_MODELS, OLT_SPECS, portsNeeded, type OltModelId } from "@/lib/mikrotik/olt"
+import { checkOlt, OLT_MODELS, OLT_SPECS, type OltModelId } from "@/lib/mikrotik/olt"
 import { rosRate } from "@/lib/mikrotik/routeros"
-import { MAX_CLIENTS_PER_PLAN, MAX_NAME, PRESETS, type CapacityState, type LabState } from "@/lib/mikrotik/state"
+import { MAX_CLIENTS_PER_PLAN, MAX_NAME, MAX_PORTS, PRESETS, type CapacityState, type DeploymentStatus, type LabState } from "@/lib/mikrotik/state"
 import { speedLabel } from "@/lib/format"
 import { Choice } from "./Choice"
+import { CopyButton } from "./CopyButton"
 import { IssueList } from "./IssueList"
 import { MultiChart, type ChartSeries } from "./MultiChart"
 import { NumberField } from "./NumberField"
@@ -30,22 +32,45 @@ import { SelectField } from "./SelectField"
 import { TextField } from "./TextField"
 import { SERIES_COLORS } from "./ticks"
 
-type Props = { state: LabState; onCapacity: (c: CapacityState) => void; onDeployment: (name: string) => void }
+/** Busy-hour averages measured on another saved deployment that already runs. */
+export type MeasuredAverage = { id: string; name: string; down: number | null; up: number | null }
+
+type Props = {
+  state: LabState
+  onCapacity: (c: CapacityState) => void
+  onDeployment: (name: string) => void
+  onStatus: (status: DeploymentStatus) => void
+  measuredAverages: MeasuredAverage[]
+}
 type SizeInput = Omit<CapacityInput, "parentMbps">
 
 const TECHS: PonTech[] = ["gpon", "xgpon", "xgspon", "none"]
 const LINK = "text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white"
+const round3 = (v: number) => Math.round(v * 1000) / 1000
+
+/** A quick reading of the providers' interfaces (rx = download, tx = upload). */
+function monitorCommand(ifaces: string[]): string {
+  const names = ifaces.map((i) => i.trim()).filter(Boolean)
+  const list = names.every((n) => /^[A-Za-z0-9._-]+$/.test(n)) ? names.join(",") : `"${names.join(",").replace(/["\\]/g, "")}"`
+  return `/interface monitor-traffic interface=${list} once`
+}
 
 /** One deployment (an OLT and its router, with its own internet providers) at the busiest hour. */
-export function CapacityPanel({ state, onCapacity, onDeployment }: Props) {
+export function CapacityPanel({ state, onCapacity, onDeployment, onStatus, measuredAverages }: Props) {
   const t = useTranslations("mikrotik")
   const c = state.capacity
   const set = (patch: Partial<CapacityState>) => onCapacity({ ...c, ...patch })
   const { rule } = state
   const testS = state.pattern.testS
   const down = c.direction === "down"
-  const avg = down ? c.avgDownMbps : c.avgUpMbps
   const ponOn = c.pon !== "none"
+  // A deployment that already runs uses what was measured on it: ports in use, the router's traffic.
+  const existing = state.status === "existing"
+  const average = averageOf({ status: state.status, capacity: c }, c.direction)
+  const avg = average.mbps
+  const homes = homesPerPortOf({ status: state.status, capacity: c })
+  const fromPorts = existing && c.portsInUse !== null
+  const measured = down ? c.measuredDownMbps : c.measuredUpMbps
 
   // The router's links, balanced as in "Varios enlaces": per client unless PCC also hashes the ports.
   const mode: Links["mode"] = state.balance.classifier === "both-addresses-and-ports" ? "connection" : "client"
@@ -66,13 +91,13 @@ export function CapacityPanel({ state, onCapacity, onDeployment }: Props) {
       videoShare: c.videoShare,
       videoMbps: c.videoMbps,
       fileMB: c.fileMB,
-      pon: { tech: c.pon, homesPerPort: c.homesPerPort, efficiency: c.ponEfficiency },
+      pon: { tech: c.pon, homesPerPort: homes, efficiency: c.ponEfficiency },
       olt,
       links,
       testS,
       lineCapMbps: state.lineCapMbps,
     }),
-    [c.clients, c.direction, down, avg, c.videoShare, c.videoMbps, c.fileMB, c.pon, c.homesPerPort, c.ponEfficiency, olt, links, rule, testS, state.lineCapMbps]
+    [c.clients, c.direction, down, avg, c.videoShare, c.videoMbps, c.fileMB, c.pon, homes, c.ponEfficiency, olt, links, rule, testS, state.lineCapMbps]
   )
   const simInput = useMemo<CapacityInput>(() => ({ ...sizeInput, parentMbps: links ? Number.POSITIVE_INFINITY : c.parentMbps }), [sizeInput, links, c.parentMbps])
   const simKey = useMemo(() => JSON.stringify(simInput), [simInput])
@@ -132,8 +157,8 @@ export function CapacityPanel({ state, onCapacity, onDeployment }: Props) {
 
   // The OLT against its model: PON type, ports the clients need, split, users.
   const oltTech = c.pon === "none" ? null : c.pon
-  const oltIssues = oltTech ? checkOlt({ model: c.oltModel, tech: oltTech, homesPerPort: c.homesPerPort, uplinkMbps: c.oltUplinkMbps }, total) : []
-  const need = portsNeeded(total, c.homesPerPort)
+  const oltIssues = oltTech ? checkOlt({ model: c.oltModel, tech: oltTech, homesPerPort: homes, uplinkMbps: c.oltUplinkMbps }, total, fromPorts ? (c.portsInUse ?? undefined) : undefined) : []
+  const need = portsOf({ status: state.status, capacity: c })
   const maxPorts = oltTech ? OLT_SPECS[c.oltModel].maxPorts[oltTech] : null
 
   const series = useMemo<ChartSeries[]>(() => {
@@ -155,7 +180,7 @@ export function CapacityPanel({ state, onCapacity, onDeployment }: Props) {
     }
     if (r.overOlt && r.olt) warnings.push(t("capacity.overOlt", { offered: fmtRate(r.offeredMbps), cap: fmtRate(r.olt.uplinkMbps) }))
     if (r.ports && r.offeredPerPortMbps !== null && r.offeredPerPortMbps >= r.ports.capacityMbps)
-      warnings.push(t("capacity.overPort", { offered: fmtRate(r.offeredPerPortMbps), cap: fmtRate(r.ports.capacityMbps), homes: fmtNum(c.homesPerPort, 0) }))
+      warnings.push(t("capacity.overPort", { offered: fmtRate(r.offeredPerPortMbps), cap: fmtRate(r.ports.capacityMbps), homes: fmtNum(homes, 0) }))
   }
 
   const linkNames = state.wans.map((w, k) => w.name || `WAN${k + 1}`)
@@ -216,7 +241,7 @@ export function CapacityPanel({ state, onCapacity, onDeployment }: Props) {
       case "olt":
         return t("capacity.sizing.limitOlt", { target: targetPct, cap: fmtRate(c.oltUplinkMbps) })
       case "pon":
-        return t("capacity.sizing.limitPon", { target: targetPct, homes: fmtNum(c.homesPerPort, 0), tech: techName })
+        return t("capacity.sizing.limitPon", { target: targetPct, homes: fmtNum(homes, 0), tech: techName })
       case "link":
         return t("capacity.sizing.limitLink", { target: targetPct, link: fmtRate(Math.max(...(links?.mbps ?? [0]))), mode: modeName, plan: planName(u.id) })
       default:
@@ -231,6 +256,19 @@ export function CapacityPanel({ state, onCapacity, onDeployment }: Props) {
         <div className="grid gap-1">
           <h3 className="text-sm font-medium text-foreground">{t("capacity.deployment.title")}</h3>
           <p className="text-xs leading-snug text-zinc-400">{t("capacity.deployment.lead")}</p>
+        </div>
+        <div className="grid gap-2">
+          <p className="font-mono text-xs text-zinc-300">{t("capacity.deployment.status")}</p>
+          <Choice
+            label={t("capacity.deployment.status")}
+            value={state.status}
+            onChange={onStatus}
+            options={[
+              { value: "existing", label: t("capacity.deployment.statuses.existing") },
+              { value: "planned", label: t("capacity.deployment.statuses.planned") },
+            ]}
+          />
+          <p className="text-xs leading-snug text-zinc-400">{t(`capacity.deployment.statusHint.${state.status}`)}</p>
         </div>
         <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2">
@@ -251,16 +289,31 @@ export function CapacityPanel({ state, onCapacity, onDeployment }: Props) {
         {ponOn && (
           <>
             <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <NumberField
-                label={t("capacity.homes")}
-                unit={t("capacity.unitClients")}
-                value={c.homesPerPort}
-                integer
-                min={1}
-                max={1024}
-                hint={t("capacity.homesHint", { cap: fmtRate(portCap), tech: techName, eff: fmtPct(c.ponEfficiency) })}
-                onChange={(v) => v !== null && set({ homesPerPort: v })}
-              />
+              {existing && (
+                <NumberField
+                  label={t("capacity.deployment.portsInUse")}
+                  unit={t("capacity.deployment.unitPorts")}
+                  value={c.portsInUse}
+                  integer
+                  optional
+                  min={1}
+                  max={MAX_PORTS}
+                  hint={t("capacity.deployment.portsInUseHint", { cap: fmtRate(portCap), tech: techName, eff: fmtPct(c.ponEfficiency) })}
+                  onChange={(v) => set({ portsInUse: v })}
+                />
+              )}
+              {!fromPorts && (
+                <NumberField
+                  label={t("capacity.homes")}
+                  unit={t("capacity.unitClients")}
+                  value={c.homesPerPort}
+                  integer
+                  min={1}
+                  max={1024}
+                  hint={t("capacity.homesHint", { cap: fmtRate(portCap), tech: techName, eff: fmtPct(c.ponEfficiency) })}
+                  onChange={(v) => v !== null && set({ homesPerPort: v })}
+                />
+              )}
               <NumberField
                 label={t("capacity.deployment.uplink")}
                 unit={t("params.unitMbps")}
@@ -280,9 +333,13 @@ export function CapacityPanel({ state, onCapacity, onDeployment }: Props) {
               />
             </div>
             <p className="text-sm text-zinc-300">
-              {maxPorts !== null && maxPorts > 0
-                ? t("capacity.deployment.ports", { need: fmtNum(need, 0), max: fmtNum(maxPorts, 0), tech: techName, model: modelName })
-                : t("capacity.deployment.portsAny", { need: fmtNum(need, 0), tech: techName })}
+              {fromPorts
+                ? maxPorts !== null && maxPorts > 0
+                  ? t("capacity.deployment.portsUsed", { need: fmtNum(need, 0), homes: fmtNum(homes, 0), max: fmtNum(maxPorts, 0), tech: techName, model: modelName })
+                  : t("capacity.deployment.portsUsedAny", { need: fmtNum(need, 0), homes: fmtNum(homes, 0), tech: techName })
+                : maxPorts !== null && maxPorts > 0
+                  ? t("capacity.deployment.ports", { need: fmtNum(need, 0), max: fmtNum(maxPorts, 0), tech: techName, model: modelName })
+                  : t("capacity.deployment.portsAny", { need: fmtNum(need, 0), tech: techName })}
             </p>
             <IssueList
               items={oltIssues.map((i) => ({
@@ -293,7 +350,7 @@ export function CapacityPanel({ state, onCapacity, onDeployment }: Props) {
                   tech: techName,
                   max: fmtNum(i.max ?? 0, 0),
                   need: fmtNum(i.need ?? 0, 0),
-                  homes: fmtNum(c.homesPerPort, 0),
+                  homes: fmtNum(homes, 0),
                 }),
               }))}
             />
@@ -341,6 +398,43 @@ export function CapacityPanel({ state, onCapacity, onDeployment }: Props) {
             />
           )}
         </div>
+        {existing && (
+          <fieldset className="grid gap-3">
+            <legend className="mb-2 font-mono text-xs text-zinc-300">{t("capacity.deployment.measured")}</legend>
+            <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <NumberField
+                label={t("capacity.deployment.measuredDown")}
+                unit={t("params.unitMbps")}
+                value={c.measuredDownMbps}
+                optional
+                max={1e6}
+                onChange={(v) => set({ measuredDownMbps: v })}
+              />
+              <NumberField
+                label={t("capacity.deployment.measuredUp")}
+                unit={t("params.unitMbps")}
+                value={c.measuredUpMbps}
+                optional
+                max={1e6}
+                onChange={(v) => set({ measuredUpMbps: v })}
+              />
+            </div>
+            <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("capacity.deployment.measuredHint")}</p>
+            {c.internet === "links" && state.wans.length > 0 && (
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="text-xs text-zinc-400">{t("capacity.deployment.measureCmd")}</span>
+                {/* Scrolls sideways on phones instead of breaking the command mid-word. */}
+                <code
+                  tabIndex={0}
+                  className="max-w-full min-w-0 overflow-x-auto rounded-md border border-white/10 bg-black/40 px-2.5 py-1.5 font-mono text-xs whitespace-nowrap text-zinc-100 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  {monitorCommand(state.wans.map((w) => w.iface))}
+                </code>
+                <CopyButton text={monitorCommand(state.wans.map((w) => w.iface))} label={t("export.copy")} done={t("export.copied")} />
+              </div>
+            )}
+          </fieldset>
+        )}
       </div>
 
       <div className="grid gap-5">
@@ -358,14 +452,22 @@ export function CapacityPanel({ state, onCapacity, onDeployment }: Props) {
           />
         </div>
         <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <NumberField
-            label={t("capacity.avg")}
-            unit={t("params.unitMbps")}
-            value={avg}
-            max={1e4}
-            hint={t(down ? "capacity.avgHintDown" : "capacity.avgHintUp")}
-            onChange={(v) => v !== null && set(down ? { avgDownMbps: v } : { avgUpMbps: v })}
-          />
+          {average.measured ? (
+            <div className="grid content-start gap-1.5">
+              <p className="font-mono text-xs text-zinc-300">{t("capacity.avg")}</p>
+              <p className="flex h-10 items-center rounded-md border border-white/10 bg-white/[0.02] px-3 font-mono text-sm text-foreground tabular-nums">{fmtRate(avg)}</p>
+              <p className="text-xs leading-snug text-zinc-400">{t("capacity.avgMeasured", { total: fmtRate(measured ?? 0), clients: fmtNum(total, 0) })}</p>
+            </div>
+          ) : (
+            <NumberField
+              label={t("capacity.avg")}
+              unit={t("params.unitMbps")}
+              value={avg}
+              max={1e4}
+              hint={t(down ? "capacity.avgHintDown" : "capacity.avgHintUp")}
+              onChange={(v) => v !== null && set(down ? { avgDownMbps: v } : { avgUpMbps: v })}
+            />
+          )}
           <NumberField
             label={t("capacity.fileMB")}
             unit={t("sim.unitMB")}
@@ -397,6 +499,28 @@ export function CapacityPanel({ state, onCapacity, onDeployment }: Props) {
             </>
           )}
         </div>
+        {!average.measured && measuredAverages.length > 0 && (
+          <div className="grid gap-2">
+            <p className="text-xs text-zinc-400">{t("capacity.borrow")}</p>
+            <div className="flex flex-wrap gap-2">
+              {measuredAverages.map((m) => (
+                <Button
+                  key={m.id}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => set({ ...(m.down !== null ? { avgDownMbps: round3(m.down) } : {}), ...(m.up !== null ? { avgUpMbps: round3(m.up) } : {}) })}
+                >
+                  {t("capacity.borrowOne", {
+                    name: m.name.trim() || t("deployments.unnamed"),
+                    down: m.down !== null ? fmtRate(m.down) : "—",
+                    up: m.up !== null ? fmtRate(m.up) : "—",
+                  })}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <fieldset className="grid gap-3">
           <legend className="mb-3 font-mono text-xs text-zinc-300">{t("capacity.clients", { total: fmtNum(total, 0) })}</legend>

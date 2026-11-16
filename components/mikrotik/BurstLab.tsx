@@ -9,14 +9,30 @@ import { IslandFrame } from "@/components/layout/IslandFrame"
 import { WhenVisible } from "@/components/layout/WhenVisible"
 import type { Wan } from "@/lib/mikrotik/balance"
 import type { Pattern, PlanRule, QueueParams } from "@/lib/mikrotik/burst"
+import { averageOf, newId, type SavedDeployment } from "@/lib/mikrotik/deployments"
+import {
+  importDeployments,
+  putDeployment,
+  readDeployments,
+  removeDeployment,
+  serverDeployments,
+  setLastOpen,
+  subscribeDeployments,
+} from "@/lib/mikrotik/deployment-store"
 import type { QueueKind } from "@/lib/mikrotik/routeros"
 import {
+  decodeDeployment,
   decodeState,
+  deploymentFields,
+  encodeDeployment,
   encodeState,
   initialState,
+  MAX_NAME,
   PRESETS,
   presetState,
   type BalanceState,
+  type DeploymentFields,
+  type DeploymentStatus,
   type CapacityState,
   type Direction,
   type GroupState,
@@ -38,6 +54,7 @@ const frame = (className: string) =>
 const ComparePanel = dynamic(() => import("./ComparePanel").then((m) => m.ComparePanel), { ssr: false, loading: frame("min-h-[60rem] sm:min-h-[56rem]") })
 const SharedPanel = dynamic(() => import("./SharedPanel").then((m) => m.SharedPanel), { ssr: false, loading: frame("min-h-[110rem] sm:min-h-[100rem]") })
 const CapacityPanel = dynamic(() => import("./CapacityPanel").then((m) => m.CapacityPanel), { ssr: false, loading: frame("min-h-[160rem] sm:min-h-[130rem]") })
+const DeploymentsPanel = dynamic(() => import("./DeploymentsPanel").then((m) => m.DeploymentsPanel), { ssr: false, loading: frame("min-h-[40rem] sm:min-h-[32rem]") })
 const BalancePanel = dynamic(() => import("./BalancePanel").then((m) => m.BalancePanel), { ssr: false, loading: frame("min-h-[120rem] sm:min-h-[90rem]") })
 const ExportPanel = dynamic(() => import("./ExportPanel").then((m) => m.ExportPanel), { ssr: false, loading: frame("min-h-[60rem] sm:min-h-[48rem]") })
 const BulkPanel = dynamic(() => import("./BulkPanel").then((m) => m.BulkPanel), { ssr: false, loading: frame("min-h-[100rem] sm:min-h-[70rem]") })
@@ -57,12 +74,13 @@ const subscribeHash = (cb: () => void) => {
 }
 const readHash = () => window.location.hash
 
-const JUMP = ["params", "sim", "compare", "shared", "capacity", "links", "solver", "export", "bulk", "how"] as const
+const JUMP = ["params", "sim", "compare", "shared", "deployments", "capacity", "links", "solver", "export", "bulk", "how"] as const
 const ANCHORS: Record<(typeof JUMP)[number], string> = {
   params: "parametros",
   sim: "simulacion",
   compare: "comparar",
   shared: "compartida",
+  deployments: "despliegues",
   capacity: "hora-pico",
   links: "enlaces",
   solver: "calculadora",
@@ -89,6 +107,9 @@ function Section({ id, name, title, lead, children }: { id: string; name: string
 export function BurstLab() {
   const t = useTranslations("mikrotik")
   const [state, setState] = useState<LabState>(initialState)
+  // The saved deployment the page is working on (its edits are saved as they happen); null = not saved.
+  const [boundId, setBoundId] = useState<string | null>(null)
+  const saved = useSyncExternalStore(subscribeDeployments, readDeployments, serverDeployments)
 
   // A shared link carries the configuration in the hash (never sent to the
   // server). Adopt it on load and when it changes, adjusting during render.
@@ -97,8 +118,83 @@ export function BurstLab() {
   if (hash !== adopted) {
     setAdopted(hash)
     const fromHash = decodeState(hash)
-    if (fromHash) setState(fromHash)
+    if (fromHash) {
+      setState(fromHash)
+      setBoundId(null)
+    }
   }
+
+  // Without a shared link, open the deployment used last (once, when the browser's list is read).
+  const [restored, setRestored] = useState(false)
+  if (!restored && saved.loaded) {
+    setRestored(true)
+    const last = saved.list.find((d) => d.id === saved.lastOpen)
+    const fields = last ? decodeDeployment(last.data) : null
+    if (last && fields && !decodeState(window.location.hash)) {
+      setState((s) => ({ ...s, ...fields }))
+      setBoundId(last.id)
+    }
+  }
+
+  // The open deployment saves itself on every change.
+  const deploymentData = useMemo(
+    () => encodeDeployment({ deployment: state.deployment, status: state.status, capacity: state.capacity, wans: state.wans, balance: state.balance }),
+    [state.deployment, state.status, state.capacity, state.wans, state.balance]
+  )
+  useEffect(() => {
+    if (!boundId) return
+    putDeployment(boundId, deploymentData)
+    setLastOpen(boundId)
+  }, [boundId, deploymentData])
+
+  const openFields = (id: string, fields: DeploymentFields) => {
+    setState((s) => ({ ...s, ...fields }))
+    setBoundId(id)
+  }
+  const deployments = {
+    open: (id: string) => {
+      const fields = decodeDeployment(saved.list.find((d) => d.id === id)?.data ?? "")
+      if (fields) openFields(id, fields)
+    },
+    saveNew: () => {
+      const id = newId()
+      putDeployment(id, deploymentData)
+      setBoundId(id)
+    },
+    create: (name: string) => {
+      const id = newId()
+      const fields: DeploymentFields = { ...deploymentFields(initialState()), deployment: name.slice(0, MAX_NAME), status: "planned" }
+      putDeployment(id, encodeDeployment(fields))
+      openFields(id, fields)
+    },
+    duplicate: (id: string, name: string) => {
+      const fields = decodeDeployment(saved.list.find((d) => d.id === id)?.data ?? "")
+      if (!fields) return
+      const copy = { ...fields, deployment: name.slice(0, MAX_NAME) }
+      const next = newId()
+      putDeployment(next, encodeDeployment(copy))
+      openFields(next, copy)
+    },
+    remove: (id: string) => {
+      removeDeployment(id)
+      if (boundId === id) setBoundId(null)
+    },
+    importItems: (items: SavedDeployment[]) => importDeployments(items),
+  }
+
+  // Averages measured on the other saved deployments that already run, for planning new ones.
+  const measuredAverages = useMemo(
+    () =>
+      saved.list.flatMap((d) => {
+        if (d.id === boundId) return []
+        const f = decodeDeployment(d.data)
+        if (!f || f.status !== "existing") return []
+        const down = averageOf(f, "down")
+        const up = averageOf(f, "up")
+        return down.measured || up.measured ? [{ id: d.id, name: f.deployment, down: down.measured ? down.mbps : null, up: up.measured ? up.mbps : null }] : []
+      }),
+    [saved.list, boundId]
+  )
 
   const set = (patch: Partial<LabState>) => setState((s) => ({ ...s, ...patch }))
   const setQueue = (dir: Direction, patch: Partial<QueueParams>) =>
@@ -122,6 +218,7 @@ export function BurstLab() {
   const setQueueKind = (queueKind: QueueKind) => set({ queueKind })
   const setCapacity = (capacity: CapacityState) => set({ capacity })
   const setDeployment = (deployment: string) => set({ deployment })
+  const setStatus = (status: DeploymentStatus) => set({ status })
   const setWans = (wans: Wan[]) => set({ wans })
   const setBalance = (balance: BalanceState) => set({ balance })
   // A new rule reloads the current plan with it; custom values stay as they are.
@@ -147,6 +244,7 @@ export function BurstLab() {
   }
   const reset = () => {
     setState(initialState())
+    setBoundId(null)
     window.history.replaceState(null, "", window.location.pathname)
     setAdopted("")
   }
@@ -216,9 +314,21 @@ export function BurstLab() {
         </Lazy>
       </Section>
 
+      <Section id="despliegues" name="mk-deployments" title={t("deployments.title")} lead={t("deployments.lead")}>
+        <Lazy fallback="min-h-[40rem] sm:min-h-[32rem]">
+          <DeploymentsPanel state={state} saved={saved} boundId={boundId} actions={deployments} />
+        </Lazy>
+      </Section>
+
       <Section id="hora-pico" name="mk-capacity" title={t("capacity.title")} lead={t("capacity.lead")}>
         <Lazy fallback="min-h-[160rem] sm:min-h-[130rem]">
-          <CapacityPanel state={state} onCapacity={setCapacity} onDeployment={setDeployment} />
+          <CapacityPanel
+            state={state}
+            onCapacity={setCapacity}
+            onDeployment={setDeployment}
+            onStatus={setStatus}
+            measuredAverages={measuredAverages}
+          />
         </Lazy>
       </Section>
 
