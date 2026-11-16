@@ -8,6 +8,8 @@ import { CopyButton } from "@/components/mikrotik/CopyButton"
 import { SelectField } from "@/components/mikrotik/SelectField"
 import { CHASSIS } from "@/lib/olt-kb"
 import { BuildDeployment } from "./BuildDeployment"
+import { DEFAULT_POWER, PowerPanel, type PowerChoice } from "./PowerPanel"
+import { powerBill, powerPlan } from "@/lib/olt-power"
 import { LAYOUTS, boardsFor, decodeBuild, encodeBuild, starter, summarize, type Build, type BuildIssue, type PonTech, type SlotRole } from "@/lib/olt-build"
 
 const ROLE_STYLE: Record<SlotRole, string> = {
@@ -46,8 +48,12 @@ export function OltBuilder() {
     setBuild({ ...build, slots: next })
   }
   const chassis = CHASSIS.find((c) => c.id === build.chassis)
+  const [power, setPower] = useState<PowerChoice>(DEFAULT_POWER)
+  const powerBoards = slots.filter((slot) => s.roleOf[slot] === "power" && build.slots[slot]).map((slot) => build.slots[slot])
+  const plan = powerPlan({ loadW: s.maxW, chassis: build.chassis, boards: powerBoards, unknownBoards: s.issues.some((i) => i.code === "noPowerData"), ...power })
+  const external = powerBill(plan)
 
-  const bill = [`1 × ${chassis?.name ?? build.chassis}${chassis?.backplane ? ` (${chassis.backplane.v})` : ""}`, ...s.bill.map((x) => `${x.count} × ${x.code}`)].join("\n")
+  const bill = [`1 × ${chassis?.name ?? build.chassis}${chassis?.backplane ? ` (${chassis.backplane.v})` : ""}`, ...s.bill.map((x) => `${x.count} × ${x.code}`), ...(external ? [external] : [])].join("\n")
   const shareUrl = () => `${window.location.origin}/olt?${PARAM}=${encodeURIComponent(encodeBuild(build))}#armar`
 
   const issueText = (i: BuildIssue) => {
@@ -165,7 +171,7 @@ export function OltBuilder() {
           )}
           <div className="grid gap-2">
             <p className="text-xs text-zinc-400">{t("bill")}</p>
-            <pre className="overflow-x-auto rounded-lg bg-black/40 p-3 font-mono text-xs leading-relaxed text-zinc-200">{bill}</pre>
+            <pre className="rounded-lg bg-black/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-200 [overflow-wrap:anywhere]">{bill}</pre>
             <div className="flex flex-wrap gap-2">
               <CopyButton text={bill} label={t("copyBill")} done={t("copied")} />
               <CopyButton getText={shareUrl} label={t("copyLink")} done={t("copied")} />
@@ -174,6 +180,7 @@ export function OltBuilder() {
           <p className="text-xs leading-snug text-zinc-400">{t("note")}</p>
         </div>
       </div>
+      <PowerPanel plan={plan} choice={power} onChange={setPower} chassis={build.chassis} />
       <BuildDeployment build={build} ports={s.ports} onBuild={setBuild} />
     </div>
   )

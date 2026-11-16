@@ -12,16 +12,18 @@ import { OpticBudget } from "./OpticBudget"
 import { Src } from "./Src"
 import { OltBuilder } from "./OltBuilder"
 import { OltOnts } from "./OltOnts"
+import { OltPower } from "./OltPower"
 import { OltSoftware } from "./OltSoftware"
 import { OltTrouble } from "./OltTrouble"
 import { OpticModules } from "./OpticModules"
 import { BOARD_KINDS, BOARDS, CHASSIS, OPTICS, SOURCES, chassisName, type Board, type BoardKind, type Chassis, type Fact, type Family } from "@/lib/olt-kb"
 
-const SECTIONS = ["chassis", "builder", "boards", "optics", "onts", "compat", "modified", "software", "buying", "trouble", "commands", "sources"] as const
+const SECTIONS = ["chassis", "builder", "boards", "power", "optics", "onts", "compat", "modified", "software", "buying", "trouble", "commands", "sources"] as const
 const ANCHOR: Record<(typeof SECTIONS)[number], string> = {
   chassis: "chasis",
   builder: "armar",
   boards: "tarjetas",
+  power: "energia",
   optics: "opticas",
   onts: "onts",
   compat: "compatibilidad",
@@ -320,6 +322,10 @@ export function OltKnowledgeBase() {
           </div>
           <Boards />
         </div>
+      </Section>
+
+      <Section id={ANCHOR.power} name="olt-power" title={t("power.title")} lead={t("power.lead")}>
+        <OltPower />
       </Section>
 
       <Section id={ANCHOR.optics} name="olt-optics" title={t("optics.title")} lead={t("optics.lead")}>

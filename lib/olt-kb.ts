@@ -64,6 +64,13 @@ export const SOURCES: Source[] = [
   { id: "hdPatch", kind: "huawei", title: "SmartAX MA5600T Hardware Description (copia en ManualsLib, p. 172): tarjetas que piden parche en V800R017C10/V800R018C00", url: "https://www.manualslib.com/manual/2092344/Huawei-Smartax-Ma5600t.html?page=172" },
   { id: "huaweiTs", kind: "huawei", title: "Huawei: «GPON ONU frequently goes online and offline» (manejo de alarmas)", url: "https://info.support.huawei.com/network/ptmngsys/Web/tsrev_access/en/content/access/20_gpononu_frequently_goes_online_and_offline/trouble_510802.html" },
   { id: "iatecOnu", kind: "reseller", title: "IA Tecnologia: ONU con LOS u offline en OLT Huawei, diagnóstico completo", url: "https://iatecnologia.net/onu-los-offline-olt-huawei/" },
+  // Power.
+  { id: "etp4890", kind: "huawei", title: "ETP4890-A2 Embedded Power User Manual, Issue 10 (copia publicada por una tienda)", url: "https://cdn.awsli.com.br/147/147951/arquivos/ETP4890-A2%20Embedded%20Power%20User%20Manual.pdf", date: "2017-11-28" },
+  { id: "hd5800", kind: "huawei", title: "MA5800 Hardware Description (copia en Scribd; leída por los extractos del buscador)", url: "https://www.scribd.com/document/431825818/MA5800-Hardware-Description" },
+  { id: "tlPila", kind: "reseller", title: "Thunder-link: H901PILA (tarjeta de energía DC del MA5800)", url: "https://www.thunder-link.com/h901pila.html" },
+  { id: "tlEtp48100", kind: "reseller", title: "Thunder-link: ETP48100-A1-50A, sistema de energía −48 V", url: "https://www.thunder-link.com/etp48100-a1-50a" },
+  { id: "tlEps30", kind: "reseller", title: "Thunder-link: EPS30-4815AF-15A, sistema de energía −48 V", url: "https://www.thunder-link.com/EPS30-4815AF-15A_p682.html" },
+  { id: "tlEps75", kind: "reseller", title: "Thunder-link: EPS75-4815AF-45A, sistema de energía −48 V", url: "https://www.thunder-link.com/eps75-4815af-45a_p709/" },
   { id: "tlOnu", kind: "reseller", title: "Thunder-link: Failure to go online of a GPON ONU", url: "https://www.thunder-link.com/failure-to-go-online-of-a-gpon-onu/", date: "2024-05-21" },
 ]
 
@@ -119,7 +126,7 @@ export const CHASSIS: Chassis[] = [
     controlBoards: ["H801MCUD", "H801MCUD1", "H801MCUE"],
     uplinkSlots: h("Ninguno: los uplinks van en la controladora (MCUD 4 × GE; MCUD1 2 × GE/10GE + 2 × GE)"),
     powerSlots: h("1 (slot 4)"),
-    powerBoards: ["H801MPWC", "H801MPWD"],
+    powerBoards: ["H801MPWC", "H801MPWD", "H801MPWE"],
     power: h("DC −48/−60 V (−38.4 a −72 V, 10 A) o AC 110/220 V (6 A, con batería)"),
     maxPower: h("293.5 W (configuración P2P de prueba de Huawei)"),
     fans: h("Charola de 2 ventiladores, H831FCBB: 4 W / 39 W"),
@@ -363,6 +370,7 @@ export const BOARDS: Board[] = [
   { code: "H801PRTG", kind: "power", family: "ma5600", ports: h("1 entrada −48 V DC, solo filtro"), power: h("0.2 W"), chassis: BIG_5600, lifecycle: h("EOM"), replacedBy: h(["H801PRTE"]) },
   { code: "H801PRTA", kind: "power", family: "ma5600", ports: h("1 entrada −48 V DC"), power: h("1.5 W"), chassis: ["ma5600t-etsi", "ma5600t-iec"], lifecycle: h("EOP"), replacedBy: h(["H801PRTE"]) },
   { code: "H801MPWC", kind: "power", family: "ma5600", ports: h("2 entradas −48 V DC (10 A cada una)"), power: h("2.5 W"), chassis: ["ma5608t"], minVersion: h("V800R012C00") },
+  { code: "H801MPWE", kind: "power", family: "ma5600", ports: ds("1 entrada −48 V DC (tarjeta DC sencilla)"), chassis: ["ma5608t"], detail: ds("Solo aparece en la lista de partes del datasheet; sin ficha en la descripción de hardware") },
   { code: "H801MPWD", kind: "power", family: "ma5600", ports: h("AC 100–240 V, 6 A; salida −48 V, 400 W; entrada de batería"), power: h("2 W; eficiencia máx. 93 %"), chassis: ["ma5608t"], minVersion: h("V800R012C00") },
   { code: "H801FCBI", kind: "fan", family: "ma5600", ports: h("Charola de ventiladores ETSI o MA5603T"), power: h("13–16 / 67 W"), chassis: ["ma5600t-etsi", "ma5603t"], detail: h("Reemplaza a FCBB (ETSI) y a FMCA (MA5603T)") },
   { code: "H801FCBH", kind: "fan", family: "ma5600", ports: h("Charola IEC, 10 ventiladores"), power: h("21 / 88 W"), chassis: ["ma5600t-iec"], detail: h("Reemplaza a FCBC") },
@@ -391,8 +399,8 @@ export const BOARDS: Board[] = [
   { code: "H901FLHF", kind: "combo", family: "ma5800", ports: d8("16 × Flex-PON: GPON, XG-PON, XGS-PON, combos o TWDM según el módulo óptico"), chassis: ALL_5800 },
   { code: "H901NXED", kind: "uplink", family: "ma5800", ports: r("8 × 10GE/GE", "telecomate"), chassis: BIG_5800 },
   { code: "H902NCEB", kind: "uplink", family: "ma5800", ports: r("2 × 100GE", "telecomate"), chassis: BIG_5800 },
-  { code: "H901PILA", kind: "power", family: "ma5800", ports: r("Entrada −48 V DC", "telecomate"), chassis: BIG_5800 },
-  { code: "H901PISB", kind: "power", family: "ma5800", ports: r("AC (MA5800-X2)", "telecomate"), chassis: ["ma5800-x2"] },
+  { code: "H901PILA", kind: "power", family: "ma5800", ports: r("1 entrada −48/−60 V DC (−38.4 a −72 V) por 2 terminales OT de 100 A", "tlPila"), power: r("0.5 / 4 W", "tlPila"), chassis: BIG_5800, detail: r("Número de parte 03022RVX; dos tarjetas = doble alimentación", "tlPila") },
+  { code: "H901PISB", kind: "power", family: "ma5800", ports: h("1 entrada AC 220 V o 110 V, salida de 600 W, respaldo con batería", "hd5800"), chassis: ["ma5800-x2"] },
   { code: "H901PISA", kind: "power", family: "ma5800", ports: r("DC (MA5800-X2)", "telecomate"), chassis: ["ma5800-x2"] },
 ]
 
@@ -645,3 +653,107 @@ export const COMMANDS: Command[] = [
 
 export const sourceOf = (id: string) => SOURCES.find((s) => s.id === id)
 export const chassisName = (id: string) => CHASSIS.find((c) => c.id === id)?.name ?? id
+
+// ── Power: AC boards and external −48 V systems ─────────────────────────────
+
+/** Power boards that take AC directly (rectifier inside): rated DC output, W. Every other power board needs −48 V DC from outside. */
+export const AC_BOARDS: Record<string, Fact<number>> = {
+  H801MPWD: h(400),
+  H901PISB: h(600, "hd5800"),
+}
+
+/** Chassis maximum input current per the Huawei documents (DC), A. */
+export const CHASSIS_INPUT_A: Record<string, Fact<number>> = {
+  ma5608t: h(10),
+  ma5603t: h(20),
+  "ma5800-x2": d8(20),
+  "ma5800-x7": d8(40),
+  "ma5800-x15": d8(60),
+  "ma5800-x17": d8(60),
+}
+
+/**
+ * An AC → −48 V DC power system (rectifier shelf with batteries) for the OLTs that only take DC.
+ * moduleA: what one rectifier gives at 176 V AC and up (220 V between two phases in Mexico) and, derated, at 85–175 V
+ * (127 V phase to neutral).
+ */
+export type PowerSystem = {
+  id: string
+  /** Rectifier model(s) it takes. */
+  rectifier: Fact
+  /** low: derated figure (the source's watts at 85–175 V ÷ 53.5 V, or half where the source says it halves). */
+  moduleA: { high: Fact<number>; low: Fact<number> }
+  /** Rectifier slots. */
+  slots: Fact<number>
+  maxA: Fact<number>
+  input: Fact
+  /** DC outputs (breakers) to the loads. */
+  outputs: Fact
+  /** Biggest load output, A. */
+  maxOutputA: Fact<number>
+  /** Battery connection (breaker / port). */
+  battery: Fact
+  hasBattery: boolean
+  monitor?: Fact
+  size?: Fact
+  temperature?: Fact
+  /** Which OLTs the source says it powers. */
+  powers: Fact
+}
+export const POWER_SYSTEMS: PowerSystem[] = [
+  {
+    id: "ETP4890-A2",
+    rectifier: h("2 a 3 × R4830G1 / R4830N2 (30 A, 1600 W) o R4815G1 / R4815N1 (15 A)", "etp4890"),
+    moduleA: { high: h(30, "etp4890"), low: h(15, "etp4890") },
+    slots: h(3, "etp4890"),
+    maxA: h(90, "etp4890"),
+    input: h("85–300 V AC (nominal 220–240 V): monofásica 220 V, 110 V entre dos fases o trifásica; −53.5 V de salida, 4800 W máx.", "etp4890"),
+    outputs: h("LOAD1 10 A, LOAD2 30 A, LOAD3 40 A, LOAD4 40 A", "etp4890"),
+    maxOutputA: h(40, "etp4890"),
+    battery: h("Breaker BATT de 80 A, gestión de baterías desde la SMU", "etp4890"),
+    hasBattery: true,
+    monitor: h("SMU01A: web, SNMP y HTTPS; SMU01B: protocolo de Huawei para equipos de acceso (U2000); contactos secos opcionales", "etp4890"),
+    size: h("2U: 86.1 × 442 × 255 mm, 10 kg con 3 rectificadores; orejas para rack de 19 pulgadas o ETSI", "etp4890"),
+    temperature: h("−40 a +65 °C", "etp4890"),
+    powers: h("Huawei la usa en los gabinetes de AC del MA5800", "hd5800"),
+  },
+  {
+    id: "ETP48100-A1",
+    rectifier: r("1 o 2 × R4850G2 (50 A)", "tlEtp48100"),
+    moduleA: { high: r(50, "tlEtp48100"), low: r(23, "tlEtp48100") },
+    slots: r(2, "tlEtp48100"),
+    maxA: r(100, "tlEtp48100"),
+    input: r("176–290 V AC monofásica (3000 W por rectificador); de 85 a 175 V baja a 1250 W", "tlEtp48100"),
+    outputs: r("2 salidas de 25 A", "tlEtp48100"),
+    maxOutputA: r(25, "tlEtp48100"),
+    battery: r("Sin puerto de batería", "tlEtp48100"),
+    hasBattery: false,
+    powers: r("MA5683T, MA5680T, MA5800-X7, X15 y X17", "tlEtp48100"),
+  },
+  {
+    id: "EPS30-4815AF",
+    rectifier: r("1 × GERM4815T (15 A)", "tlEps30"),
+    moduleA: { high: r(15, "tlEps30"), low: r(7.5, "tlEps30") },
+    slots: r(1, "tlEps30"),
+    maxA: r(15, "tlEps30"),
+    input: r("176–290 V AC monofásica (15 A, 800 W); 110 V entre dos fases: 7.5 A", "tlEps30"),
+    outputs: r("Load1 10 A, Load2 20 A", "tlEps30"),
+    maxOutputA: r(20, "tlEps30"),
+    battery: r("Puerto BATT de 20 A", "tlEps30"),
+    hasBattery: true,
+    powers: r("MA5683T, MA5680T", "tlEps30"),
+  },
+  {
+    id: "EPS75-4815AF",
+    rectifier: r("3 a 5 × GERM4815T (15 A); 3 de fábrica = 45 A", "tlEps75"),
+    moduleA: { high: r(15, "tlEps75"), low: h(7.5) },
+    slots: r(5, "tlEps75"),
+    maxA: r(75, "tlEps75"),
+    input: h("Con 110 V la salida baja a la mitad (máx. 1600 W); entre 90 y 175 V AC baja en línea recta", "hd5600"),
+    outputs: h("Solo dos entradas de 40 A para las OLT (una tarjeta de energía por subrack si alimenta dos)", "hd5600"),
+    maxOutputA: h(40),
+    battery: r("Con puerto de batería (capacidad no publicada)", "tlEps75"),
+    hasBattery: true,
+    powers: h("Huawei la usa en el gabinete de AC N66E-18 para MA5600T y MA5603T (hasta 100 Ah de batería)", "hd5600"),
+  },
+]

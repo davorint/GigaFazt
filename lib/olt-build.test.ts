@@ -31,7 +31,7 @@ describe("builder numbers match the sourced knowledge base", () => {
 describe("what fits where", () => {
   it("MA5608T: MCU control boards, MPW power, no GIU slots", () => {
     expect(boardsFor("ma5608t", "control").map((b) => b.code)).toEqual(["H801MCUD", "H801MCUD1", "H801MCUE"])
-    expect(boardsFor("ma5608t", "power").map((b) => b.code)).toEqual(["H801MPWC", "H801MPWD"])
+    expect(boardsFor("ma5608t", "power").map((b) => b.code)).toEqual(["H801MPWC", "H801MPWE", "H801MPWD"])
     expect(boardsFor("ma5608t", "service").map((b) => b.code)).toContain("H802GPFD")
     expect(boardsFor("ma5608t", "service").map((b) => b.code)).not.toContain("H901GPHF")
   })

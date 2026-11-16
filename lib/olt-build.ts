@@ -66,6 +66,7 @@ export const BOARD_NUMBERS: Record<string, { s?: number; m?: number; pon?: { por
   H801PRTA: { s: 1.5, m: 1.5 },
   H801MPWC: { s: 2.5, m: 2.5 },
   H801MPWD: { s: 2 },
+  H901PILA: { s: 0.5, m: 4 },
   H901GPHF: { s: 25, m: 50, pon: { ports: 16, tech: "gpon" } },
   H901XGHD: { s: 42, m: 61, pon: { ports: 8, tech: "xgpon" } },
   H901XSHF: { pon: { ports: 16, tech: "xgspon" } },

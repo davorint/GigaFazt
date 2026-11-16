@@ -19,6 +19,7 @@
         "chassis": "Chasis",
         "builder": "Arma tu OLT",
         "boards": "Tarjetas",
+        "power": "Energía",
         "optics": "Ópticas",
         "onts": "ONT",
         "compat": "Compatibilidad",
@@ -282,6 +283,42 @@
           "ma5800x17": "Huawei MA5800-X17",
           "other": "Otra"
         }
+      },
+      "energy": {
+        "title": "Energía de esta OLT",
+        "load": "A consumo máximo pide {amps} A a −{volts} V.",
+        "chassisMax": "El chasis admite hasta {amps} A por entrada.",
+        "ac": "La alimenta la {board}: toma AC directo y da hasta {rated} W.",
+        "acBattery": "Para {hours} h con la luz caída: batería de 48 V de unos {ah} Ah.",
+        "dc": "Sus tarjetas de energía solo toman −48 V DC: necesitas un sistema de energía externo (AC a DC) con baterías.",
+        "system": "Sistema de energía",
+        "hours": "Respaldo con batería",
+        "hoursHint": "Horas con la luz caída. Se calcula con {usable} % de la batería utilizable y carga de {rate} C (valores típicos).",
+        "mains": "Luz de la red",
+        "mainsOptions": {
+          "127": "127 V (fase y neutro)",
+          "220": "220 V (entre dos fases)"
+        },
+        "spare": "Un rectificador de más por si falla uno",
+        "module": "Un rectificador da",
+        "modules": "Rectificadores",
+        "modulesValue": "{n} de {slots} ranuras",
+        "battery": "Baterías 48 V",
+        "batteryValue": "{ah} Ah (carga {charge} A)",
+        "outputs": "Salidas",
+        "none": "Ninguna",
+        "issues": {
+          "acOver": "El armado pasa de los {rated} W que da la {board}: usa la tarjeta DC con un sistema externo o quita tarjetas.",
+          "noBoard": "Sin tarjeta de energía: pon una en su ranura.",
+          "mixed": "Mezcla una tarjeta de AC con una de DC: usa dos iguales.",
+          "tooFewSlots": "Se necesitan {need} rectificadores y el sistema tiene {slots} ranuras: escoge uno más grande, quita el de reserva o conéctalo a 220 V.",
+          "outputSmall": "La OLT pide {amps} A y la salida más grande del sistema es de {output} A.",
+          "noBattery": "Este sistema no tiene puerto de batería: sin respaldo cuando se va la luz.",
+          "lowMains": "A 127 V cada rectificador da la mitad: conectado entre dos fases (220 V) necesitas menos.",
+          "fromChassis": "Faltan los consumos de algunas tarjetas: para no quedarte corto se usa la corriente máxima del chasis ({amps} A, Huawei). Si consigues los consumos, el cálculo baja."
+        },
+        "note": "La corriente se calcula a 48 V (el sistema trabaja a −53.5 V, así que la real es un poco menor). Los rectificadores, salidas y batería son los de la ficha de cada sistema; la del ETP4890-A2 viene del manual de Huawei, las demás de revendedores. El sistema y las baterías se suman a la lista de compra.",
+        "loadChassis": "Se dimensiona con {amps} A a −{volts} V, lo más que pide el chasis."
       }
     },
     "modified": {
@@ -580,6 +617,49 @@
         "admin": "Alguien lo desactivó, lo borró o lo reinició, o el ONT se reinició solo: no es la fibra."
       },
       "note": "Los significados vienen de una guía de técnico (revendedor), los números de alarma de Huawei. Los nombres de los campos y la sintaxis pueden cambiar con la versión de la OLT."
+    },
+    "power": {
+      "title": "Energía",
+      "lead": "Cómo se alimenta cada chasis: con una tarjeta de AC (el rectificador va en la tarjeta) o con −48 V de un sistema de energía externo con baterías. «Arma tu OLT» calcula los rectificadores y las baterías de tu armado.",
+      "chassisTitle": "Cómo se alimenta cada chasis",
+      "cols": {
+        "chassis": "Chasis",
+        "boards": "Tarjetas de energía",
+        "input": "Entrada",
+        "current": "Corriente máx.",
+        "external": "¿Fuente externa?"
+      },
+      "acBoard": "AC directo, {w} W",
+      "dcBoard": "−48 V DC",
+      "noData": "sin dato",
+      "externalNeeded": "Sí: solo toma −48 V DC; con AC necesitas un sistema de energía.",
+      "externalOptional": "No, con {boards} (AC directo). Con la tarjeta DC, sí.",
+      "systemsTitle": "Sistemas de energía −48 V (AC a DC)",
+      "systemsLead": "Convierten la luz de la red en −48 V para la OLT y cargan las baterías. El ETP4890-A2 tiene manual de Huawei; los demás, solo fichas de revendedor.",
+      "rows": {
+        "model": "Modelo",
+        "rectifier": "Rectificadores",
+        "module": "Un rectificador (220 V / 127 V)",
+        "slots": "Ranuras",
+        "maxA": "Salida máx.",
+        "input": "Entrada AC",
+        "outputs": "Salidas a la OLT",
+        "battery": "Batería",
+        "monitor": "Monitoreo",
+        "size": "Tamaño",
+        "temperature": "Temperatura",
+        "powers": "Alimenta a"
+      },
+      "adviceTitle": "Para instalarlo",
+      "advice": [
+        "En México la red da 127 V entre fase y neutro y 220 V entre dos fases. A 127 V los rectificadores entregan la mitad (el ETP4890-A2: 800 W en vez de 1600 W por rectificador); conéctalos entre dos fases para tener la potencia completa.",
+        "Doble alimentación: los chasis con dos tarjetas de energía (dos PRTE, dos PILA) se alimentan de dos breakers distintos del sistema (en el ETP4890-A2, LOAD3 y LOAD4 de 40 A): si se dispara uno, la OLT sigue. Cada uno debe aguantar la carga completa.",
+        "Baterías de 48 V = cuatro de 12 V en serie. Para dimensionarlas, «Arma tu OLT» usa 80 % de la capacidad como utilizable y una carga de 0.1 C: son valores típicos de plomo-ácido; usa los de la hoja de tus baterías.",
+        "El MA5608T con MPWD y el MA5800-X2 con PISB no necesitan sistema externo: la tarjeta toma AC y carga su propia batería. Revisa que el armado no pase de lo que da la tarjeta (400 W la MPWD, 600 W la PISB).",
+        "Un UPS de AC no sustituye al rectificador en los chasis que solo toman −48 V; sirve con las tarjetas de AC.",
+        "El ETP4890-A2 avisa por SNMP y web (SMU01A) de falla de luz, batería baja y rectificador dañado: conéctalo a tu VLAN de gestión y súmalo a las alertas.",
+        "Al comprar uno usado: que traiga la SMU y rectificadores del modelo que acepta (R4830G1/N2 o R4815G1/N1 en el ETP4890-A2), y pide el cable y el breaker de batería."
+      ]
     }
   }
 }
