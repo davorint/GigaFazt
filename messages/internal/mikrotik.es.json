@@ -934,7 +934,6 @@
         "linksEdit": "Editar en Varios enlaces",
         "issues": {
           "unsupported": "La {model} no tiene tarjetas {tech}: el XGS-PON es de la serie MA5800.",
-          "unconfirmed": "XG-PON en la {model}: solo la lista de un distribuidor menciona tarjetas (XGBC de 4 puertos, XGBD de 8). Confírmalo con Huawei o con quien te vende el equipo antes de contar con ellas.",
           "tooManyPorts": "Con {homes} clientes por puerto se necesitan {need} puertos y la {model} admite como mucho {max} {tech}: no caben en una OLT.",
           "tooManyHomes": "Más de {max} clientes por puerto: el divisor más grande que se toma en cuenta es 1:{max}.",
           "tooManyUsers": "Más de {max} clientes: lo más que admite la {model}.",

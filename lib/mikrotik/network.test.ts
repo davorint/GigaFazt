@@ -176,11 +176,15 @@ describe("load balancing script (RouterOS v7)", () => {
 })
 
 describe("the deployment's OLT", () => {
-  it("knows the MA5600T family has no XGS-PON and only unconfirmed XG-PON", () => {
+  it("knows the MA5600T family has XG-PON (Huawei) but no XGS-PON", () => {
     expect(checkOlt({ model: "ma5608t", tech: "xgspon", homesPerPort: 32, uplinkMbps: 10000 }, 256).map((i) => i.code)).toContain("unsupported")
-    expect(checkOlt({ model: "ma5683t", tech: "xgpon", homesPerPort: 32, uplinkMbps: 10000 }, 256).map((i) => i.code)).toContain("unconfirmed")
-    // 1,024 clients at 64 per port: the 16 XGS-PON ports of an MA5800-X2.
+    // XG-PON confirmed by Huawei (H802XGBC): 48 ports on an MA5683T are plenty for 256 clients.
+    expect(checkOlt({ model: "ma5683t", tech: "xgpon", homesPerPort: 32, uplinkMbps: 10000 }, 256)).toEqual([])
+    // An MA5608T has 8 XG-PON ports (2 slots × 4): 512 clients at 32 per port need 16.
+    expect(checkOlt({ model: "ma5608t", tech: "xgpon", homesPerPort: 32, uplinkMbps: 10000 }, 512)).toContainEqual({ code: "tooManyPorts", level: "error", max: 8, need: 16 })
+    // 1,024 clients at 64 per port: 16 of the MA5800-X2's 32 XGS-PON ports.
     expect(checkOlt({ model: "ma5800x2", tech: "xgspon", homesPerPort: 64, uplinkMbps: 20000 }, 1024)).toEqual([])
+    expect(OLT_SPECS.ma5800x15.slots).toBe(15)
   })
   it("checks the ports the clients need, the split and the users against the model", () => {
     const issues = checkOlt({ model: "ma5608t", tech: "gpon", homesPerPort: 130, uplinkMbps: 0 }, 5000)

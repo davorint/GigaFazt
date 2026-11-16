@@ -309,7 +309,7 @@ export const BOARDS: Board[] = [
   { code: "H805GPFD", kind: "gpon", family: "ma5600", ports: r("16 × GPON, B+/C+/C++", "thunderlink"), power: r("26 / 50 W (la misma página también dice 45–73 W)", "thunderlink"), chassis: ALL_5600, detail: r("No viene en la descripción de hardware 2013", "thunderlink") },
   { code: "H803GPFD", kind: "gpon", family: "ma5600", ports: r("16 × GPON", "thunderlink"), power: r("39 / 61 W", "thunderlink"), chassis: ALL_5600 },
   { code: "H807GPBD", kind: "gpon", family: "ma5600", ports: r("8 × GPON, hasta 1:128", "fiberolt"), power: r("25 / 38 W", "fiberolt"), chassis: ALL_5600, detail: r("HQoS de 4 niveles, jumbo de 9216 bytes", "fiberolt") },
-  { code: "H801GPMD", kind: "gpon", family: "ma5600", ports: h("8 × GPON, 128 ONT por puerto, 40 km"), power: h("32 / 46 W"), chassis: BIG_5600, minVersion: h("V800R013C00"), detail: h("Para D-CMTS (cable); en la tabla de Huawei solo con SCUV") },
+  { code: "H801GPMD", kind: "gpon", family: "ma5600", ports: h("8 × GPON, 128 ONT por puerto, 40 km"), power: h("32 / 46 W"), chassis: BIG_5600, controls: h(["SCUV"]), minVersion: h("V800R013C00"), detail: h("Para D-CMTS (cable); en la tabla de Huawei solo con SCUV (tabla poco legible: confírmalo)") },
   // ── MA5600T family: 10G GPON ──────────────────────────────────────────────
   { code: "H802XGBC", kind: "tenG", family: "ma5600", ports: h("4 × XG-PON (XFP), división hasta 1:128"), power: h("67 / 85 W"), chassis: ALL_5600, detail: ds("Por eso el MA5608T da 8 puertos 10G GPON (2 slots × 4)") },
   { code: "H801XGBD", kind: "tenG", family: "ma5600", ports: r("8 × XG-PON", "fiberolt"), chassis: ALL_5600, detail: r("En el MA5608T y MA5683T según el revendedor; sin ficha de Huawei leída", "fiberolt") },

@@ -17,6 +17,7 @@
       "navLabel": "Secciones de la base de conocimiento",
       "jump": {
         "chassis": "Chasis",
+        "builder": "Arma tu OLT",
         "boards": "Tarjetas",
         "optics": "Ópticas",
         "compat": "Compatibilidad",
@@ -191,6 +192,57 @@
         "huawei": "Documento de Huawei",
         "reseller": "Revendedor"
       }
+    },
+    "builder": {
+      "title": "Arma tu OLT",
+      "lead": "Elige un chasis y pon una tarjeta en cada slot: ves los puertos, cuántos ONT aguanta, el consumo, la versión de software que pide y lo que no cuadra antes de comprar. Sale la lista de compra para copiar o compartir.",
+      "chassis": "Chasis",
+      "chassisHint": "Al cambiarlo se carga un ejemplo típico de ese chasis.",
+      "example": "Cargar el ejemplo",
+      "clear": "Vaciar slots",
+      "slot": "Slot {slot} · {role}",
+      "empty": "Vacío",
+      "roles": {
+        "service": "Servicio",
+        "control": "Control",
+        "uplink": "Uplink (GIU)",
+        "power": "Energía"
+      },
+      "summary": "Lo que suma",
+      "ports": "Puertos PON",
+      "portsOf": "{count} {tech}",
+      "techs": {
+        "gpon": "GPON",
+        "xgpon": "XG-PON",
+        "xgspon": "XGS-PON",
+        "comboXg": "combo XG-PON + GPON",
+        "comboXgs": "combo XGS-PON + GPON",
+        "flex": "Flex-PON"
+      },
+      "onts": "ONT máx. (GPON)",
+      "none": "—",
+      "power": "Consumo (tarjetas + ventiladores)",
+      "powerValue": "{staticW} W estático · {maxW} W máx.",
+      "current": "Corriente máx. a −48 V",
+      "currentValue": "{amps} A",
+      "software": "Software mínimo que pide",
+      "bill": "Lista de compra",
+      "copyBill": "Copiar lista",
+      "copyLink": "Copiar enlace",
+      "copied": "Copiado",
+      "issues": {
+        "noControl": "Falta la tarjeta de control.",
+        "oneControl": "Una sola tarjeta de control: sin respaldo. Pon dos iguales (activa y en reserva).",
+        "mixedControl": "Tarjetas de control distintas ({boards}): van en par, del mismo modelo.",
+        "noPower": "Falta la tarjeta de energía.",
+        "onePower": "Una sola tarjeta de energía: sin respaldo si el chasis tiene dos slots.",
+        "notWithControl": "{board} no funciona con {control} según la tabla de Huawei.",
+        "endOfLife": "{board}: {status}. Reemplazo: {replacedBy}.",
+        "endOfLifeNoReplacement": "{board}: {status}.",
+        "noPowerData": "Sin dato de consumo para {boards}: el total no los incluye.",
+        "noOntData": "Algunas tarjetas GPON no publican ONT por puerto: el total de ONT no las incluye."
+      },
+      "note": "El consumo máximo suma el máximo de cada tarjeta (o el estático si es el único publicado) y la charola de ventiladores; la corriente es ese máximo entre 48 V. Dimensiona rectificador, baterías o UPS con margen. Los ONT máximos son el tope del puerto (128 en la mayoría), no lo recomendable: la división real la marca tu óptica (ver Ópticas)."
     }
   }
 }
