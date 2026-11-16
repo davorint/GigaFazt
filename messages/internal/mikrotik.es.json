@@ -517,7 +517,6 @@
     "guide": {
       "title": "Guía paso a paso",
       "lead": "Tu lista para montar un despliegue (MikroTik como BNG, varios proveedores con PCC y CGNAT), fase por fase, con los comandos de este despliegue. Prueba cada fase antes de seguir.",
-      "intro": "Para el despliegue abierto: «{name}». Las casillas se guardan en este navegador, por despliegue.",
       "unnamed": "Sin nombre",
       "progress": "{done} de {total}",
       "missing": "Falta corregir datos en",
@@ -545,22 +544,28 @@
         "caption": "Proveedores de este despliegue",
         "cols": {
           "link": "Enlace",
-          "iface": "Interfaz",
           "type": "Conexión",
-          "down": "Bajada",
+          "iface": "Interfaz",
+          "gateway": "Gateway",
+          "down": "Bajada medida",
           "up": "Subida",
           "probe": "IP vigilada",
           "buckets": "Partes PCC (de {total})",
-          "cgnat": "Gateway en 100.64/10"
+          "cgnat": "Gateway en 100.64/10",
+          "remove": "Quitar"
         },
         "types": {
           "dhcp": "DHCP",
           "static": "IP fija",
           "pppoe": "PPPoE"
         },
-        "notMeasured": "contratada",
         "cgnatOne": "El gateway de {name} está en 100.64/10",
-        "hint": "Velocidades de «Varios enlaces» (mídelas y escríbelas ahí: el reparto y las colas salen de lo medido). Marca los proveedores que te dan una dirección en 100.64/10: en esos enlaces no se bloquea 100.64 de entrada."
+        "hint": "Mide cada enlace solo, en hora pico, y escribe lo medido (vacío = la contratada, en gris): el reparto y las colas salen de ahí. Marca los proveedores que te dan una dirección en 100.64/10.",
+        "field": "{what} de {name}",
+        "gatewayAuto": {
+          "dhcp": "del DHCP",
+          "pppoe": "la sesión"
+        }
       },
       "phases": {
         "p0": {
@@ -569,7 +574,7 @@
           "items": [
             "Instala el canal long-term de RouterOS (7.23.x en noviembre de 2026; desde 7.23.4 trae un arreglo de seguridad). No uses 7.20.0 a 7.20.5 en un servidor PPPoE (falla con varios nombres de servicio; se arregló en 7.20.6).",
             "Respalda la configuración de fábrica (comandos abajo).",
-            "Mide cada proveedor solo, en hora pico (bajada y subida), y anótalo en «Varios enlaces»: el reparto y las colas salen de lo medido, nunca del contrato.",
+            "Mide cada proveedor solo, en hora pico (bajada y subida), y anótalo en la tabla de abajo: el reparto y las colas salen de lo medido, nunca del contrato.",
             "Lee la dirección y el gateway de cada proveedor con /ip dhcp-client print detail y marca en la tabla los que estén en 100.64.0.0/10 (el proveedor ya hace CGNAT).",
             "Ten acceso fuera de banda: la VLAN de gestión o un router pequeño aparte. Nunca administres el router solo por un enlace a internet.",
             "Pega la base conectado por la VLAN de gestión (al final limita Winbox, SSH y el acceso por MAC a esa red).",
@@ -717,6 +722,24 @@
       "hardware": {
         "title": "Equipo y cuándo dividir funciones",
         "body": "Para unos 300 clientes, un CCR2004-16G-2S+ (hasta ~1.5 Gbps; se reportan ~800 usuarios PPPoE con colas al 100 % de CPU). Si esperas más de ~600 clientes o más de ~2 Gbps en 18 meses, un CCR2116-12G-4S+ (16 núcleos, 4 SFP+). PPPoE depende del CPU y aquí no hay FastTrack: vigila el CPU. Divide en dos routers cuando por una semana de horas pico pase algo de esto: CPU arriba del 70 %, más de ~700 sesiones PPPoE, connection tracking arriba del 60 % con tcp-established ya en 1 h, o necesites un segundo BNG de respaldo. La división usual: el router A termina PPPoE con sus colas y sin connection tracking; el router B hace CGNAT con FastTrack y el PCC."
+      },
+      "fixAbove": "Corrige los avisos de arriba para generar los comandos.",
+      "dataFor": "Datos de «{name}» para esta fase",
+      "plansFrom": "Los perfiles PPP salen de los planes con la regla de ráfaga de «Parámetros» (arriba en esta página).",
+      "deploy": {
+        "pick": "Despliegue",
+        "pickHint": "Los guardados en este navegador. Al cambiar, todos los comandos se generan para ese despliegue.",
+        "unsaved": "Sin guardar (lo que tienes en pantalla)",
+        "name": "Nombre del despliegue",
+        "save": "Guardar como despliegue",
+        "new": "Nuevo despliegue",
+        "newName": "Despliegue nuevo {n}",
+        "downloadRouter": "Descargar script del MikroTik (.rsc)",
+        "downloadOlt": "Descargar comandos de la OLT (.txt)",
+        "downloadHint": "El .rsc junta las fases en orden (base, balanceo, PPPoE, CGNAT, colas y firewall). Pégalo por fases o súbelo y corre /import file=…: se detiene en el primer error."
+      },
+      "file": {
+        "order": "Orden: base, rutas y PCC, PPPoE, CGNAT, colas y firewall. Revisa cada fase antes de aplicarla."
       }
     },
     "capacity": {

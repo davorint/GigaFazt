@@ -352,7 +352,16 @@ export function BurstLab({ page }: { page: LabPage }) {
       {on("guide") && (
         <Section id="guia" name="mk-guide" title={t("guide.title")} lead={t("guide.lead")}>
           <Lazy fallback="min-h-[90rem] sm:min-h-[70rem]">
-            <GuidePanel state={state} boundId={boundId} onWans={setWans} />
+            <GuidePanel
+              state={state}
+              boundId={boundId}
+              saved={saved}
+              actions={deployments}
+              onWans={setWans}
+              onBalance={setBalance}
+              onSetup={setSetup}
+              onName={setDeployment}
+            />
           </Lazy>
         </Section>
       )}
