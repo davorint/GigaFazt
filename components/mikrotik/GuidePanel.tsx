@@ -30,6 +30,7 @@ import { CodeBlock } from "./CodeBlock"
 import { IssueList } from "./IssueList"
 import { NumberField } from "./NumberField"
 import { PlansEditor } from "./PlansEditor"
+import { AccessFields, NatFields } from "./TracePanel"
 import { SelectField } from "./SelectField"
 import { TextField } from "./TextField"
 
@@ -115,7 +116,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
   const addWan = () => {
     const n = wans.length + 1
     const last = wans.at(-1)
-    onWans([...wans, { name: `WAN${n}`, type: last?.type ?? "dhcp", iface: `ether${n}`, gateway: "", mbps: last?.mbps ?? 1000, measuredMbps: null, upMbps: null, upstreamCgnat: false, monitor: nextMonitor(wans) }])
+    onWans([...wans, { name: `WAN${n}`, type: last?.type ?? "dhcp", iface: `ether${n}`, gateway: "", mbps: last?.mbps ?? 1000, measuredMbps: null, upMbps: null, upstreamCgnat: false, monitor: nextMonitor(wans), natIps: "" }])
   }
 
   const clients = clientsOf({ status: state.status, capacity: state.capacity })
@@ -127,8 +128,10 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
     monitors: b.failover === "recursive" ? wans.map((w) => w.monitor.trim()) : [],
     cgnatUpstreams: wans.filter((w) => w.upstreamCgnat).map((w) => w.iface.trim()),
     pppoeIfaces: wans.filter((w) => w.type === "pppoe").map((w) => w.iface.trim()),
+    links: wans,
+    queue: state.queueKind,
   }
-  const parts = setupParts(s, { ...ctx, name: state.deployment, plans, queue: state.queueKind })
+  const parts = setupParts(s, { ...ctx, name: state.deployment, plans })
   const balance = balanceScript({ ...b, wans })
   const olt = oltSetup(s, { plans })
   const { buckets, total } = pccBuckets(wans)
@@ -317,6 +320,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
           </>
         )}
         {toggleRow(tc("isolate"), s.isolate, (isolate) => setS({ isolate }), tc("isolateHint"))}
+        <NatFields setup={s} wans={wans} onSetup={setS} onWans={onWans} where={tc("trace.whereGuide")} />
       </>
     ),
     p4: (
@@ -334,6 +338,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
           </>
         )}
         {toggleRow(tc("mtu1500"), s.mtu1500, (mtu1500) => setS({ mtu1500 }))}
+        <AccessFields setup={s} onSetup={setS} />
         <div className="grid min-w-0 gap-2">
           <p className="text-sm font-medium text-foreground">{tc("plans.title")}</p>
           <PlansEditor plans={s.plans} rule={s.rule} onPlans={(p) => setS({ plans: p })} onRule={(rule) => setS({ rule })} label={tc("plans.captionGuide")} />
@@ -369,7 +374,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
           <span>{t("forwardBug")}</span>
         </p>
         {parts ? <CodeBlock label={t("scripts.cgnat")} code={parts.cgnat} /> : missing}
-        {!s.collector.trim() && <p className="text-sm text-amber-200">{t("noCollector")}</p>}
+        {!s.collector.trim() && <p className="text-sm text-amber-200">{t(s.natMode === "fixed" ? "noCollectorFixed" : "noCollector")}</p>}
       </>
     ),
     p4: (

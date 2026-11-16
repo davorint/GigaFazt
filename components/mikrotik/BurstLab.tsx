@@ -390,7 +390,7 @@ export function BurstLab({ page }: { page: LabPage }) {
       {on("setup") && (
         <Section id="configuracion" name="mk-setup" title={t("config.title")} lead={t("config.lead")}>
           <Lazy fallback="min-h-[110rem] sm:min-h-[80rem]">
-            <SetupPanel state={state} onSetup={setSetup} />
+            <SetupPanel state={state} onSetup={setSetup} onWans={setWans} />
           </Lazy>
         </Section>
       )}

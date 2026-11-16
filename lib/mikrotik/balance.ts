@@ -77,6 +77,8 @@ export type Wan = {
   upstreamCgnat: boolean
   /** Public IP watched through this link (recursive failover). */
   monitor: string
+  /** Public IPs this link lends to fixed CGNAT ("201.1.1.8" or "201.1.1.8-201.1.1.15"); empty = its own address. */
+  natIps: string
 }
 
 export type BalanceOptions = {
@@ -430,6 +432,7 @@ export function defaultWans(n = 3): Wan[] {
     measuredMbps: null,
     upMbps: null,
     upstreamCgnat: false,
+    natIps: "",
     monitor: DEFAULT_MONITORS[k % DEFAULT_MONITORS.length],
   }))
 }

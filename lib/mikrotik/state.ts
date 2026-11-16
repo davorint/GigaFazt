@@ -17,7 +17,7 @@ import {
 import { DEFAULT_PON_EFFICIENCY, type PonTech } from "./capacity"
 import { OLT_MODELS, type OltModelId } from "./olt"
 import { QUEUE_KINDS, type Pair, type QueueKind } from "./routeros"
-import { DEFAULT_SETUP, MAX_PLANS, type SetupPlan, type SetupState } from "./setup"
+import { DEFAULT_SETUP, MAX_PLANS, NAT_MODES, type NatMode, type SetupPlan, type SetupState } from "./setup"
 
 /**
  * State of the /mikrotik burst tool and its share link (#hash, so nothing
@@ -297,7 +297,7 @@ function setDeploymentParams(h: URLSearchParams, f: DeploymentFields) {
   if (f.deployment) h.set("n", f.deployment)
   if (f.status === "existing") h.set("st", "existing")
   const enc = encodeURIComponent
-  h.set("w", [f.balance.classifier, f.balance.failover, f.balance.nat ? "1" : "0", f.balance.clients.map(enc).join(","), ...f.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor), w.type, opt(w.measuredMbps), opt(w.upMbps), w.upstreamCgnat ? "1" : "0"].join(","))].join("|"))
+  h.set("w", [f.balance.classifier, f.balance.failover, f.balance.nat ? "1" : "0", f.balance.clients.map(enc).join(","), ...f.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor), w.type, opt(w.measuredMbps), opt(w.upMbps), w.upstreamCgnat ? "1" : "0", enc(w.natIps)].join(","))].join("|"))
   if (f.balance.speed !== "normal") h.set("lf", f.balance.speed)
   const st = f.setup
   h.set(
@@ -319,6 +319,12 @@ function setDeploymentParams(h: URLSearchParams, f: DeploymentFields) {
       st.ontMode,
       [st.rule.sustained, st.rule.threshold, st.rule.burstTime].map(num).join(";"),
       st.plans.map((p) => [p.name, num(p.down), num(p.up)].join(":")).join(";"),
+      st.natMode,
+      st.sessionLog ? "1" : "0",
+      st.pitp ? "1" : "0",
+      st.ipv6Pd,
+      num(st.ipv6PdLength),
+      st.ipv6Wan,
     ]
       .map(encodeURIComponent)
       .join("|")
@@ -342,8 +348,10 @@ function decodeSetup(v: string | null): SetupState {
     }
   })
   // 9 fields before the checklist options (collector, MTU, isolation, SMTP, ONT mode), 14 before the plans: those take the defaults.
-  if (![9, 14, 16].includes(parts.length) || parts.some((x) => x === null)) return DEFAULT_SETUP
-  const [oltPort, inet, mgmtVlan, mgmtNet, pool, dns, service, firewall, oltUplink, collector, mtu1500, isolate, blockSmtp, ontMode, rule, plans] = parts as string[]
+  // 22 with NAT mode, session log, PITP and IPv6.
+  if (![9, 14, 16, 22].includes(parts.length) || parts.some((x) => x === null)) return DEFAULT_SETUP
+  const [oltPort, inet, mgmtVlan, mgmtNet, pool, dns, service, firewall, oltUplink, collector, mtu1500, isolate, blockSmtp, ontMode, rule, plans, natMode, sessionLog, pitp, ipv6Pd, pdLen, ipv6Wan] =
+    parts as string[]
   const flag = (x: string | undefined, fallback: boolean) => (x === "1" ? true : x === "0" ? false : fallback)
   const vlan = (x: string) => finite(x, 1, 4094)
   if (vlan(inet) === null || vlan(mgmtVlan) === null || (firewall !== "0" && firewall !== "1")) return DEFAULT_SETUP
@@ -365,6 +373,12 @@ function decodeSetup(v: string | null): SetupState {
     ontMode: ontMode === "router" ? "router" : ontMode === "bridge" ? "bridge" : DEFAULT_SETUP.ontMode,
     rule: decodeSetupRule(rule) ?? DEFAULT_SETUP.rule,
     plans: decodePlans(plans) ?? DEFAULT_SETUP.plans,
+    natMode: NAT_MODES.includes(natMode as NatMode) ? (natMode as NatMode) : DEFAULT_SETUP.natMode,
+    sessionLog: flag(sessionLog, DEFAULT_SETUP.sessionLog),
+    pitp: flag(pitp, DEFAULT_SETUP.pitp),
+    ipv6Pd: (ipv6Pd ?? DEFAULT_SETUP.ipv6Pd).slice(0, 64),
+    ipv6PdLength: Math.round(finite(pdLen, 16, 128) ?? DEFAULT_SETUP.ipv6PdLength),
+    ipv6Wan: (ipv6Wan ?? DEFAULT_SETUP.ipv6Wan).slice(0, 64),
   }
 }
 
@@ -512,7 +526,7 @@ function decodeWans(h: URLSearchParams): { wans: Wan[]; balance: BalanceState } 
   }
   const wans: Wan[] = []
   for (const [k, row] of rows.entries()) {
-    const [name, iface, gateway, mbps, monitor, type, measured, up, cgnat] = row.split(",")
+    const [name, iface, gateway, mbps, monitor, type, measured, up, cgnat, natIps] = row.split(",")
     const w = { name: dec(name), iface: dec(iface), gateway: dec(gateway), mbps: finite(mbps, 1, 1e6), monitor: dec(monitor) }
     if (Object.values(w).some((x) => x === null)) return null
     wans.push({
@@ -525,6 +539,7 @@ function decodeWans(h: URLSearchParams): { wans: Wan[]; balance: BalanceState } 
       upMbps: finite(up, 1, 1e6),
       upstreamCgnat: cgnat === "1",
       monitor: (w.monitor as string).slice(0, 64),
+      natIps: (dec(natIps) ?? "").slice(0, 40),
     })
   }
   const nets = (clients ?? "").split(",").map(dec)

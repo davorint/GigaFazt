@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
-import { RULES } from "./burst"
-import { checkSetup, DEFAULT_PLANS, DEFAULT_SETUP, mikrotikSetup, oltSetup, ontTemplate, parseCidr, poolHosts, setupParts, setupPlans, setupUndo, type SetupContext } from "./setup"
+import { DEFAULT_RULE, RULES } from "./burst"
+import { natLayout, natLookup, natOf, parsePublicIps, type NatLayout } from "./cgnat"
+import { checkSetup, DEFAULT_PLANS, DEFAULT_SETUP, mikrotikSetup, oltSetup, ontTemplate, parseCidr, parseIpv6Prefix, poolHosts, setupParts, setupPlans, setupUndo, type SetupContext, type SetupParts } from "./setup"
 import { decodeState, encodeState, initialState } from "./state"
 
 const ctx = (over: Partial<SetupContext> = {}): SetupContext => ({
@@ -85,15 +86,18 @@ describe("deployment setup: Huawei OLT", () => {
     expect(olt.slice(i + 1, i + 6)).toEqual([" tcont 1 dba-profile-id 11", " gem add 1 eth tcont 1", " gem mapping 1 0 vlan 100", " commit", " quit"])
   })
   it("adds one ONT with its plan (bridge: the ONT's first port goes untagged into the internet VLAN)", () => {
-    expect(ontTemplate(DEFAULT_SETUP, { plan: 1, ponPort: "0/1/3", ontId: 5, sn: "HWTC1A2B3C4D", client: 'Juan "Pérez"' }).split("\n")).toEqual([
+    expect(ontTemplate(DEFAULT_SETUP, { plan: 1, ponPort: "0/1/3", ontId: 5, sn: "HWTC1A2B3C4D", client: 'Juan "Pérez"', servicePort: 105 }).split("\n")).toEqual([
       "interface gpon 0/1",
       ' ont add 3 5 sn-auth "HWTC1A2B3C4D" omci ont-lineprofile-id 11 ont-srvprofile-id 10 desc "Juan Pérez"',
       " ont port native-vlan 3 5 eth 1 vlan 100 priority 0",
       " quit",
-      "service-port vlan 100 gpon 0/1/3 ont 5 gemport 1 multi-service user-vlan 100 rx-cttr 11 tx-cttr 11",
+      "service-port 105 vlan 100 gpon 0/1/3 ont 5 gemport 1 multi-service user-vlan 100 rx-cttr 11 tx-cttr 11",
+      // Anti-spoofing and PITP act only when also on per service-port.
+      "security anti-ipspoofing service-port 105 enable",
+      "pitp permit-forwarding service-port 105 enable",
     ])
-    expect(ontTemplate(DEFAULT_SETUP, { plan: 0, ponPort: "x", ontId: 0, sn: "", client: "" })).toBe("")
-    expect(ontTemplate({ ...DEFAULT_SETUP, ontMode: "router" }, { plan: 0, ponPort: "0/1/0", ontId: 1, sn: "", client: "" })).not.toContain("native-vlan")
+    expect(ontTemplate(DEFAULT_SETUP, { plan: 0, ponPort: "x", ontId: 0, sn: "", client: "", servicePort: 1 })).toBe("")
+    expect(ontTemplate({ ...DEFAULT_SETUP, ontMode: "router" }, { plan: 0, ponPort: "0/1/0", ontId: 1, sn: "", client: "", servicePort: 1 })).not.toContain("native-vlan")
     expect(oltSetup(DEFAULT_SETUP, { plans: plans.slice(0, 1) })).toContain("security anti-macspoofing enable\nsecurity anti-ipspoofing enable")
   })
 })
@@ -175,5 +179,107 @@ describe("deployment setup: share link", () => {
     // Links from before the checklist options (9 fields) take the defaults for them.
     const old = decodeState("#d=100,500,75,16,0&ds=ether5|200|20|192.168.20.0%2F24|100.64.0.0%2F22|9.9.9.9|isp|1|0%2F19%2F0")?.setup
     expect(old).toMatchObject({ oltPort: "ether5", internetVlan: 200, collector: "", mtu1500: true, ontMode: "bridge" })
+  })
+})
+
+describe("traceability, OLT security and IPv6", () => {
+  const links = [
+    { name: "WAN1", iface: "ether1", natIps: "" },
+    { name: "WAN2", iface: "ether2", natIps: "201.1.1.8-201.1.1.15" },
+  ]
+  const ctx = { clients: 600, wanIfaces: ["ether1", "ether2"], balanced: null, links }
+  const pool = parseCidr("100.64.0.0/22") as NonNullable<ReturnType<typeof parseCidr>>
+
+  it("fixed CGNAT: port blocks per client, by the link's own IP or a range of IPs", () => {
+    const own = natLayout(pool, links[0]) as NatLayout
+    // 1,021 clients on one IP: 63 ports each, from 1024.
+    expect([own.hosts, own.perIp, own.block]).toEqual([1021, 1021, 63])
+    expect(natOf(own, 0)).toEqual({ address: "100.64.0.2", ip: null, from: 1024, to: 1086 })
+    expect(natOf(own, 1020)).toEqual({ address: "100.64.3.254", ip: null, from: 1024 + 1020 * 63, to: 1024 + 1021 * 63 - 1 })
+    const range = natLayout(pool, links[1]) as NatLayout
+    // 8 IPs: 128 clients each, 504 ports.
+    expect([range.perIp, range.block]).toEqual([128, 504])
+    expect(natOf(range, 130)).toEqual({ address: "100.64.0.132", ip: "201.1.1.9", from: 1024 + 2 * 504, to: 1024 + 3 * 504 - 1 })
+    expect(natLookup(range, "201.1.1.9", 2100)).toEqual(natOf(range, 130))
+    expect(natLookup(range, "201.1.1.99", 2100)).toBeNull()
+    expect(natLookup(own, "", 1000)).toBeNull()
+    expect(natLookup(own, "", 1086)?.address).toBe("100.64.0.2")
+    // Every client and port round-trips.
+    for (const k of [0, 63, 64, 500, 1020]) {
+      const n = natOf(range, k)
+      expect(natLookup(range, n.ip ?? "", n.to)?.address).toBe(n.address)
+    }
+    expect(parsePublicIps("201.1.1.15-201.1.1.8")).toBeNull()
+    expect(parsePublicIps("hola")).toBeNull()
+  })
+
+  it("fixed CGNAT script: jump to the top, chains of 64, tcp + udp per client, the rest at the end", () => {
+    const parts = setupParts({ ...DEFAULT_SETUP, natMode: "fixed" }, { ...ctx, name: "x", plans: setupPlans(DEFAULT_PLANS, DEFAULT_RULE) }) as SetupParts
+    const cg = parts.cgnat.split("\n")
+    expect(cg).toContain('add chain=srcnat action=jump jump-target="DS-cg-WAN1" out-interface="ether1" src-address=100.64.0.0/22 comment="DS: CGNAT WAN1"')
+    expect(cg).toContain(':do {/ip firewall nat move [find where chain=srcnat and comment="DS: CGNAT WAN1"] destination=0} on-error={}')
+    expect(cg).toContain('  /ip firewall nat add chain="DS-cg-WAN1-$g" action=masquerade to-ports="$p-$q" protocol=tcp src-address=$a comment="DS: CGNAT WAN1"')
+    expect(cg).toContain('  /ip firewall nat add chain="DS-cg-WAN2-$g" action=src-nat to-addresses=($pub + ($k / $per)) to-ports="$p-$q" protocol=udp src-address=$a comment="DS: CGNAT WAN2"')
+    expect(cg).toContain(":local block 504")
+    expect(cg).toContain('/ip firewall nat add chain="DS-cg-WAN2" action=src-nat to-addresses=201.1.1.8 comment="DS: CGNAT WAN2 otros protocolos"')
+    // Braces balance (the loop pastes as one block).
+    const text = parts.cgnat
+    expect(text.split("{").length).toBe(text.split("}").length)
+    const issues = checkSetup({ ...DEFAULT_SETUP, natMode: "fixed" }, ctx).map((i) => i.code)
+    expect(issues).toContain("fewPorts")
+    expect(issues).toContain("natOwnIp")
+    expect(checkSetup({ ...DEFAULT_SETUP, natMode: "fixed" }, { ...ctx, links: [{ name: "WAN1", iface: "ether1", natIps: "1.2.3" }] }).map((i) => i.code)).toContain("badNatIps")
+    // Masquerade mode writes no NAT here (the balancing has it).
+    expect(setupParts(DEFAULT_SETUP, { ...ctx, name: "x", plans: setupPlans(DEFAULT_PLANS, DEFAULT_RULE) })?.cgnat).not.toContain("DS-cg-")
+  })
+
+  it("session log: one line per login and logout, kept on disk", () => {
+    const pp = (setupParts(DEFAULT_SETUP, { ...ctx, name: "x", plans: setupPlans(DEFAULT_PLANS, DEFAULT_RULE) }) as SetupParts).pppoe
+    expect(pp).toContain('on-up=":log info (\\"DS-sesion alta usuario=\\" . \\$user . \\" ip=\\" . \\$\\"remote-address\\" . \\" mac=\\" . \\$\\"caller-id\\")"')
+    expect(pp).toContain("add name=DSsesiones target=disk disk-file-name=DS-sesiones disk-lines-per-file=20000 disk-file-count=20")
+    const off = (setupParts({ ...DEFAULT_SETUP, sessionLog: false }, { ...ctx, name: "x", plans: setupPlans(DEFAULT_PLANS, DEFAULT_RULE) }) as SetupParts).pppoe
+    expect(off).not.toContain("on-up")
+    expect(setupUndo(DEFAULT_SETUP)).toContain('/ip firewall nat remove [find where comment~"^DS: "]')
+  })
+
+  it("OLT: PITP and IP anti-spoofing at global and VLAN level", () => {
+    const olt = oltSetup(DEFAULT_SETUP, { plans: setupPlans(DEFAULT_PLANS, DEFAULT_RULE) }).split("\n")
+    const i = olt.indexOf("pitp enable pmode")
+    expect(olt.slice(i, i + 7)).toEqual(["pitp enable pmode", "vlan service-profile profile-id 10", " pitp enable", " security anti-ipspoofing enable", " commit", " quit", "vlan bind service-profile 100 profile-id 10"])
+    const noPitp = oltSetup({ ...DEFAULT_SETUP, pitp: false }, { plans: setupPlans(DEFAULT_PLANS, DEFAULT_RULE) })
+    expect(noPitp).not.toContain("pitp")
+    expect(noPitp).toContain(" security anti-ipspoofing enable")
+  })
+
+  it("IPv6: PD pool per session, optional WAN /64s, the router's input closed", () => {
+    expect(parseIpv6Prefix("2001:db8:100::/40")).toBe(40)
+    expect(parseIpv6Prefix("2001:db8:100::1/40")).toBeNull()
+    expect(parseIpv6Prefix("2001:db8::/129")).toBeNull()
+    expect(parseIpv6Prefix("2001:db8:0:0:0:0:0:0/32")).toBe(32)
+    expect(parseIpv6Prefix("2001:zz::/32")).toBeNull()
+    const v6 = { ...DEFAULT_SETUP, ipv6Pd: "2001:db8:100::/44", ipv6Wan: "2001:db8:200::/52" }
+    const parts = setupParts(v6, { ...ctx, name: "x", plans: setupPlans(DEFAULT_PLANS, DEFAULT_RULE) }) as SetupParts
+    expect(parts.pppoe).toContain("/ipv6 pool\nadd name=DS-pd prefix=2001:db8:100::/44 prefix-length=56\nadd name=DS-wan6 prefix=2001:db8:200::/52 prefix-length=64")
+    expect(parts.pppoe).toContain("use-ipv6=yes dhcpv6-pd-pool=DS-pd remote-ipv6-prefix-pool=DS-wan6")
+    expect(parts.hardening).toContain('add chain=input action=drop in-interface-list=DS-WAN comment="DS: nada desde internet al router"\nadd chain=forward action=drop connection-state=invalid')
+    expect(parts.hardening).toContain("/ipv6 firewall filter")
+    const codes = checkSetup(v6, ctx).map((i) => i.code)
+    // /44 in /56s = 4,096 prefixes; /52 in /64s = 4,096: enough. Two links: the upstream note.
+    expect(codes).not.toContain("ipv6Small")
+    expect(codes).toContain("ipv6Upstream")
+    expect(checkSetup({ ...v6, ipv6Pd: "2001:db8:100::/50" }, ctx).map((i) => i.code)).toContain("ipv6Small")
+    expect(checkSetup({ ...v6, ipv6Pd: "2001:db8:100::1/40" }, ctx).map((i) => i.code)).toContain("badIpv6")
+    expect(setupParts(DEFAULT_SETUP, { ...ctx, name: "x", plans: setupPlans(DEFAULT_PLANS, DEFAULT_RULE) })?.pppoe).not.toContain("ipv6")
+  })
+
+  it("per-client fq-codel/CAKE PPP queues warn on big deployments", () => {
+    expect(checkSetup(DEFAULT_SETUP, { ...ctx, queue: "cake" }).map((i) => i.code)).toContain("queueCpu")
+    expect(checkSetup(DEFAULT_SETUP, { ...ctx, clients: 200, queue: "cake" }).map((i) => i.code)).not.toContain("queueCpu")
+    expect(checkSetup(DEFAULT_SETUP, { ...ctx, queue: "default" }).map((i) => i.code)).not.toContain("queueCpu")
+  })
+
+  it("share link carries the new options and each link's public IPs", () => {
+    const st = { ...initialState(), setup: { ...DEFAULT_SETUP, natMode: "fixed" as const, sessionLog: false, pitp: false, ipv6Pd: "2001:db8:100::/44", ipv6PdLength: 60, ipv6Wan: "2001:db8:200::/52" } }
+    expect(decodeState(encodeState(st))?.setup).toEqual(st.setup)
   })
 })

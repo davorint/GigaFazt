@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { clientsOf } from "@/lib/mikrotik/deployments"
 import { checkSetup, mikrotikSetup, OLT_HEADROOM, oltSetup, ontTemplate, parseCidr, poolHosts, setupPlans, setupUndo, type SetupState } from "@/lib/mikrotik/setup"
 import type { LabState } from "@/lib/mikrotik/state"
+import type { Wan } from "@/lib/mikrotik/balance"
 import { fmtNum } from "@/lib/mikrotik/format"
 import { CodeBlock } from "./CodeBlock"
 import { IssueList } from "./IssueList"
@@ -14,13 +15,12 @@ import { NumberField } from "./NumberField"
 import { PlansEditor } from "./PlansEditor"
 import { SelectField } from "./SelectField"
 import { TextField } from "./TextField"
+import { AccessFields, NatFields } from "./TracePanel"
 
-type Props = { state: LabState; onSetup: (s: SetupState) => void }
-
-/** The plans, by download speed (all symmetric). */
+type Props = { state: LabState; onSetup: (s: SetupState) => void; onWans: (w: Wan[]) => void }
 
 /** VLANs, PPPoE and the OLT for a new deployment: MikroTik and Huawei commands that match. */
-export function SetupPanel({ state, onSetup }: Props) {
+export function SetupPanel({ state, onSetup, onWans }: Props) {
   const t = useTranslations("mikrotik.config")
   const s = state.setup
   const set = (patch: Partial<SetupState>) => onSetup({ ...s, ...patch })
@@ -33,14 +33,16 @@ export function SetupPanel({ state, onSetup }: Props) {
     monitors: state.balance.failover === "recursive" ? state.wans.map((w) => w.monitor.trim()) : [],
     cgnatUpstreams: state.wans.filter((w) => w.upstreamCgnat).map((w) => w.iface.trim()),
     pppoeIfaces: state.wans.filter((w) => w.type === "pppoe").map((w) => w.iface.trim()),
+    links: state.wans,
+    queue: state.queueKind,
   }
   const plans = useMemo(() => setupPlans(s.plans, s.rule), [s.plans, s.rule])
   const issues = checkSetup(s, ctx)
-  const router = mikrotikSetup(s, { ...ctx, name: state.deployment, plans, queue: state.queueKind })
+  const router = mikrotikSetup(s, { ...ctx, name: state.deployment, plans })
   const olt = oltSetup(s, { plans })
 
   // One ONT, to copy for each client (not saved).
-  const [ont, setOnt] = useState({ plan: 0, ponPort: "0/1/0", ontId: 0, sn: "", client: "" })
+  const [ont, setOnt] = useState({ plan: 0, ponPort: "0/1/0", ontId: 0, sn: "", client: "", servicePort: 100 })
   // The chosen plan, kept inside the list when plans are removed (its profiles are numbered by position).
   const ontPlan = Math.min(ont.plan, Math.max(0, plans.length - 1))
   const ontText = plans.length ? ontTemplate(s, { ...ont, plan: ontPlan }) : ""
@@ -81,6 +83,12 @@ export function SetupPanel({ state, onSetup }: Props) {
       <fieldset className="grid min-w-0 gap-4">
         <legend className="mb-3 text-sm font-medium text-foreground">{t("plans.title")}</legend>
         <PlansEditor plans={s.plans} rule={s.rule} onPlans={(p) => set({ plans: p })} onRule={(rule) => set({ rule })} />
+      </fieldset>
+
+      <fieldset className="grid min-w-0 gap-4">
+        <legend className="mb-3 text-sm font-medium text-foreground">{t("trace.title")}</legend>
+        <NatFields setup={s} wans={state.wans} onSetup={set} onWans={onWans} where={t("trace.whereSetup")} />
+        <AccessFields setup={s} onSetup={set} />
       </fieldset>
 
       <fieldset className="grid gap-4">
@@ -156,9 +164,11 @@ export function SetupPanel({ state, onSetup }: Props) {
             <NumberField label={t("ont.ontId")} unit="ID" value={ont.ontId} integer max={127} onChange={(v) => v !== null && setOnt({ ...ont, ontId: v })} />
             <TextField label={t("ont.sn")} value={ont.sn} onChange={(v) => setOnt({ ...ont, sn: v.trim() })} hint={t("ont.snHint")} />
             <TextField label={t("ont.client")} value={ont.client} onChange={(v) => setOnt({ ...ont, client: v })} />
+            <NumberField label={t("ont.servicePort")} unit={t("ont.index")} value={ont.servicePort} integer max={65535} onChange={(v) => v !== null && setOnt({ ...ont, servicePort: v })} hint={t("ont.servicePortHint")} />
           </div>
           {ontText ? <CodeBlock label={t("ont.script")} code={ontText} /> : <p className="text-sm text-amber-300">{t("ont.bad")}</p>}
           <p className="max-w-3xl text-sm leading-relaxed text-zinc-400">{t(`ont.note.${s.ontMode}`, { vlan: s.internetVlan })}</p>
+          <p className="max-w-3xl text-sm leading-relaxed text-zinc-400">{t("ont.spoofNote", { sp: ont.servicePort })}</p>
         </TabsContent>
       </Tabs>
     </div>

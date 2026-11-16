@@ -609,7 +609,7 @@
           "goal": "Cada cliente sale con la IP del enlace que le tocó, cada traducción queda registrada en el colector y 100.64 nunca cruza a internet.",
           "items": [
             "Pool solo en 100.64.0.0/10, con la primera dirección para el router (Configuración del despliegue).",
-            "Masquerade por enlace (viene en el script de la fase 1).",
+            "Masquerade por enlace (fase 1) o bloques de puertos fijos por cliente (abajo): con bloques fijos, la IP pública y el puerto dicen quién fue sin registro NAT.",
             "Revisa el presupuesto de puertos: unos {perIp} clientes por IP pública. Vuelve a revisarlo si un enlace se cae mucho tiempo o pasas de 500 clientes.",
             "Exporta los eventos NAT por IPFIX al colector: guarda la dirección y el puerto antes y después del NAT, la hora y qué usuario PPPoE tenía cada 100.64.",
             "Bloquea 100.64 desde internet (salvo en enlaces cuyo proveedor ya es CGNAT), manda el pool a blackhole y aísla a los clientes entre sí.",
@@ -739,7 +739,8 @@
       },
       "file": {
         "order": "Orden: base, rutas y PCC, PPPoE, CGNAT, colas y firewall. Revisa cada fase antes de aplicarla."
-      }
+      },
+      "noCollectorFixed": "Sin colector: con bloques de puertos fijos no hace falta el registro NAT, pero sí el de sesiones PPPoE (en disco en el router; agrega el colector para tener copia fuera)."
     },
     "capacity": {
       "title": "Capacidad en hora pico",
@@ -1075,7 +1076,14 @@
         "noPlans": "Agrega al menos un plan.",
         "badPlanSpeed": "{value}: la bajada y la subida deben ser mayores que 0.",
         "badPlanName": "{value}: usa solo letras, números, punto, - y _.",
-        "duplicatePlan": "Hay dos planes llamados {value}; cada perfil necesita su nombre."
+        "duplicatePlan": "Hay dos planes llamados {value}; cada perfil necesita su nombre.",
+        "badNatIps": "{value}: escribe una IP o un rango de IPs consecutivas (máximo 256).",
+        "fewPorts": "{value}: cada cliente recibiría {have} puertos (recomendado {need} o más). Agrega IPs públicas a ese enlace o usa un pool más chico.",
+        "natOwnIp": "{value} sale con su propia IP: si es DHCP o PPPoE y cambia, la búsqueda necesita saber qué IP tenía a esa hora.",
+        "badIpv6": "{value} no es un prefijo IPv6 válido (dirección de red, de /16 a /64, y el prefijo de cada cliente entre /48 y /64, no más grande que el bloque).",
+        "ipv6Small": "El prefijo IPv6 da {have} prefijos y hacen falta unos {need} (los clientes + 10 %).",
+        "ipv6Upstream": "IPv6 con varios proveedores: este prefijo tiene que llegarte por el proveedor que lo enruta (o por los tuyos con BGP si es tu propio bloque). El balanceo PCC de este despliegue es solo IPv4.",
+        "queueCpu": "{have} clientes con colas {value} por cliente: un reporte del foro de MikroTik tiene ~560 clientes PPPoE con colas fq-codel llenando un núcleo. Vigila /system resource cpu o usa la cola default."
       },
       "tabs": {
         "router": "MikroTik",
@@ -1088,7 +1096,8 @@
         "Pégalo conectado por la VLAN de gestión: al final de la base, Winbox, SSH y el acceso por MAC quedan solo para esa red.",
         "Cada plan es un perfil PPP con tu regla de ráfaga y las direcciones del despliegue; si el perfil ya existe, se actualiza.",
         "change-tcp-mss=yes ya ajusta el MSS: no hace falta una regla de mangle para eso.",
-        "Sin FastTrack: las colas de los clientes y el PCC lo necesitan apagado."
+        "Sin FastTrack: las colas de los clientes y el PCC lo necesitan apagado.",
+        "Con bloques de puertos fijos: después de pegar, las conexiones que ya existían siguen con su traducción vieja; se corrigen solas al cerrarse o al limpiar /ip firewall connection (corta todas las conexiones un momento)."
       ],
       "undoTitle": "Quitar esta configuración",
       "undoHint": "Quita lo que lleva el comentario «DS: » y el servidor PPPoE. Los perfiles PPP se quedan, porque las cuentas de los clientes los usan. La identidad, la zona horaria y el DNS quedan como estén.",
@@ -1099,7 +1108,8 @@
       "oltNotes": [
         "Los IDs empiezan en 10 y siguen el orden de los planes (10 el primero, 11 el segundo…). Si ya los usas en la OLT, cámbialos antes de pegar.",
         "Las tablas de tráfico y los DBA quedan un poco arriba del plan: el límite y la ráfaga los pone el MikroTik.",
-        "El perfil de servicio «router» deja los puertos del ONT en automático; ajústalo a tus modelos de ONT."
+        "El perfil de servicio «router» deja los puertos del ONT en automático; ajústalo a tus modelos de ONT.",
+        "Anti-ipspoofing y PITP solo funcionan activos en todos sus niveles: global y por VLAN (perfil de servicio de VLAN, aquí) y por service-port (plantilla «Alta de un ONT»). PITP además tiene nivel de puerto (pitp port / pitp board); su sintaxis cambia por versión, revísalo con display pitp config."
       ],
       "ont": {
         "plan": "Plan",
@@ -1114,7 +1124,11 @@
         "note": {
           "bridge": "En modo puente, conecta el router del cliente al puerto 1 del ONT y configúralo con PPPoE (sin VLAN) con el usuario y la contraseña de su cuenta.",
           "router": "En el ONT, configura la conexión WAN como PPPoE en la VLAN {vlan} con el usuario y la contraseña del cliente (los mismos de su cuenta PPPoE en el MikroTik)."
-        }
+        },
+        "servicePort": "Índice del service-port",
+        "index": "índice",
+        "servicePortHint": "Uno libre por ONT (display service-port all). Con él se activan anti-spoofing y PITP de ese ONT.",
+        "spoofNote": "En PPPoE la OLT no ve IPs (van dentro de PPPoE), así que anti-ipspoofing no debería cortar nada; si un ONT deja de navegar al activarla, quítala solo en él: security anti-ipspoofing service-port {sp} disable."
       },
       "collector": "Colector IPFIX y syslog",
       "collectorHint": "Opcional: la IP del servidor que guarda los eventos NAT y el log de PPPoE (ElastiFlow, pmacct/nfacctd…). Es el registro para responder requerimientos legales.",
@@ -1149,6 +1163,55 @@
         "hint": "Empieza con los de la página (200 Mbps, 500 Mbps y 1 Gbps). Agrega los personalizados que vendas aquí; la subida puede ser distinta de la bajada. Sin nombre, el perfil se llama plan-<velocidad> (como en «Varios clientes», así las cuentas caen en el perfil correcto).",
         "ruleNote": "Esta regla convierte cada plan en su cola con ráfaga: perfiles PPP, tablas de tráfico y DBA de la OLT. Se guarda con el despliegue.",
         "captionGuide": "Planes y sus colas (guía, fase 4)"
+      },
+      "trace": {
+        "title": "Trazabilidad, OLT e IPv6",
+        "whereSetup": "Configuración",
+        "whereGuide": "Guía, fase 3",
+        "natMode": "Cómo salen los clientes (CGNAT)",
+        "natModes": {
+          "masquerade": "Masquerade por enlace + registro NAT",
+          "fixed": "Bloques de puertos fijos por cliente"
+        },
+        "natModeHint": {
+          "masquerade": "Cada conexión toma cualquier puerto libre: para saber quién usó una IP y un puerto hace falta el registro de eventos NAT (IPFIX) en el colector.",
+          "fixed": "Cada dirección 100.64 sale siempre con la misma IP y el mismo rango de puertos en cada enlace: la IP pública y el puerto dicen quién fue sin registro NAT (como el ejemplo «CGNAT (NAT444)» del manual de MikroTik)."
+        },
+        "caption": "Puertos por cliente en cada enlace ({where})",
+        "cols": {
+          "link": "Enlace",
+          "ips": "IPs públicas para CGNAT",
+          "perIp": "Clientes por IP",
+          "ports": "Puertos por cliente",
+          "first": "Primer cliente"
+        },
+        "own": "la del enlace",
+        "ownShort": "IP del enlace",
+        "ipsOf": "IPs públicas de {name}",
+        "badIps": "Escribe una IP o un rango (201.1.1.8-201.1.1.15).",
+        "ipsHint": "Vacío = la IP que tenga el enlace (sirve con DHCP y PPPoE; si cambia, anota cuál tenía a qué hora). Con un bloque fijo, escribe sus IPs usables como rango. Cada enlace reparte todo el pool, porque el balanceo y las caídas pueden mandar a cualquier cliente por cualquier enlace. Un puerto se reusa para destinos distintos, así que el bloque limita las conexiones a un mismo servidor, no el total; abajo de {min} puertos agrega IPs.",
+        "lookup": {
+          "title": "¿Quién era? (IP pública y puerto → cliente)",
+          "link": "Enlace",
+          "ip": "IP pública",
+          "ownIp": "Este enlace usa su propia IP: basta el puerto.",
+          "port": "Puerto de origen",
+          "portUnit": "puerto",
+          "empty": "Escribe el puerto que te dieron (y la IP si el enlace tiene varias).",
+          "found": "Fue {address}: usa los puertos {from}–{to} de {ip}.",
+          "none": "Ningún cliente usa ese puerto en ese enlace (debajo de 1024, fuera del rango o IP de otro enlace).",
+          "then": "Luego busca qué usuario PPPoE tenía esa dirección a esa hora: /log print muestra lo reciente; lo anterior está en los archivos DS-sesiones (Files) y en el colector."
+        },
+        "sessionLog": "Registro de sesiones PPPoE",
+        "sessionLogHint": "Cada alta y baja escribe una línea con el usuario, su dirección 100.64 y la MAC de su equipo, guardada en disco (20 archivos de 20,000 líneas) y en el colector si hay. Es lo que une una dirección 100.64 con un cliente.",
+        "pitp": "PITP en la OLT (etiqueta de ONT en el PPPoE)",
+        "pitpHint": "La OLT agrega a cada inicio de PPPoE una etiqueta con el puerto y el ONT de donde viene (Huawei lo recomienda para PPPoE). Qué hace el MikroTik con esa etiqueta no viene en el manual de RouterOS; sirve al usar RADIUS. Se activa global, por VLAN y por service-port (plantilla del ONT).",
+        "ipv6Pd": "Prefijo IPv6 para los clientes",
+        "ipv6PdHint": "Vacío = sin IPv6. El bloque que tu proveedor te enruta (p. ej. 2001:db8:100::/44); cada sesión PPPoE recibe uno de este tamaño por DHCPv6-PD.",
+        "ipv6PdLength": "Prefijo de cada cliente",
+        "ipv6PdLengthHint": "/56 es lo común (256 redes /64 por casa).",
+        "ipv6Wan": "Prefijo para el lado WAN (opcional)",
+        "ipv6WanHint": "Un /64 por sesión para la WAN del router del cliente. Vacío = solo prefijo delegado (la WAN usa link-local)."
       }
     },
     "setup": {

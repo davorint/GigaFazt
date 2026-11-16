@@ -39,8 +39,12 @@
 import { plans as catalog } from "../plans"
 import { DEFAULT_RULE, planDefaults, type PlanRule } from "./burst"
 import { rateLimit, planName, rosString, upsert, queueTypeSetup, type Pair, type QueueKind } from "./routeros"
+import { MIN_PORTS, natLayout, natScript, type NatLink } from "./cgnat"
 
 export type OntMode = "bridge" | "router"
+/** How subscribers leave: masquerade (any port, needs the NAT log) or fixed port blocks (no log needed). */
+export type NatMode = "masquerade" | "fixed"
+export const NAT_MODES: NatMode[] = ["masquerade", "fixed"]
 
 /** A plan the deployment sells: download and upload, Mbps; name empty = "plan-<speed>" like the bulk export. */
 export type SetupPlan = { name: string; down: number; up: number }
@@ -79,6 +83,16 @@ export type SetupState = {
   /** Plans sold in this deployment, and the burst rule that turns them into queues. */
   plans: SetupPlan[]
   rule: PlanRule
+  /** CGNAT: masquerade per link (balancing) or fixed port blocks per client. */
+  natMode: NatMode
+  /** One log line per PPPoE login and logout (user, address, MAC), kept on disk and sent to the collector. */
+  sessionLog: boolean
+  /** OLT: PITP (PPPoE intermediate agent) tags each client's PPPoE with its ONT. */
+  pitp: boolean
+  /** IPv6 for clients: prefix the router hands out (empty = no IPv6), size of each client's prefix, optional /64s for the clients' WAN. */
+  ipv6Pd: string
+  ipv6PdLength: number
+  ipv6Wan: string
 }
 
 export const DEFAULT_SETUP: SetupState = {
@@ -99,7 +113,16 @@ export const DEFAULT_SETUP: SetupState = {
   ontMode: "bridge",
   plans: DEFAULT_PLANS,
   rule: DEFAULT_RULE,
+  natMode: "masquerade",
+  sessionLog: true,
+  pitp: true,
+  ipv6Pd: "",
+  ipv6PdLength: 56,
+  ipv6Wan: "",
 }
+
+/** Per-client fq-codel / CAKE PPP queues: a forum report has ~560 PPPoE clients pegging one core. */
+export const QUEUE_CPU_CLIENTS = 500
 
 /** OLT downstream table and upstream DBA: the plan + 10 %, so the MikroTik's burst queue is what limits. */
 export const OLT_HEADROOM = 1.1
@@ -135,6 +158,29 @@ const cidrText = (c: Cidr) => `${intToIp(c.net)}/${c.prefix}`
 /** Addresses the pool hands out: all but the network, the router's and the broadcast. */
 export const poolHosts = (c: Cidr) => Math.max(0, size(c) - 3)
 
+/** An IPv6 prefix (2001:db8:100::/40): its length, or null when it isn't a valid prefix with zero host bits. */
+export function parseIpv6Prefix(text: string): number | null {
+  const m = /^([0-9a-fA-F:]+)\/(\d{1,3})$/.exec(text.trim())
+  if (!m) return null
+  const len = Number(m[2])
+  if (len < 16 || len > 64) return null
+  const halves = m[1].split("::")
+  if (halves.length > 2) return null
+  const parts = (h: string) => (h === "" ? [] : h.split(":"))
+  const head = parts(halves[0])
+  const tail = halves.length === 2 ? parts(halves[1]) : []
+  if ([...head, ...tail].some((g) => !/^[0-9a-fA-F]{1,4}$/.test(g))) return null
+  const missing = 8 - head.length - tail.length
+  if (halves.length === 1 ? missing !== 0 : missing < 1) return null
+  const groups = [...head, ...Array(halves.length === 2 ? missing : 0).fill("0"), ...tail].map((g) => parseInt(g, 16))
+  // Host bits must be zero.
+  for (let bit = len; bit < 128; bit++) if ((groups[Math.floor(bit / 16)] >> (15 - (bit % 16))) & 1) return null
+  return len
+}
+
+/** Client prefixes one IPv6 pool gives (capped so huge pools don't overflow). */
+export const ipv6Count = (poolLen: number, each: number) => (each < poolLen ? 0 : 2 ** Math.min(each - poolLen, 40))
+
 // ── Checks ─────────────────────────────────────────────────────────────────
 
 export type SetupIssueCode =
@@ -156,6 +202,13 @@ export type SetupIssueCode =
   | "badPlanSpeed"
   | "badPlanName"
   | "duplicatePlan"
+  | "badNatIps"
+  | "fewPorts"
+  | "natOwnIp"
+  | "badIpv6"
+  | "ipv6Small"
+  | "ipv6Upstream"
+  | "queueCpu"
 export type SetupIssue = { code: SetupIssueCode; level: "error" | "warn" | "info"; value?: string; need?: number; have?: number }
 
 export type SetupContext = {
@@ -171,6 +224,10 @@ export type SetupContext = {
   cgnatUpstreams?: string[]
   /** PPPoE links: no interface queue to set. */
   pppoeIfaces?: string[]
+  /** The links with the public IPs they lend to fixed CGNAT. */
+  links?: NatLink[]
+  /** Queue type of the clients' PPP queues. */
+  queue?: QueueKind
 }
 
 const isIp = (s: string) => /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.test(s) && s.split(".").every((o) => Number(o) <= 255)
@@ -209,6 +266,29 @@ export function checkSetup(s: SetupState, ctx: SetupContext): SetupIssue[] {
     if (names.has(n)) out.push({ code: "duplicatePlan", level: "error", value: n })
     names.add(n)
   }
+  if (s.natMode === "fixed" && pool) {
+    const own: string[] = []
+    for (const l of ctx.links ?? []) {
+      const lay = natLayout(pool, l)
+      if (!lay) out.push({ code: "badNatIps", level: "error", value: `${l.name}: ${l.natIps}` })
+      else if (lay.block < MIN_PORTS) out.push({ code: "fewPorts", level: "warn", value: l.name, have: lay.block, need: MIN_PORTS })
+      if (lay && !lay.ips) own.push(l.name)
+    }
+    if (own.length) out.push({ code: "natOwnIp", level: "info", value: own.join(", ") })
+  }
+  if (s.ipv6Pd.trim()) {
+    const pd = parseIpv6Prefix(s.ipv6Pd)
+    const len = s.ipv6PdLength
+    if (pd === null || !Number.isInteger(len) || len < 48 || len > 64 || len < pd) out.push({ code: "badIpv6", level: "error", value: s.ipv6Pd })
+    else if (ipv6Count(pd, len) < Math.ceil(ctx.clients * 1.1)) out.push({ code: "ipv6Small", level: "warn", have: ipv6Count(pd, len), need: Math.ceil(ctx.clients * 1.1) })
+    if (s.ipv6Wan.trim()) {
+      const wan = parseIpv6Prefix(s.ipv6Wan)
+      if (wan === null) out.push({ code: "badIpv6", level: "error", value: s.ipv6Wan })
+      else if (ipv6Count(wan, 64) < Math.ceil(ctx.clients * 1.1)) out.push({ code: "ipv6Small", level: "warn", have: ipv6Count(wan, 64), need: Math.ceil(ctx.clients * 1.1) })
+    }
+    if (ctx.wanIfaces.filter((w) => w.trim()).length > 1) out.push({ code: "ipv6Upstream", level: "info" })
+  }
+  if ((ctx.queue === "fq-codel" || ctx.queue === "cake") && ctx.clients >= QUEUE_CPU_CLIENTS) out.push({ code: "queueCpu", level: "warn", have: ctx.clients, value: ctx.queue })
   return out
 }
 
@@ -230,7 +310,7 @@ const vlanName = (id: number, what: string) => `vlan${id}-${what}`
 /** The router script by phase of the checklist. */
 export type SetupParts = { base: string; cgnat: string; pppoe: string; hardening: string }
 
-export type SetupScriptContext = SetupContext & { name: string; plans: SetupPlans; queue?: QueueKind }
+export type SetupScriptContext = SetupContext & { name: string; plans: SetupPlans }
 
 /** The parts of the RouterOS v7 script; null when there are errors. */
 export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts | null {
@@ -295,6 +375,11 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
   if (cg.length === 1) cg.pop()
   cg.push("/ip route", `add dst-address=${poolNet} blackhole distance=250 ${c("pool sin salida")}`)
   if (s.isolate) cg.push("/ip firewall filter", `add chain=forward src-address=${poolNet} dst-address=${poolNet} action=drop ${c("clientes aislados entre si")}`)
+  if (s.natMode === "fixed")
+    for (const l of ctx.links ?? []) {
+      const lay = natLayout(pool, l)
+      if (lay && lay.iface) cg.push(natScript(lay, poolNet))
+    }
   if (collector)
     cg.push(
       "/ip traffic-flow set enabled=yes interfaces=all cache-entries=64k active-flow-timeout=1m inactive-flow-timeout=15s",
@@ -323,6 +408,12 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
     )
   const typeLine = queueTypeSetup(ctx.queue)
   if (typeLine) pp.push(typeLine)
+  const v6 = s.ipv6Pd.trim()
+  const v6wan = s.ipv6Wan.trim()
+  // Official example "IPv6 PD over PPP": the profile's dhcpv6-pd-pool makes a DHCPv6 server per session.
+  if (v6) pp.push("/ipv6 pool", `add name=DS-pd prefix=${v6} prefix-length=${s.ipv6PdLength}`, ...(v6wan ? [`add name=DS-wan6 prefix=${v6wan} prefix-length=64`] : []))
+  // The session log: who had which address, and when (the NAT lookup ends here).
+  const session = (what: string) => `:log info ("DS-sesion ${what} usuario=" . $user . " ip=" . $"remote-address" . " mac=" . $"caller-id")`
   pp.push("/ppp profile")
   for (const p of ctx.plans) {
     const props = [
@@ -336,11 +427,21 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
       "use-encryption=no",
       "use-upnp=no",
       "interface-list=DS-LAN",
+      ...(v6 ? ["use-ipv6=yes", "dhcpv6-pd-pool=DS-pd", ...(v6wan ? ["remote-ipv6-prefix-pool=DS-wan6"] : [])] : []),
+      ...(s.sessionLog ? [`on-up=${rosString(session("alta"))}`, `on-down=${rosString(session("baja"))}`] : []),
       ...(ctx.queue && ctx.queue !== "default" ? [`queue-type=${rosString(ctx.queue)}`] : []),
       c(`plan ${p.name}`),
     ]
     pp.push(upsert("/ppp profile", p.name, props, [`name=${rosString(p.name)}`, ...props]))
   }
+  if (s.sessionLog)
+    pp.push(
+      "/system logging action",
+      `add name=DSsesiones target=disk disk-file-name=DS-sesiones disk-lines-per-file=20000 disk-file-count=20`,
+      "/system logging",
+      "add topics=script,info action=DSsesiones",
+      ...(collector ? ["add topics=script,info action=DSremoto"] : [])
+    )
   pp.push(
     "/interface pppoe-server server",
     `add service-name=${rosString(s.service.trim())} interface=${rosString(inet)} default-profile=${rosString(ctx.plans[0].name)} authentication=pap,chap one-session-per-host=yes max-sessions=${poolHosts(pool)} keepalive-timeout=10${s.mtu1500 ? " max-mtu=1500 max-mru=1500 mrru=disabled" : ""} disabled=no`
@@ -378,6 +479,17 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
       `add chain=forward action=drop in-interface-list=DS-WAN connection-nat-state=!dstnat ${c("nada nuevo desde internet")}`
     )
   if (fw.length) hd.push("/ip firewall filter", ...fw)
+  if (v6 && s.firewall)
+    hd.push(
+      "/ipv6 firewall filter",
+      `add chain=input action=accept connection-state=established,related,untracked ${c("respuestas")}`,
+      `add chain=input action=drop connection-state=invalid ${c("invalidas")}`,
+      `add chain=input action=accept protocol=icmpv6 ${c("ICMPv6")}`,
+      `add chain=input action=accept protocol=udp dst-port=546 src-address=fe80::/10 in-interface-list=DS-WAN ${c("DHCPv6 del proveedor")}`,
+      `add chain=input action=accept protocol=udp dst-port=547 in-interface-list=DS-LAN ${c("DHCPv6-PD de los clientes")}`,
+      `add chain=input action=drop in-interface-list=DS-WAN ${c("nada desde internet al router")}`,
+      `add chain=forward action=drop connection-state=invalid ${c("invalidas")}`
+    )
 
   return { base: base.join("\n"), cgnat: cg.join("\n"), pppoe: pp.join("\n"), hardening: hd.join("\n") }
 }
@@ -396,11 +508,15 @@ export function setupUndo(s: SetupState): string {
     "/tool mac-server mac-winbox set allowed-interface-list=all",
     '/ip service set winbox address=""',
     '/ip service set ssh address=""',
-    '/ppp profile set [find where comment~"^DS: "] interface-list=none',
+    '/ppp profile set [find where comment~"^DS: "] interface-list=none on-up="" on-down=""',
     "/system logging remove [find where action=DSremoto]",
+    "/system logging remove [find where action=DSsesiones]",
+    "/system logging action remove [find where name=DSsesiones]",
     "/system logging action remove [find where name=DSremoto]",
     `/interface pppoe-server server remove [find where service-name=${rosString(s.service.trim())}]`,
     '/ip firewall filter remove [find where comment~"^DS: "]',
+    '/ip firewall nat remove [find where comment~"^DS: "]',
+    '/ipv6 firewall filter remove [find where comment~"^DS: "]',
     '/ip firewall raw remove [find where comment~"^DS: "]',
     '/ip route remove [find where comment~"^DS: "]',
     '/interface list member remove [find where comment~"^DS: "]',
@@ -450,14 +566,25 @@ export function oltSetup(s: SetupState, ctx: { plans: { name: string; down: numb
   lines.push(`ont-srvprofile gpon profile-id ${OLT_FIRST_ID} profile-name "${s.ontMode === "bridge" ? "puente" : "router"}"`, " ont-port eth adaptive pots adaptive", " commit", " quit")
   // The owner's checklist: Huawei's recommended set for PPPoE subscribers.
   lines.push("security anti-macspoofing enable", "security anti-ipspoofing enable", "security anti-macduplicate enable", "security anti-dos enable", "security anti-ipattack enable")
+  // IP anti-spoofing (and PITP) only act when also on at VLAN level (a VLAN service profile) and per service-port (ONT template).
+  if (s.pitp) lines.push("pitp enable pmode")
+  lines.push(
+    `vlan service-profile profile-id ${OLT_FIRST_ID}`,
+    ...(s.pitp ? [" pitp enable"] : []),
+    " security anti-ipspoofing enable",
+    " commit",
+    " quit",
+    `vlan bind service-profile ${s.internetVlan} profile-id ${OLT_FIRST_ID}`
+  )
   return lines.join("\n")
 }
 
-export type OntInput = { plan: number; ponPort: string; ontId: number; sn: string; client: string }
+/** servicePort: the service-port's index (it switches anti-spoofing and PITP on for that ONT). */
+export type OntInput = { plan: number; ponPort: string; ontId: number; sn: string; client: string; servicePort: number }
 
 /** Adding one ONT on a PON port with a plan's line profile and traffic table. */
 export function ontTemplate(s: SetupState, o: OntInput): string {
-  if (!/^\d{1,2}\/\d{1,2}\/\d{1,3}$/.test(o.ponPort.trim())) return ""
+  if (!/^\d{1,2}\/\d{1,2}\/\d{1,3}$/.test(o.ponPort.trim()) || !Number.isInteger(o.servicePort) || o.servicePort < 0) return ""
   const p = frameSlot(o.ponPort)
   const id = OLT_FIRST_ID + o.plan
   const desc = o.client.replace(/["\\]/g, "").slice(0, 60) || "cliente"
@@ -467,6 +594,8 @@ export function ontTemplate(s: SetupState, o: OntInput): string {
     // Bridge: the client's router plugs into the ONT's first port untagged; the ONT puts it in the internet VLAN.
     ...(s.ontMode === "bridge" ? [` ont port native-vlan ${p.port} ${o.ontId} eth 1 vlan ${s.internetVlan} priority 0`] : []),
     " quit",
-    `service-port vlan ${s.internetVlan} gpon ${p.fs}/${p.port} ont ${o.ontId} gemport 1 multi-service user-vlan ${s.internetVlan} rx-cttr ${id} tx-cttr ${id}`,
+    `service-port ${o.servicePort} vlan ${s.internetVlan} gpon ${p.fs}/${p.port} ont ${o.ontId} gemport 1 multi-service user-vlan ${s.internetVlan} rx-cttr ${id} tx-cttr ${id}`,
+    `security anti-ipspoofing service-port ${o.servicePort} enable`,
+    ...(s.pitp ? [`pitp permit-forwarding service-port ${o.servicePort} enable`] : []),
   ].join("\n")
 }
