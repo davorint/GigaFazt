@@ -157,7 +157,7 @@ export function CapacityPanel({ state, onCapacity, onStatus, measuredAverages }:
 
   // The OLT against its model: PON type, ports the clients need, split, users.
   const oltTech = c.pon === "none" ? null : c.pon
-  const oltIssues = oltTech ? checkOlt({ model: c.oltModel, tech: oltTech, homesPerPort: homes, uplinkMbps: c.oltUplinkMbps }, total, fromPorts ? (c.portsInUse ?? undefined) : undefined) : []
+  const oltIssues = oltTech ? checkOlt({ model: c.oltModel, tech: oltTech, homesPerPort: homes, uplinkMbps: c.oltUplinkMbps, builtPorts: c.oltBuild?.ports[oltTech] }, total, fromPorts ? (c.portsInUse ?? undefined) : undefined) : []
   const need = portsOf({ status: state.status, capacity: c })
   const maxPorts = oltTech ? OLT_SPECS[c.oltModel].maxPorts[oltTech] : null
 
@@ -338,6 +338,26 @@ export function CapacityPanel({ state, onCapacity, onStatus, measuredAverages }:
                   ? t("capacity.deployment.ports", { need: fmtNum(need, 0), max: fmtNum(maxPorts, 0), tech: techName, model: modelName })
                   : t("capacity.deployment.portsAny", { need: fmtNum(need, 0), tech: techName })}
             </p>
+            {c.oltBuild && oltTech && (
+              <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-zinc-300">
+                <span>{t("capacity.deployment.built", { ports: fmtNum(c.oltBuild.ports[oltTech], 0), tech: techName })}</span>
+                <a href={`/olt?arma=${encodeURIComponent(c.oltBuild.code)}#armar`} className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+                  {t("capacity.deployment.builtOpen")}
+                </a>
+                <button type="button" onClick={() => set({ oltBuild: null })} className="text-zinc-400 underline decoration-white/20 underline-offset-4 hover:text-zinc-100">
+                  {t("capacity.deployment.builtRemove")}
+                </button>
+              </p>
+            )}
+            {!c.oltBuild && oltTech && (
+              <p className="text-xs text-zinc-400">
+                {t("capacity.deployment.buildHint")}{" "}
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
+                <a href="/olt#armar" className="text-zinc-200 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+                  {t("capacity.deployment.buildLink")}
+                </a>
+              </p>
+            )}
             <IssueList
               items={oltIssues.map((i) => ({
                 key: i.code,

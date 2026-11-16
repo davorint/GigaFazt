@@ -937,7 +937,8 @@
           "tooManyPorts": "Con {homes} clientes por puerto se necesitan {need} puertos y la {model} admite como mucho {max} {tech}: no caben en una OLT.",
           "tooManyHomes": "Más de {max} clientes por puerto: el divisor más grande que se toma en cuenta es 1:{max}.",
           "tooManyUsers": "Más de {max} clientes: lo más que admite la {model}.",
-          "noUplink": "Sin límite en el enlace de la OLT: el cálculo no lo toma en cuenta."
+          "noUplink": "Sin límite en el enlace de la OLT: el cálculo no lo toma en cuenta.",
+          "buildPorts": "La OLT armada en /olt tiene {max} puertos {tech} y se necesitan {need}: agrega tarjetas o cámbiala."
         },
         "portsInUse": "Puertos PON en uso",
         "unitPorts": "puertos",
@@ -946,7 +947,12 @@
         "measuredDown": "Bajada total medida",
         "measuredUp": "Subida total medida",
         "measuredHint": "Suma lo que reciben (rx, bajada) y envían (tx, subida) las interfaces de tus carriers cerca de las 9 p. m.; mejor el promedio de 5 minutos de las gráficas del router que una sola lectura. Con esto, el promedio por cliente sale de lo medido ÷ los clientes. Vacío = se usa el promedio de abajo.",
-        "measureCmd": "Lectura rápida en el router:"
+        "measureCmd": "Lectura rápida en el router:",
+        "built": "OLT armada en /olt: {ports} puertos {tech}.",
+        "builtOpen": "Abrir en /olt",
+        "builtRemove": "Quitar",
+        "buildHint": "¿Ya sabes qué tarjetas lleva?",
+        "buildLink": "Ármala en /olt y guárdala en este despliegue"
       },
       "overLinks": "{n, plural, one {# de tus {count} enlaces recibe} other {# de tus {count} enlaces reciben}} en promedio más de lo que da (el más cargado: {offered} en {cap}): sus descargas se acumulan sin parar y los resultados de abajo no se estabilizan.",
       "overPooled": "La demanda promedio ({offered}) pasa de lo que suman los enlaces ({cap}): las descargas se acumulan sin parar y los resultados de abajo no se estabilizan.",

@@ -11,17 +11,24 @@ import { OltCommands } from "./OltCommands"
 import { OpticBudget } from "./OpticBudget"
 import { Src } from "./Src"
 import { OltBuilder } from "./OltBuilder"
+import { OltOnts } from "./OltOnts"
+import { OltSoftware } from "./OltSoftware"
+import { OltTrouble } from "./OltTrouble"
+import { OpticModules } from "./OpticModules"
 import { BOARD_KINDS, BOARDS, CHASSIS, OPTICS, SOURCES, chassisName, type Board, type BoardKind, type Chassis, type Fact, type Family } from "@/lib/olt-kb"
 
-const SECTIONS = ["chassis", "builder", "boards", "optics", "compat", "modified", "buying", "commands", "sources"] as const
+const SECTIONS = ["chassis", "builder", "boards", "optics", "onts", "compat", "modified", "software", "buying", "trouble", "commands", "sources"] as const
 const ANCHOR: Record<(typeof SECTIONS)[number], string> = {
   chassis: "chasis",
   builder: "armar",
   boards: "tarjetas",
   optics: "opticas",
+  onts: "onts",
   compat: "compatibilidad",
   modified: "modificados",
+  software: "software",
   buying: "compra",
+  trouble: "fallas",
   commands: "comandos",
   sources: "fuentes",
 }
@@ -274,6 +281,7 @@ export function OltKnowledgeBase() {
           {t.rich("intro.legend", {
             huawei: () => <span className="rounded border border-cyan-400/30 px-1 font-mono text-[11px] text-cyan-300">{t("intro.huawei")}</span>,
             reseller: () => <span className="rounded border border-amber-400/30 px-1 font-mono text-[11px] text-amber-300">{t("intro.reseller")}</span>,
+            standard: () => <span className="rounded border border-violet-400/40 px-1 font-mono text-[11px] text-violet-300">{t("intro.standard")}</span>,
           })}
         </p>
         <p className="mt-3 text-sm text-zinc-400">
@@ -354,7 +362,12 @@ export function OltKnowledgeBase() {
           </div>
           <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("optics.note")}</p>
           <OpticBudget />
+          <OpticModules />
         </div>
+      </Section>
+
+      <Section id={ANCHOR.onts} name="olt-onts" title={t("onts.title")} lead={t("onts.lead")}>
+        <OltOnts />
       </Section>
 
       <Section id={ANCHOR.compat} name="olt-compat" title={t("compat.title")} lead={t("compat.lead")}>
@@ -378,6 +391,10 @@ export function OltKnowledgeBase() {
         <ModifiedChassis />
       </Section>
 
+      <Section id={ANCHOR.software} name="olt-software" title={t("software.title")} lead={t("software.lead")}>
+        <OltSoftware />
+      </Section>
+
       <Section id={ANCHOR.buying} name="olt-buying" title={t("buying.title")} lead={t("buying.lead")}>
         <div className="grid gap-4 lg:grid-cols-2">
           {(["test", "software", "hardware", "upgrade"] as const).map((g) => (
@@ -389,6 +406,10 @@ export function OltKnowledgeBase() {
         </div>
       </Section>
 
+      <Section id={ANCHOR.trouble} name="olt-trouble" title={t("trouble.title")} lead={t("trouble.lead")}>
+        <OltTrouble />
+      </Section>
+
       <Section id={ANCHOR.commands} name="olt-commands" title={t("commands.title")} lead={t("commands.lead")}>
         <OltCommands />
       </Section>
@@ -397,7 +418,7 @@ export function OltKnowledgeBase() {
         <ul className="grid gap-3">
           {SOURCES.map((s) => (
             <li key={s.id} id={`fuente-${s.id}`} className="scroll-mt-20 grid gap-1 rounded-xl border border-white/10 p-4">
-              <span className={`font-mono text-xs ${s.kind === "huawei" ? "text-cyan-300" : "text-amber-300"}`}>
+              <span className={`font-mono text-xs ${{ huawei: "text-cyan-300", reseller: "text-amber-300", standard: "text-violet-300" }[s.kind]}`}>
                 {t(`sources.kind.${s.kind}`)}
                 {s.date ? ` · ${s.date}` : ""}
               </span>

@@ -228,3 +228,55 @@ export function starter(chassisId: string): Build {
   }
   return { chassis: chassisId, slots: { ...(presets[chassisId] ?? {}) } }
 }
+
+// ── Link with the deployments of /mikrotik ──────────────────────────────────
+
+/** The deployments' OLT models (lib/mikrotik/olt.ts) and the chassis here. The MA5683T is the MA5603T frame (resellers). */
+export const MODEL_CHASSIS: Record<string, string> = {
+  ma5608t: "ma5608t",
+  ma5683t: "ma5603t",
+  ma5800x2: "ma5800-x2",
+  ma5800x7: "ma5800-x7",
+  ma5800x15: "ma5800-x15",
+  ma5800x17: "ma5800-x17",
+}
+/** The other way; the MA5600T frames have no model of their own on /mikrotik ("other"). */
+export const chassisModel = (chassisId: string) => Object.entries(MODEL_CHASSIS).find(([, c]) => c === chassisId)?.[0] ?? "other"
+
+export type DeployPon = "gpon" | "xgpon" | "xgspon"
+
+/** PON ports a build gives each kind of ONT: a combo port serves GPON and its 10G type, a Flex-PON port any (with its module). */
+export function buildPorts(ports: Partial<Record<PonTech, number>>): Record<DeployPon, number> {
+  const n = (k: PonTech) => ports[k] ?? 0
+  return {
+    gpon: n("gpon") + n("comboXg") + n("comboXgs") + n("flex"),
+    xgpon: n("xgpon") + n("comboXg") + n("flex"),
+    xgspon: n("xgspon") + n("comboXgs") + n("flex"),
+  }
+}
+
+/**
+ * The board used to fill a deployment's ports. MA5600T family: GPFD for GPON, XGBC for XG-PON (no XGS-PON boards).
+ * MA5800: the XGS-PON combo CSHF for GPON too (GPON ONTs today, XGS-PON later without changing them), CGHF for XG-PON.
+ */
+const FILL: Record<Family, Partial<Record<DeployPon, string>>> = {
+  ma5600: { gpon: "H802GPFD", xgpon: "H802XGBC" },
+  ma5800: { gpon: "H901CSHF", xgpon: "H901CGHF", xgspon: "H901CSHF" },
+}
+
+export type Suggestion = { build: Build; board: string | null; boards: number; ports: number; fits: boolean }
+
+/** The chassis' example with its service slots filled with enough boards for `need` ports of `pon`. */
+export function suggestFor(chassisId: string, pon: DeployPon, need: number): Suggestion {
+  const base = starter(chassisId)
+  const layout = LAYOUTS[chassisId]
+  const family = CHASSIS.find((c) => c.id === chassisId)?.family
+  const board = family ? (FILL[family][pon] ?? null) : null
+  const service = new Set(layout?.service ?? [])
+  const slots = Object.fromEntries(Object.entries(base.slots).filter(([s]) => !service.has(Number(s))))
+  const per = board ? (BOARD_NUMBERS[board]?.pon?.ports ?? 0) : 0
+  const wanted = per > 0 ? Math.max(1, Math.ceil(Math.max(0, need) / per)) : 0
+  const boards = Math.min(wanted, layout?.service.length ?? 0)
+  for (const s of (layout?.service ?? []).slice(0, boards)) slots[s] = board as string
+  return { build: { chassis: chassisId, slots }, board, boards, ports: boards * per, fits: per > 0 && boards * per >= need }
+}

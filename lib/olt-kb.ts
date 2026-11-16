@@ -7,7 +7,8 @@
  * published is left out (undefined) and the page says so.
  */
 
-export type SourceKind = "huawei" | "reseller"
+/** "standard" = a standards body or public registry (ITU-T, NIST NVD). */
+export type SourceKind = "huawei" | "reseller" | "standard"
 export type Source = { id: string; kind: SourceKind; title: string; url: string; date?: string }
 
 export const SOURCES: Source[] = [
@@ -45,6 +46,25 @@ export const SOURCES: Source[] = [
   { id: "fiberolt", kind: "reseller", title: "Fiberolt: MA5608T, MA5683T, H806GPBD, H807GPBD", url: "https://www.fiberolt.com/huawei-ma5608t.html" },
   { id: "isphome", kind: "reseller", title: "ISP-Home: comparativa MA5608T / MA5683T / MA5680T", url: "https://isp-home.com/huawei-ma5600t-series-olt/" },
   { id: "gponsolution", kind: "reseller", title: "GPON Solution: desbloqueo de ONT de otras marcas (firmware R015/R018)", url: "https://gponsolution.com/huawei-olt-unlock-to-support-any-brand-ont.html" },
+  // Optical modules (part numbers), 10G classes.
+  { id: "gponModules", kind: "reseller", title: "GPON Solution: módulos ópticos PON de Huawei (BOM, clase, potencia, sensibilidad)", url: "https://gponsolution.com/huawei-pon-sfp-gpon-xgpon-optical-modules.html", date: "2026-06-08" },
+  { id: "tlBplus", kind: "reseller", title: "Thunder-link: GPON OLT Class B+ (34060337-1, OSG002001) y tarjetas donde va", url: "https://www.thunder-link.com/gpon-olt-class-b-plus_p1843.html" },
+  { id: "tlCplus", kind: "reseller", title: "Thunder-link: GPON OLT Class C+ (34060694-2, OSX002003)", url: "https://www.thunder-link.com/gpon-olt-class-c-plus_p1845.html" },
+  { id: "fiberoltCpp", kind: "reseller", title: "Fiberolt: Huawei 34060841 GPON OLT Class C++ SFP", url: "https://www.fiberolt.com/huawei-34060841-gpon-olt-class-c-plus-plus-sfp.html" },
+  { id: "edgeoptic", kind: "reseller", title: "Edgeoptic: módulo GPON compatible con Huawei (memoria EEPROM codificada)", url: "https://edgeoptic.com/products/huawei/h87mma5671a2", date: "2026-01-16" },
+  { id: "g9807", kind: "standard", title: "ITU-T G.9807.1 (02/2023): XGS-PON (clases N1, N2, E1, E2 heredadas de XG-PON, G.987.2)", url: "https://www.itu.int/epublications/publication/itu-t-g-9807-1-2023-02-10-gigabit-capable-symmetric-passive-optical-network-xgs-pon", date: "2023-02" },
+  // ONTs.
+  { id: "pondeskB7", kind: "reseller", title: "Pondesk: Huawei OptiXstar EG8145B7-50, ficha técnica", url: "https://pondesk.com/product/huawei-optixstar-eg8145b7-50-gpon-and-wi-fi-7-routing-type-ont-foel-032" },
+  { id: "ponplanetB7N", kind: "reseller", title: "PON Planet: Huawei OptiXstar EG8145B7N-50", url: "https://www.ponplanet.eu/en/optixstar-eg8145b7n-50/" },
+  { id: "dsEN8145", kind: "huawei", title: "Huawei OptiXstar EN8145B7Ns Datasheet 01", url: "https://www.ponplanet.eu/user/related_files/huawei_optixstar_en8145b7ns_datasheet_01.pdf" },
+  { id: "dsX6", kind: "huawei", title: "Huawei OptiXstar EG8145X6-10 Datasheet 01", url: "https://aleashop.es/documentacion/EG8145X6-10.pdf" },
+  // Software and troubleshooting.
+  { id: "psirt", kind: "huawei", title: "Huawei PSIRT huawei-sa-20200401-01: desbordamiento de búfer (CVE-2020-9067)", url: "https://www.huawei.com/en/psirt/security-advisories/2020/huawei-sa-20200401-01-overflow-en", date: "2020-04-01" },
+  { id: "nvd", kind: "standard", title: "NIST NVD: CVE-2020-9067 (versiones afectadas, CVSS 8.0)", url: "https://nvd.nist.gov/vuln/detail/CVE-2020-9067" },
+  { id: "hdPatch", kind: "huawei", title: "SmartAX MA5600T Hardware Description (copia en ManualsLib, p. 172): tarjetas que piden parche en V800R017C10/V800R018C00", url: "https://www.manualslib.com/manual/2092344/Huawei-Smartax-Ma5600t.html?page=172" },
+  { id: "huaweiTs", kind: "huawei", title: "Huawei: «GPON ONU frequently goes online and offline» (manejo de alarmas)", url: "https://info.support.huawei.com/network/ptmngsys/Web/tsrev_access/en/content/access/20_gpononu_frequently_goes_online_and_offline/trouble_510802.html" },
+  { id: "iatecOnu", kind: "reseller", title: "IA Tecnologia: ONU con LOS u offline en OLT Huawei, diagnóstico completo", url: "https://iatecnologia.net/onu-los-offline-olt-huawei/" },
+  { id: "tlOnu", kind: "reseller", title: "Thunder-link: Failure to go online of a GPON ONU", url: "https://www.thunder-link.com/failure-to-go-online-of-a-gpon-onu/", date: "2024-05-21" },
 ]
 
 /** A value with the source that published it. */
@@ -384,7 +404,8 @@ export const OPTICS: OpticClass[] = [
   { id: "C++", budget: r("35 dB", "telecomate"), tx: r("+6 a +10 dBm", "thunderlink"), sensitivity: r("−35 dBm", "thunderlink"), split: r("1:128", "telecomate"), use: "cPlusPlus" },
   { id: "C+++", budget: r("No publicado (la calculadora lo estima)", "airlive"), tx: r("+6 a +10 dBm (Philisun: +8 a +11)", "airlive"), sensitivity: r("−33 dBm (Philisun: −31)", "airlive"), use: "cPlus3" },
   { id: "C++++", budget: r("No publicado (la calculadora lo estima)", "airlive"), tx: r("+9 a +13 dBm (igual VSOL)", "airlive"), sensitivity: r("−33 dBm (igual VSOL)", "airlive"), use: "cPlus4" },
-  { id: "N1 / N2a (XG-PON)", budget: r("N1 / N2a", "telecomate"), split: r("1:256", "telecomate"), use: "xg" },
+  { id: "N1 / N2a / E1 (XG-PON)", budget: r("29 / 31 / 33 dB", "g9807"), tx: r("Combo Huawei: +5 a +8 (C+), +8 a +12 (D)", "gponModules"), sensitivity: r("Combo Huawei: −30.5 (C+), −33.5 (D)", "gponModules"), split: r("1:256", "telecomate"), use: "xg" },
+  { id: "N1 / N2 / E1 (XGS-PON)", budget: r("29 / 31 / 33 dB", "g9807"), tx: r("Combo Huawei: +5 a +8 (C+), +6 a +11 (D)", "gponModules"), sensitivity: r("Combo Huawei: −29 (C+), −32 (D)", "gponModules"), split: r("1:256", "telecomate"), use: "xgs" },
 ]
 
 /** PLC splitter insertion loss, maximum dB (connectorized), by ratio. */
@@ -400,19 +421,211 @@ export const SPLITTERS: { ratio: number; loss: Fact<number> }[] = [
 /**
  * OLT module classes for the calculator. B+/C+/C++ have a published class budget; C+++/C++++ (vendor extensions, not
  * ITU classes) only publish transmit power and sensitivity, so their budget is computed from both directions.
- * txMax: the strongest the module transmits (for the ONT overload check).
+ * txMax: the strongest the module transmits (for the ONT overload check; unknown for the ITU 10G classes, so no check).
+ * 10G (XG-PON, XGS-PON): the ITU classes' budgets, and Huawei's combo modules computed from the transmit power and
+ * sensitivity of their 10G side (a reseller's table of Huawei BOMs).
  */
-export type BudgetClass = { id: string; budget?: Fact<number>; txMin?: Fact<number>; txMax: Fact<number>; sensitivity?: Fact<number> }
+export type PonKind = "gpon" | "xgpon" | "xgspon"
+export const PON_KINDS: PonKind[] = ["gpon", "xgpon", "xgspon"]
+export type BudgetClass = { id: string; tech: PonKind; budget?: Fact<number>; txMin?: Fact<number>; txMax?: Fact<number>; sensitivity?: Fact<number> }
 export const BUDGETS: BudgetClass[] = [
-  { id: "B+", budget: h(28.5), txMax: r(5, "thunderlink") },
-  { id: "C+", budget: h(32), txMax: r(7, "thunderlink") },
-  { id: "C++", budget: r(35, "telecomate"), txMax: r(10, "thunderlink") },
-  { id: "C+++", txMin: r(6, "airlive"), txMax: r(10, "airlive"), sensitivity: r(-33, "airlive") },
-  { id: "C++++", txMin: r(9, "airlive"), txMax: r(13, "airlive"), sensitivity: r(-33, "airlive") },
+  { id: "B+", tech: "gpon", budget: h(28.5), txMax: r(5, "thunderlink") },
+  { id: "C+", tech: "gpon", budget: h(32), txMax: r(7, "thunderlink") },
+  { id: "C++", tech: "gpon", budget: r(35, "telecomate"), txMax: r(10, "thunderlink") },
+  { id: "C+++", tech: "gpon", txMin: r(6, "airlive"), txMax: r(10, "airlive"), sensitivity: r(-33, "airlive") },
+  { id: "C++++", tech: "gpon", txMin: r(9, "airlive"), txMax: r(13, "airlive"), sensitivity: r(-33, "airlive") },
+  { id: "N1", tech: "xgpon", budget: r(29, "g9807") },
+  { id: "N2a", tech: "xgpon", budget: r(31, "g9807") },
+  { id: "E1", tech: "xgpon", budget: r(33, "g9807") },
+  { id: "Combo C+ (34062632)", tech: "xgpon", txMin: r(5, "gponModules"), txMax: r(8, "gponModules"), sensitivity: r(-30.5, "gponModules") },
+  { id: "Combo D (34062018)", tech: "xgpon", txMin: r(8, "gponModules"), txMax: r(12, "gponModules"), sensitivity: r(-33.5, "gponModules") },
+  { id: "N1", tech: "xgspon", budget: r(29, "g9807") },
+  { id: "N2", tech: "xgspon", budget: r(31, "g9807") },
+  { id: "E1", tech: "xgspon", budget: r(33, "g9807") },
+  { id: "Combo C+ (34062610)", tech: "xgspon", txMin: r(5, "gponModules"), txMax: r(8, "gponModules"), sensitivity: r(-29, "gponModules") },
+  { id: "Combo D (34062990)", tech: "xgspon", txMin: r(6, "gponModules"), txMax: r(11, "gponModules"), sensitivity: r(-32, "gponModules") },
 ]
 
 /** The company's ONT (EG8145B7-50): GPON Class B+, receiver sensitivity −27 dBm. */
 export const ONT_SENSITIVITY: Fact<number> = h(-27, "eg8145")
+/** Huawei's XGS-PON Wi-Fi 7 ONT (EN8145B7Ns): Class XGSN2, receiver sensitivity −28 dBm (datasheet). */
+export const XGS_ONT_SENSITIVITY: Fact<number> = h(-28, "dsEN8145")
+
+// ── Optical modules (part numbers) ──────────────────────────────────────────
+
+export type ModuleTech = "gpon" | "comboXg" | "comboXgs"
+/** A Huawei PON module by its BOM (part number). Values from one reseller's table unless the fact says otherwise. */
+export type OpticModule = {
+  bom: string
+  model: string
+  tech: ModuleTech
+  form: string
+  cls: string
+  /** Transmit power, dBm (combo: GPON / 10G side). */
+  tx: Fact
+  /** Receiver sensitivity, dBm. */
+  rx: Fact
+  km: Fact
+  /** One line worth knowing (other sources, conflicts). */
+  note?: Fact
+}
+const g = <T>(v: T): Fact<T> => ({ v, src: "gponModules" })
+export const MODULES: OpticModule[] = [
+  { bom: "34060337", model: "OSG002001", tech: "gpon", form: "SFP", cls: "B+", tx: g("+1.5 a +5"), rx: g("−28"), km: g("40"), note: r("Thunder-link lo vende como 34060337-1 y le da 20 km", "tlBplus") },
+  { bom: "34060694", model: "OSX002003", tech: "gpon", form: "SFP", cls: "C+", tx: g("+3 a +7"), rx: g("−32"), km: g("60"), note: r("El BOM de C+ que más vendedores usan (34060694-2 en Thunder-link)", "tlCplus") },
+  { bom: "34060499", model: "OSG002004", tech: "gpon", form: "SFP", cls: "C+", tx: g("+3 a +7"), rx: g("−32"), km: g("60"), note: g("Conector PC (los demás UPC); solo esta fuente da este BOM") },
+  { bom: "34061415", model: "OSG002010", tech: "gpon", form: "SFP", cls: "C+ industrial", tx: g("+3 a +7"), rx: g("−32"), km: g("60") },
+  { bom: "34062607", model: "C+ Pro", tech: "gpon", form: "SFP", cls: "C+ Pro", tx: g("+3 a +10"), rx: g("−32 / −35"), km: g("60") },
+  { bom: "34062777", model: "OSG006001", tech: "gpon", form: "SFP doble (2 × SC)", cls: "C+", tx: g("+3 a +7"), rx: g("−32"), km: g("60"), note: g("Dos puertos PON en un módulo") },
+  { bom: "34060841", model: "OSG002008", tech: "gpon", form: "SFP", cls: "C++", tx: r("+6 a +10", "fiberoltCpp"), rx: r("−35 (sobrecarga −15)", "fiberoltCpp"), km: r("20", "fiberoltCpp"), note: g("GPON Solution lo llama «clase D» con las mismas cifras") },
+  { bom: "34062632", model: "OSGXGC+02", tech: "comboXg", form: "SFP+", cls: "C+", tx: g("+4.5 a +8.5 / +5 a +8"), rx: g("−32 / −30.5"), km: g("20") },
+  { bom: "34062608", model: "OSGXGCC+Pro", tech: "comboXg", form: "SFP+", cls: "C+ Pro", tx: g("+4.5 a +8.5 / +5 a +9"), rx: g("−32 / −30.5"), km: g("20") },
+  { bom: "34062018", model: "OSGXGD01", tech: "comboXg", form: "SFP+", cls: "D", tx: g("+6 a +10 / +8 a +12"), rx: g("−35 / −33.5"), km: g("20") },
+  { bom: "34062610", model: "OSGXGSC+01", tech: "comboXgs", form: "SFP+", cls: "C+", tx: g("+5 a +8 / +5 a +8"), rx: g("−32 / −29"), km: g("20") },
+  { bom: "34062495", model: "OSGXGSC+02", tech: "comboXgs", form: "SFP+", cls: "C+ industrial", tx: g("+5 a +8 / +5 a +8"), rx: g("−32 / −29"), km: g("20") },
+  { bom: "34062990", model: "OSGXGSD40", tech: "comboXgs", form: "SFP+", cls: "D", tx: g("+6 a +10 / +6 a +11"), rx: g("−35 / −32"), km: g("40") },
+  { bom: "34062938", model: "OSGXGSC+03", tech: "comboXgs", form: "SFP+ doble (2 × SC)", cls: "C+", tx: g("+5 a +8 / +5 a +8"), rx: g("−32 / −29"), km: g("20") },
+]
+/** Boards the GPON modules go in, per the sellers. */
+export const GPON_MODULE_BOARDS: Fact<string[]>[] = [r(["GPBD", "GPFD", "GPHF", "GPSF", "GPLF"], "tlBplus"), r(["GPBD", "GPFD", "GPHF", "GPUF", "GPSF"], "fiberoltCpp")]
+
+// ── ONTs ────────────────────────────────────────────────────────────────────
+
+export type Ont = {
+  model: string
+  pon: Fact
+  ports: Fact
+  wifi: Fact
+  /** Air interface rate per band. */
+  rates: Fact
+  optics: Fact
+  power: Fact
+  size: Fact
+  /** The one the company hands out today. */
+  ours?: boolean
+}
+export const ONTS: Ont[] = [
+  {
+    model: "EG8145B7-50",
+    ours: true,
+    pon: r("GPON clase B+", "pondeskB7"),
+    ports: h("4 × GE, 1 POTS, 1 USB", "eg8145"),
+    wifi: r("Wi-Fi 7, 2.4 + 5 GHz, 2 × 2, 160 MHz, 4096-QAM, MLO", "pondeskB7"),
+    rates: r("688 + 2882 Mbps", "pondeskB7"),
+    optics: r("Sensibilidad −27 dBm, sobrecarga −8 dBm, 1310 / 1490 nm, SC/APC", "pondeskB7"),
+    power: r("5 W estático / 12.5 W máx.", "pondeskB7"),
+    size: r("40 × 150 × 108 mm, 293 g", "pondeskB7"),
+  },
+  {
+    model: "EG8145B7N-50",
+    pon: r("GPON clase B+", "ponplanetB7N"),
+    ports: r("1 × 2.5GE + 3 × GE, 1 POTS, 1 USB 2.0", "ponplanetB7N"),
+    wifi: r("Wi-Fi 7, 2.4 + 5 GHz, 2 × 2, 4096-QAM", "ponplanetB7N"),
+    rates: r("688 + 2882 Mbps", "ponplanetB7N"),
+    optics: r("SC/APC (sensibilidad no publicada en la ficha)", "ponplanetB7N"),
+    power: r("~5 W estático / ~14 W máx.", "ponplanetB7N"),
+    size: r("40 × 150 × 108 mm, 282 g", "ponplanetB7N"),
+  },
+  {
+    model: "EN8145B7Ns",
+    pon: h("XGS-PON clase XGSN2, 9.953 / 9.953 Gbit/s", "dsEN8145"),
+    ports: h("1 × 2.5GE + 3 × GE, 1 POTS, 1 USB 2.0", "dsEN8145"),
+    wifi: h("Wi-Fi 7, 2.4 + 5 GHz, 2 × 2, 160 MHz, 4096-QAM, MLO", "dsEN8145"),
+    rates: h("688 + 2882 Mbps", "dsEN8145"),
+    optics: h("Sensibilidad −28 dBm, subida 1260–1280 nm, bajada 1575–1580 nm, SC/APC", "dsEN8145"),
+    power: h("6.6 W estático / 18 W máx.", "dsEN8145"),
+    size: h("157 × 250 × 30 mm, 543 g (vertical o en pared)", "dsEN8145"),
+  },
+  {
+    model: "EG8145X6-10",
+    pon: h("GPON clase B+", "dsX6"),
+    ports: h("4 × GE, 1 POTS, 1 USB 2.0", "dsX6"),
+    wifi: h("Wi-Fi 6, 2.4 + 5 GHz, 2 × 2, 160 MHz, 1024-QAM", "dsX6"),
+    rates: h("574 + 2402 Mbps", "dsX6"),
+    optics: h("Sensibilidad −27 dBm, sobrecarga −8 dBm, 1310 / 1490 nm, SC/APC", "dsX6"),
+    power: h("6.6 W estático / 12 W máx.", "dsX6"),
+    size: h("35 × 155 × 105 mm, 246 g", "dsX6"),
+  },
+]
+
+// ── Software versions ───────────────────────────────────────────────────────
+
+/** "V800R013C10" → sortable [800, 13, 10]; null when it isn't a version. */
+export function versionKey(v: string): number[] | null {
+  const m = /^V(\d{3})R(\d{3})C(\d{2})/.exec(v)
+  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null
+}
+export const compareVersions = (a: string, b: string) => {
+  const x = versionKey(a) ?? [0, 0, 0]
+  const y = versionKey(b) ?? [0, 0, 0]
+  return x[0] - y[0] || x[1] - y[1] || x[2] - y[2]
+}
+
+/** Versions a known vulnerability affects, per family (CVE-2020-9067: buffer overflow when the device works as an OLT). */
+export const CVE_9067 = {
+  id: "CVE-2020-9067",
+  score: r("CVSS 3.1: 8.0", "nvd"),
+  ma5600: r(["V800R013C10", "V800R015C00", "V800R015C10", "V800R017C00", "V800R017C10", "V800R018C00", "V800R018C10"], "nvd"),
+  ma5800: r(["V100R017C00", "V100R017C10", "V100R018C00", "V100R018C10", "V100R019C10"], "nvd"),
+  fix: h("Huawei publicó parches; para MA5600T V800R013C10 indica V800R017C10SPH229 o posterior", "psirt"),
+}
+
+// ── Troubleshooting ─────────────────────────────────────────────────────────
+
+/** One step of a fault case: what to do (messages olt.trouble.cases.<case>.steps.<id>) and, when there is one, the command. */
+export type TroubleStep = { id: string; cmd?: string; src: string }
+export type TroubleCase = { id: "offline" | "notRegistered" | "manyDown" | "lowPower"; steps: TroubleStep[] }
+const OPTICAL = "interface gpon 0/<slot>\n display ont optical-info <puerto> <ont-id>\n quit"
+export const TROUBLE: TroubleCase[] = [
+  {
+    id: "offline",
+    steps: [
+      { id: "info", cmd: "display ont info 0 <slot> <puerto> <ont-id>", src: "iatecOnu" },
+      { id: "cause", src: "iatecOnu" },
+      { id: "optical", cmd: OPTICAL, src: "iatecOnu" },
+      { id: "history", cmd: "interface gpon 0/<slot>\n display ont register-info <puerto> <ont-id>\n quit", src: "iatecOnu" },
+      { id: "alarms", cmd: "display alarm active all", src: "huaweiTs" },
+    ],
+  },
+  {
+    id: "notRegistered",
+    steps: [
+      { id: "autofind", cmd: "display ont autofind all", src: "iatecOnu" },
+      { id: "auth", src: "tlOnu" },
+      { id: "range", cmd: "interface gpon 0/<slot>\n display port info <puerto>\n quit", src: "tlOnu" },
+      { id: "state", src: "iatecOnu" },
+    ],
+  },
+  {
+    id: "manyDown",
+    steps: [
+      { id: "summary", cmd: "display ont info summary 0/<slot>/<puerto>", src: "iatecOnu" },
+      { id: "pattern", src: "iatecOnu" },
+      { id: "port", cmd: "display port state all", src: "iatecOnu" },
+      { id: "board", cmd: "display board 0", src: "iatecOnu" },
+      { id: "rogue", src: "huaweiTs" },
+    ],
+  },
+  {
+    id: "lowPower",
+    steps: [
+      { id: "read", cmd: OPTICAL, src: "iatecOnu" },
+      { id: "levels", src: "iatecOnu" },
+      { id: "overload", src: "tlOnu" },
+      { id: "clean", src: "tlOnu" },
+    ],
+  },
+]
+/** "Last down cause" values and the Huawei alarm id where the source gives one. */
+export const DOWN_CAUSES: { key: string; label: string; alarm?: Fact; src: string }[] = [
+  { key: "dyingGasp", label: "dying-gasp", src: "iatecOnu" },
+  { key: "losi", label: "LOSi / LOBi", alarm: h("0x2e112007", "huaweiTs"), src: "iatecOnu" },
+  { key: "lofi", label: "LOFi", alarm: h("0x2e112006", "huaweiTs"), src: "iatecOnu" },
+  { key: "sfi", label: "SFi", alarm: h("0x2e112004", "huaweiTs"), src: "iatecOnu" },
+  { key: "sdi", label: "SDi", alarm: h("0x2e112003", "huaweiTs"), src: "iatecOnu" },
+  { key: "loami", label: "LOAMi", src: "iatecOnu" },
+  { key: "admin", label: "deactive, ontdeleted, reset, cmdReboot", src: "iatecOnu" },
+]
 
 /** OLT commands worth having at hand, each from the source that shows it (what it does: messages olt.commands.items.<id>). */
 export type Command = { id: string; cmd: string; src: string; group: "check" | "ont" | "save" }

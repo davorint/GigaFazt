@@ -5,9 +5,10 @@ import { Minus, Plus } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { NumberField } from "@/components/mikrotik/NumberField"
+import { Choice } from "@/components/mikrotik/Choice"
 import { SelectField } from "@/components/mikrotik/SelectField"
-import { DEFAULT_BUDGET, opticBudget, type BudgetInput } from "@/lib/olt-budget"
-import { SPLITTERS } from "@/lib/olt-kb"
+import { DEFAULT_BUDGET, ONT_DEFAULTS, opticBudget, type BudgetInput } from "@/lib/olt-budget"
+import { PON_KINDS, SPLITTERS, type PonKind } from "@/lib/olt-kb"
 import { Src } from "./Src"
 
 const MAX_STAGES = 3
@@ -27,6 +28,12 @@ export function OpticBudget() {
       <div className="grid gap-1.5">
         <h3 className="text-base font-medium text-foreground">{t("title")}</h3>
         <p className="max-w-3xl text-sm leading-relaxed text-zinc-400">{t("lead")}</p>
+      </div>
+      <div className="grid gap-2">
+        <p className="font-mono text-xs text-zinc-300">{t("tech")}</p>
+        {/* Another PON type: its classes, and its ONT's values (the typical ones are labeled). */}
+        <Choice label={t("tech")} value={i.tech} onChange={(tech: PonKind) => setI({ ...i, tech, ...ONT_DEFAULTS[tech] })} options={PON_KINDS.map((k) => ({ value: k, label: t(`techs.${k}`) }))} />
+        <p className="text-xs leading-snug text-zinc-400">{t(`techHint.${i.tech}`)}</p>
       </div>
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <div className="grid gap-4">
@@ -67,7 +74,7 @@ export function OpticBudget() {
                 <NumberField label={t("spliceDb")} unit="dB" value={i.spliceDb} max={1} onChange={(v) => v !== null && set({ spliceDb: v })} />
                 <NumberField label={t("marginDb")} unit="dB" value={i.marginDb} max={10} onChange={(v) => v !== null && set({ marginDb: v })} />
               </div>
-              <p className="text-xs leading-snug text-zinc-400">{t("ontHint")}</p>
+              <p className="text-xs leading-snug text-zinc-400">{t(`ontHint.${i.tech}`)}</p>
               <div className="grid items-start gap-4 sm:grid-cols-3">
                 <NumberField label={t("ontSensitivity")} unit="dBm" value={i.ontSensitivity} min={-40} max={0} onChange={(v) => v !== null && set({ ontSensitivity: v })} />
                 <NumberField label={t("ontTx")} unit="dBm" value={i.ontTx} min={-10} max={10} onChange={(v) => v !== null && set({ ontTx: v })} />
@@ -103,12 +110,12 @@ export function OpticBudget() {
                   <span className={VERDICT[c.verdict]}>{t(`verdict.${c.verdict}`, { spare: fmt(c.spare) })}</span>
                 </div>
                 {c.limit && <span className="text-xs text-zinc-400">{t(`limit.${c.limit}`)}</span>}
-                {c.overload && <span className="text-xs text-rose-300">{t("overload", { min: fmt(c.minLoss) })}</span>}
+                {c.overload && c.minLoss !== null && <span className="text-xs text-rose-300">{t("overload", { min: fmt(c.minLoss) })}</span>}
               </li>
             ))}
           </ul>
           <p className="text-sm text-zinc-100">{r.pick ? t("pick", { id: r.pick }) : t("pickNone")}</p>
-          {r.ratio > 128 && <p className="text-sm text-amber-200">{t("over128")}</p>}
+          {r.ratio > 128 && i.tech === "gpon" && <p className="text-sm text-amber-200">{t("over128")}</p>}
         </div>
       </div>
       <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("note")}</p>

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { CopyButton } from "@/components/mikrotik/CopyButton"
 import { SelectField } from "@/components/mikrotik/SelectField"
 import { CHASSIS } from "@/lib/olt-kb"
+import { BuildDeployment } from "./BuildDeployment"
 import { LAYOUTS, boardsFor, decodeBuild, encodeBuild, starter, summarize, type Build, type BuildIssue, type PonTech, type SlotRole } from "@/lib/olt-build"
 
 const ROLE_STYLE: Record<SlotRole, string> = {
@@ -173,6 +174,7 @@ export function OltBuilder() {
           <p className="text-xs leading-snug text-zinc-400">{t("note")}</p>
         </div>
       </div>
+      <BuildDeployment build={build} ports={s.ports} onBuild={setBuild} />
     </div>
   )
 }

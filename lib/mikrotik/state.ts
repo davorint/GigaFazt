@@ -15,7 +15,7 @@ import {
   type WanType,
 } from "./balance"
 import { DEFAULT_PON_EFFICIENCY, type PonTech } from "./capacity"
-import { OLT_MODELS, type OltModelId } from "./olt"
+import { OLT_MODELS, type OltModelId, type OltTech } from "./olt"
 import { QUEUE_KINDS, type Pair, type QueueKind } from "./routeros"
 import { ALERT_MODES, BACKUP_MODES, DEFAULT_SETUP, DNS_MODES, MAX_PLANS, NAT_MODES, type NatMode, type SetupPlan, type SetupState } from "./setup"
 
@@ -119,7 +119,11 @@ export type CapacityState = {
   /** Deployments that already run: all the router's traffic at the busy hour, Mbps (null = not measured: the average per client is an input). */
   measuredDownMbps: number | null
   measuredUpMbps: number | null
+  /** The OLT built for this deployment on /olt ("Arma tu OLT"): its share code and the PON ports it gives each ONT type. */
+  oltBuild: OltBuild | null
 }
+
+export type OltBuild = { code: string; ports: Record<OltTech, number> }
 
 /** A client in the shared-parent simulation. */
 export type GroupMember = {
@@ -182,6 +186,7 @@ export const DEFAULT_CAPACITY: CapacityState = {
   portsInUse: null,
   measuredDownMbps: null,
   measuredUpMbps: null,
+  oltBuild: null,
 }
 
 export const DEFAULT_PATTERN: Pattern = {
@@ -294,6 +299,10 @@ function setDeploymentParams(h: URLSearchParams, f: DeploymentFields) {
   )
   // Rows split by "|", fields by ",": both are always escaped inside URI-encoded text.
   h.set("o", [num(c.ponEfficiency), c.internet, c.oltModel, num(c.oltUplinkMbps), opt(c.portsInUse), opt(c.measuredDownMbps), opt(c.measuredUpMbps)].join(","))
+  if (c.oltBuild) {
+    h.set("ob", c.oltBuild.code)
+    h.set("obp", OLT_TECHS.map((k) => num(c.oltBuild?.ports[k] ?? 0)).join(","))
+  }
   if (f.deployment) h.set("n", f.deployment)
   if (f.status === "existing") h.set("st", "existing")
   const enc = encodeURIComponent
@@ -638,8 +647,21 @@ export const MAX_PORTS = 512
 function decodeCapacityAll(h: URLSearchParams, base: CapacityState): CapacityState {
   const cap = decodeCapacity(h.get("h"))
   const olt = decodeOlt(h.get("o"))
-  if (cap) return { ...cap, ...(olt ?? { internet: "single", oltUplinkMbps: 0 }) }
-  return { ...base, ...(olt ?? {}) }
+  const oltBuild = decodeOltBuild(h.get("ob"), h.get("obp"))
+  if (cap) return { ...cap, ...(olt ?? { internet: "single", oltUplinkMbps: 0 }), oltBuild }
+  return { ...base, ...(olt ?? {}), oltBuild }
+}
+
+const OLT_TECHS: OltTech[] = ["gpon", "xgpon", "xgspon"]
+/** Longest build code kept (the biggest chassis, every slot filled, is ~400 characters). */
+const MAX_BUILD = 600
+
+/** `ob=` (the build's share code, read by /olt) + `obp=` (its GPON, XG-PON and XGS-PON ports). */
+function decodeOltBuild(code: string | null, ports: string | null): OltBuild | null {
+  if (!code || code.length > MAX_BUILD || !/^[a-z0-9-]+;/.test(code)) return null
+  const p = (ports ?? "").split(",").map((x) => finite(x, 0, 1e4))
+  if (p.length !== OLT_TECHS.length || p.some((x) => x === null)) return null
+  return { code, ports: Object.fromEntries(OLT_TECHS.map((k, i) => [k, Math.round(p[i] as number)])) as Record<OltTech, number> }
 }
 
 /** Reads a share hash; anything malformed falls back to the defaults. */

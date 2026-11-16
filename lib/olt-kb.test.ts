@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { BOARDS, CHASSIS, OPTICS, SOURCES, type Fact } from "./olt-kb"
+import { BOARDS, BUDGETS, CHASSIS, CVE_9067, DOWN_CAUSES, MODULES, ONTS, OPTICS, SOURCES, TROUBLE, compareVersions, type Fact } from "./olt-kb"
 import { matchInternal } from "./internal-pages"
 
 const isFact = (x: unknown): x is Fact<unknown> => !!x && typeof x === "object" && "v" in x && "src" in x
@@ -31,6 +31,28 @@ describe("OLT knowledge base data", () => {
     const x7 = CHASSIS.find((c) => c.id === "ma5800-x7")
     expect(x7?.minSoftware).toEqual({ v: "V100R016C00", src: "ds5800" })
     expect(BOARDS.find((b) => b.code === "H802GPFD")?.power).toEqual({ v: "45 / 73 W", src: "hd5600" })
+  })
+})
+
+describe("modules, ONTs, software and faults", () => {
+  it("every new value names a known source", () => {
+    const all = [...MODULES.flatMap(facts), ...ONTS.flatMap(facts), ...BUDGETS.flatMap(facts), ...DOWN_CAUSES.flatMap(facts), ...facts(CVE_9067)]
+    expect(all.length).toBeGreaterThan(80)
+    expect(all.filter((f) => !ids.has(f.src))).toEqual([])
+    const steps = TROUBLE.flatMap((c) => c.steps)
+    expect(steps.filter((s) => !ids.has(s.src))).toEqual([])
+    expect(DOWN_CAUSES.filter((c) => !ids.has(c.src))).toEqual([])
+  })
+  it("part numbers are unique and the company's ONT is marked", () => {
+    const boms = MODULES.map((m) => m.bom)
+    expect(new Set(boms).size).toBe(boms.length)
+    expect(ONTS.filter((o) => o.ours).map((o) => o.model)).toEqual(["EG8145B7-50"])
+    // The XGS-PON ONT's sensitivity is Huawei's datasheet figure.
+    expect(ONTS.find((o) => o.model === "EN8145B7Ns")?.optics).toMatchObject({ src: "dsEN8145" })
+  })
+  it("sorts versions by release", () => {
+    expect(["V800R013C00", "V800R011C00", "V800R012C00"].sort(compareVersions)).toEqual(["V800R011C00", "V800R012C00", "V800R013C00"])
+    expect(compareVersions("V100R016C10", "V100R016C00")).toBeGreaterThan(0)
   })
 })
 

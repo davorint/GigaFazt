@@ -8,7 +8,7 @@
       "private": "Uso interno",
       "title": "OLT Huawei: chasis, tarjetas y compras",
       "lead": "Los datos para comprar o reemplazar equipo de las familias MA5600T (MA5608T, MA5603T/MA5683T, MA5600T/MA5680T) y MA5800 (X2, X7, X15, X17): slots, tarjetas compatibles, consumo, ópticas y qué revisar antes de pagar.",
-      "legend": "Cada dato dice de dónde sale: {huawei} viene de un documento de Huawei (descripción de hardware o datasheet); {reseller} viene de la página de un revendedor y conviene confirmarlo. Si nadie publicó un dato, aparece como «sin dato».",
+      "legend": "Cada dato dice de dónde sale: {huawei} viene de un documento de Huawei (descripción de hardware o datasheet); {reseller} viene de la página de un revendedor y conviene confirmarlo; {standard} viene de una norma (ITU-T) o de un registro público (NIST). Si nadie publicó un dato, aparece como «sin dato».",
       "huawei": "Huawei",
       "reseller": "Revendedor",
       "links": "Otras páginas internas:",
@@ -20,12 +20,16 @@
         "builder": "Arma tu OLT",
         "boards": "Tarjetas",
         "optics": "Ópticas",
+        "onts": "ONT",
         "compat": "Compatibilidad",
         "modified": "Chasis modificados",
+        "software": "Software",
         "buying": "Guía de compra",
+        "trouble": "Fallas",
         "commands": "Comandos",
         "sources": "Fuentes"
-      }
+      },
+      "standard": "Público"
     },
     "missing": "sin dato",
     "chassis": {
@@ -104,7 +108,7 @@
     },
     "optics": {
       "title": "Ópticas",
-      "lead": "El módulo SFP define cuánta pérdida aguanta el puerto, y con eso la distancia y la división. GPON transmite en 1490 nm hacia el cliente y recibe en 1310 nm; XG-PON en 1577 / 1270 nm.",
+      "lead": "El módulo SFP define cuánta pérdida aguanta el puerto, y con eso la distancia y la división. GPON transmite en 1490 nm hacia el cliente y recibe en 1310 nm; XG-PON y XGS-PON en 1577 / 1270 nm.",
       "caption": "Clases de módulos ópticos PON",
       "cols": {
         "class": "Clase",
@@ -118,9 +122,10 @@
         "bPlus": "La común: edificios y distancias cortas.",
         "cPlus": "Más alcance o divisiones de 1:128.",
         "cPlusPlus": "Distancias largas o muchas pérdidas en la planta.",
-        "xg": "XG-PON en tarjetas 10G y combo.",
+        "xg": "XG-PON en tarjetas 10G y combo (XGBC en MA5600T; XGHD, CGHF en MA5800). Clases de la ITU; los módulos combo de Huawei traen su lado GPON aparte.",
         "cPlus3": "Más potencia de bajada; no es clase ITU (extensión de fabricantes).",
-        "cPlus4": "La de más potencia; ojo con saturar el ONT en tramos cortos."
+        "cPlus4": "La de más potencia; ojo con saturar el ONT en tramos cortos.",
+        "xgs": "XGS-PON, solo MA5800 (XSHF, CSHF, CSHD). Mismas clases de la ITU que XG-PON."
       },
       "note": "Huawei publica 28.5 dB (B+) y 32 dB (C+) y pide C+ para 1:128; C++ y los rangos de potencia vienen de revendedores. C+++ y C++++ no son clases de la ITU: cada fabricante pone sus cifras (aquí las de AirLive, comparadas con VSOL y Philisun) y no publican un presupuesto; la calculadora lo estima con tu ONT. Revisa que el módulo diga ser compatible con tu tarjeta Huawei. Al comprar, mide la potencia de salida de cada puerto (Guía de compra)."
     },
@@ -196,7 +201,8 @@
       "lead": "De dónde sale cada dato. Los documentos de Huawei se leyeron en copias públicas; la descripción de hardware es de 2013 (versión V800R013), así que no cubre tarjetas más nuevas.",
       "kind": {
         "huawei": "Documento de Huawei",
-        "reseller": "Revendedor"
+        "reseller": "Revendedor",
+        "standard": "Norma o registro público"
       }
     },
     "builder": {
@@ -248,7 +254,35 @@
         "noPowerData": "Sin dato de consumo para {boards}: el total no los incluye.",
         "noOntData": "Algunas tarjetas GPON no publican ONT por puerto: el total de ONT no las incluye."
       },
-      "note": "El consumo máximo suma el máximo de cada tarjeta (o el estático si es el único publicado) y la charola de ventiladores; la corriente es ese máximo entre 48 V. Dimensiona rectificador, baterías o UPS con margen. Los ONT máximos son el tope del puerto (128 en la mayoría), no lo recomendable: la división real la marca tu óptica (ver Ópticas)."
+      "note": "El consumo máximo suma el máximo de cada tarjeta (o el estático si es el único publicado) y la charola de ventiladores; la corriente es ese máximo entre 48 V. Dimensiona rectificador, baterías o UPS con margen. Los ONT máximos son el tope del puerto (128 en la mayoría), no lo recomendable: la división real la marca tu óptica (ver Ópticas).",
+      "deployment": {
+        "title": "Para un despliegue",
+        "pick": "Despliegue guardado",
+        "choose": "Escoge uno",
+        "suggest": "Armar para este despliegue",
+        "save": "Guardar en el despliegue",
+        "none": "No hay despliegues guardados en este navegador.",
+        "noneLink": "Crea uno en /mikrotik",
+        "unnamed": "Sin nombre",
+        "summary": "{clients} clientes: necesita {need} puertos {tech}. OLT del despliegue: {model}.",
+        "noPon": "{clients} clientes, sin capa PON (escoge un tipo de PON en Hora pico).",
+        "hasBuild": "Ya tiene una OLT armada guardada; guardar la reemplaza.",
+        "noBoard": "El {chassis} no tiene tarjetas {tech}: escoge un MA5800.",
+        "suggested": "Listo: {boards} × {board} = {ports} puertos para los {need} que necesita. Revisa el resumen y guárdala en el despliegue.",
+        "short": "No caben: con {boards} × {board} el {chassis} da {ports} puertos y se necesitan {need}. Escoge un chasis más grande o pon más clientes por puerto.",
+        "saved": "Guardada en «{name}». Hora pico ahora revisa sus puertos contra los clientes.",
+        "open": "Ábrelo en Hora pico",
+        "note": "Usa los despliegues de /mikrotik y /calculadora (los guarda este navegador). Guardar pone este chasis como la OLT del despliegue; los marcos MA5600T no tienen modelo propio allá y quedan como «Otra». Para GPON en un MA5800 sugiere la combo CSHF: sirve a los ONT GPON hoy y a los XGS-PON después.",
+        "models": {
+          "ma5608t": "Huawei MA5608T",
+          "ma5683t": "Huawei MA5683T",
+          "ma5800x2": "Huawei MA5800-X2",
+          "ma5800x7": "Huawei MA5800-X7",
+          "ma5800x15": "Huawei MA5800-X15",
+          "ma5800x17": "Huawei MA5800-X17",
+          "other": "Otra"
+        }
+      }
     },
     "modified": {
       "title": "Chasis modificados (no oficiales)",
@@ -359,8 +393,12 @@
       "pick": "Con estos datos te basta un módulo {id}.",
       "pickNone": "Ninguna clase alcanza con el margen: acorta la distancia, quita un nivel de división o revisa conectores y empalmes.",
       "over128": "Más de 1:128: las tarjetas GPON de Huawei aceptan hasta 128 ONT por puerto.",
-      "note": "Las pérdidas de splitter son las máximas de una tabla de revendedor (ya incluyen sus conectores). Presupuestos: B+ y C+ de Huawei, C++ de revendedor; C+++ y C++++ estimados con la potencia y la sensibilidad que publica el fabricante del módulo y los valores de tu ONT. Mide con un medidor de potencia en la instalación: este cálculo es para elegir el módulo, no para garantizar el enlace.",
-      "ontHint": "Tu ONT: la sensibilidad es la del EG8145B7-50 (Huawei, clase B+); su potencia mínima de salida y la máxima que aguanta su receptor son valores típicos de un ONT B+: usa los de su hoja si los tienes. Sirven para estimar C+++ y C++++ y para ver si un módulo potente satura el ONT.",
+      "note": "Las pérdidas de splitter son las máximas de una tabla de revendedor (ya incluyen sus conectores). Presupuestos: B+ y C+ de Huawei, C++ de revendedor, N1/N2/N2a/E1 de la ITU; C+++, C++++ y los combo de Huawei estimados con la potencia y la sensibilidad que publica su vendedor y los valores de tu ONT. Las clases de la ITU no publican la potencia máxima, así que no se revisa si saturan el ONT. Mide con un medidor de potencia en la instalación: este cálculo es para elegir el módulo, no para garantizar el enlace.",
+      "ontHint": {
+        "gpon": "Tu ONT: la sensibilidad es la del EG8145B7-50 (Huawei, clase B+); su potencia mínima de salida y la máxima que aguanta su receptor son valores típicos de un ONT B+: usa los de su hoja si los tienes. Sirven para estimar C+++ y C++++ y para ver si un módulo potente satura el ONT.",
+        "xgpon": "ONT XG-PON: la sensibilidad es la del EN8145B7Ns de Huawei (XGS-PON, −28 dBm) a falta de un ONT XG-PON propio; la potencia de salida y el máximo que aguanta son valores típicos. Cámbialos por los de tu ONT.",
+        "xgspon": "ONT XGS-PON: la sensibilidad es la del EN8145B7Ns (Huawei, clase XGSN2, −28 dBm); su potencia mínima de salida y el máximo que aguanta son valores típicos (Huawei no los publica en su hoja). Sirven para estimar los módulos combo y ver si saturan el ONT."
+      },
       "ontSensitivity": "Sensibilidad del ONT",
       "ontTx": "Potencia mínima del ONT",
       "ontOverload": "Máximo que aguanta el ONT",
@@ -368,7 +406,18 @@
         "down": "Estimado: lo limita la bajada (potencia mínima del módulo contra la sensibilidad del ONT).",
         "up": "Estimado: lo limita la subida (potencia del ONT contra la sensibilidad del módulo): más potencia de bajada ya no ayuda."
       },
-      "overload": "Satura el ONT: con esta pérdida le llega demasiada luz. Necesita al menos {min} dB de pérdida (un atenuador) o una clase menor."
+      "overload": "Satura el ONT: con esta pérdida le llega demasiada luz. Necesita al menos {min} dB de pérdida (un atenuador) o una clase menor.",
+      "tech": "Tipo de PON",
+      "techs": {
+        "gpon": "GPON",
+        "xgpon": "XG-PON",
+        "xgspon": "XGS-PON"
+      },
+      "techHint": {
+        "gpon": "GPON: 2.5 Gbit/s de bajada en 1490 nm y 1.25 de subida en 1310 nm.",
+        "xgpon": "XG-PON: 10 Gbit/s de bajada en 1577 nm y 2.5 de subida en 1270 nm. Clases de la ITU (N1, N2a, E1) y los módulos combo de Huawei con su lado XG-PON.",
+        "xgspon": "XGS-PON: 10 Gbit/s simétricos, 1577 nm de bajada y 1270 nm de subida. Clases de la ITU (N1, N2, E1) y los módulos combo de Huawei con su lado XGS-PON."
+      }
     },
     "commands": {
       "title": "Comandos",
@@ -394,6 +443,143 @@
       "copy": "Copiar",
       "copied": "Copiado",
       "note": "Los <…> son datos tuyos (slot, puerto, índice). Fuentes: la guía de configuración de Huawei (copia en ManualsLib), una página de solución de fallas de Huawei y dos sitios de terceros, marcados en cada comando."
+    },
+    "modules": {
+      "title": "Módulos de Huawei por número de parte",
+      "lead": "El número de parte (BOM) es lo que pides al comprar. La tabla viene de un revendedor que lista los módulos de Huawei; donde otro vendedor dice algo distinto, la última columna lo anota.",
+      "filter": "Tipo de módulo",
+      "caption": "Módulos ópticos PON de Huawei por número de parte",
+      "techs": {
+        "all": "Todos",
+        "gpon": "GPON",
+        "comboXg": "Combo XG-PON + GPON",
+        "comboXgs": "Combo XGS-PON + GPON"
+      },
+      "cols": {
+        "bom": "BOM",
+        "model": "Modelo",
+        "tech": "Tipo",
+        "cls": "Clase",
+        "tx": "Salida (dBm)",
+        "rx": "Sensibilidad (dBm)",
+        "km": "Alcance (km)",
+        "note": "Nota"
+      },
+      "boards": "Los GPON (SFP) van en las tarjetas GPON: {a} según un vendedor; {b} según otro.",
+      "combo": "Los combo traen dos láseres en un SFP+ (cifras: lado GPON / lado 10G). Por su tipo van en las tarjetas combo del mismo tipo (CGHF/CGHD para XG-PON, CSHF/CSHD para XGS-PON), pero ninguna fuente lo dice por número de parte: confírmalo con el vendedor.",
+      "xfp": "La H802XGBC del MA5600T usa módulos XFP (no SFP+): no encontramos su número de parte publicado; pídelo junto con la tarjeta.",
+      "thirdParty": "Módulos de otras marcas: hay vendedores que graban la memoria del módulo para que la OLT lo reconozca como Huawei, y la tabla de revendedor advierte que uno genérico «puede necesitar pruebas». Prueba uno en tu OLT antes de comprar en cantidad y mide su potencia de salida (Guía de compra).",
+      "units": "34060841 aparece como C++ en un vendedor y como «clase D» en otro, con las mismas cifras. Para C+ hay dos BOM: 34060694 es el que más vendedores usan."
+    },
+    "onts": {
+      "title": "ONT",
+      "lead": "Los ONT Wi-Fi 7 de Huawei y el Wi-Fi 6, lado a lado: qué piden de la OLT y qué le dan al cliente. Hoy entregas el EG8145B7-50 (Wi-Fi 7) y, cuando no hay, uno Wi-Fi 6 en 200 y 500 Mbps.",
+      "caption": "ONT de Huawei: Wi-Fi 7 y Wi-Fi 6",
+      "model": "Modelo",
+      "ours": "El que entregas",
+      "rows": {
+        "pon": "PON",
+        "ports": "Puertos",
+        "wifi": "Wi-Fi",
+        "rates": "Velocidad del aire por banda",
+        "optics": "Óptica",
+        "power": "Consumo",
+        "size": "Tamaño y peso",
+        "olt": "En la OLT"
+      },
+      "olt": {
+        "gpon": "Cualquier puerto GPON (MA5600T o MA5800) o combo.",
+        "xgs": "Necesita un puerto XGS-PON o combo XGS-PON + GPON: solo MA5800 (CSHF, CSHD, XSHF…)."
+      },
+      "notes": [
+        "El EG8145B7N-50 es el mismo equipo con un puerto 2.5GE: sirve si un cliente quiere pasar de 1 Gbps por cable. Sus valores ópticos no vienen en la ficha del vendedor.",
+        "El EN8145B7Ns es el Wi-Fi 7 para XGS-PON: el paso natural cuando la OLT tenga tarjetas combo XGS-PON, sin quitar los ONT GPON de los demás.",
+        "El EG8145X6-10 es el Wi-Fi 6 de Huawei con datasheet público; si el Wi-Fi 6 que entregas es otro modelo, dinos cuál y lo agregamos.",
+        "Ninguna fuente publica la versión mínima de la OLT que necesita cada ONT. Antes de comprar en cantidad, registra uno en tu OLT con tu versión de software (Guía de compra).",
+        "Las velocidades del aire son el máximo de cada banda con dispositivos compatibles, no lo que mide el cliente."
+      ]
+    },
+    "software": {
+      "title": "Versiones de software",
+      "lead": "Qué versión pide cada chasis y cada tarjeta, la falla de seguridad conocida que toca a varias versiones y cómo escoger. Las notas de versión completas están en el portal de Huawei (con cuenta).",
+      "family": {
+        "ma5600": "MA5600T / MA5603T / MA5608T",
+        "ma5800": "MA5800"
+      },
+      "needs": "La piden:",
+      "affected": "afectada por {cve}",
+      "cveTitle": "Falla de seguridad {cve}",
+      "cveLead": "Desbordamiento de búfer que permite ejecutar código a distancia cuando el equipo trabaja como OLT. Huawei publicó parches.",
+      "fix": "Solución",
+      "adviceTitle": "Cómo escoger la versión",
+      "advice": [
+        "La versión de la OLT debe ser igual o mayor que la de la tarjeta más exigente que vayas a poner; «Arma tu OLT» te dice cuál es.",
+        "En V800R017C10 y V800R018C00 algunas tarjetas solo funcionan con el parche correspondiente cargado: al comprar, pregunta qué parches trae además de la versión.",
+        "Las OLT «desbloqueadas» que venden con V800R015 o V800R018 caen en el rango afectado por CVE-2020-9067 si no traen parche: no expongas su administración a internet y deja el acceso solo desde tu VLAN de gestión.",
+        "Una versión por modelo en toda la red: prueba la nueva en una OLT con pocos clientes antes de pasarla a las demás, y respalda la configuración antes (save y copia fuera de la OLT)."
+      ]
+    },
+    "trouble": {
+      "title": "Fallas",
+      "lead": "Qué revisar cuando un ONT no se registra, se cae, se cae todo un puerto o le llega poca luz. Los pasos vienen de Huawei y de guías de técnicos que trabajan con estas OLT; confirma la sintaxis en tu versión.",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "cases": {
+        "offline": {
+          "title": "Un ONT se cae o está offline",
+          "steps": {
+            "info": "Mira «Run state» (online/offline), «Last down cause» y «Last up time». Se corre desde config, no dentro de interface gpon. Si «Last up time» cambió, sí hubo caída; la causa se queda guardada hasta la siguiente.",
+            "cause": "Lee la causa: dying-gasp = se fue la luz eléctrica en el departamento (no es la fibra); LOSi/LOBi = la OLT dejó de recibir al ONT (fibra o ONT apagado); LOFi, SFi, SDi = señal mala (mide la potencia y limpia conectores); reset, deactive o reRegister = alguien lo reinició o lo desactivó.",
+            "optical": "La potencia que recibe el ONT, la que recibe la OLT de él, su salida y su temperatura. Si el ONT está offline con LOS no da lectura: eso ya dice que no llega luz.",
+            "history": "El historial de altas y caídas con su causa: muestra si se cae siempre a la misma hora o por la misma razón.",
+            "alarms": "Alarmas activas: Huawei manda revisar las del ODN (LOS del puerto, LOSi/LOBi, LOFi, SFi, SDi) y la de ONT intruso; quítalas y vuelve a revisar."
+          }
+        },
+        "notRegistered": {
+          "title": "Un ONT nuevo no se registra",
+          "steps": {
+            "autofind": "Si su número de serie aparece aquí, la luz llega y la OLT lo ve: solo falta darlo de alta (ont add, en Comandos). Si no aparece, revisa la fibra hasta el ONT.",
+            "auth": "Si se dio de alta y no sube: número de serie o contraseña distintos (corrígelo con ont modify) o el ONT quedó desactivado (ont activate).",
+            "range": "Distancia: el puerto mide de 0 a 20 km por omisión; un ONT fuera de ese rango no se registra (se ajusta con port range).",
+            "state": "Ya registrado pero sin servicio: «Config state» failed = la OLT no pudo aplicar el perfil (por ejemplo, el mismo GEM en dos perfiles del puerto); «Match state» mismatch = el tipo de ONT no cuadra con su perfil de servicio."
+          }
+        },
+        "manyDown": {
+          "title": "Se caen varios ONT de un puerto",
+          "steps": {
+            "summary": "Todos los ONT del puerto con su estado y su última causa: primero cuenta cuántos y desde cuándo.",
+            "pattern": "Todos con dying-gasp = falla de energía en el edificio. Todos con LOSi/LOBi y ninguno con dying-gasp = fibra troncal, splitter principal o el módulo del puerto. Solo los de una caja = esa rama.",
+            "port": "Estado de los puertos PON: láser apagado o puerto caído.",
+            "board": "Si se cayeron todos los puertos de una tarjeta, revisa que la tarjeta esté en «Normal».",
+            "rogue": "Un ONT dañado que transmite todo el tiempo tumba a los demás del puerto: Huawei lo reporta con las alarmas 0x2e314021 (hay un ONT intruso en el puerto) y 0x2e314022 (este ONT es el intruso)."
+          }
+        },
+        "lowPower": {
+          "title": "Le llega poca luz (o demasiada)",
+          "steps": {
+            "read": "Lee la potencia que recibe el ONT y la que recibe la OLT, y compárala con la de otros ONT de la misma caja.",
+            "levels": "Tu EG8145B7-50 deja de recibir por debajo de −27 dBm (su sensibilidad). Un técnico que trabaja con estas OLT considera bien arriba de −25 dBm, aceptable de −25 a −27 y empieza a revisar por debajo de −27; es su criterio, no una cifra de Huawei.",
+            "overload": "Más de −8 dBm en el ONT lo satura: pon un atenuador (pasa con módulos potentes en tramos cortos, ver «¿Qué óptica necesito?»).",
+            "clean": "Limpia y vuelve a conectar; no mezcles conectores APC (verdes) con UPC (azules); busca dobleces y empalmes malos; revisa el splitter."
+          }
+        }
+      },
+      "causesTitle": "Qué significa «Last down cause»",
+      "cols": {
+        "cause": "Causa",
+        "means": "Qué quiere decir",
+        "alarm": "Alarma de Huawei"
+      },
+      "causes": {
+        "dyingGasp": "El ONT se quedó sin corriente y alcanzó a avisar: es energía eléctrica, no fibra.",
+        "losi": "La OLT dejó de recibir la señal del ONT: fibra cortada o doblada, o ONT apagado sin aviso.",
+        "lofi": "La OLT recibe la señal pero no reconoce las tramas: señal débil o sucia.",
+        "sfi": "Demasiados errores en la subida (falla de señal).",
+        "sdi": "Errores en la subida por encima del umbral (señal degradada); suele venir antes de SFi.",
+        "loami": "El ONT dejó de contestar mensajes de control (PLOAM).",
+        "admin": "Alguien lo desactivó, lo borró o lo reinició, o el ONT se reinició solo: no es la fibra."
+      },
+      "note": "Los significados vienen de una guía de técnico (revendedor), los números de alarma de Huawei. Los nombres de los campos y la sintaxis pueden cambiar con la versión de la OLT."
     }
   }
 }

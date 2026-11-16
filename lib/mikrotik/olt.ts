@@ -38,13 +38,22 @@ export const OLT_SPECS: Record<OltModelId, OltSpec> = {
 }
 
 /** The deployment's OLT. uplinkMbps 0 = no limit. */
-export type OltEntry = { model: OltModelId; tech: OltTech; homesPerPort: number; uplinkMbps: number }
+export type OltEntry = {
+  model: OltModelId
+  tech: OltTech
+  homesPerPort: number
+  uplinkMbps: number
+  /** Ports of this PON type in the OLT built for the deployment on /olt (undefined = none built). */
+  builtPorts?: number
+}
 
 export type OltIssueCode =
   /** The model has no boards for this PON type (XGS-PON on the MA5600T family). */
   | "unsupported"
   /** The clients need more ports than the model takes. */
   | "tooManyPorts"
+  /** The OLT built on /olt has fewer ports of this type than the clients need. */
+  | "buildPorts"
   | "tooManyHomes"
   | "tooManyUsers"
   | "noUplink"
@@ -62,6 +71,7 @@ export function checkOlt(o: OltEntry, clients: number, ports?: number): OltIssue
   const need = ports ?? portsNeeded(clients, o.homesPerPort)
   if (max === 0) out.push({ code: "unsupported", level: "error" })
   else if (max !== null && need > max) out.push({ code: "tooManyPorts", level: "error", max, need })
+  else if (o.builtPorts !== undefined && need > o.builtPorts) out.push({ code: "buildPorts", level: "warn", max: o.builtPorts, need })
   if (o.homesPerPort > MAX_HOMES_PER_PORT) out.push({ code: "tooManyHomes", level: "error", max: MAX_HOMES_PER_PORT })
   if (spec.maxUsers !== null && clients > spec.maxUsers) out.push({ code: "tooManyUsers", level: "warn", max: spec.maxUsers })
   if (!(o.uplinkMbps > 0)) out.push({ code: "noUplink", level: "info" })

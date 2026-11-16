@@ -71,7 +71,7 @@ export function summarize(f: DeploymentFields): DeploymentSummary {
   const pon = c.pon !== "none"
   const ports = pon ? portsOf(f) : 0
   const oltIssues =
-    c.pon === "none" ? [] : checkOlt({ model: c.oltModel, tech: c.pon, homesPerPort: homesPerPortOf(f), uplinkMbps: c.oltUplinkMbps }, clients, f.status === "existing" ? (c.portsInUse ?? undefined) : undefined)
+    c.pon === "none" ? [] : checkOlt({ model: c.oltModel, tech: c.pon, homesPerPort: homesPerPortOf(f), uplinkMbps: c.oltUplinkMbps, builtPorts: c.oltBuild?.ports[c.pon] }, clients, f.status === "existing" ? (c.portsInUse ?? undefined) : undefined)
   const linkIssues = links !== null ? checkBalance({ ...f.balance, wans: f.wans }) : []
   return {
     clients,

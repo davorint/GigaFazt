@@ -55,6 +55,17 @@ describe("saved deployments", () => {
     expect(decodeDeployment(encodeDeployment(f))).toEqual(f)
     expect(decodeDeployment(encodeDeployment(example()))).toEqual(example())
   })
+  it("keep the OLT built on /olt and check its ports", () => {
+    const built = { ...running(), capacity: { ...running().capacity, oltBuild: { code: "ma5608t;0:H802GPFD,2:H801MCUD1,3:H801MCUD1,4:H801MPWD", ports: { gpon: 16, xgpon: 0, xgspon: 0 } } } }
+    expect(decodeDeployment(encodeDeployment(built))).toEqual(built)
+    // 12 ports in use fit in 16; 20 don't.
+    expect(summarize(built).problems).toBe(summarize(running()).problems)
+    const more = { ...built, capacity: { ...built.capacity, portsInUse: 20 } }
+    expect(summarize(more).problems).toBe(summarize(running()).problems + 1)
+    // A malformed build is dropped, the rest of the deployment stays.
+    const bad = encodeDeployment(built).replace(/obp=[^&]*/, "obp=x")
+    expect(decodeDeployment(bad)?.capacity.oltBuild).toBeNull()
+  })
   it("reject text that isn't a deployment", () => {
     expect(decodeDeployment("")).toBeNull()
     expect(decodeDeployment("h=nope")).toBeNull()

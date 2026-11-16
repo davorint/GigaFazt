@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { DEFAULT_BUDGET, opticBudget, splitterLoss } from "./olt-budget"
+import { DEFAULT_BUDGET, ONT_DEFAULTS, opticBudget, splitterLoss } from "./olt-budget"
 
 describe("PON optical budget", () => {
   it("uses the sourced splitter maximums", () => {
@@ -52,5 +52,16 @@ describe("high-power modules on short runs", () => {
     const r = opticBudget({ ...DEFAULT_BUDGET, ontTx: 4 })
     // min(9 + 27, 4 + 33) = 36: now the downstream sets it.
     expect(r.classes.find((c) => c.id === "C++++")).toMatchObject({ budget: 36, limit: "down" })
+  })
+
+  it("compares only the classes of the chosen PON type", () => {
+    expect(opticBudget(DEFAULT_BUDGET).classes.map((c) => c.id)).toEqual(["B+", "C+", "C++", "C+++", "C++++"])
+    const xgs = opticBudget({ ...DEFAULT_BUDGET, tech: "xgspon", ...ONT_DEFAULTS.xgspon })
+    expect(xgs.classes.map((c) => c.id)).toEqual(["N1", "N2", "E1", "Combo C+ (34062610)", "Combo D (34062990)"])
+    // ITU classes publish no maximum power: no overload check.
+    expect(xgs.classes[0]).toMatchObject({ budget: 29, minLoss: null, overload: false })
+    // Combo C+: min(5 + 28, 4 + 29) = 33 either way; combo D: min(6 + 28, 4 + 32) = 34 by the downstream.
+    expect(xgs.classes[3]).toMatchObject({ budget: 33 })
+    expect(xgs.classes[4]).toMatchObject({ budget: 34, limit: "down" })
   })
 })
