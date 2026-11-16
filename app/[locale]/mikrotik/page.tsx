@@ -6,7 +6,8 @@ import { BurstLab } from "@/components/mikrotik/BurstLab"
 import internal from "@/messages/internal/mikrotik.es.json"
 
 /**
- * Internal MikroTik burst calculator/simulator, served at /mikrotik.
+ * Internal MikroTik scripts (queues, deployments, load balancing, setup), served
+ * at /mikrotik; the calculators and simulators live at /calculadora.
  * Open (no password, owner 2026-11-15); proxy.ts rewrites /mikrotik (any
  * capitalization) here. It sits inside [locale] on purpose: a static
  * folder at the app root is listed in every public page's router payload
@@ -30,7 +31,7 @@ export default async function MikrotikPage({ params }: PageProps<"/[locale]/mikr
   setRequestLocale(locale)
   return (
     <NextIntlClientProvider locale="es" messages={internal}>
-      <BurstLab />
+      <BurstLab page="scripts" />
     </NextIntlClientProvider>
   )
 }

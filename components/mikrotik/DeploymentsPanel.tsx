@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import type { DeploymentStore } from "@/lib/mikrotik/deployment-store"
 import { exportFile, parseFile, summarize, type SavedDeployment } from "@/lib/mikrotik/deployments"
 import { fmtNum, fmtPct, fmtRate } from "@/lib/mikrotik/format"
-import { decodeDeployment, type LabState } from "@/lib/mikrotik/state"
+import { decodeDeployment, MAX_NAME, type LabState } from "@/lib/mikrotik/state"
+import { TextField } from "./TextField"
 
 type Actions = {
   open: (id: string) => void
@@ -17,7 +18,7 @@ type Actions = {
   remove: (id: string) => void
   importItems: (items: SavedDeployment[]) => number
 }
-type Props = { state: LabState; saved: DeploymentStore; boundId: string | null; actions: Actions }
+type Props = { state: LabState; saved: DeploymentStore; boundId: string | null; actions: Actions; onName: (name: string) => void }
 
 const DATE = new Intl.DateTimeFormat("es-MX", { dateStyle: "short", timeStyle: "short" })
 const MAX_FILE = 1_000_000
@@ -27,7 +28,7 @@ const COLS = ["name", "olt", "clients", "ports", "internet", "demand", "oltLoad"
 const loadTone = (ratio: number) => (ratio >= 1 ? "text-red-300" : ratio >= 0.8 ? "text-amber-300" : "text-zinc-100")
 
 /** The deployments saved in this browser: open, duplicate, delete, compare, back up. */
-export function DeploymentsPanel({ state, saved, boundId, actions }: Props) {
+export function DeploymentsPanel({ state, saved, boundId, actions, onName }: Props) {
   const t = useTranslations("mikrotik.deployments")
   const tc = useTranslations("mikrotik.capacity")
   const fileInput = useRef<HTMLInputElement>(null)
@@ -63,6 +64,9 @@ export function DeploymentsPanel({ state, saved, boundId, actions }: Props) {
     <div className="surface grid min-w-0 gap-6 rounded-2xl p-5 sm:p-7 [&>*]:min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-4">
         <p className="text-sm leading-snug text-zinc-200">{boundId ? t("openNow", { name: nameOf(state.deployment) }) : t("unsaved")}</p>
+        <div className="w-full sm:max-w-sm">
+          <TextField label={t("name")} value={state.deployment} onChange={(v) => onName(v.slice(0, MAX_NAME))} hint={t("nameHint")} />
+        </div>
         {!boundId && (
           <Button type="button" onClick={actions.saveNew}>
             <Save aria-hidden />

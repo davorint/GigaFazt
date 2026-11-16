@@ -76,8 +76,16 @@ const subscribeHash = (cb: () => void) => {
 }
 const readHash = () => window.location.hash
 
-const JUMP = ["params", "sim", "compare", "shared", "deployments", "capacity", "links", "setup", "solver", "export", "bulk", "how"] as const
-const ANCHORS: Record<(typeof JUMP)[number], string> = {
+type Jump = "params" | "sim" | "compare" | "shared" | "deployments" | "capacity" | "links" | "setup" | "solver" | "export" | "bulk" | "how"
+
+/** The two internal pages: /mikrotik makes the scripts, /calculadora holds the calculators and simulators (owner, 2026-11-15). */
+export type LabPage = "scripts" | "calculators"
+const PAGE_SECTIONS: Record<LabPage, Jump[]> = {
+  scripts: ["params", "deployments", "links", "setup", "export", "bulk"],
+  calculators: ["params", "sim", "compare", "shared", "deployments", "capacity", "solver", "how"],
+}
+const OTHER_PAGE: Record<LabPage, string> = { scripts: "/calculadora", calculators: "/mikrotik" }
+const ANCHORS: Record<Jump, string> = {
   params: "parametros",
   sim: "simulacion",
   compare: "comparar",
@@ -107,8 +115,9 @@ function Section({ id, name, title, lead, children }: { id: string; name: string
   )
 }
 
-export function BurstLab() {
+export function BurstLab({ page }: { page: LabPage }) {
   const t = useTranslations("mikrotik")
+  const on = (k: Jump) => PAGE_SECTIONS[page].includes(k)
   const [state, setState] = useState<LabState>(initialState)
   // The saved deployment the page is working on (its edits are saved as they happen); null = not saved.
   const [boundId, setBoundId] = useState<string | null>(null)
@@ -260,7 +269,7 @@ export function BurstLab() {
     return url
   }
 
-  const navItems = useMemo(() => JUMP.map((k) => ({ id: ANCHORS[k], label: t(`intro.jump.${k}`) })), [t])
+  const navItems = useMemo(() => PAGE_SECTIONS[page].map((k) => ({ id: ANCHORS[k], label: t(`intro.jump.${k}`) })), [t, page])
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-24 sm:px-6">
@@ -271,8 +280,14 @@ export function BurstLab() {
             {t("intro.private")}
           </span>
         </div>
-        <h1 className="mt-4 text-4xl font-light tracking-tight text-foreground sm:text-6xl">{t("intro.title")}</h1>
-        <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300 sm:text-lg">{t("intro.lead")}</p>
+        <h1 className="mt-4 text-4xl font-light tracking-tight text-foreground sm:text-6xl">{t(`intro.title.${page}`)}</h1>
+        <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300 sm:text-lg">{t(`intro.lead.${page}`)}</p>
+        <p className="mt-3 text-sm text-zinc-400">
+          {/* The other internal page: a full load (each page keeps its own state; proxy.ts rewrites it). */}
+          <a href={OTHER_PAGE[page]} className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+            {t(`intro.other.${page}`)}
+          </a>
+        </p>
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <CopyButton getText={shareUrl} label={t("intro.share")} done={t("intro.shared")} size="default" variant="default" />
           <Button type="button" variant="outline" onClick={reset}>
@@ -288,7 +303,7 @@ export function BurstLab() {
         <div className="mb-6">
           <ImportPanel onApply={applyImport} />
         </div>
-        <div className="grid items-start gap-6 lg:grid-cols-[1.25fr_1fr] [&>*]:min-w-0">
+        <div className={`grid items-start gap-6 [&>*]:min-w-0 ${page === "calculators" ? "lg:grid-cols-[1.25fr_1fr]" : ""}`}>
           <ParamsPanel
             state={state}
             onPreset={setPreset}
@@ -298,101 +313,122 @@ export function BurstLab() {
             onPlan={(v) => set({ planMbps: v })}
             onRule={setRule}
           />
-          <FiguresPanel state={state} onView={(view) => set({ view })} onBackground={setBackground} />
+          {page === "calculators" && <FiguresPanel state={state} onView={(view) => set({ view })} onBackground={setBackground} />}
         </div>
       </Section>
 
-      <Section id="simulacion" name="mk-sim" title={t("sim.title")} lead={t("sim.lead")}>
-        <SimPanel state={state} onPreset={setPreset} onPattern={setPattern} onDuration={(durationS) => set({ durationS })} onView={(view) => set({ view })} />
-      </Section>
+      {on("sim") && (
+        <Section id="simulacion" name="mk-sim" title={t("sim.title")} lead={t("sim.lead")}>
+          <SimPanel state={state} onPreset={setPreset} onPattern={setPattern} onDuration={(durationS) => set({ durationS })} onView={(view) => set({ view })} />
+        </Section>
+      )}
 
-      <Section id="comparar" name="mk-compare" title={t("compare.title")} lead={t("compare.lead")}>
-        <Lazy fallback="min-h-[60rem] sm:min-h-[56rem]">
-          <ComparePanel state={state} />
-        </Lazy>
-      </Section>
+      {on("compare") && (
+        <Section id="comparar" name="mk-compare" title={t("compare.title")} lead={t("compare.lead")}>
+          <Lazy fallback="min-h-[60rem] sm:min-h-[56rem]">
+            <ComparePanel state={state} />
+          </Lazy>
+        </Section>
+      )}
 
-      <Section id="compartida" name="mk-shared" title={t("shared.title")} lead={t("shared.lead")}>
-        <Lazy fallback="min-h-[110rem] sm:min-h-[100rem]">
-          <SharedPanel state={state} onGroup={setGroup} />
-        </Lazy>
-      </Section>
+      {on("shared") && (
+        <Section id="compartida" name="mk-shared" title={t("shared.title")} lead={t("shared.lead")}>
+          <Lazy fallback="min-h-[110rem] sm:min-h-[100rem]">
+            <SharedPanel state={state} onGroup={setGroup} />
+          </Lazy>
+        </Section>
+      )}
 
-      <Section id="despliegues" name="mk-deployments" title={t("deployments.title")} lead={t("deployments.lead")}>
-        <Lazy fallback="min-h-[40rem] sm:min-h-[32rem]">
-          <DeploymentsPanel state={state} saved={saved} boundId={boundId} actions={deployments} />
-        </Lazy>
-      </Section>
+      {on("deployments") && (
+        <Section id="despliegues" name="mk-deployments" title={t("deployments.title")} lead={t("deployments.lead")}>
+          <Lazy fallback="min-h-[40rem] sm:min-h-[32rem]">
+            <DeploymentsPanel state={state} saved={saved} boundId={boundId} actions={deployments} onName={setDeployment} />
+          </Lazy>
+        </Section>
+      )}
 
-      <Section id="hora-pico" name="mk-capacity" title={t("capacity.title")} lead={t("capacity.lead")}>
-        <Lazy fallback="min-h-[160rem] sm:min-h-[130rem]">
-          <CapacityPanel
-            state={state}
-            onCapacity={setCapacity}
-            onDeployment={setDeployment}
-            onStatus={setStatus}
-            measuredAverages={measuredAverages}
-          />
-        </Lazy>
-      </Section>
+      {on("capacity") && (
+        <Section id="hora-pico" name="mk-capacity" title={t("capacity.title")} lead={t("capacity.lead")}>
+          <Lazy fallback="min-h-[160rem] sm:min-h-[130rem]">
+            <CapacityPanel
+              state={state}
+              onCapacity={setCapacity}
+              onStatus={setStatus}
+              measuredAverages={measuredAverages}
+            />
+          </Lazy>
+        </Section>
+      )}
 
-      <Section id="enlaces" name="mk-links" title={t("links.title")} lead={t("links.lead")}>
-        <Lazy fallback="min-h-[120rem] sm:min-h-[90rem]">
-          <BalancePanel state={state} onWans={setWans} onBalance={setBalance} />
-        </Lazy>
-      </Section>
+      {on("links") && (
+        <Section id="enlaces" name="mk-links" title={t("links.title")} lead={t("links.lead")}>
+          <Lazy fallback="min-h-[120rem] sm:min-h-[90rem]">
+            <BalancePanel state={state} onWans={setWans} onBalance={setBalance} />
+          </Lazy>
+        </Section>
+      )}
 
-      <Section id="configuracion" name="mk-setup" title={t("config.title")} lead={t("config.lead")}>
-        <Lazy fallback="min-h-[110rem] sm:min-h-[80rem]">
-          <SetupPanel state={state} onSetup={setSetup} />
-        </Lazy>
-      </Section>
+      {on("setup") && (
+        <Section id="configuracion" name="mk-setup" title={t("config.title")} lead={t("config.lead")}>
+          <Lazy fallback="min-h-[110rem] sm:min-h-[80rem]">
+            <SetupPanel state={state} onSetup={setSetup} />
+          </Lazy>
+        </Section>
+      )}
 
-      <Section id="calculadora" name="mk-solver" title={t("solver.title")} lead={t("solver.lead")}>
-        <SolverPanel state={state} onApply={applySolver} />
-      </Section>
+      {on("solver") && (
+        <Section id="calculadora" name="mk-solver" title={t("solver.title")} lead={t("solver.lead")}>
+          <SolverPanel state={state} onApply={applySolver} />
+        </Section>
+      )}
 
-      <Section id="exportar" name="mk-export" title={t("export.title")} lead={t("export.lead")}>
-        <Lazy fallback="min-h-[60rem] sm:min-h-[48rem]">
-          <ExportPanel state={state} onQueueKind={setQueueKind} />
-        </Lazy>
-      </Section>
+      {on("export") && (
+        <Section id="exportar" name="mk-export" title={t("export.title")} lead={t("export.lead")}>
+          <Lazy fallback="min-h-[60rem] sm:min-h-[48rem]">
+            <ExportPanel state={state} onQueueKind={setQueueKind} />
+          </Lazy>
+        </Section>
+      )}
 
-      <Section id="varios-clientes" name="mk-bulk" title={t("bulk.title")} lead={t("bulk.lead")}>
-        <Lazy fallback="min-h-[100rem] sm:min-h-[70rem]">
-          <BulkPanel state={state} />
-        </Lazy>
-      </Section>
+      {on("bulk") && (
+        <Section id="varios-clientes" name="mk-bulk" title={t("bulk.title")} lead={t("bulk.lead")}>
+          <Lazy fallback="min-h-[100rem] sm:min-h-[70rem]">
+            <BulkPanel state={state} />
+          </Lazy>
+        </Section>
+      )}
 
-      <Section id="como-funciona" name="mk-how" title={t("how.title")}>
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
-          <ol className="surface grid content-start gap-5 rounded-2xl p-5 sm:p-7">
-            {(t.raw("how.points") as string[]).map((point, i) => (
-              <li key={i} className="flex gap-4 text-sm leading-relaxed text-zinc-200 sm:text-base">
-                <span aria-hidden className="font-mono text-xs leading-6 text-zinc-500">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span>{point}</span>
-              </li>
-            ))}
-          </ol>
-          <div className="grid content-start gap-6">
-            <div className="surface grid gap-3 rounded-2xl p-5 sm:p-7">
-              <h3 className="text-sm font-medium text-foreground">{t("how.exampleTitle")}</h3>
-              <p className="text-sm leading-relaxed text-zinc-300">{t("how.example")}</p>
-              <div>
-                <Button type="button" variant="outline" onClick={loadClassic}>
-                  {t("how.loadExample")}
-                </Button>
+      {on("how") && (
+        <Section id="como-funciona" name="mk-how" title={t("how.title")}>
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
+            <ol className="surface grid content-start gap-5 rounded-2xl p-5 sm:p-7">
+              {(t.raw("how.points") as string[]).map((point, i) => (
+                <li key={i} className="flex gap-4 text-sm leading-relaxed text-zinc-200 sm:text-base">
+                  <span aria-hidden className="font-mono text-xs leading-6 text-zinc-500">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ol>
+            <div className="grid content-start gap-6">
+              <div className="surface grid gap-3 rounded-2xl p-5 sm:p-7">
+                <h3 className="text-sm font-medium text-foreground">{t("how.exampleTitle")}</h3>
+                <p className="text-sm leading-relaxed text-zinc-300">{t("how.example")}</p>
+                <div>
+                  <Button type="button" variant="outline" onClick={loadClassic}>
+                    {t("how.loadExample")}
+                  </Button>
+                </div>
+              </div>
+              <div className="grid gap-2 rounded-2xl border border-white/10 p-5 sm:p-7">
+                <h3 className="text-sm font-medium text-foreground">{t("how.modelTitle")}</h3>
+                <p className="text-sm leading-relaxed text-zinc-400">{t("how.model")}</p>
               </div>
             </div>
-            <div className="grid gap-2 rounded-2xl border border-white/10 p-5 sm:p-7">
-              <h3 className="text-sm font-medium text-foreground">{t("how.modelTitle")}</h3>
-              <p className="text-sm leading-relaxed text-zinc-400">{t("how.model")}</p>
-            </div>
           </div>
-        </div>
-      </Section>
+        </Section>
+      )}
     </main>
   )
 }

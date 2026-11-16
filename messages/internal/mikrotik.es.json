@@ -1,13 +1,20 @@
 {
   "mikrotik": {
     "meta": {
-      "title": "Simulador de burst MikroTik · Interno"
+      "title": "Scripts MikroTik · Interno",
+      "titleCalc": "Calculadoras y simuladores · Interno"
     },
     "intro": {
       "eyebrow": "Herramienta interna",
       "private": "Uso interno · sin enlaces · no indexada",
-      "title": "Simulador de burst MikroTik",
-      "lead": "Calcula y prueba la ráfaga de una cola de RouterOS antes de configurarla: cuánto dura, qué ve el cliente en una prueba de velocidad, cuándo vuelve y qué pasa con distintos tipos de tráfico. Compara planes y reglas, prueba clientes bajo una misma cola padre, estima la hora pico de un despliegue y cuántos enlaces necesita, arma el balanceo entre sus proveedores y copia los comandos para un cliente o para todos.",
+      "title": {
+        "scripts": "Scripts MikroTik",
+        "calculators": "Calculadoras y simuladores"
+      },
+      "lead": {
+        "scripts": "Los comandos para tus routers: colas con ráfaga para uno o muchos clientes, la configuración de un despliegue nuevo (VLANs, PPPoE y la OLT Huawei) y el balanceo entre tus proveedores. Elige los valores en Parámetros y el despliegue en Despliegues.",
+        "calculators": "Calcula y prueba antes de configurar: cuánto dura la ráfaga, qué ve el cliente en una prueba de velocidad, cómo se comparan planes y reglas, cómo se reparte una cola padre y qué pasa en la hora pico de cada despliegue."
+      },
       "share": "Copiar enlace con esta configuración",
       "shared": "Enlace copiado",
       "reset": "Restablecer",
@@ -25,7 +32,11 @@
         "bulk": "Varios clientes",
         "how": "Cómo funciona"
       },
-      "navLabel": "Secciones de la herramienta"
+      "navLabel": "Secciones de la herramienta",
+      "other": {
+        "scripts": "Calculadoras y simuladores →",
+        "calculators": "Scripts para el MikroTik →"
+      }
     },
     "params": {
       "title": "Parámetros de la cola",
@@ -455,6 +466,8 @@
       "lead": "Guarda cada despliegue (una OLT y su router, con sus proveedores): los que ya operan, con lo que mides en ellos, y los que planeas. Ábrelos para calcularlos en Hora pico y armar su balanceo en Varios enlaces.",
       "openNow": "Abierto: «{name}». Lo que cambies en Hora pico y Varios enlaces se guarda solo.",
       "unsaved": "Lo que ves en Hora pico y Varios enlaces no está guardado como despliegue.",
+      "name": "Nombre del despliegue",
+      "nameHint": "Se guarda con el despliegue, en este navegador; el router de los scripts toma este nombre.",
       "save": "Guardar como despliegue",
       "unnamed": "Sin nombre",
       "status": {
@@ -607,8 +620,6 @@
           "existing": "Con lo que ya tiene: los puertos PON en uso y el tráfico medido en su router.",
           "planned": "Con supuestos: clientes por puerto y un promedio por cliente (puedes usar el medido en otro despliegue)."
         },
-        "name": "Nombre del despliegue",
-        "nameHint": "Se guarda con el despliegue en «Despliegues», en este navegador.",
         "model": "Modelo de OLT",
         "models": {
           "ma5608t": "Huawei MA5608T",

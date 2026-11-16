@@ -1,11 +1,12 @@
 /**
- * Internal pages (/mikrotik): open (no password, owner 2026-11-15) but never
- * linked, not in the sitemap and noindex. /mikrotik is served from the Spanish
- * route, and any capitalization (/MikroTik, /ES/MIKROTIK) maps to the
- * lowercase route.
+ * Internal pages (/mikrotik for the MikroTik scripts, /calculadora for the
+ * calculators and simulators): open (no password, owner 2026-11-15) but never
+ * linked from the public site, not in the sitemap and noindex. They are served
+ * from the Spanish route, and any capitalization (/MikroTik, /ES/CALCULADORA)
+ * maps to the lowercase route.
  */
 
-export const INTERNAL_PAGES = ["mikrotik"] as const
+export const INTERNAL_PAGES = ["mikrotik", "calculadora"] as const
 
 export type InternalMatch = {
   /** Where to rewrite, or null when the path is already the canonical route. */

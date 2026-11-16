@@ -10,7 +10,8 @@ import { CopyButton } from "./CopyButton"
  * the OLT profiles that can limit before them. The full box lives in Exportar
  * (id `antes-de-pegar`); other exports show the compact line that links to it.
  */
-export function SetupChecks({ compact = false }: { compact?: boolean }) {
+/** `href`: where the full box is (another page's when it isn't on this one). */
+export function SetupChecks({ compact = false, href = "#antes-de-pegar" }: { compact?: boolean; href?: string }) {
   const t = useTranslations("mikrotik.setup")
   const te = useTranslations("mikrotik.export")
 
@@ -20,7 +21,7 @@ export function SetupChecks({ compact = false }: { compact?: boolean }) {
         <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-amber-300" />
         <span>
           {t("compact")}{" "}
-          <a href="#antes-de-pegar" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+          <a href={href} className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
             {t("compactLink")}
           </a>
         </span>

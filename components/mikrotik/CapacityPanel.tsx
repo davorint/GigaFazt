@@ -22,7 +22,7 @@ import { averageOf, homesPerPortOf, portsOf } from "@/lib/mikrotik/deployments"
 import { fmtNum, fmtPct, fmtRate, fmtSec } from "@/lib/mikrotik/format"
 import { checkOlt, OLT_MODELS, OLT_SPECS, type OltModelId } from "@/lib/mikrotik/olt"
 import { rosRate } from "@/lib/mikrotik/routeros"
-import { MAX_CLIENTS_PER_PLAN, MAX_NAME, MAX_PORTS, PRESETS, type CapacityState, type DeploymentStatus, type LabState } from "@/lib/mikrotik/state"
+import { MAX_CLIENTS_PER_PLAN, MAX_PORTS, PRESETS, type CapacityState, type DeploymentStatus, type LabState } from "@/lib/mikrotik/state"
 import { speedLabel } from "@/lib/format"
 import { Choice } from "./Choice"
 import { CopyButton } from "./CopyButton"
@@ -30,7 +30,6 @@ import { IssueList } from "./IssueList"
 import { MultiChart, type ChartSeries } from "./MultiChart"
 import { NumberField } from "./NumberField"
 import { SelectField } from "./SelectField"
-import { TextField } from "./TextField"
 import { SERIES_COLORS } from "./ticks"
 
 /** Busy-hour averages measured on another saved deployment that already runs. */
@@ -39,7 +38,6 @@ export type MeasuredAverage = { id: string; name: string; down: number | null; u
 type Props = {
   state: LabState
   onCapacity: (c: CapacityState) => void
-  onDeployment: (name: string) => void
   onStatus: (status: DeploymentStatus) => void
   measuredAverages: MeasuredAverage[]
 }
@@ -57,7 +55,7 @@ function monitorCommand(ifaces: string[]): string {
 }
 
 /** One deployment (an OLT and its router, with its own internet providers) at the busiest hour. */
-export function CapacityPanel({ state, onCapacity, onDeployment, onStatus, measuredAverages }: Props) {
+export function CapacityPanel({ state, onCapacity, onStatus, measuredAverages }: Props) {
   const t = useTranslations("mikrotik")
   const c = state.capacity
   const set = (patch: Partial<CapacityState>) => onCapacity({ ...c, ...patch })
@@ -273,10 +271,7 @@ export function CapacityPanel({ state, onCapacity, onDeployment, onStatus, measu
           <p className="text-xs leading-snug text-zinc-400">{t(`capacity.deployment.statusHint.${state.status}`)}</p>
         </div>
         <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="sm:col-span-2">
-            <TextField label={t("capacity.deployment.name")} value={state.deployment} onChange={(v) => onDeployment(v.slice(0, MAX_NAME))} hint={t("capacity.deployment.nameHint")} />
-          </div>
-          <SelectField label={t("capacity.deployment.model")} value={c.oltModel} onChange={(v) => set({ oltModel: v as OltModelId })} className="sm:col-span-2 lg:col-span-1">
+          <SelectField label={t("capacity.deployment.model")} value={c.oltModel} onChange={(v) => set({ oltModel: v as OltModelId })}>
             {OLT_MODELS.map((m) => (
               <option key={m} value={m}>
                 {t(`capacity.deployment.models.${m}`)}
@@ -383,7 +378,8 @@ export function CapacityPanel({ state, onCapacity, onDeployment, onStatus, measu
               </ul>
               <p className="text-sm text-zinc-300">
                 {t("capacity.deployment.linksSummary", { total: fmtRate(netCap), count: state.wans.length, mode: modeName })}{" "}
-                <a href="#enlaces" className={LINK}>
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- the other internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
+                <a href="/mikrotik#enlaces" className={LINK}>
                   {t("capacity.deployment.linksEdit")}
                 </a>
               </p>

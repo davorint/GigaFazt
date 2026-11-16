@@ -373,4 +373,12 @@ describe("internal pages", () => {
     expect(matchInternal("/es/MIKROTIK")).toEqual({ rewriteTo: "/es/mikrotik" })
     expect(matchInternal("/ES/Mikrotik.rsc")).toEqual({ rewriteTo: "/es/mikrotik.rsc" })
   })
+  it("also serves /calculadora, in any capitalization", () => {
+    expect(matchInternal("/calculadora")).toEqual({ rewriteTo: "/es/calculadora" })
+    expect(matchInternal("/CALCULADORA")).toEqual({ rewriteTo: "/es/calculadora" })
+    expect(matchInternal("/Calculadora.rsc")).toEqual({ rewriteTo: "/es/calculadora.rsc" })
+    expect(matchInternal("/es/calculadora")).toEqual({ rewriteTo: null })
+    expect(matchInternal("/ES/CalculaDora")).toEqual({ rewriteTo: "/es/calculadora" })
+    expect(matchInternal("/calculadoras")).toBeNull()
+  })
 })
