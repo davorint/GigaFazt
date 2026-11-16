@@ -273,10 +273,15 @@ describe("traceability, OLT security and IPv6", () => {
     expect(parseIpv6Prefix("2001:zz::/32")).toBeNull()
     const v6 = { ...DEFAULT_SETUP, ipv6Pd: "2001:db8:100::/44", ipv6Wan: "2001:db8:200::/52" }
     const parts = setupParts(v6, { ...ctx, name: "x", plans: setupPlans(DEFAULT_PLANS, DEFAULT_RULE) }) as SetupParts
-    expect(parts.pppoe).toContain("/ipv6 pool\nadd name=DS-pd prefix=2001:db8:100::/44 prefix-length=56\nadd name=DS-wan6 prefix=2001:db8:200::/52 prefix-length=64")
+    expect(parts.pppoe).toContain(
+      '/ipv6 pool\nadd name=DS-pd prefix=2001:db8:100::/44 prefix-length=56 comment="DS: prefijos de clientes"\nadd name=DS-wan6 prefix=2001:db8:200::/52 prefix-length=64 comment="DS: prefijos WAN de clientes"'
+    )
     expect(parts.pppoe).toContain("use-ipv6=yes dhcpv6-pd-pool=DS-pd remote-ipv6-prefix-pool=DS-wan6")
     expect(parts.hardening).toContain('add chain=input action=drop in-interface-list=DS-WAN comment="DS: nada desde internet al router"\nadd chain=forward action=drop connection-state=invalid')
     expect(parts.hardening).toContain("/ipv6 firewall filter")
+    // IPv6 forward like IPv4: replies and ICMPv6 pass, nothing new from the internet reaches the clients.
+    expect(parts.hardening).toContain('add chain=forward action=accept protocol=icmpv6 comment="DS: ICMPv6"\nadd chain=forward action=drop in-interface-list=DS-WAN comment="DS: nada nuevo desde internet"')
+    expect(setupUndo(v6)).toContain(':do {/ipv6 pool remove [find where comment~"^DS: "]} on-error={}')
     const codes = checkSetup(v6, ctx).map((i) => i.code)
     // /44 in /56s = 4,096 prefixes; /52 in /64s = 4,096: enough. Two links: the upstream note.
     expect(codes).not.toContain("ipv6Small")

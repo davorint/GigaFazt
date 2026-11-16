@@ -520,8 +520,8 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
   if (v6)
     pp.push(
       "/ipv6 pool",
-      `add name=DS-pd prefix=${v6} prefix-length=${s.ipv6PdLength}`,
-      ...(v6wan ? [`add name=DS-wan6 prefix=${v6wan} prefix-length=64`] : []),
+      `add name=DS-pd prefix=${v6} prefix-length=${s.ipv6PdLength} ${c("prefijos de clientes")}`,
+      ...(v6wan ? [`add name=DS-wan6 prefix=${v6wan} prefix-length=64 ${c("prefijos WAN de clientes")}`] : []),
       // Each session installs its own route; the rest of the block goes nowhere instead of bouncing back to the provider.
       "/ipv6 route",
       `add dst-address=${v6} blackhole ${c("prefijos de clientes sin uso")}`,
@@ -596,7 +596,11 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
       `add chain=input action=accept protocol=udp dst-port=546 src-address=fe80::/10 in-interface-list=DS-WAN ${c("DHCPv6 del proveedor")}`,
       `add chain=input action=accept protocol=udp dst-port=547 in-interface-list=DS-LAN ${c("DHCPv6-PD de los clientes")}`,
       `add chain=input action=drop in-interface-list=DS-WAN ${c("nada desde internet al router")}`,
-      `add chain=forward action=drop connection-state=invalid ${c("invalidas")}`
+      `add chain=forward action=drop connection-state=invalid ${c("invalidas")}`,
+      // Like IPv4: client devices with public IPv6 aren't open to the internet (ICMPv6 must pass: path MTU, neighbors).
+      `add chain=forward action=accept connection-state=established,related,untracked ${c("respuestas")}`,
+      `add chain=forward action=accept protocol=icmpv6 ${c("ICMPv6")}`,
+      `add chain=forward action=drop in-interface-list=DS-WAN ${c("nada nuevo desde internet")}`
     )
 
   return { base: base.join("\n"), cgnat: cg.join("\n"), pppoe: pp.join("\n"), hardening: hd.join("\n"), ops: opsScript(s, ctx.name, mgmtNet) }
@@ -692,6 +696,8 @@ export function setupUndo(s: SetupState): string {
     '/ip firewall nat remove [find where comment~"^DS: "]',
     '/ipv6 firewall filter remove [find where comment~"^DS: "]',
     '/ipv6 route remove [find where comment~"^DS: "]',
+    // The plan profiles keep pointing at the pools: removing them may fail, and that's fine.
+    ':do {/ipv6 pool remove [find where comment~"^DS: "]} on-error={}',
     '/ip firewall raw remove [find where comment~"^DS: "]',
     '/ip route remove [find where comment~"^DS: "]',
     '/interface list member remove [find where comment~"^DS: "]',

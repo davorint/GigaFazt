@@ -686,8 +686,50 @@ export function monitorScript(ctx: AdvContext, o: MonitorOptions): AdvResult {
 
 // ── 9 Backup router ─────────────────────────────────────────────────────────
 
-export type BackupRouterOptions = { vrid: number; padoDelay: number; syncUser: string }
-export const DEFAULT_BACKUP_ROUTER: BackupRouterOptions = { vrid: 10, padoDelay: 300, syncUser: "DSX-sync" }
+export type BackupRouterOptions = {
+  vrid: number
+  padoDelay: number
+  syncUser: string
+  /** OLT uplink port the backup router plugs into (frame/slot/port). */
+  oltPort2: string
+}
+export const DEFAULT_BACKUP_ROUTER: BackupRouterOptions = { vrid: 10, padoDelay: 300, syncUser: "DSX-sync", oltPort2: "0/9/1" }
+
+/** An IPv6 prefix split in two (one more bit), compressed; null when it can't be split or isn't valid. */
+export function v6Halves(prefix: string): [string, string] | null {
+  const m = /^([0-9a-f:]+)\/(\d{1,3})$/i.exec(prefix.trim())
+  if (!m) return null
+  const len = Number(m[2])
+  if (len < 16 || len >= 64) return null
+  const halves = m[1].split("::")
+  if (halves.length > 2) return null
+  const head = halves[0] ? halves[0].split(":") : []
+  const tail = halves.length === 2 && halves[1] ? halves[1].split(":") : []
+  const missing = 8 - head.length - tail.length
+  if (halves.length === 1 ? missing !== 0 : missing < 1) return null
+  const groups = [...head, ...Array(halves.length === 2 ? missing : 0).fill("0"), ...tail]
+  if (groups.some((g) => !/^[0-9a-f]{1,4}$/i.test(g))) return null
+  const value = groups.reduce((a, g) => (a << BigInt(16)) + BigInt(parseInt(g, 16)), BigInt(0))
+  const fmt = (v: bigint) => {
+    const gs = Array.from({ length: 8 }, (_, k) => Number((v >> BigInt(112 - 16 * k)) & BigInt(0xffff)).toString(16))
+    // Compress the longest run of zero groups (two or more).
+    let best = -1
+    let bestLen = 1
+    for (let i = 0; i < 8; ) {
+      if (gs[i] !== "0") {
+        i++
+        continue
+      }
+      let j = i
+      while (j < 8 && gs[j] === "0") j++
+      if (j - i > bestLen) [best, bestLen] = [i, j - i]
+      i = j
+    }
+    const text = best < 0 ? gs.join(":") : `${gs.slice(0, best).join(":")}::${gs.slice(best + bestLen).join(":")}`
+    return `${text}/${len + 1}`
+  }
+  return [fmt(value), fmt(value + (BigInt(1) << BigInt(128 - len - 1)))]
+}
 
 /**
  * Two routers per deployment, both answering PPPoE: the main one first, the backup after pado-delay, each from its own
@@ -695,7 +737,7 @@ export const DEFAULT_BACKUP_ROUTER: BackupRouterOptions = { vrid: 10, padoDelay:
  * them. The management gateway the OLT uses (.1) becomes a VRRP address; the routers keep .3 (main) and .4 (backup).
  * The accounts are copied every hour from the main router to the backup by SFTP over the management network.
  */
-export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { main: string; backup: string; undoMain: string; backupIp: string; issues: AdvIssue[] } {
+export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { main: string; backup: string; undoMain: string; backupIp: string; olt: string; issues: AdvIssue[] } {
   const issues: AdvIssue[] = []
   const n = nets(ctx, issues)
   if (!(Number.isInteger(o.vrid) && o.vrid >= 1 && o.vrid <= 255)) issues.push({ code: "vrid", level: "error" })
@@ -703,7 +745,9 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { 
   if (!/^[\w-]+$/.test(o.syncUser)) issues.push({ code: "syncUser", level: "error" })
   if (n && n.mgmt.prefix > 29) issues.push({ code: "mgmtSmall", level: "error" })
   if (n && size(n.pool) < 16) issues.push({ code: "poolSmall", level: "error" })
-  if (!n || hasError(issues)) return { main: "", backup: "", undoMain: "", backupIp: "", issues }
+  if (!/^\d+\/\d+\/\d+$/.test(o.oltPort2.trim())) issues.push({ code: "oltPort2", level: "error" })
+  else if (o.oltPort2.trim() === ctx.setup.oltUplink.trim()) issues.push({ code: "oltPortSame", level: "error" })
+  if (!n || hasError(issues)) return { main: "", backup: "", undoMain: "", backupIp: "", olt: "", issues }
   const s = ctx.setup
   const c = comment("respaldo")
   const mg = vlanName(s.mgmtVlan, "gestion")
@@ -719,6 +763,9 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { 
   // the router's own address first, then the old .1 moves to VRRP.
   const move = (ip: string, prio: number, what: string) =>
     `{ /ip address add address=${ip}/${p} interface=${rosString(mg)} ${c(what)}; /ip address remove [find where comment="DS: gestion de la OLT"]; /interface vrrp add name=DSX-vrrp interface=${rosString(mg)} vrid=${o.vrid} priority=${prio} ${c("gateway de la OLT")}; :delay 2s; /ip address add address=${vip}/32 interface=DSX-vrrp ${c("gateway de la OLT (VRRP)")} }`
+  // The OLT must send the clients' and the management VLANs to the backup router's uplink too.
+  const [f2, sl2, p2] = o.oltPort2.trim().split("/")
+  const olt = ["config", `port vlan ${s.internetVlan} ${f2}/${sl2} ${p2}`, `port vlan ${s.mgmtVlan} ${f2}/${sl2} ${p2}`, "save"].join("\n")
   const main = [
     move(mainIp, 200, "gestion del principal"),
     `/ip pool set [find where name="DS-clientes"] ranges=${intToIp(first)}-${intToIp(mid)}`,
@@ -750,7 +797,24 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { 
     `{ /ip address remove [find where comment~"^DSX respaldo: "]; /interface vrrp remove [find where name="DSX-vrrp"]; /ip address add address=${vip}/${p} interface=${rosString(mg)} comment="DS: gestion de la OLT" }`,
   ].join("\n")
   issues.push({ code: "links", level: "info" }, { code: "sameSetup", level: "info" })
-  return { main, backup, undoMain, backupIp, issues }
+  // IPv6: each router hands out its own half of the prefixes, like the IPv4 pool.
+  let mainV6 = ""
+  let backupV6 = ""
+  for (const [pool, prefix] of [
+    ["DS-pd", s.ipv6Pd.trim()],
+    ["DS-wan6", s.ipv6Wan.trim()],
+  ]) {
+    if (!prefix) continue
+    const h = v6Halves(prefix)
+    if (!h) {
+      issues.push({ code: "v6NoSplit", level: "warn", value: prefix })
+      continue
+    }
+    mainV6 += `\n/ipv6 pool set [find where name="${pool}"] prefix=${h[0]}`
+    backupV6 += `\n/ipv6 pool set [find where name="${pool}"] prefix=${h[1]}`
+  }
+  if (mainV6) issues.push({ code: "v6Halves", level: "info" })
+  return { main: main + mainV6, backup: backup + backupV6, undoMain, backupIp, olt, issues }
 }
 
 // ── 10 Fixed exit per destination ───────────────────────────────────────────

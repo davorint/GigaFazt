@@ -366,9 +366,24 @@ function BackupRouter({ t, ctx }: { t: T; ctx: AdvContext }) {
         <NumberField label={t("respaldo.vrid")} unit="VRID" value={o.vrid} integer min={1} max={255} onChange={(v) => v !== null && setO({ ...o, vrid: v })} />
         <NumberField label={t("respaldo.pado")} unit="ms" value={o.padoDelay} integer min={100} max={5000} onChange={(v) => v !== null && setO({ ...o, padoDelay: v })} hint={t("respaldo.padoHint")} />
         <TextField label={t("respaldo.user")} value={o.syncUser} onChange={(v) => setO({ ...o, syncUser: v.trim() })} />
+        <TextField label={t("respaldo.oltPort2")} value={o.oltPort2} onChange={(v) => setO({ ...o, oltPort2: v.trim() })} hint={t("respaldo.oltPort2Hint")} />
       </div>
       <Toggle label={t("respaldo.profiles")} hint={t("respaldo.profilesHint")} on={profiles} set={setProfiles} />
-      <Output t={t} issues={r.issues} script={main} undo={r.undoMain} label={t("respaldo.main")} extra={backup ? <CodeBlock code={backup} label={t("respaldo.backup")} /> : undefined} />
+      <Output
+        t={t}
+        issues={r.issues}
+        script={main}
+        undo={r.undoMain}
+        label={t("respaldo.main")}
+        extra={
+          backup ? (
+            <>
+              <CodeBlock code={backup} label={t("respaldo.backup")} />
+              <CodeBlock code={r.olt} label={t("respaldo.olt")} />
+            </>
+          ) : undefined
+        }
+      />
     </>
   )
 }

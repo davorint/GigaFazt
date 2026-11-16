@@ -24,6 +24,7 @@ import {
   upgradeCommands,
   urlHost,
   usageScript,
+  v6Halves,
   type AdvContext,
 } from "./advanced"
 import { initialState } from "./state"
@@ -227,4 +228,16 @@ describe("audit fixes (2026-11-16)", () => {
     expect(d.script).toContain("/ipv6 firewall nat")
     expect(d.undo).toContain("/ipv6 firewall nat remove")
   })
+  it("backup router: the OLT sends both VLANs to the backup's uplink, and IPv6 prefixes are split like the IPv4 pool", () => {
+    const r = backupRouterScripts(ctx({ ipv6Pd: "2001:db8:100::/40", ipv6Wan: "2001:db8:200::/40" }), DEFAULT_BACKUP_ROUTER)
+    expect(r.olt).toContain("port vlan 100 0/9 1")
+    expect(r.olt).toContain("port vlan 10 0/9 1")
+    expect(r.main).toContain('/ipv6 pool set [find where name="DS-pd"] prefix=2001:db8:100::/41')
+    expect(r.backup).toContain('/ipv6 pool set [find where name="DS-pd"] prefix=2001:db8:180::/41')
+    expect(r.backup).toContain('/ipv6 pool set [find where name="DS-wan6"] prefix=2001:db8:280::/41')
+    expect(backupRouterScripts(ctx(), { ...DEFAULT_BACKUP_ROUTER, oltPort2: "0/9/0" }).issues.map((i) => i.code)).toContain("oltPortSame")
+    expect(v6Halves("2001:db8::/32")).toEqual(["2001:db8::/33", "2001:db8:8000::/33"])
+    expect(v6Halves("2001:db8::/64")).toBeNull()
+  })
 })
+

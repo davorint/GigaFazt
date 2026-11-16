@@ -1757,7 +1757,10 @@
         "main": "Router principal",
         "backup": "Router de respaldo (después de pegarle la misma Configuración)",
         "profiles": "Copiar también las velocidades de los planes",
-        "profilesHint": "Cada hora el principal manda los rate-limit de sus perfiles DS y DSX y el respaldo los aplica. Los perfiles nuevos se pegan en los dos desde Configuración."
+        "profilesHint": "Cada hora el principal manda los rate-limit de sus perfiles DS y DSX y el respaldo los aplica. Los perfiles nuevos se pegan en los dos desde Configuración.",
+        "oltPort2": "Puerto de la OLT para el respaldo",
+        "oltPort2Hint": "Marco/slot/puerto de subida donde conectas el router de respaldo; distinto del que usa el principal.",
+        "olt": "OLT Huawei: las VLAN también al puerto del respaldo"
       },
       "destinos": {
         "wan": "Enlace {n}",
@@ -1875,7 +1878,11 @@
         "openToInternet": "Esa IP queda abierta a internet: el cliente es responsable de su firewall (cámaras y routers con clave de fábrica son los primeros en caer).",
         "repasteBase": "Si vuelves a pegar la base de Configuración, pega esto otra vez: la base lo deshace (proxy, servicio web o acceso a Winbox/SSH).",
         "suspendedNoV6": "Con IPv6 activo, el perfil suspendido no da IPv6: la lista de morosos solo guarda la dirección IPv4 y por IPv6 el cliente seguiría navegando.",
-        "familyNoV6": "Los perfiles familia no dan IPv6: por IPv6 el filtro no podría reconocer al cliente. El resto de los planes siguen con IPv6."
+        "familyNoV6": "Los perfiles familia no dan IPv6: por IPv6 el filtro no podría reconocer al cliente. El resto de los planes siguen con IPv6.",
+        "oltPort2": "Escribe el puerto de la OLT del respaldo como marco/slot/puerto.",
+        "oltPortSame": "El respaldo necesita otro puerto de subida de la OLT, no el mismo que el principal.",
+        "v6Halves": "IPv6: cada router reparte su mitad de los prefijos, como el pool IPv4. Para que el tráfico de vuelta llegue, cada mitad tiene que llegarle a su router (prefijos distintos de cada carrier o tu propio bloque por BGP).",
+        "v6NoSplit": "No se pudo partir {value} en dos: ajusta el pool IPv6 del respaldo a mano para que no se repita con el principal."
       },
       "groups": {
         "enlaces": "Enlaces y alta disponibilidad",
