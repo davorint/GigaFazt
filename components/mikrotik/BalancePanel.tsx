@@ -6,7 +6,20 @@ import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import { balanceScript, BALANCE_UNDO, checkBalance, CLASSIFIERS, pccWeights, WAN_TYPES, type Wan, type WanType } from "@/lib/mikrotik/balance"
+import {
+  balanceScript,
+  balanceUndo,
+  checkBalance,
+  CLASSIFIERS,
+  DETECTION,
+  detectionSeconds,
+  FAILOVER_SPEEDS,
+  linkSpeed,
+  pccWeights,
+  WAN_TYPES,
+  type Wan,
+  type WanType,
+} from "@/lib/mikrotik/balance"
 import { fmtRate } from "@/lib/mikrotik/format"
 import { MAX_WANS, nextMonitor, type BalanceState, type LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
@@ -36,17 +49,18 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
   const addWan = () => {
     const n = wans.length + 1
     const last = wans.at(-1)
-    onWans([...wans, { name: `WAN${n}`, type: last?.type ?? "dhcp", iface: `ether${n}`, gateway: "", mbps: last?.mbps ?? 1000, monitor: nextMonitor(wans) }])
+    onWans([...wans, { name: `WAN${n}`, type: last?.type ?? "dhcp", iface: `ether${n}`, gateway: "", mbps: last?.mbps ?? 1000, measuredMbps: null, monitor: nextMonitor(wans) }])
   }
   const removeWan = (k: number) => onWans(wans.filter((_, i) => i !== k))
   const set = (patch: Partial<BalanceState>) => onBalance({ ...balance, ...patch })
 
-  const opts = { wans, clients: balance.clients, classifier: balance.classifier, failover: balance.failover, nat: balance.nat }
+  const opts = { ...balance, wans }
   const issues = checkBalance(opts)
   const script = balanceScript(opts)
-  const weights = pccWeights(wans.map((w) => w.mbps))
+  // Weights and totals follow the measured speed when it's there.
+  const weights = pccWeights(wans.map(linkSpeed))
   const slots = weights.reduce((a, b) => a + b, 0)
-  const total = wans.reduce((a, w) => a + w.mbps, 0)
+  const total = wans.reduce((a, w) => a + linkSpeed(w), 0)
   const recursive = balance.failover === "recursive"
 
   return (
@@ -83,6 +97,16 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
                 <TextField label={t("iface")} value={w.iface} onChange={(v) => setWan(k, { iface: v.trim() })} hint={t(`ifaceHint.${w.type}`)} />
                 {w.type === "static" && <TextField label={t("gateway")} value={w.gateway} onChange={(v) => setWan(k, { gateway: v.trim() })} />}
                 <NumberField label={t("mbps")} unit="Mbps" value={w.mbps} min={1} max={1e6} onChange={(v) => v !== null && setWan(k, { mbps: v })} />
+                <NumberField
+                  label={t("measuredMbps")}
+                  unit="Mbps"
+                  value={w.measuredMbps}
+                  optional
+                  min={1}
+                  max={1e6}
+                  hint={k === 0 ? t("measuredHint") : undefined}
+                  onChange={(v) => setWan(k, { measuredMbps: v })}
+                />
                 {recursive && <TextField label={t("monitor")} value={w.monitor} onChange={(v) => setWan(k, { monitor: v.trim() })} hint={k === 0 ? t("monitorHint") : undefined} />}
               </div>
             </li>
@@ -122,6 +146,18 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
             className="sm:w-full"
           />
           <p className="text-xs leading-snug text-zinc-400">{t(`failoverHint.${balance.failover}`)}</p>
+        </div>
+        <div className="grid gap-2 lg:col-span-2">
+          <p className="font-mono text-xs text-zinc-300">{t("detect")}</p>
+          <Choice
+            label={t("detect")}
+            value={balance.speed}
+            onChange={(speed) => set({ speed })}
+            options={FAILOVER_SPEEDS.map((s) => ({ value: s, label: t(`detects.${s}`, { s: detectionSeconds(s) }) }))}
+          />
+          <p className="max-w-3xl text-xs leading-snug text-zinc-400">
+            {t(`detectHint.${balance.speed}`, { interval: DETECTION[balance.speed].intervalS, count: DETECTION[balance.speed].count })}
+          </p>
         </div>
       </div>
 
@@ -174,7 +210,7 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
             <summary className="cursor-pointer rounded-xl p-4 text-sm text-zinc-200 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">{t("undoTitle")}</summary>
             <div className="grid gap-3 px-4 pb-4">
               <p className="text-xs text-zinc-400">{t("undoHint")}</p>
-              <CodeBlock label={t("undo")} code={BALANCE_UNDO} />
+              <CodeBlock label={t("undo")} code={balanceUndo(balance.speed)} />
             </div>
           </details>
           <p className="text-sm text-zinc-300">

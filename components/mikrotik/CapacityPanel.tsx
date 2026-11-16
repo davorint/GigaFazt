@@ -16,6 +16,7 @@ import {
   type PonTech,
   type Sizing,
 } from "@/lib/mikrotik/capacity"
+import { linkSpeed } from "@/lib/mikrotik/balance"
 import { CapacityClient } from "@/lib/mikrotik/capacity-client"
 import { averageOf, homesPerPortOf, portsOf } from "@/lib/mikrotik/deployments"
 import { fmtNum, fmtPct, fmtRate, fmtSec } from "@/lib/mikrotik/format"
@@ -74,7 +75,8 @@ export function CapacityPanel({ state, onCapacity, onDeployment, onStatus, measu
 
   // The router's links, balanced as in "Varios enlaces": per client unless PCC also hashes the ports.
   const mode: Links["mode"] = state.balance.classifier === "both-addresses-and-ports" ? "connection" : "client"
-  const speeds = c.internet === "links" ? state.wans.map((w) => w.mbps).join(",") : ""
+  // Measured speeds when known: what the links really give.
+  const speeds = c.internet === "links" ? state.wans.map(linkSpeed).join(",") : ""
   const links = useMemo<Links | null>(() => (speeds ? { mbps: speeds.split(",").map(Number), mode } : null), [speeds, mode])
   const olt = useMemo<OltConfig | null>(() => (ponOn && c.oltUplinkMbps > 0 ? { uplinkMbps: c.oltUplinkMbps } : null), [ponOn, c.oltUplinkMbps])
 
@@ -374,7 +376,8 @@ export function CapacityPanel({ state, onCapacity, onDeployment, onStatus, measu
               <ul className="flex flex-wrap gap-2" aria-label={t("capacity.deployment.linksLabel")}>
                 {state.wans.map((w, k) => (
                   <li key={k} className="rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 font-mono text-xs text-zinc-200">
-                    {linkNames[k]} · {fmtRate(w.mbps)}
+                    {linkNames[k]} · {fmtRate(linkSpeed(w))}
+                    {w.measuredMbps !== null && <span className="text-zinc-400"> · {t("deployments.measured")}</span>}
                   </li>
                 ))}
               </ul>

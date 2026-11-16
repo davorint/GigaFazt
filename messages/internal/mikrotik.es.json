@@ -694,7 +694,9 @@
         "pppoe": "La interfaz pppoe-out del enlace, no el puerto físico."
       },
       "gateway": "Gateway del proveedor",
-      "mbps": "Velocidad",
+      "mbps": "Velocidad contratada",
+      "measuredMbps": "Velocidad medida",
+      "measuredHint": "Opcional: lo que da de verdad (una prueba de velocidad por ese enlace, fuera de hora pico). Si la escribes, el reparto y Hora pico usan esta.",
       "monitor": "IP a vigilar",
       "monitorHint": "Una IP pública distinta por enlace; se vigila a través de ese enlace.",
       "add": "Agregar enlace",
@@ -724,6 +726,17 @@
         "recursive": "Cada enlace hace ping a una IP pública a través de sí mismo: también detecta una falla más allá del gateway del proveedor.",
         "gateway": "Solo hace ping al gateway del proveedor: no ve fallas más adentro de su red. Con PPPoE, la ruta cae cuando cae la sesión."
       },
+      "detect": "Detección de la caída",
+      "detects": {
+        "normal": "Normal (≈ {s} s)",
+        "fast": "Rápida (≈ {s} s)",
+        "faster": "Muy rápida (≈ {s} s)"
+      },
+      "detectHint": {
+        "normal": "La de RouterOS: un ping cada {interval} s y el enlace se da por caído tras {count} sin respuesta. El script no cambia nada.",
+        "fast": "Un ping cada {interval} s; caído tras {count} sin respuesta. Cambia /routing settings, que vale para todas las rutas con check-gateway del router.",
+        "faster": "Un ping cada {interval} s; caído tras {count} sin respuesta seguidas (tres, para que una pérdida suelta no mueva a los clientes de enlace). Cambia /routing settings, que vale para todas las rutas con check-gateway del router."
+      },
       "clients": "Redes de los clientes",
       "clientsHint": "Una por renglón (CIDR). El tráfico entre redes privadas no se balancea.",
       "nat": "NAT (masquerade) en cada enlace",
@@ -747,6 +760,8 @@
         "Cada enlace ya debe estar conectado al pegarlo: su IP fija, su cliente DHCP con lease (status bound) o su sesión PPPoE. El script solo agrega tablas de ruteo, listas, marcas, NAT y rutas, y ajusta los clientes DHCP.",
         "Enlaces DHCP: las rutas toman el gateway que tiene el cliente DHCP al pegar; el cliente deja de poner su propia ruta por defecto (add-default-route=no) y recibe un script que cambia el gateway de esas rutas si el proveedor lo cambia. Si ese cliente ya tenía un script, este lo reemplaza.",
         "Quita antes las rutas por defecto que pusiste a mano y, en PPPoE, apaga add-default-route en el cliente PPPoE; si no, competirán con estas.",
+        "Detección rápida o muy rápida: el script ajusta check-gateway-ping-interval, -timeout y -count en /routing settings. Si tu versión de RouterOS no los tiene, ese renglón marca error y lo demás queda igual, con la detección normal (≈ 20 s).",
+        "El reparto usa la velocidad medida de cada enlace cuando la escribes; si no, la contratada. Mídela fuera de hora pico y repítela de vez en cuando: si un proveedor da menos, recibe menos clientes.",
         "FastTrack y el balanceo no se llevan bien: agrega connection-mark=no-mark a la regla de FastTrack (o desactívala) para que las conexiones balanceadas sigan su marca.",
         "Cada IP vigilada queda fija a su enlace: si el router la usa como DNS, solo la alcanzará por ese enlace.",
         "Con reparto por cliente, un cliente nunca pasa de la velocidad de un enlace: con enlaces de 1 Gbps, un plan de 1 Gbps llega al plan solo si su enlace va libre.",
@@ -754,7 +769,7 @@
         "Si los clientes entran por PPPoE en este router, sus pools de IP van en «Redes de los clientes»."
       ],
       "undoTitle": "Quitar el balanceo",
-      "undoHint": "Todo lo que agrega el script lleva un comentario que empieza con «LB: »; estos comandos lo quitan y devuelven a los clientes DHCP su ruta por defecto.",
+      "undoHint": "Todo lo que agrega el script lleva un comentario que empieza con «LB: »; estos comandos lo quitan, devuelven a los clientes DHCP su ruta por defecto y, si cambiaste la detección, regresan los tiempos de RouterOS.",
       "undo": "Comandos para quitarlo",
       "capacity": "¿Te alcanzan estos enlaces en hora pico?",
       "capacityLink": "Calcúlalo en Hora pico",

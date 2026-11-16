@@ -18,6 +18,13 @@
  *   failure past the ISP's gateway. "gateway": pings the gateway only.
  * - Connections that come in on a link are marked so replies leave by it.
  * - NAT: masquerade per link.
+ * - Weights follow each link's measured speed when it's known (what it
+ *   really gives), otherwise the contracted one.
+ * - Failover detection: RouterOS pings every 10 s and drops a gateway after
+ *   2 missed replies (≈ 20 s). Faster presets set the router-wide timers in
+ *   `/routing settings` (check-gateway-ping-interval / -timeout / -count;
+ *   RouterOS manual, Routing Decision); older versions without them keep
+ *   the default.
  * - How each link gets its address: a fixed IP (its gateway typed in), DHCP
  *   (the routes take the gateway the DHCP client holds when the script is
  *   pasted; the client stops adding its own default route and gets a lease
@@ -46,8 +53,10 @@ export type Wan = {
   iface: string
   /** ISP gateway IP (fixed IP only). */
   gateway: string
-  /** Link speed, Mbps (PCC weight). */
+  /** Contracted link speed, Mbps. */
   mbps: number
+  /** What the link really gives (a speed test through it), Mbps; null = not measured. Used for weights and capacity when set. */
+  measuredMbps: number | null
   /** Public IP watched through this link (recursive failover). */
   monitor: string
 }
@@ -58,8 +67,24 @@ export type BalanceOptions = {
   clients: string[]
   classifier: Classifier
   failover: Failover
+  /** How fast a dead link is noticed. */
+  speed: FailoverSpeed
   nat: boolean
 }
+
+export type FailoverSpeed = "normal" | "fast" | "faster"
+export const FAILOVER_SPEEDS: FailoverSpeed[] = ["normal", "fast", "faster"]
+/** Ping every `intervalS`, a gateway is down after `count` missed replies (1 s timeout each). normal = RouterOS defaults. */
+export const DETECTION: Record<FailoverSpeed, { intervalS: number; count: number }> = {
+  normal: { intervalS: 10, count: 2 },
+  fast: { intervalS: 5, count: 2 },
+  faster: { intervalS: 2, count: 3 },
+}
+/** About how long a dead link takes to be noticed, s. */
+export const detectionSeconds = (s: FailoverSpeed) => DETECTION[s].intervalS * DETECTION[s].count
+
+/** The speed a link is weighted and modeled with: measured when known. */
+export const linkSpeed = (w: Pick<Wan, "mbps" | "measuredMbps">) => (w.measuredMbps !== null && w.measuredMbps > 0 ? w.measuredMbps : w.mbps)
 
 /** Public IPs to watch, one per link: anycast resolvers that answer ping. */
 export const DEFAULT_MONITORS = ["1.1.1.1", "8.8.8.8", "9.9.9.9", "208.67.222.222", "1.0.0.1", "8.8.4.4", "149.112.112.112", "208.67.220.220"]
@@ -133,10 +158,10 @@ export function checkBalance(o: BalanceOptions): BalanceIssue[] {
   if (nets.length === 0) out.push({ code: "noClients", level: "error" })
   for (const n of nets) if (!parseTarget(n)) out.push({ code: "badClients", level: "error", value: n })
   // Rounded slots that don't follow the speeds closely.
-  const w = pccWeights(o.wans.map((x) => x.mbps))
+  const w = pccWeights(o.wans.map(linkSpeed))
   const sumW = w.reduce((a, b) => a + b, 0)
-  const sumM = o.wans.reduce((a, b) => a + Math.max(0, b.mbps), 0)
-  if (sumW > 0 && sumM > 0 && o.wans.some((x, k) => Math.abs(w[k] / sumW - x.mbps / sumM) > 0.05)) out.push({ code: "unevenSlots", level: "warn" })
+  const sumM = o.wans.reduce((a, b) => a + Math.max(0, linkSpeed(b)), 0)
+  if (sumW > 0 && sumM > 0 && o.wans.some((x, k) => Math.abs(w[k] / sumW - linkSpeed(x) / sumM) > 0.05)) out.push({ code: "unevenSlots", level: "warn" })
   return out
 }
 
@@ -171,7 +196,7 @@ export function leaseScript(v: Wan, routeComments: string[]): string {
 export function balanceScript(o: BalanceOptions): string {
   if (checkBalance(o).some((i) => i.level === "error") || o.wans.length === 0) return ""
   const wans = o.wans
-  const weights = pccWeights(wans.map((w) => w.mbps))
+  const weights = pccWeights(wans.map(linkSpeed))
   const slots = weights.reduce((a, b) => a + b, 0)
   const lines: string[] = []
   const add = (...l: string[]) => lines.push(...l)
@@ -234,7 +259,20 @@ export function balanceScript(o: BalanceOptions): string {
       add(`set [find where interface=${rosString(v.iface.trim())}] add-default-route=no script=${rosString(leaseScript(v, routes))}`)
     }
   }
+
+  // Faster detection: router-wide timers for every route with check-gateway.
+  if (o.speed !== "normal") {
+    const d = DETECTION[o.speed]
+    add("/routing settings", `set check-gateway-ping-interval=${d.intervalS}s check-gateway-ping-timeout=1s check-gateway-ping-count=${d.count}`)
+  }
   return lines.join("\n")
+}
+
+/** The undo commands; with faster detection they also put the RouterOS default timers back. */
+export function balanceUndo(speed: FailoverSpeed): string {
+  if (speed === "normal") return BALANCE_UNDO
+  const d = DETECTION.normal
+  return `${BALANCE_UNDO}\n/routing settings set check-gateway-ping-interval=${d.intervalS}s check-gateway-ping-timeout=1s check-gateway-ping-count=${d.count}`
 }
 
 /** Commands that undo the script (everything it adds carries an "LB: " comment; DHCP clients get their default route back). */
@@ -255,6 +293,7 @@ export function defaultWans(n = 3): Wan[] {
     iface: `ether${k + 1}`,
     gateway: "",
     mbps: 1000,
+    measuredMbps: null,
     monitor: DEFAULT_MONITORS[k % DEFAULT_MONITORS.length],
   }))
 }
