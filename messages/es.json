@@ -101,7 +101,7 @@
     "promo": "Promoción",
     "include": {
       "wifi7Modem": "Módem Wi-Fi 7 sin costo adicional",
-      "wifi6Modem": "Módem Wi-Fi 6 sin costo adicional"
+      "wifi6Modem": "Módem Wi-Fi 6, o Wi-Fi 7 si hay disponible, sin costo adicional"
     },
     "wifi7Note": "Módem en comodato sin costo adicional: te lo prestamos mientras tu servicio esté activo. Wi-Fi 7: la velocidad inalámbrica máxima requiere dispositivos compatibles.",
     "free": "Gratis",
@@ -410,7 +410,7 @@
       "router": {
         "title": "Equipo en casa",
         "body": "El equipo decide cuánta de tu velocidad llega por Wi-Fi a cada cuarto.",
-        "value": "Wi-Fi 7 en {wifi7} · Wi-Fi 6 en {wifi6}"
+        "value": "Wi-Fi 7 en {wifi7} · Wi-Fi 6 o 7 en {wifi6}"
       }
     },
     "symmetry": {
@@ -569,7 +569,7 @@
       },
       "router": {
         "q": "¿Incluye módem?",
-        "a": "Sí. Todos los planes incluyen módem en comodato y sin costo adicional: te lo prestamos mientras tu servicio esté activo. El plan de {wifi7} trae módem Wi-Fi 7 y los de {wifi6}, módem Wi-Fi 6. Para la velocidad máxima de Wi-Fi 7 tus dispositivos deben ser compatibles; los demás también se conectan sin problema."
+        "a": "Sí. Todos los planes incluyen módem en comodato y sin costo adicional: te lo prestamos mientras tu servicio esté activo. El plan de {wifi7} trae módem Wi-Fi 7; los de {wifi6}, módem Wi-Fi 7 si hay disponible y, si no, Wi-Fi 6. Para la velocidad máxima de Wi-Fi 7 tus dispositivos deben ser compatibles; los demás también se conectan sin problema."
       },
       "support": {
         "q": "¿Qué hago si se cae el servicio?",

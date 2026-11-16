@@ -101,7 +101,7 @@
     "promo": "Promo",
     "include": {
       "wifi7Modem": "Wi-Fi 7 modem at no extra cost",
-      "wifi6Modem": "Wi-Fi 6 modem at no extra cost"
+      "wifi6Modem": "Wi-Fi 6 modem, or Wi-Fi 7 when available, at no extra cost"
     },
     "wifi7Note": "Modem on loan at no extra cost while your service is active. Wi-Fi 7: top wireless speed needs compatible devices.",
     "free": "Free",
@@ -410,7 +410,7 @@
       "router": {
         "title": "Home equipment",
         "body": "The equipment decides how much of your speed reaches each room over Wi-Fi.",
-        "value": "Wi-Fi 7 with {wifi7} · Wi-Fi 6 with {wifi6}"
+        "value": "Wi-Fi 7 with {wifi7} · Wi-Fi 6 or 7 with {wifi6}"
       }
     },
     "symmetry": {
@@ -569,7 +569,7 @@
       },
       "router": {
         "q": "Is a modem included?",
-        "a": "Yes. Every plan includes a modem on loan at no extra cost for as long as your service is active: a Wi-Fi 7 modem with {wifi7} and a Wi-Fi 6 modem with {wifi6}. Wi-Fi 7's top speed needs compatible devices; older devices still connect fine."
+        "a": "Yes. Every plan includes a modem on loan at no extra cost for as long as your service is active: a Wi-Fi 7 modem with {wifi7}, and with {wifi6} a Wi-Fi 7 modem when one is available or a Wi-Fi 6 modem otherwise. Wi-Fi 7's top speed needs compatible devices; older devices still connect fine."
       },
       "support": {
         "q": "What if the service goes down?",
