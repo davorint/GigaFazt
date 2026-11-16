@@ -1,6 +1,19 @@
 import { plans } from "../plans"
 import { DEFAULT_RULE, KINDS, planDefaults, type Pattern, type PatternKind, type PlanRule, type QueueParams } from "./burst"
-import { CLASSIFIERS, DEFAULT_MONITORS, defaultWans, FAILOVER_SPEEDS, WAN_TYPES, type Classifier, type Failover, type FailoverSpeed, type Wan, type WanType } from "./balance"
+import {
+  CLASSIFIERS,
+  DEFAULT_LINK_QUEUES,
+  DEFAULT_MONITORS,
+  defaultWans,
+  FAILOVER_SPEEDS,
+  WAN_TYPES,
+  type Classifier,
+  type Failover,
+  type FailoverSpeed,
+  type LinkQueues,
+  type Wan,
+  type WanType,
+} from "./balance"
 import { DEFAULT_PON_EFFICIENCY, type PonTech } from "./capacity"
 import { OLT_MODELS, type OltModelId } from "./olt"
 import { QUEUE_KINDS, type Pair, type QueueKind } from "./routeros"
@@ -57,6 +70,8 @@ export type BalanceState = {
   /** How fast a dead link is noticed. */
   speed: FailoverSpeed
   nat: boolean
+  /** Queues and Netwatch per link. */
+  queues: LinkQueues
   /** Client networks to balance, CIDR. */
   clients: string[]
 }
@@ -66,6 +81,7 @@ export const DEFAULT_BALANCE: BalanceState = {
   failover: "recursive",
   speed: "normal",
   nat: true,
+  queues: DEFAULT_LINK_QUEUES,
   clients: ["10.0.0.0/8", "100.64.0.0/10"],
 }
 
@@ -277,8 +293,10 @@ function setDeploymentParams(h: URLSearchParams, f: DeploymentFields) {
   if (f.deployment) h.set("n", f.deployment)
   if (f.status === "existing") h.set("st", "existing")
   const enc = encodeURIComponent
-  h.set("w", [f.balance.classifier, f.balance.failover, f.balance.nat ? "1" : "0", f.balance.clients.map(enc).join(","), ...f.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor), w.type, opt(w.measuredMbps)].join(","))].join("|"))
+  h.set("w", [f.balance.classifier, f.balance.failover, f.balance.nat ? "1" : "0", f.balance.clients.map(enc).join(","), ...f.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor), w.type, opt(w.measuredMbps), opt(w.upMbps)].join(","))].join("|"))
   if (f.balance.speed !== "normal") h.set("lf", f.balance.speed)
+  const lq = f.balance.queues
+  h.set("lq", [lq.shape, num(lq.sharePct), lq.prio, lq.alerts, lq.flush].map((x) => (x === true ? "1" : x === false ? "0" : x)).join(","))
 }
 
 export function deploymentFields(s: LabState): DeploymentFields {
@@ -295,7 +313,7 @@ export function encodeDeployment(f: DeploymentFields): string {
 /** A saved deployment back; null when the text isn't one. */
 export function decodeDeployment(text: string): DeploymentFields | null {
   const h = new URLSearchParams(text)
-  const lines = decodeWans(h.get("w"), h.get("lf"))
+  const lines = decodeWans(h)
   if (!decodeCapacity(h.get("h")) || !lines) return null
   return { capacity: decodeCapacityAll(h, DEFAULT_CAPACITY), deployment: nameOf(h), status: statusOf(h), ...lines }
 }
@@ -382,8 +400,19 @@ function legacyType(gateway: string, iface: string): WanType {
   return /^pppoe/i.test(iface.trim()) ? "pppoe" : "dhcp"
 }
 
+/** Link queues and Netwatch (`lq=`): shape, share %, priority, alerts, flush. Absent or malformed = the defaults. */
+function decodeQueues(v: string | null): LinkQueues {
+  const [shape, pct, prio, alerts, flush] = (v ?? "").split(",")
+  const flag = (x: string | undefined) => (x === "1" ? true : x === "0" ? false : null)
+  const q = { shape: flag(shape), sharePct: finite(pct, 50, 100), prio: flag(prio), alerts: flag(alerts), flush: flag(flush) }
+  if (Object.values(q).some((x) => x === null)) return DEFAULT_LINK_QUEUES
+  return q as LinkQueues
+}
+
 /** Internet links and balancing (`w=`). */
-function decodeWans(v: string | null, speed: string | null): { wans: Wan[]; balance: BalanceState } | null {
+function decodeWans(h: URLSearchParams): { wans: Wan[]; balance: BalanceState } | null {
+  const v = h.get("w")
+  const speed = h.get("lf")
   if (!v) return null
   const [classifier, failover, nat, clients, ...rows] = v.split("|")
   if (!CLASSIFIERS.includes(classifier as Classifier) || (failover !== "recursive" && failover !== "gateway") || (nat !== "0" && nat !== "1")) return null
@@ -397,7 +426,7 @@ function decodeWans(v: string | null, speed: string | null): { wans: Wan[]; bala
   }
   const wans: Wan[] = []
   for (const [k, row] of rows.entries()) {
-    const [name, iface, gateway, mbps, monitor, type, measured] = row.split(",")
+    const [name, iface, gateway, mbps, monitor, type, measured, up] = row.split(",")
     const w = { name: dec(name), iface: dec(iface), gateway: dec(gateway), mbps: finite(mbps, 1, 1e6), monitor: dec(monitor) }
     if (Object.values(w).some((x) => x === null)) return null
     wans.push({
@@ -407,6 +436,7 @@ function decodeWans(v: string | null, speed: string | null): { wans: Wan[]; bala
       gateway: (w.gateway as string).slice(0, 64),
       mbps: w.mbps as number,
       measuredMbps: finite(measured, 1, 1e6),
+      upMbps: finite(up, 1, 1e6),
       monitor: (w.monitor as string).slice(0, 64),
     })
   }
@@ -421,6 +451,7 @@ function decodeWans(v: string | null, speed: string | null): { wans: Wan[]; bala
       speed: FAILOVER_SPEEDS.includes(speed as FailoverSpeed) ? (speed as FailoverSpeed) : "normal",
       nat: nat === "1",
       clients: (nets as string[]).filter(Boolean).slice(0, 32),
+      queues: decodeQueues(h.get("lq")),
     },
   }
 }
@@ -520,7 +551,7 @@ export function decodeState(hash: string): LabState | null {
     capacity: decodeCapacityAll(h, base.capacity),
     deployment: nameOf(h),
     status: statusOf(h),
-    ...(decodeWans(h.get("w"), h.get("lf")) ?? { wans: base.wans, balance: base.balance }),
+    ...(decodeWans(h) ?? { wans: base.wans, balance: base.balance }),
     backgroundMbps: finite(h.get("b") ?? undefined, 0, 1e4) ?? 0,
     queueKind: QUEUE_KINDS.includes(h.get("q") as QueueKind) ? (h.get("q") as QueueKind) : "default",
   }

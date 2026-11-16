@@ -6,7 +6,7 @@
  * and the backup file. Storage lives in deployment-store.ts.
  */
 
-import { checkBalance, linkSpeed } from "./balance"
+import { checkBalance, usableSpeed } from "./balance"
 import { checkOlt, OLT_SPECS, portsNeeded } from "./olt"
 import { decodeDeployment, type DeploymentFields, type Direction } from "./state"
 
@@ -67,7 +67,7 @@ export function summarize(f: DeploymentFields): DeploymentSummary {
   const avg = averageOf(f, "down")
   const offeredMbps = clients * avg.mbps
   const links = c.internet === "links" ? f.wans.length : null
-  const internetMbps = links !== null ? f.wans.reduce((a, w) => a + Math.max(0, linkSpeed(w)), 0) : c.parentMbps
+  const internetMbps = links !== null ? f.wans.reduce((a, w) => a + Math.max(0, usableSpeed(w, "down", f.balance.queues)), 0) : c.parentMbps
   const pon = c.pon !== "none"
   const ports = pon ? portsOf(f) : 0
   const oltIssues =

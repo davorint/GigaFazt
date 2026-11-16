@@ -31,12 +31,26 @@
  *   script that sets the new gateway on exactly those routes when the
  *   provider changes it: `$bound`, `$"gateway-address"`, help.mikrotik.com
  *   DHCP), or PPPoE (the pppoe-out interface is the gateway).
+ * - Link queues (optional, on by default): each link is shaped a little
+ *   below its real speed in both directions, so the line forms in the
+ *   router (fair, short) and not in the provider's modem (bufferbloat). A
+ *   global queue tree per link and direction, fed by packet marks set in the
+ *   forward chain by the link's interface; global trees run after src-nat and
+ *   before the clients' simple queues, so both apply (RouterOS Packet Flow).
+ *   Leaves are CAKE (RouterOS 7.1+): fair per client by destination going
+ *   down, by source going up (cake-nat looks behind the masquerade).
+ *   Priority: the first 500 KB of every connection (pages, DNS, the start of
+ *   everything) and small UDP packets (games, calls) go before the rest.
+ * - Netwatch per link (recursive failover only: its ping goes through the
+ *   link's host route): log lines when it drops and comes back, and removing
+ *   its marked connections then, so apps reconnect instead of hanging on a
+ *   NAT that no longer works.
  *
  * Pure functions; the UI shows the text and its notes.
  */
 
 import { parseTarget } from "./bulk"
-import { rosString } from "./routeros"
+import { rosRate, rosString } from "./routeros"
 
 export type Classifier = "src-address" | "both-addresses" | "both-addresses-and-ports"
 export const CLASSIFIERS: Classifier[] = ["src-address", "both-addresses", "both-addresses-and-ports"]
@@ -57,6 +71,8 @@ export type Wan = {
   mbps: number
   /** What the link really gives (a speed test through it), Mbps; null = not measured. Used for weights and capacity when set. */
   measuredMbps: number | null
+  /** Upload when it differs from the download, Mbps; null = same as the download (measured when known). */
+  upMbps: number | null
   /** Public IP watched through this link (recursive failover). */
   monitor: string
 }
@@ -70,7 +86,26 @@ export type BalanceOptions = {
   /** How fast a dead link is noticed. */
   speed: FailoverSpeed
   nat: boolean
+  queues: LinkQueues
 }
+
+/** Queues and Netwatch per link. */
+export type LinkQueues = {
+  /** Shape each link to `sharePct` % of its real speed, both directions. */
+  shape: boolean
+  sharePct: number
+  /** Short connections and small UDP packets first. */
+  prio: boolean
+  /** Log lines when a link drops and comes back (Netwatch). */
+  alerts: boolean
+  /** Remove a link's connections when it drops and comes back (Netwatch). */
+  flush: boolean
+}
+export const DEFAULT_LINK_QUEUES: LinkQueues = { shape: true, sharePct: 95, prio: true, alerts: true, flush: true }
+/** The first bytes of a connection that count as interactive. */
+export const PRIO_BYTES = 500_000
+/** UDP packets up to this size count as interactive (games, calls). */
+export const PRIO_UDP_SIZE = 300
 
 export type FailoverSpeed = "normal" | "fast" | "faster"
 export const FAILOVER_SPEEDS: FailoverSpeed[] = ["normal", "fast", "faster"]
@@ -85,6 +120,15 @@ export const detectionSeconds = (s: FailoverSpeed) => DETECTION[s].intervalS * D
 
 /** The speed a link is weighted and modeled with: measured when known. */
 export const linkSpeed = (w: Pick<Wan, "mbps" | "measuredMbps">) => (w.measuredMbps !== null && w.measuredMbps > 0 ? w.measuredMbps : w.mbps)
+/** Its upload: the one entered, or the same as the download. */
+export const upSpeed = (w: Pick<Wan, "mbps" | "measuredMbps" | "upMbps">) => (w.upMbps !== null && w.upMbps > 0 ? w.upMbps : linkSpeed(w))
+/** What a link carries in a direction, after its queue when the links are shaped. */
+export function usableSpeed(w: Pick<Wan, "mbps" | "measuredMbps" | "upMbps">, direction: "down" | "up", q: LinkQueues): number {
+  const raw = direction === "up" ? upSpeed(w) : linkSpeed(w)
+  return q.shape ? shaped(raw, q) : raw
+}
+/** Whole Mbps a little below the link (at least 1). */
+const shaped = (mbps: number, q: LinkQueues) => Math.max(1, Math.floor((mbps * q.sharePct) / 100))
 
 /** Public IPs to watch, one per link: anycast resolvers that answer ping. */
 export const DEFAULT_MONITORS = ["1.1.1.1", "8.8.8.8", "9.9.9.9", "208.67.222.222", "1.0.0.1", "8.8.4.4", "149.112.112.112", "208.67.220.220"]
@@ -124,6 +168,8 @@ export type BalanceIssueCode =
   | "badClients"
   | "noClients"
   | "unevenSlots"
+  | "shapeNominal"
+  | "netwatchRecursive"
 export type BalanceIssue = { code: BalanceIssueCode; level: "error" | "warn" | "info"; wan?: string; value?: string }
 
 const IPV4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/
@@ -162,11 +208,19 @@ export function checkBalance(o: BalanceOptions): BalanceIssue[] {
   const sumW = w.reduce((a, b) => a + b, 0)
   const sumM = o.wans.reduce((a, b) => a + Math.max(0, linkSpeed(b)), 0)
   if (sumW > 0 && sumM > 0 && o.wans.some((x, k) => Math.abs(w[k] / sumW - linkSpeed(x) / sumM) > 0.05)) out.push({ code: "unevenSlots", level: "warn" })
+  // A queue above what the link really gives doesn't keep the line out of the modem.
+  if (o.queues.shape) for (const x of o.wans) if (x.measuredMbps === null) out.push({ code: "shapeNominal", level: "info", wan: x.name })
+  if ((o.queues.alerts || o.queues.flush) && o.failover !== "recursive") out.push({ code: "netwatchRecursive", level: "info" })
   return out
 }
 
 /** Routing table name of a link. */
 export const tableOf = (w: Wan) => `to-${w.name}`
+
+const DIRS = ["down", "up"] as const
+const DIR_ES = { down: "bajada", up: "subida" } as const
+/** Packet mark of a link's traffic in a direction (interactive or the rest). */
+const mark = (w: Wan, dir: "down" | "up", prio: boolean) => `LB-${w.name}-${DIR_ES[dir]}${prio ? "-prioridad" : ""}`
 
 /** The gateway as RouterOS takes it; DHCP reads what the client holds now (its lease script keeps it current). */
 function gw(w: Wan): string {
@@ -227,6 +281,23 @@ export function balanceScript(o: BalanceOptions): string {
   for (const w of wans)
     add(`add chain=output action=mark-routing connection-mark=${rosString(w.name)} new-routing-mark=${rosString(tableOf(w))} passthrough=no ${c(`respuestas del router por ${w.name}`)}`)
 
+  // Link queues: packet marks by the link's interface (in = download, out = upload); interactive first.
+  const q = o.queues
+  if (q.shape) {
+    for (const w of wans) {
+      for (const dir of DIRS) {
+        const side = `${dir === "down" ? "in" : "out"}-interface=${rosString(w.iface.trim())}`
+        if (q.prio) {
+          add(`add chain=forward action=mark-packet ${side} connection-bytes=0-${PRIO_BYTES} new-packet-mark=${rosString(mark(w, dir, true))} passthrough=no ${c(`${DIR_ES[dir]} ${w.name} prioridad`)}`)
+          add(
+            `add chain=forward action=mark-packet ${side} protocol=udp packet-size=0-${PRIO_UDP_SIZE} new-packet-mark=${rosString(mark(w, dir, true))} passthrough=no ${c(`${DIR_ES[dir]} ${w.name} prioridad`)}`
+          )
+        }
+        add(`add chain=forward action=mark-packet ${side} new-packet-mark=${rosString(mark(w, dir, false))} passthrough=no ${c(`${DIR_ES[dir]} ${w.name}`)}`)
+      }
+    }
+  }
+
   if (o.nat) add("/ip firewall nat", ...wans.map((w) => `add chain=srcnat action=masquerade out-interface=${rosString(w.iface.trim())} ${c(`NAT ${w.name}`)}`))
 
   add("/ip route")
@@ -260,6 +331,44 @@ export function balanceScript(o: BalanceOptions): string {
     }
   }
 
+  if (q.shape) {
+    // CAKE leaves: fair per client (by destination going down, by source going up, behind the NAT).
+    add(
+      "/queue type",
+      `add name=LB-bajada kind=cake cake-flowmode=dual-dsthost`,
+      `add name=LB-subida kind=cake cake-flowmode=dual-srchost cake-nat=yes`,
+      "/queue tree"
+    )
+    for (const w of wans) {
+      for (const dir of DIRS) {
+        const limit = rosRate(usableSpeed(w, dir, q))
+        const name = `LB-${w.name}-${DIR_ES[dir]}`
+        const type = `queue=${dir === "down" ? "LB-bajada" : "LB-subida"}`
+        if (q.prio) {
+          add(`add name=${rosString(name)} parent=global max-limit=${limit} ${c(`${DIR_ES[dir]} ${w.name}`)}`)
+          add(`add name=${rosString(`${name}-prioridad`)} parent=${rosString(name)} packet-mark=${rosString(mark(w, dir, true))} priority=1 ${type} ${c(`${DIR_ES[dir]} ${w.name} prioridad`)}`)
+          add(`add name=${rosString(`${name}-resto`)} parent=${rosString(name)} packet-mark=${rosString(mark(w, dir, false))} priority=8 ${type} ${c(`${DIR_ES[dir]} ${w.name} resto`)}`)
+        } else {
+          add(`add name=${rosString(name)} parent=global packet-mark=${rosString(mark(w, dir, false))} max-limit=${limit} ${type} ${c(`${DIR_ES[dir]} ${w.name}`)}`)
+        }
+      }
+    }
+  }
+
+  // Netwatch through each link's host route: log lines and fresh connections when it drops or comes back.
+  if ((q.alerts || q.flush) && o.failover === "recursive") {
+    add("/tool netwatch")
+    for (const w of wans) {
+      const code = (event: "down" | "up") =>
+        [q.alerts ? `:log warning ${rosString(`LB: ${w.name} ${event === "down" ? "sin internet" : "volvio"}`)}` : "", q.flush ? `/ip firewall connection remove [find where connection-mark=${rosString(w.name)}]` : ""]
+          .filter(Boolean)
+          .join("; ")
+      add(
+        `add host=${w.monitor.trim()} type=simple interval=${DETECTION[o.speed].intervalS}s down-script=${rosString(code("down"))} up-script=${rosString(code("up"))} ${c(`aviso ${w.name}`)}`
+      )
+    }
+  }
+
   // Faster detection: router-wide timers for every route with check-gateway.
   if (o.speed !== "normal") {
     const d = DETECTION[o.speed]
@@ -275,9 +384,12 @@ export function balanceUndo(speed: FailoverSpeed): string {
   return `${BALANCE_UNDO}\n/routing settings set check-gateway-ping-interval=${d.intervalS}s check-gateway-ping-timeout=1s check-gateway-ping-count=${d.count}`
 }
 
-/** Commands that undo the script (everything it adds carries an "LB: " comment; DHCP clients get their default route back). */
+/** Commands that undo the script (everything it adds carries an "LB: " comment, queue types an "LB-" name; DHCP clients get their default route back). */
 export const BALANCE_UNDO = [
   '/ip dhcp-client set [find where script~"LB: "] add-default-route=yes script=""',
+  '/tool netwatch remove [find where comment~"^LB: "]',
+  '/queue tree remove [find where comment~"^LB: "]',
+  '/queue type remove [find where name~"^LB-"]',
   '/ip route remove [find where comment~"^LB: "]',
   '/ip firewall nat remove [find where comment~"^LB: "]',
   '/ip firewall mangle remove [find where comment~"^LB: "]',
@@ -294,6 +406,7 @@ export function defaultWans(n = 3): Wan[] {
     gateway: "",
     mbps: 1000,
     measuredMbps: null,
+    upMbps: null,
     monitor: DEFAULT_MONITORS[k % DEFAULT_MONITORS.length],
   }))
 }

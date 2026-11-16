@@ -16,7 +16,10 @@ import {
   FAILOVER_SPEEDS,
   linkSpeed,
   pccWeights,
+  PRIO_BYTES,
+  PRIO_UDP_SIZE,
   WAN_TYPES,
+  type LinkQueues,
   type Wan,
   type WanType,
 } from "@/lib/mikrotik/balance"
@@ -49,10 +52,12 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
   const addWan = () => {
     const n = wans.length + 1
     const last = wans.at(-1)
-    onWans([...wans, { name: `WAN${n}`, type: last?.type ?? "dhcp", iface: `ether${n}`, gateway: "", mbps: last?.mbps ?? 1000, measuredMbps: null, monitor: nextMonitor(wans) }])
+    onWans([...wans, { name: `WAN${n}`, type: last?.type ?? "dhcp", iface: `ether${n}`, gateway: "", mbps: last?.mbps ?? 1000, measuredMbps: null, upMbps: null, monitor: nextMonitor(wans) }])
   }
   const removeWan = (k: number) => onWans(wans.filter((_, i) => i !== k))
   const set = (patch: Partial<BalanceState>) => onBalance({ ...balance, ...patch })
+  const q = balance.queues
+  const setQueues = (patch: Partial<LinkQueues>) => set({ queues: { ...q, ...patch } })
 
   const opts = { ...balance, wans }
   const issues = checkBalance(opts)
@@ -107,6 +112,16 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
                   hint={k === 0 ? t("measuredHint") : undefined}
                   onChange={(v) => setWan(k, { measuredMbps: v })}
                 />
+                <NumberField
+                  label={t("upMbps")}
+                  unit="Mbps"
+                  value={w.upMbps}
+                  optional
+                  min={1}
+                  max={1e6}
+                  hint={k === 0 ? t("upHint") : undefined}
+                  onChange={(v) => setWan(k, { upMbps: v })}
+                />
                 {recursive && <TextField label={t("monitor")} value={w.monitor} onChange={(v) => setWan(k, { monitor: v.trim() })} hint={k === 0 ? t("monitorHint") : undefined} />}
               </div>
             </li>
@@ -160,6 +175,53 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
           </p>
         </div>
       </div>
+
+      <fieldset className="grid gap-4 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
+        <legend className="px-1 text-sm font-medium text-foreground">{t("queues.title")}</legend>
+        <div className="grid items-start gap-4 lg:grid-cols-[1fr_14rem]">
+          <div className="grid gap-1.5">
+            <label className="flex w-fit cursor-pointer items-center gap-3 text-sm text-zinc-200">
+              <Switch checked={q.shape} onCheckedChange={(shape) => setQueues({ shape })} />
+              {t("queues.shape")}
+            </label>
+            <p className="text-xs leading-snug text-zinc-400">{t("queues.shapeHint")}</p>
+          </div>
+          {q.shape && (
+            <NumberField
+              label={t("queues.share")}
+              unit="%"
+              value={q.sharePct}
+              min={50}
+              max={100}
+              hint={t("queues.shareHint")}
+              onChange={(v) => v !== null && setQueues({ sharePct: v })}
+            />
+          )}
+        </div>
+        {q.shape && (
+          <div className="grid gap-1.5">
+            <label className="flex w-fit cursor-pointer items-center gap-3 text-sm text-zinc-200">
+              <Switch checked={q.prio} onCheckedChange={(prio) => setQueues({ prio })} />
+              {t("queues.prio")}
+            </label>
+            <p className="text-xs leading-snug text-zinc-400">{t("queues.prioHint", { kb: PRIO_BYTES / 1000, size: PRIO_UDP_SIZE })}</p>
+          </div>
+        )}
+        <div className="grid gap-1.5">
+          <label className="flex w-fit cursor-pointer items-center gap-3 text-sm text-zinc-200">
+            <Switch checked={q.alerts} onCheckedChange={(alerts) => setQueues({ alerts })} />
+            {t("queues.alerts")}
+          </label>
+          <p className="text-xs leading-snug text-zinc-400">{t("queues.alertsHint")}</p>
+        </div>
+        <div className="grid gap-1.5">
+          <label className="flex w-fit cursor-pointer items-center gap-3 text-sm text-zinc-200">
+            <Switch checked={q.flush} onCheckedChange={(flush) => setQueues({ flush })} />
+            {t("queues.flush")}
+          </label>
+          <p className="text-xs leading-snug text-zinc-400">{t("queues.flushHint")}</p>
+        </div>
+      </fieldset>
 
       <div className="grid items-start gap-6 lg:grid-cols-2">
         <div className="grid gap-1.5">

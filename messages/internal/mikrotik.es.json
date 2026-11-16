@@ -697,6 +697,8 @@
       "mbps": "Velocidad contratada",
       "measuredMbps": "Velocidad medida",
       "measuredHint": "Opcional: lo que da de verdad (una prueba de velocidad por ese enlace, fuera de hora pico). Si la escribes, el reparto y Hora pico usan esta.",
+      "upMbps": "Subida (si es distinta)",
+      "upHint": "Opcional: la subida real si el proveedor da menos que de bajada. Vacío = igual que la bajada.",
       "monitor": "IP a vigilar",
       "monitorHint": "Una IP pública distinta por enlace; se vigila a través de ese enlace.",
       "add": "Agregar enlace",
@@ -737,6 +739,19 @@
         "fast": "Un ping cada {interval} s; caído tras {count} sin respuesta. Cambia /routing settings, que vale para todas las rutas con check-gateway del router.",
         "faster": "Un ping cada {interval} s; caído tras {count} sin respuesta seguidas (tres, para que una pérdida suelta no mueva a los clientes de enlace). Cambia /routing settings, que vale para todas las rutas con check-gateway del router."
       },
+      "queues": {
+        "title": "Colas y avisos por enlace",
+        "shape": "Cola por enlace (bajada y subida)",
+        "shapeHint": "Limita cada enlace un poco por debajo de lo que da de verdad, para que la fila se forme en tu MikroTik (reparto parejo por cliente con CAKE, latencia baja) y no en el módem del proveedor. Se suma a las colas con burst de cada cliente, que siguen igual.",
+        "share": "Hasta",
+        "shareHint": "% de la velocidad medida (o la contratada si no la mediste). 95 % es lo usual; bájalo si a la hora pico la latencia sigue subiendo.",
+        "prio": "Prioridad para lo interactivo",
+        "prioHint": "Primero los primeros {kb} KB de cada conexión (páginas, DNS, el arranque de todo) y los paquetes UDP de hasta {size} bytes (juegos, llamadas); después las descargas grandes.",
+        "alerts": "Avisos en el log",
+        "alertsHint": "Netwatch hace ping a la IP vigilada de cada enlace y escribe en el log del router cuando se cae y cuando vuelve.",
+        "flush": "Limpiar conexiones cuando un enlace cae o vuelve",
+        "flushHint": "Borra las conexiones de ese enlace al caer y al volver: las apps se reconectan solas en vez de quedarse colgadas en un NAT que ya no sirve."
+      },
       "clients": "Redes de los clientes",
       "clientsHint": "Una por renglón (CIDR). El tráfico entre redes privadas no se balancea.",
       "nat": "NAT (masquerade) en cada enlace",
@@ -752,7 +767,9 @@
         "pppoeIface": "{value} parece un puerto físico: con PPPoE la ruta sale por la interfaz pppoe-out (p. ej. pppoe-out1).",
         "badClients": "{value} no es una red válida (CIDR).",
         "noClients": "Falta al menos una red de clientes.",
-        "unevenSlots": "Las velocidades no se dividen bien en partes enteras: el reparto queda aproximado."
+        "unevenSlots": "Las velocidades no se dividen bien en partes enteras: el reparto queda aproximado.",
+        "shapeNominal": "Sin velocidad medida, la cola usa la contratada: si el enlace da menos, la fila se sigue formando en el módem.",
+        "netwatchRecursive": "Los avisos y la limpieza de conexiones necesitan «Vigilar una IP pública» (Netwatch revisa cada enlace por esa IP)."
       },
       "script": "Script de balanceo (RouterOS v7)",
       "notes": [
@@ -762,6 +779,8 @@
         "Quita antes las rutas por defecto que pusiste a mano y, en PPPoE, apaga add-default-route en el cliente PPPoE; si no, competirán con estas.",
         "Detección rápida o muy rápida: el script ajusta check-gateway-ping-interval, -timeout y -count en /routing settings. Si tu versión de RouterOS no los tiene, ese renglón marca error y lo demás queda igual, con la detección normal (≈ 20 s).",
         "El reparto usa la velocidad medida de cada enlace cuando la escribes; si no, la contratada. Mídela fuera de hora pico y repítela de vez en cuando: si un proveedor da menos, recibe menos clientes.",
+        "Colas por enlace: van en queue tree con parent=global (antes de las colas de cada cliente) y usan CAKE, que existe desde RouterOS 7.1. Como las colas de clientes, FastTrack las salta: debe estar apagado para ese tráfico.",
+        "Si vuelves a pegar el script, primero usa «Quitar el balanceo»: los nombres de colas y tipos ya existirían y RouterOS marcaría error.",
         "FastTrack y el balanceo no se llevan bien: agrega connection-mark=no-mark a la regla de FastTrack (o desactívala) para que las conexiones balanceadas sigan su marca.",
         "Cada IP vigilada queda fija a su enlace: si el router la usa como DNS, solo la alcanzará por ese enlace.",
         "Con reparto por cliente, un cliente nunca pasa de la velocidad de un enlace: con enlaces de 1 Gbps, un plan de 1 Gbps llega al plan solo si su enlace va libre.",
@@ -769,7 +788,7 @@
         "Si los clientes entran por PPPoE en este router, sus pools de IP van en «Redes de los clientes»."
       ],
       "undoTitle": "Quitar el balanceo",
-      "undoHint": "Todo lo que agrega el script lleva un comentario que empieza con «LB: »; estos comandos lo quitan, devuelven a los clientes DHCP su ruta por defecto y, si cambiaste la detección, regresan los tiempos de RouterOS.",
+      "undoHint": "Todo lo que agrega el script lleva un comentario que empieza con «LB: » (los tipos de cola, un nombre «LB-»); estos comandos lo quitan, devuelven a los clientes DHCP su ruta por defecto y, si cambiaste la detección, regresan los tiempos de RouterOS.",
       "undo": "Comandos para quitarlo",
       "capacity": "¿Te alcanzan estos enlaces en hora pico?",
       "capacityLink": "Calcúlalo en Hora pico",
