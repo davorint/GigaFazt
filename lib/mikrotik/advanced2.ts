@@ -160,7 +160,8 @@ export function bondScript(ctx: AdvContext, o: BondOptions): { router: string; o
   const c = comment("bond")
   const router = [
     // One line: the OLT's management and the clients' VLANs come back on the bond in the same step.
-    `{ /interface bonding add name=DSX-bond-olt slaves=${ports.map((p) => rosString(p)).join(",")} mode=802.3ad lacp-rate=1sec transmit-hash-policy=layer-2-and-3 ${c("dos cables a la OLT")}; /interface vlan set [find where interface=${rosString(first)}] interface=DSX-bond-olt }`,
+    // A port with VLANs on it may not join a bond: they wait on a temporary bridge, the bond is made, they move to it.
+    `{ :local v [/interface vlan find where interface=${rosString(first)}]; /interface bridge add name=DSX-espera ${c("temporal")}; /interface vlan set $v interface=DSX-espera; :do {/interface bonding add name=DSX-bond-olt slaves=${ports.map((p) => rosString(p)).join(",")} mode=802.3ad lacp-rate=1sec transmit-hash-policy=layer-2-and-3 ${c("dos cables a la OLT")}; /interface vlan set $v interface=DSX-bond-olt} on-error={/interface vlan set $v interface=${rosString(first)}; :log error "DSX: no se pudo crear el bond, las VLAN regresaron al puerto"}; /interface bridge remove [find where name="DSX-espera"] }`,
     ':do {/queue interface set [find where interface="DSX-bond-olt"] queue=DS-fq-codel} on-error={}',
   ].join("\n")
   const [a, b] = olt.map((p) => {
@@ -171,7 +172,8 @@ export function bondScript(ctx: AdvContext, o: BondOptions): { router: string; o
   const sameBoard = olt[0].split("/").slice(0, 2).join("/") === olt[1].split("/").slice(0, 2).join("/")
   if (sameBoard) issues.push({ code: "sameBoard", level: "warn" })
   issues.push({ code: "bondWindow", level: "info" }, { code: "bondSetup", level: "info" })
-  const undo = `{ /interface vlan set [find where interface="DSX-bond-olt"] interface=${rosString(first)}; /interface bonding remove [find where name="DSX-bond-olt"] }`
+  // The same dance backwards: the port is still in the bond until the bond goes.
+  const undo = `{ :local v [/interface vlan find where interface="DSX-bond-olt"]; /interface bridge add name=DSX-espera; /interface vlan set $v interface=DSX-espera; /interface bonding remove [find where name="DSX-bond-olt"]; /interface vlan set $v interface=${rosString(first)}; /interface bridge remove [find where name="DSX-espera"] }`
   return { router, olt: oltText, undo, issues }
 }
 
@@ -269,7 +271,7 @@ export type FilterOptions = {
   /** DNS queries per second per client (0 = no limit). */
   dnsRate: number
 }
-export const DEFAULT_FILTERS: FilterOptions = { spoof: true, smb: true, ssdp: true, telnet: true, udpLimit: 300, dnsRate: 50 }
+export const DEFAULT_FILTERS: FilterOptions = { spoof: true, smb: true, ssdp: true, telnet: true, udpLimit: 500, dnsRate: 50 }
 
 export function filtersScript(ctx: AdvContext, o: FilterOptions): AdvResult {
   const issues: AdvIssue[] = []
@@ -350,7 +352,7 @@ export function alertsScript(ctx: AdvContext, o: AlertsOptions): AdvResult {
       ':if ([:len $msg] > 0) do={:global DSmsg ("cambio la configuracion en:" . $msg); /system script run DS-aviso}',
     ])
     scripts.push(`add name=DSX-cambios policy=ftp,read,write,policy,test,sensitive dont-require-permissions=yes source=${rosString(body)} ${c("cambios de configuracion")}`)
-    sched.push(`add name=DSX-cambios interval=30m on-event=DSX-cambios ${c("cada 30 min")}`)
+    sched.push(`add name=DSX-cambios interval=2h on-event=DSX-cambios ${c("cada 2 h")}`)
     issues.push({ code: "configNote", level: "info" })
   }
   if (o.version) {

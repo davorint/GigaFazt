@@ -1872,7 +1872,10 @@
         "privateIp": "{value} es privada o CGNAT: tiene que ser pública.",
         "ipTwice": "{value} está repetida.",
         "routedBlock": "El carrier debe enrutar esa IP o bloque hacia tu router (servicio empresarial) o ser un bloque tuyo anunciado por BGP; si no, el tráfico de vuelta no llega.",
-        "openToInternet": "Esa IP queda abierta a internet: el cliente es responsable de su firewall (cámaras y routers con clave de fábrica son los primeros en caer)."
+        "openToInternet": "Esa IP queda abierta a internet: el cliente es responsable de su firewall (cámaras y routers con clave de fábrica son los primeros en caer).",
+        "repasteBase": "Si vuelves a pegar la base de Configuración, pega esto otra vez: la base lo deshace (proxy, servicio web o acceso a Winbox/SSH).",
+        "suspendedNoV6": "Con IPv6 activo, el perfil suspendido no da IPv6: la lista de morosos solo guarda la dirección IPv4 y por IPv6 el cliente seguiría navegando.",
+        "familyNoV6": "Los perfiles familia no dan IPv6: por IPv6 el filtro no podría reconocer al cliente. El resto de los planes siguen con IPv6."
       },
       "groups": {
         "enlaces": "Enlaces y alta disponibilidad",
@@ -1954,6 +1957,16 @@
         "add": "Agregar cliente",
         "remove": "Quitar el último",
         "label": "IP pública fija"
+      },
+      "order": {
+        "title": "Orden de pegado (léelo antes del primer generador)",
+        "steps": [
+          "Configuración del despliegue: base, PPPoE, CGNAT y endurecimiento (con avisos y respaldo si los vas a usar).",
+          "Varios enlaces: el balanceo con sus colas y avisos. Failover por calidad, Salida fija por destino, Prioridad DSCP e IP pública fija dependen de él y fallan si no está.",
+          "Los generadores, de uno en uno, probando cada uno. Morosos antes de Uso por cliente si vas a usar el tope de uso justo.",
+          "Si vuelves a pegar la base de Configuración, vuelve a pegar Morosos, Acceso remoto y Monitoreo: la base apaga el proxy y el servicio web y deja Winbox y SSH solo para la red de gestión.",
+          "Para quitar todo, primero el «Cómo quitarlo» de cada generador y al final el de Configuración: sus listas de interfaces no se pueden borrar mientras haya reglas que las usen."
+        ]
       }
     }
   }

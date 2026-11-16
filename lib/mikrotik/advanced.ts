@@ -77,6 +77,12 @@ export const NOTICE_PORT = 8080
 const SUSPENDED_RATE = "512k/512k"
 
 /**
+ * The deployment's profile properties without IPv6. Address lists (suspension, families) only hold the session's IPv4
+ * address, so a profile that must be filtered can't give IPv6: it would be a way around the filter.
+ */
+export const v4Only = (props: string[]) => [...props.filter((x) => !/^(use-ipv6|dhcpv6-pd-pool|remote-ipv6-prefix-pool)=/.test(x)), "use-ipv6=no"]
+
+/**
  * Two PPP profiles: DSX-reducido (low speed, still browses) and DSX-suspendido (only the notice page, payment sites
  * and DNS). The profile's address-list puts the session's address in DSX-morosos while it lasts; raw drops the rest,
  * plain-HTTP goes through the router's web proxy, which answers with a redirect (307) to the notice page. Phones and
@@ -102,9 +108,9 @@ export function morososScript(ctx: AdvContext, o: MorososOptions): AdvResult {
       "address-list=DSX-reducidos",
       c("velocidad reducida"),
     ]),
-    upsert("/ppp profile", "DSX-suspendido", [...profileProps(s, SUSPENDED_RATE, ctx.queue), "address-list=DSX-morosos", c("solo el aviso de pago")], [
+    upsert("/ppp profile", "DSX-suspendido", [...v4Only(profileProps(s, SUSPENDED_RATE, ctx.queue)), "address-list=DSX-morosos", c("solo el aviso de pago")], [
       "name=DSX-suspendido",
-      ...profileProps(s, SUSPENDED_RATE, ctx.queue),
+      ...v4Only(profileProps(s, SUSPENDED_RATE, ctx.queue)),
       "address-list=DSX-morosos",
       c("solo el aviso de pago"),
     ]),
@@ -132,7 +138,8 @@ export function morososScript(ctx: AdvContext, o: MorososOptions): AdvResult {
     `add chain=input in-interface-list=DS-WAN protocol=tcp dst-port=${NOTICE_PORT} action=drop ${c("el proxy no se abre a internet")}`,
   ]
   if (o.noticeUrl.trim().startsWith("http://")) issues.push({ code: "noticeHttp", level: "info" })
-  issues.push({ code: "httpsNote", level: "info" })
+  if (s.ipv6Pd.trim()) issues.push({ code: "suspendedNoV6", level: "info" })
+  issues.push({ code: "httpsNote", level: "info" }, { code: "repasteBase", level: "warn" })
   const undo = [
     ...removeAll("morosos", ["/ip firewall raw", "/ip firewall nat", "/ip firewall filter", "/ip firewall address-list", "/ip proxy access"]),
     "/ip proxy set enabled=no",
@@ -161,7 +168,8 @@ export function parseClientLines(text: string): { lines: ClientLine[]; errors: C
 }
 
 /** Change each client's profile and drop its session (the profile applies when it reconnects, in seconds). */
-export function clientCommands(action: ClientAction, text: string, plans: string[]): ClientCommands {
+export function clientCommands(action: ClientAction, text: string, planList: string[]): ClientCommands {
+  const plans = withFamily(planList)
   const { lines, errors } = parseClientLines(text)
   const out: string[] = []
   for (const l of lines) {
@@ -216,7 +224,7 @@ export function remoteScript(ctx: AdvContext, o: RemoteOptions): AdvResult & { h
       `/ip service set ssh available-from=${from}`,
       ...users.map((u) => `/ip cloud back-to-home-user show-client-config [find where name=${rosString(u)}]`),
     ]
-    issues.push({ code: "bthApp", level: "info" })
+    issues.push({ code: "bthApp", level: "info" }, { code: "repasteBase", level: "warn" })
     const undo = ["/ip cloud set back-to-home-vpn=revoked-and-disabled", `/ip service set winbox available-from=${n.mgmtText}`, `/ip service set ssh available-from=${n.mgmtText}`]
     return { script: out.join("\n"), undo: undo.join("\n"), issues, hubSide: "" }
   }
@@ -247,7 +255,7 @@ export function remoteScript(ctx: AdvContext, o: RemoteOptions): AdvResult & { h
     "/ip route",
     `add dst-address=${n.mgmtText} gateway=wg-hub ${c(`gestion de ${name}`)}`,
   ].join("\n")
-  issues.push({ code: "mgmtUnique", level: "info" })
+  issues.push({ code: "mgmtUnique", level: "info" }, { code: "repasteBase", level: "warn" })
   const undo = [`/ip service set winbox available-from=${n.mgmtText}`, `/ip service set ssh available-from=${n.mgmtText}`, ...removeAll("acceso", ["/ip address", "/interface wireguard peers", "/interface wireguard"])]
   return { script: out.join("\n"), undo: undo.join("\n"), issues, hubSide }
 }
@@ -264,6 +272,8 @@ export const ADLISTS = {
 /** Cloudflare for Families: malware + adult content blocked. */
 export const FAMILY_DNS = ["1.1.1.3", "1.0.0.3"]
 export const familyName = (plan: string) => `${plan}-familia`
+/** The plan profiles plus their -familia twins (both are valid targets for a client). */
+export const withFamily = (plans: string[]) => [...plans, ...plans.map(familyName)]
 
 export function dnsFilterScript(ctx: AdvContext, o: DnsFilterOptions): AdvResult {
   const issues: AdvIssue[] = []
@@ -284,19 +294,22 @@ export function dnsFilterScript(ctx: AdvContext, o: DnsFilterOptions): AdvResult
   if (o.force)
     for (const proto of ["udp", "tcp"])
       out.push(`add chain=dstnat src-address=${n.poolText} dst-address=!${n.local} protocol=${proto} dst-port=53 action=redirect to-ports=53 ${c("todo el DNS al router")}`)
+  if (o.force && ctx.setup.ipv6Pd.trim())
+    out.push("/ipv6 firewall nat", ...["udp", "tcp"].map((proto) => `add chain=dstnat in-interface-list=DS-LAN protocol=${proto} dst-port=53 action=redirect to-ports=53 ${c("todo el DNS IPv6 al router")}`))
   if (o.family) {
     const s = ctx.setup
     out.push("/ppp profile")
     for (const p of plansOf(ctx)) {
       const name = familyName(p.name)
-      const props = [...profileProps(s, rateLimit(p.pair), ctx.queue), "address-list=DSX-familia", c(`plan ${p.name} con filtro`)]
+      const props = [...v4Only(profileProps(s, rateLimit(p.pair), ctx.queue)), "address-list=DSX-familia", c(`plan ${p.name} con filtro`)]
       out.push(upsert("/ppp profile", name, props, [`name=${rosString(name)}`, ...props]))
     }
   }
   if (urls.length) issues.push({ code: "cache", level: "info" })
   if (o.force) issues.push({ code: "doh", level: "info" })
+  if (o.family && ctx.setup.ipv6Pd.trim()) issues.push({ code: "familyNoV6", level: "info" })
   const undo = [
-    ...removeAll("dns", ["/ip firewall nat"]),
+    ...removeAll("dns", ["/ip firewall nat", "/ipv6 firewall nat"]),
     ...urls.map((u) => `/ip dns adlist remove [find where url=${rosString(u)}]`),
     ...(o.family ? [':do {/ppp profile remove [find where name~"-familia$"]} on-error={:log warning "DSX: regresa a los clientes a su plan antes de borrar los perfiles -familia"}'] : []),
   ]
@@ -314,6 +327,8 @@ export type UsageOptions = {
 }
 export const DEFAULT_USAGE: UsageOptions = { capGb: 0, top: 5, reportTime: "08:00:00" }
 export const USAGE_EVERY_MIN = 10
+/** Hours between writes of the totals into the accounts: every write goes to flash, so not too often. */
+export const USAGE_SAVE_H = 6
 
 /**
  * Every 10 minutes, DSX-uso adds what each PPPoE session moved since the last run (its interface counters; a counter
@@ -360,7 +375,7 @@ export function usageScript(ctx: AdvContext, o: UsageOptions): AdvResult {
     '/ppp secret set $id comment=($base . " [uso " . $m . " " . $d . "/" . $up . " MB]")',
     ...(cap > 0
       ? [
-          `:if (($d > ${cap}) && ([/ppp secret get $id profile] != "DSX-reducido") && ([:len [/ppp profile find where name="DSX-reducido"]] > 0)) do={/ppp secret set $id profile=DSX-reducido; /ppp active remove [find where name=$u]; :log warning ("DSX-uso tope usuario=" . $u . " " . $d . " MB")${alerts ? '; :global DSmsg ("tope de uso: " . $u . " paso de ' + o.capGb + ' GB, quedo en velocidad reducida"); /system script run DS-aviso' : ""}}`,
+          `:if (($d > ${cap}) && ([:pick [/ppp secret get $id profile] 0 4] != "DSX-") && ([:len [/ppp profile find where name="DSX-reducido"]] > 0)) do={/ppp secret set $id profile=DSX-reducido; /ppp active remove [find where name=$u]; :log warning ("DSX-uso tope usuario=" . $u . " " . $d . " MB")${alerts ? '; :global DSmsg ("tope de uso: " . $u . " paso de ' + o.capGb + ' GB, quedo en velocidad reducida"); /system script run DS-aviso' : ""}}`,
         ]
       : []),
     "}}}",
@@ -382,7 +397,7 @@ export function usageScript(ctx: AdvContext, o: UsageOptions): AdvResult {
     ...(o.top > 0 && alerts ? [`add name=DSX-uso-reporte policy=read,write,test dont-require-permissions=yes source=${rosString(report)} ${c("los que mas usan")}`] : []),
     "/system scheduler",
     `add name=DSX-uso interval=${USAGE_EVERY_MIN}m on-event=DSX-uso ${c("cada 10 min")}`,
-    `add name=DSX-uso-guardar interval=1h start-time=00:05:00 on-event=DSX-uso-guardar ${c("cada hora")}`,
+    `add name=DSX-uso-guardar interval=${USAGE_SAVE_H}h start-time=00:05:00 on-event=DSX-uso-guardar ${c(`cada ${USAGE_SAVE_H} h`)}`,
     ...(o.top > 0 && alerts ? [`add name=DSX-uso-reporte interval=1d start-time=${o.reportTime} on-event=DSX-uso-reporte ${c("reporte diario")}`] : []),
   ]
   if (cap > 0) issues.push({ code: "capNeedsMorosos", level: "info" })
@@ -439,9 +454,9 @@ export function shieldScript(ctx: AdvContext, o: ShieldOptions): AdvResult {
     const watch = [
       ":global DSXvistos; :if ([:typeof $DSXvistos] != \"array\") do={:set DSXvistos [:toarray \"\"]}; :local msg \"\"",
       ':foreach e in=[/ip firewall address-list find where list="DSX-infectados"] do={:local a [/ip firewall address-list get $e address]',
-      ':if ([:typeof ($DSXvistos->$a)] = "nothing") do={:set ($DSXvistos->$a) 1; :local u [/ppp active find where address=$a]; :local who $a; :if ([:len $u] > 0) do={:set who ([/ppp active get [:pick $u 0] name] . " (" . $a . ")")}; :set msg ($msg . " " . $who)}}',
+      ':if (($DSXvistos->$a) != 1) do={:set ($DSXvistos->$a) 1; :local u [/ppp active find where address=$a]; :local who $a; :if ([:len $u] > 0) do={:set who ([/ppp active get [:pick $u 0] name] . " (" . $a . ")")}; :set msg ($msg . " " . $who)}}',
       ':if ([:len $msg] > 0) do={:global DSmsg ("cliente(s) con trafico de bot:" . $msg); /system script run DS-aviso}',
-      ':foreach a,v in=$DSXvistos do={:if ([:len [/ip firewall address-list find where list="DSX-infectados" and address=$a]] = 0) do={:set ($DSXvistos->$a)}}',
+      ':foreach a,v in=$DSXvistos do={:if ([:len [/ip firewall address-list find where list="DSX-infectados" and address=$a]] = 0) do={:set ($DSXvistos->$a) 0}}',
     ].join(STMT).replace(/\{; /g, "{").replace(/; \}/g, "}")
     out.push(
       "/system script",
@@ -496,8 +511,9 @@ export function boostScript(ctx: AdvContext, o: BoostOptions): AdvResult {
   const c = comment("velocidad")
   const kick = (plan: string) =>
     o.reconnect ? `; :foreach s in=[/ppp secret find where profile=${rosString(plan)}] do={/ppp active remove [find where name=[/ppp secret get $s name]]}` : ""
+  // Each plan and its -familia twin (DNS filter), when it exists: a set on an empty find does nothing.
   const apply = (which: "boost" | "normal") =>
-    plans.map((p) => `/ppp profile set [find where name=${rosString(p.name)}] rate-limit=${rosString(p[which])}${kick(p.name)}`).join("; ")
+    plans.flatMap((p) => [p.name, familyName(p.name)].map((name) => `/ppp profile set [find where name=${rosString(name)}] rate-limit=${rosString(p[which])}${kick(name)}`)).join("; ")
   // HH:MM:SS compares as text; the window may cross midnight.
   const inside = o.start < o.end ? `(($t >= "${o.start}") && ($t < "${o.end}"))` : `(($t >= "${o.start}") || ($t < "${o.end}"))`
   const check = `:local t [:pick [/system clock get time] 0 8]; :if ${inside} do={/system script run DSX-noche-inicio} else={/system script run DSX-noche-fin}`
@@ -523,7 +539,8 @@ export function boostScript(ctx: AdvContext, o: BoostOptions): AdvResult {
 export type UpgradeInput = { user: string; to: string; back: string; date: string; time: string }
 
 /** A temporary plan change that reverts by itself on the date given. */
-export function upgradeCommands(u: UpgradeInput, plans: string[]): { script: string; issues: AdvIssue[] } {
+export function upgradeCommands(u: UpgradeInput, planList: string[]): { script: string; issues: AdvIssue[] } {
+  const plans = withFamily(planList)
   const issues: AdvIssue[] = []
   if (!u.user.trim() || /\s/.test(u.user.trim())) issues.push({ code: "badUser", level: "error" })
   if (!plans.includes(u.to)) issues.push({ code: "unknownPlan", level: "error", value: u.to })
@@ -658,7 +675,7 @@ export function monitorScript(ctx: AdvContext, o: MonitorOptions): AdvResult {
   }
   if (!out.length) issues.push({ code: "nothing", level: "error" })
   if (hasError(issues)) return fail(issues)
-  if (o.graphs) issues.push({ code: "graphsUrl", level: "info", value: intToIp(n.mgmt.net + 1) })
+  if (o.graphs) issues.push({ code: "graphsUrl", level: "info", value: intToIp(n.mgmt.net + 1) }, { code: "repasteBase", level: "warn" })
   const undo = [
     ':do {/system scheduler remove [find where name~"^DSX-(caida|resumen)$"]} on-error={}',
     ':do {/system script remove [find where name~"^DSX-(caida|resumen)$"]} on-error={}',
@@ -718,7 +735,7 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { 
     `/ip pool set [find where name="DS-clientes"] ranges=${intToIp(mid + 1)}-${intToIp(last)}`,
     `/interface pppoe-server server set [find where service-name=${rosString(s.service.trim())}] pado-delay=${o.padoDelay}`,
     "/user",
-    `add name=${o.syncUser} group=full address=${mainIp}/32 password="${SECRET("clave-de-sincronizacion")}" ${c("solo para copiar las cuentas")}`,
+    `add name=${o.syncUser} group=full address=${n.mgmtText} password="${SECRET("clave-de-sincronizacion")}" ${c("solo para copiar las cuentas")}`,
     "/system script",
     `add name=DSX-sync-importar policy=ftp,read,write,test,sensitive dont-require-permissions=yes source=${rosString(
       ':if ([:len [/file find where name="DSX-secretos.rsc"]] > 0) do={/ppp secret remove [find]; /import file-name=DSX-secretos.rsc; /file remove [find where name="DSX-secretos.rsc"]; :log info "DSX: cuentas copiadas del principal"}'

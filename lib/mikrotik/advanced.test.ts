@@ -192,3 +192,39 @@ describe("fixed exit per destination", () => {
     expect(codes(routeScript(ctx(), [{ wan: "WAN9", dest: "x.com" }]))).toContain("unknownWan")
   })
 })
+
+describe("audit fixes (2026-11-16)", () => {
+  it("familia profiles are valid targets to restore and upgrade, and the night boost covers them", () => {
+    const plans = ["plan-200M", "plan-500M"]
+    expect(clientCommands("restore", "ana,plan-200M-familia", plans).errors).toEqual([])
+    expect(upgradeCommands({ user: "ana", to: "plan-500M-familia", back: "plan-200M-familia", date: "2026-12-01", time: "00:00:00" }, plans).issues).toEqual([])
+    expect(boostScript(ctx(), DEFAULT_BOOST).script).toContain('name=\\"plan-200M-familia\\"')
+  })
+  it("the fair-use cap never moves a suspended or reduced client", () => {
+    expect(usageScript(ctx(), { ...DEFAULT_USAGE, capGb: 100 }).script).toContain('[:pick [/ppp secret get \\$id profile] 0 4] != \\"DSX-\\"')
+  })
+  it("totals are written every 6 h (flash wear)", () => {
+    expect(usageScript(ctx(), DEFAULT_USAGE).script).toContain("add name=DSX-uso-guardar interval=6h")
+  })
+  it("the backup accepts the copy from anywhere on the management network (the main may use the VRRP address)", () => {
+    expect(backupRouterScripts(ctx(), DEFAULT_BACKUP_ROUTER).backup).toContain("group=full address=192.168.10.0/24")
+  })
+  it("the infected-client alert uses a flag, not :set without a value", () => {
+    const s = shieldScript(ctx(), DEFAULT_SHIELD).script
+    expect(s).toContain("!= 1) do={:set (\\$DSXvistos->\\$a) 1")
+    expect(s).toContain("do={:set (\\$DSXvistos->\\$a) 0}")
+  })
+  it("with IPv6 on, the suspended and familia profiles give no IPv6 and DNS is forced on IPv6 too", () => {
+    const v6 = ctx({ ipv6Pd: "2001:db8:100::/40" })
+    const m = morososScript(v6, { ...DEFAULT_MOROSOS, noticeUrl: "https://x.com" })
+    const suspended = m.script.split("\n").find((l) => l.includes('name="DSX-suspendido"')) ?? ""
+    expect(suspended).toContain("use-ipv6=no")
+    expect(suspended).not.toContain("dhcpv6-pd-pool")
+    // The reduced profile keeps IPv6: its queue limits both.
+    expect(m.script.split("\n").find((l) => l.includes('name="DSX-reducido"'))).toContain("dhcpv6-pd-pool=DS-pd")
+    const d = dnsFilterScript(v6, DEFAULT_DNS_FILTER)
+    expect(d.script.split("\n").find((l) => l.includes('name="plan-200M-familia"'))).toContain("use-ipv6=no")
+    expect(d.script).toContain("/ipv6 firewall nat")
+    expect(d.undo).toContain("/ipv6 firewall nat remove")
+  })
+})

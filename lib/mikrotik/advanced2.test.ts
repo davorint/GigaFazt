@@ -63,7 +63,11 @@ describe("OLT bond", () => {
   it("bond with the OLT port, VLANs moved in the same line, Huawei static LACP", () => {
     const r = bondScript(ctx(), { ports: `${DEFAULT_SETUP.oltPort}, sfp-sfpplus3`, oltPorts: "0/2/0 0/3/0" })
     expect(r.router).toContain(`slaves="${DEFAULT_SETUP.oltPort}","sfp-sfpplus3" mode=802.3ad lacp-rate=1sec transmit-hash-policy=layer-2-and-3`)
-    expect(r.router).toContain(`/interface vlan set [find where interface="${DEFAULT_SETUP.oltPort}"] interface=DSX-bond-olt }`)
+    // VLANs wait on a temporary bridge so the port can join the bond; if the bond fails they go back.
+    expect(r.router).toContain("/interface vlan set $v interface=DSX-espera")
+    expect(r.router).toContain("/interface vlan set $v interface=DSX-bond-olt}")
+    expect(r.router).toContain(`on-error={/interface vlan set $v interface="${DEFAULT_SETUP.oltPort}"`)
+    expect(r.undo.indexOf("bonding remove")).toBeLessThan(r.undo.indexOf(`interface="${DEFAULT_SETUP.oltPort}"`))
     expect(r.olt).toContain("link-aggregation 0/2 0 0/3 0 egress-ingress workmode lacp-static")
     expect(codes(r)).not.toContain("sameBoard")
     expect(codes(bondScript(ctx(), { ports: "ether1, ether2", oltPorts: "0/2/0 0/3/0" }))).toContain("bondHasOltPort")
@@ -100,7 +104,7 @@ describe("filtering", () => {
     expect(r.script).toContain("add list=DSX-origen-valido6 address=fe80::/10")
     expect(r.script).toContain("protocol=tcp dst-port=135-139,445 action=drop")
     expect(r.script).toContain("protocol=udp dst-port=1900 action=drop")
-    expect(r.script).toContain("connection-limit=300,32")
+    expect(r.script).toContain("connection-limit=500,32")
     expect(r.script).toContain("dst-limit=50,100,src-address/1m action=accept")
     expect(r.script).toContain("/ipv6 firewall filter")
     expect(filtersScript(ctx(), { ...DEFAULT_FILTERS }).script).not.toContain("/ipv6")

@@ -144,6 +144,19 @@ export function AdvancedPanel({ state }: { state: LabState }) {
           ))}
         </SelectField>
       </div>
+      <details className="rounded-xl border border-white/10">
+        <summary className="cursor-pointer rounded-xl p-3 text-sm text-zinc-200 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">{t("order.title")}</summary>
+        <ol className="grid gap-1.5 px-3 pb-3 text-sm leading-relaxed text-zinc-300">
+          {(t.raw("order.steps") as string[]).map((x, k) => (
+            <li key={k} className="flex gap-2">
+              <span aria-hidden className="font-mono text-xs text-zinc-400">
+                {String(k + 1).padStart(2, "0")}
+              </span>
+              {x}
+            </li>
+          ))}
+        </ol>
+      </details>
       <div className="grid gap-1.5">
         <h3 className="text-base font-medium text-foreground">{t(`modules.${mod}.name`)}</h3>
         <p className="max-w-3xl text-sm leading-relaxed text-zinc-300">{t(`modules.${mod}.lead`)}</p>
