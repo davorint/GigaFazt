@@ -171,7 +171,7 @@ export function OltBuilder() {
           )}
           <div className="grid gap-2">
             <p className="text-xs text-zinc-400">{t("bill")}</p>
-            <pre className="rounded-lg bg-black/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-200 [overflow-wrap:anywhere]">{bill}</pre>
+            <pre className="[font-variant-ligatures:none] rounded-lg bg-black/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-200 [overflow-wrap:anywhere]">{bill}</pre>
             <div className="flex flex-wrap gap-2">
               <CopyButton text={bill} label={t("copyBill")} done={t("copied")} />
               <CopyButton getText={shareUrl} label={t("copyLink")} done={t("copied")} />

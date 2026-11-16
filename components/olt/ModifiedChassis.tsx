@@ -74,7 +74,7 @@ export function ModifiedChassis() {
         <div className="surface grid content-start gap-3 rounded-xl p-5">
           <h3 className="text-base font-medium text-foreground">{t("claimsTitle")}</h3>
           <p className="text-sm text-zinc-400">{t("claimsLead")}</p>
-          <pre className="overflow-x-auto rounded-lg bg-black/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-200">{claims.join("\n")}</pre>
+          <pre className="[font-variant-ligatures:none] overflow-x-auto rounded-lg bg-black/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-200">{claims.join("\n")}</pre>
           <div>
             <CopyButton text={claims.join("\n")} label={t("copy")} done={t("copied")} />
           </div>

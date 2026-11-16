@@ -24,7 +24,7 @@ export function OltCommands() {
                   <CopyButton text={c.cmd} label={t("copy")} done={t("copied")} />
                 </div>
                 {/* Wraps instead of scrolling: a scroll box would need its own keyboard stop. */}
-                <pre className="rounded-lg bg-black/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-100 [overflow-wrap:anywhere]">{c.cmd}</pre>
+                <pre className="[font-variant-ligatures:none] rounded-lg bg-black/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-100 [overflow-wrap:anywhere]">{c.cmd}</pre>
               </li>
             ))}
           </ul>

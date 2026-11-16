@@ -601,7 +601,8 @@
             "Netwatch por enlace: aviso en el log y limpieza de sus conexiones al caer y al volver (Varios enlaces → Colas y avisos).",
             "No des las IPs vigiladas a los clientes como DNS: cada una sale por un solo enlace.",
             "Prueba: desconecta un enlace. Su ruta se apaga en unos 20–30 s, aparece la línea en el log y las sesiones PPPoE siguen; solo cambia su IP pública.",
-            "Servicios que deben salir siempre por un carrier (la TV de tu proveedor, un banco): Generadores avanzados → Salida fija por destino."
+            "Servicios que deben salir siempre por un carrier (la TV de tu proveedor, un banco): Generadores avanzados → Salida fija por destino.",
+            "Failover por calidad: dos IPs vigiladas por enlace, umbrales de pérdida y latencia y espera antes de regresar; LTE de último recurso si el edificio lo amerita (Generadores avanzados → Failover por calidad)."
           ]
         },
         "p2": {
@@ -639,7 +640,8 @@
             "Seguridad en la OLT: anti-macspoofing (máximo 1 MAC por service-port), anti-ipspoofing, anti-macduplicate, anti-dos, anti-ipattack y control de tormentas del lado de los ONT.",
             "La gestión de la OLT, en su VLAN y solo desde la red de gestión.",
             "Instalación del ONT: WAN de ruta PPPoE en la VLAN de internet con la cuenta del cliente, contraseña de administrador de la empresa (no la de fábrica) y Wi-Fi propio del cliente (lista en «Alta de un ONT»).",
-            "Morosos: perfiles DSX-reducido y DSX-suspendido con página de aviso, y los comandos para suspender y reactivar (Generadores avanzados → Morosos)."
+            "Morosos: perfiles DSX-reducido y DSX-suspendido con página de aviso, y los comandos para suspender y reactivar (Generadores avanzados → Morosos).",
+            "Dos cables entre la OLT y el router en LACP, de preferencia en dos tarjetas de control (Generadores avanzados → Dos cables a la OLT)."
           ]
         },
         "p5": {
@@ -655,7 +657,8 @@
             "DNS: caché del router dimensionada para el despliegue, o los clientes directo a los resolutores.",
             "Avisos al celular (Telegram o correo), respaldo diario fuera del router y SNMP para graficar enlaces, CPU y sesiones.",
             "Clientes infectados: marca y avisa a quien abre conexiones a ritmo de bot o escanea puertos (Generadores avanzados → Clientes infectados y DDoS).",
-            "DNS: listas de bloqueo, todo el DNS de los clientes por el router y planes familia (Generadores avanzados → Filtro DNS)."
+            "DNS: listas de bloqueo, todo el DNS de los clientes por el router y planes familia (Generadores avanzados → Filtro DNS).",
+            "Filtros del lado de los clientes: anti-spoofing (BCP 38), Windows/NetBIOS, SSDP y telnet hacia internet, topes de UDP y de DNS (Generadores avanzados → Filtros TCP/UDP)."
           ]
         },
         "p6": {
@@ -668,7 +671,9 @@
             "Paquete legal: este procedimiento, la política de retención de IPFIX, dónde quedan los logs de PPPoE y cómo contestar un requerimiento (IP pública + puerto + hora → 100.64 → usuario PPPoE).",
             "Restaura un respaldo en un router de prueba al menos una vez: un respaldo que nunca se probó no cuenta.",
             "Uso por cliente en el comentario de cada cuenta, aviso de caída masiva de sesiones y resumen diario (Generadores avanzados → Uso por cliente y Monitoreo).",
-            "Edificios grandes: router de respaldo en caliente (Generadores avanzados → Router de respaldo)."
+            "Edificios grandes: router de respaldo en caliente (Generadores avanzados → Router de respaldo).",
+            "Alertas de cambios de configuración, versión nueva de RouterOS y entradas fallidas (Generadores avanzados → Alertas de operación).",
+            "Copia completa semanal con contraseñas a tu servidor y el procedimiento para cargarla en otro modelo (Generadores avanzados → Router de repuesto)."
           ]
         }
       },
@@ -1568,7 +1573,7 @@
     },
     "advanced": {
       "title": "Generadores avanzados",
-      "lead": "Scripts para operar el despliegue a mano: morosos, acceso remoto, filtro DNS, uso por cliente, clientes infectados, velocidades programadas, monitoreo, router de respaldo, salida fija por destino y BGP. Usan los datos del despliegue abierto (pool, planes, enlaces, gestión, avisos) y cada uno trae cómo quitarlo.",
+      "lead": "Scripts para operar el despliegue a mano: failover por calidad, respaldo y alta disponibilidad, filtros, morosos, uso por cliente, alertas, monitoreo y más. Usan los datos del despliegue abierto (pool, planes, enlaces, gestión, avisos) y cada uno trae cómo quitarlo.",
       "pick": "Generador",
       "undo": "Cómo quitarlo",
       "undoLabel": "Quitar · {label}",
@@ -1613,6 +1618,34 @@
         "bgp": {
           "name": "BGP (preparación)",
           "lead": "Para cuando tengas ASN y bloques de IP propios: la instancia BGP, los bloques que anuncias, filtros por carrier (recibes solo la ruta por defecto, mandas solo tus bloques, con prepend opcional) y las sesiones, en la sintaxis de RouterOS 7.25."
+        },
+        "failover": {
+          "name": "Failover por calidad",
+          "lead": "El failover de «Varios enlaces» solo actúa cuando un enlace deja de contestar. Este también saca a un enlace que contesta mal (pérdida o latencia alta): lo vigilan dos IPs, sale solo si fallan las dos, y regresa hasta que lleva un rato estable, así no rebota. Nunca saca al último enlace que queda. Opcional: un enlace LTE de último recurso."
+        },
+        "bond": {
+          "name": "Dos cables a la OLT (LACP)",
+          "lead": "El router y la OLT unidos por dos cables como uno solo (802.3ad / LACP): si falla un cable, un SFP o un puerto, el edificio sigue. Es la redundancia más barata que hay."
+        },
+        "repuesto": {
+          "name": "Router de repuesto",
+          "lead": "Cuando un router muere, cargar su configuración en otro modelo: pega la exportación, escribe cómo se llaman los puertos en el nuevo y sale el script listo. Más una copia completa semanal (con contraseñas) a tu servidor SFTP para tener de dónde sacarla."
+        },
+        "filtros": {
+          "name": "Filtros TCP/UDP",
+          "lead": "Lo que un ISP filtra del lado de sus clientes: direcciones de origen falsas (BCP 38), puertos que usan gusanos y equipos infectados hacia internet, un tope de conexiones UDP por cliente y un tope de consultas DNS. También en IPv6 si está activo."
+        },
+        "alertas": {
+          "name": "Alertas de operación",
+          "lead": "Avisos al celular cuando cambia la configuración del router, cuando sale una versión estable nueva de RouterOS (no instala nada sola) y cuando hay muchos intentos de entrada PPPoE fallidos."
+        },
+        "prioridad": {
+          "name": "Prioridad para llamadas y juegos",
+          "lead": "Los paquetes que las apps marcan como tiempo real (DSCP: llamadas, videollamadas, algunos juegos) entran a la misma prioridad que ya tienen los primeros 500 KB de cada conexión y el UDP chico en las colas de cada enlace."
+        },
+        "ippublica": {
+          "name": "IP pública fija (empresas)",
+          "lead": "Un cliente con su propia IP pública: su cuenta PPPoE siempre recibe esa dirección, no pasa por el CGNAT, sale siempre por el enlace dueño de esa IP y se le puede entrar desde internet (cámaras, servidores, VPN)."
         }
       },
       "morosos": {
@@ -1722,7 +1755,9 @@
         "padoHint": "Cuánto espera el respaldo antes de ofrecer PPPoE: los ONT eligen al principal mientras viva.",
         "user": "Usuario de copia",
         "main": "Router principal",
-        "backup": "Router de respaldo (después de pegarle la misma Configuración)"
+        "backup": "Router de respaldo (después de pegarle la misma Configuración)",
+        "profiles": "Copiar también las velocidades de los planes",
+        "profilesHint": "Cada hora el principal manda los rate-limit de sus perfiles DS y DSX y el respaldo los aplica. Los perfiles nuevos se pegan en los dos desde Configuración."
       },
       "destinos": {
         "wan": "Enlace {n}",
@@ -1804,7 +1839,121 @@
         "needsBalance": "Necesita dos o más enlaces y el balanceo de «Varios enlaces» ya pegado.",
         "noRules": "Escribe al menos un destino.",
         "unknownWan": "El enlace «{value}» no existe en este despliegue.",
-        "domains": "Los dominios se vuelven IPs en el router y se renuevan solos; si el servicio usa muchos servidores, agrega también sus redes."
+        "domains": "Los dominios se vuelven IPs en el router y se renuevan solos; si el servicio usa muchos servidores, agrega también sus redes.",
+        "needsRecursive": "Necesita el failover recursivo de «Varios enlaces» (Vigilar una IP pública).",
+        "lossPct": "La pérdida va de 1 a 100 %.",
+        "avgMs": "La latencia va de 10 a 2,000 ms.",
+        "holdMin": "La espera va de 0 a 60 minutos.",
+        "badProbe": "La segunda IP de {value} no es una IPv4.",
+        "probeTwice": "{value} ya se vigila en otro enlace: cada IP vigilada sale por un solo enlace.",
+        "probeIsDns": "{value} es el DNS de los clientes: si se vigila, quedaría amarrado a un enlace.",
+        "lteMbps": "El tope del LTE debe ser mayor que 0.",
+        "lteNote": "El LTE solo entra con distancia 3, cuando todos los carriers están caídos; revisa que tu plan de datos aguante y que el módem no esté en modo puente con otra red.",
+        "foHow": "Se revisa cada 10 s. Un enlace sale si sus dos IPs fallan y regresa tras {value} min bien. Sus conexiones se reinician al salir y al volver (los clientes se reconectan solos).",
+        "twoPorts": "Escribe dos puertos distintos del router.",
+        "bondHasOltPort": "Uno de los dos debe ser el puerto actual hacia la OLT ({value}).",
+        "twoOltPorts": "Escribe dos puertos de la OLT como marco/slot/puerto.",
+        "sameBoard": "Los dos puertos están en la misma tarjeta: protege el cable y el SFP, no la tarjeta. Si puedes, usa uno en cada tarjeta de control.",
+        "bondWindow": "Al pegarlo se corta unos segundos la OLT y los clientes: hazlo en tu ventana de mantenimiento, desde Back To Home o la consola, y pega primero la parte de la OLT.",
+        "bondSetup": "Después pon DSX-bond-olt como «Puerto hacia la OLT» en Configuración, para que los siguientes scripts lo usen.",
+        "needsSftp": "Necesita el respaldo por SFTP de Configuración (servidor, usuario y ruta).",
+        "passwordsFile": "Esta copia lleva las contraseñas de los clientes en texto: guárdala solo en tu servidor y no la mandes por correo.",
+        "udpLimit": "El tope UDP va de 50 a 10,000 (o 0).",
+        "dnsRate": "El tope DNS va de 5 a 1,000 por segundo (o 0).",
+        "rpFilter": "El router sigue con rp-filter en loose: en modo strict, el reparto entre carriers rompería tráfico. El anti-spoofing de aquí hace el trabajo del lado de los clientes.",
+        "needsAlerts": "Necesita los avisos de Configuración (Telegram o correo).",
+        "pppFails": "Revisa el número de intentos.",
+        "configNote": "Después de un reinicio, la primera revisión solo toma la referencia. Los cambios del failover por calidad (rutas apagadas) también cuentan como cambio de rutas.",
+        "logText": "Cuenta las líneas del log que digan «authentication failed» o «login failed»; si tu RouterOS lo escribe distinto, ajusta el texto en el script DSX-fallos-ppp.",
+        "queueType": "Dentro de la cola de cada cliente, lo que evita que una llamada espere detrás de una descarga es el tipo de cola: ponlo en fq-codel o CAKE en Parámetros (más CPU con muchos clientes).",
+        "noRows": "Escribe al menos un cliente.",
+        "badIp": "«{value}» no es una IPv4.",
+        "ipInPool": "{value} está dentro del pool de clientes.",
+        "privateIp": "{value} es privada o CGNAT: tiene que ser pública.",
+        "ipTwice": "{value} está repetida.",
+        "routedBlock": "El carrier debe enrutar esa IP o bloque hacia tu router (servicio empresarial) o ser un bloque tuyo anunciado por BGP; si no, el tráfico de vuelta no llega.",
+        "openToInternet": "Esa IP queda abierta a internet: el cliente es responsable de su firewall (cámaras y routers con clave de fábrica son los primeros en caer)."
+      },
+      "groups": {
+        "enlaces": "Enlaces y alta disponibilidad",
+        "clientes": "Clientes",
+        "seguridad": "Seguridad y filtros",
+        "operacion": "Operación",
+        "crecer": "Crecer"
+      },
+      "failover": {
+        "probe": "Segunda IP de {wan}",
+        "probeHint": "Otra IP pública que se vigila por este enlace (la primera es {monitor}, la de Varios enlaces). Que no sea el DNS de los clientes.",
+        "loss": "Pérdida máxima",
+        "lossHint": "Porcentaje de pings perdidos a partir del cual una prueba falla.",
+        "avg": "Latencia máxima",
+        "avgHint": "Promedio de ida y vuelta a partir del cual una prueba falla.",
+        "hold": "Espera para regresar",
+        "holdHint": "Minutos que un enlace debe estar bien antes de volver a recibir clientes.",
+        "lte": "Interfaz LTE de último recurso",
+        "lteHint": "Por ejemplo lte1. Vacío = sin LTE. Solo lleva tráfico cuando se caen todos los carriers.",
+        "lteMbps": "Tope del LTE",
+        "label": "Failover por calidad"
+      },
+      "bond": {
+        "ports": "Puertos del router",
+        "portsHint": "Los dos puertos hacia la OLT separados por coma; uno debe ser el de ahora ({port}).",
+        "oltPorts": "Puertos de subida de la OLT",
+        "oltPortsHint": "Marco/slot/puerto de los dos, separados por coma (por ejemplo 0/2/0, 0/3/0: uno en cada tarjeta de control).",
+        "router": "Router",
+        "olt": "OLT Huawei (por verificar)"
+      },
+      "repuesto": {
+        "steps": [
+          "Saca la configuración: si el router viejo vive, /export show-sensitive file=viejo; si no, usa la copia completa semanal de abajo (la diaria no trae contraseñas y el .backup cifrado solo se restaura en el mismo modelo).",
+          "Pégala aquí y escribe cómo se llama cada puerto en el router nuevo (deja vacío el que no cambia).",
+          "En el router nuevo de fábrica, sin configuración: súbelo como archivo .rsc y corre /import file-name=<archivo>.rsc desde la consola o por MAC (Winbox).",
+          "Revisa las licencias de nivel (CHR/x86), los usuarios de /user (el export no los trae con contraseña) y prueba un cliente antes de conectar la OLT."
+        ],
+        "paste": "Exportación del router viejo",
+        "pasteHint": "El texto completo del .rsc. No sale de tu navegador.",
+        "map": "Puertos en el router nuevo",
+        "to": "{from} pasa a",
+        "result": "Script para el router nuevo",
+        "full": "Copia completa semanal (con contraseñas)"
+      },
+      "filtros": {
+        "spoof": "Anti-spoofing (BCP 38)",
+        "spoofHint": "Del lado de los clientes solo pueden salir direcciones del pool (y las IPs públicas fijas): un cliente con origen falso no puede atacar a nadie en tu nombre.",
+        "smb": "Bloquear Windows/NetBIOS a internet",
+        "smbHint": "Puertos 135 a 139 y 445 (TCP y UDP): los usan gusanos como WannaCry; casi nadie los necesita hacia internet.",
+        "ssdp": "Bloquear SSDP a internet",
+        "ssdpHint": "UDP 1900: el descubrimiento UPnP de cámaras y teles, muy usado para ataques de reflexión.",
+        "telnet": "Bloquear telnet a internet",
+        "telnetHint": "TCP 23 y 2323: lo que usan los bots tipo Mirai para propagarse entre cámaras y routers.",
+        "udp": "Tope de conexiones UDP",
+        "udpUnit": "por cliente",
+        "udpHint": "Además del tope general de conexiones. Torrents y floods UDP llenan la tabla del router. 0 = sin tope.",
+        "dns": "Tope de consultas DNS",
+        "dnsUnit": "por s",
+        "dnsHint": "Por cliente (con ráfaga del doble). Una casa normal hace unas pocas por segundo. 0 = sin tope.",
+        "label": "Filtros"
+      },
+      "alertas": {
+        "config": "Cambios de configuración",
+        "configHint": "Cada 30 minutos compara el tamaño de la exportación de firewall, rutas, direcciones, servicios, usuarios, interfaces, scripts y Netwatch, y te dice qué parte cambió.",
+        "version": "Versión nueva de RouterOS",
+        "versionHint": "Revisa el canal estable cada día a las 9:00 y te avisa una vez por versión. No descarga ni instala nada.",
+        "ppp": "Entradas PPPoE fallidas",
+        "pppUnit": "por hora",
+        "pppHint": "Te avisa si en una hora hay al menos estos intentos fallidos. 0 = sin aviso.",
+        "label": "Alertas"
+      },
+      "prioridad": {
+        "label": "Prioridad DSCP"
+      },
+      "ippublica": {
+        "user": "Usuario PPPoE {n}",
+        "ip": "IP pública {n}",
+        "wan": "Sale por {n}",
+        "add": "Agregar cliente",
+        "remove": "Quitar el último",
+        "label": "IP pública fija"
       }
     }
   }

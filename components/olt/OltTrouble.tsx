@@ -27,7 +27,7 @@ export function OltTrouble() {
                   {s.cmd && (
                     <div className="grid justify-items-start gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
                       {/* Wraps instead of scrolling: a scroll box would need its own keyboard stop. */}
-                      <pre className="w-full min-w-0 rounded-lg bg-black/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-100 [overflow-wrap:anywhere]">{s.cmd}</pre>
+                      <pre className="[font-variant-ligatures:none] w-full min-w-0 rounded-lg bg-black/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-100 [overflow-wrap:anywhere]">{s.cmd}</pre>
                       <CopyButton text={s.cmd} label={t("copy")} done={t("copied")} />
                     </div>
                   )}

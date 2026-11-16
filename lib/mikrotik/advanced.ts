@@ -20,22 +20,24 @@ export type AdvContext = {
   setup: SetupState
   wans: Wan[]
   queue?: QueueKind
+  /** How the balancing watches the links (Varios enlaces). */
+  failover?: "recursive" | "gateway"
 }
 
 export type AdvIssue = { code: string; level: "error" | "warn" | "info"; value?: string }
 export type AdvResult = { script: string; undo: string; issues: AdvIssue[] }
 
-const SECRET = (what: string) => `PEGA-AQUI-${what}`
-const comment = (mod: string) => (text: string) => `comment=${rosString(`DSX ${mod}: ${text}`)}`
+export const SECRET = (what: string) => `PEGA-AQUI-${what}`
+export const comment = (mod: string) => (text: string) => `comment=${rosString(`DSX ${mod}: ${text}`)}`
 /** Removes every line of a module from the given menus. */
-const removeAll = (mod: string, menus: string[]) => menus.map((m) => `${m} remove [find where comment~${rosString(`^DSX ${mod}: `)}]`)
+export const removeAll = (mod: string, menus: string[]) => menus.map((m) => `${m} remove [find where comment~${rosString(`^DSX ${mod}: `)}]`)
 /** Statements of a one-line RouterOS script: "; " between them, none right after "{" or before "}". */
-const STMT = "; "
-const fail = (issues: AdvIssue[]): AdvResult => ({ script: "", undo: "", issues })
-const hasError = (issues: AdvIssue[]) => issues.some((i) => i.level === "error")
+export const STMT = "; "
+export const fail = (issues: AdvIssue[]): AdvResult => ({ script: "", undo: "", issues })
+export const hasError = (issues: AdvIssue[]) => issues.some((i) => i.level === "error")
 
-type Net = { pool: Cidr; poolText: string; local: string; mgmt: Cidr; mgmtText: string }
-function nets(ctx: AdvContext, issues: AdvIssue[]): Net | null {
+export type Net = { pool: Cidr; poolText: string; local: string; mgmt: Cidr; mgmtText: string }
+export function nets(ctx: AdvContext, issues: AdvIssue[]): Net | null {
   const pool = parseCidr(ctx.setup.pool)
   const mgmt = parseCidr(ctx.setup.mgmtNet)
   if (!pool) issues.push({ code: "noPool", level: "error" })
@@ -46,18 +48,18 @@ function nets(ctx: AdvContext, issues: AdvIssue[]): Net | null {
 
 const plansOf = (ctx: AdvContext) => setupPlans(ctx.setup.plans, ctx.setup.rule)
 /** A secret's username as RouterOS text. */
-const user = (u: string) => rosString(u.trim())
+export const user = (u: string) => rosString(u.trim())
 /** Hostname of an http(s) URL, or null. */
 export function urlHost(url: string): string | null {
   const m = /^https?:\/\/([a-z0-9.-]+)(?::\d+)?(?:\/.*)?$/i.exec(url.trim())
   return m ? m[1].toLowerCase() : null
 }
-const list = (text: string) =>
+export const list = (text: string) =>
   text
     .split(/[\s,;]+/)
     .map((x) => x.trim())
     .filter(Boolean)
-const HOST = /^(?:[a-z0-9-]+\.)+[a-z]{2,}$|^\d{1,3}(?:\.\d{1,3}){3}(?:\/\d{1,2})?$/i
+export const HOST = /^(?:[a-z0-9-]+\.)+[a-z]{2,}$|^\d{1,3}(?:\.\d{1,3}){3}(?:\/\d{1,2})?$/i
 
 // ── 1 Unpaid clients ────────────────────────────────────────────────────────
 
@@ -466,7 +468,7 @@ export function shieldScript(ctx: AdvContext, o: ShieldOptions): AdvResult {
 
 export type BoostOptions = { factor: number; start: string; end: string; capMbps: number; reconnect: boolean }
 export const DEFAULT_BOOST: BoostOptions = { factor: 2, start: "00:00:00", end: "06:00:00", capMbps: 1000, reconnect: true }
-const TIME = /^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/
+export const TIME = /^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/
 
 /** The plans with their speeds multiplied (capped), same names and burst rule. */
 export function boostedPlans(plans: SetupPlan[], rule: PlanRule, o: BoostOptions) {
@@ -676,7 +678,7 @@ export const DEFAULT_BACKUP_ROUTER: BackupRouterOptions = { vrid: 10, padoDelay:
  * them. The management gateway the OLT uses (.1) becomes a VRRP address; the routers keep .3 (main) and .4 (backup).
  * The accounts are copied every hour from the main router to the backup by SFTP over the management network.
  */
-export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { main: string; backup: string; undoMain: string; issues: AdvIssue[] } {
+export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { main: string; backup: string; undoMain: string; backupIp: string; issues: AdvIssue[] } {
   const issues: AdvIssue[] = []
   const n = nets(ctx, issues)
   if (!(Number.isInteger(o.vrid) && o.vrid >= 1 && o.vrid <= 255)) issues.push({ code: "vrid", level: "error" })
@@ -684,7 +686,7 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { 
   if (!/^[\w-]+$/.test(o.syncUser)) issues.push({ code: "syncUser", level: "error" })
   if (n && n.mgmt.prefix > 29) issues.push({ code: "mgmtSmall", level: "error" })
   if (n && size(n.pool) < 16) issues.push({ code: "poolSmall", level: "error" })
-  if (!n || hasError(issues)) return { main: "", backup: "", undoMain: "", issues }
+  if (!n || hasError(issues)) return { main: "", backup: "", undoMain: "", backupIp: "", issues }
   const s = ctx.setup
   const c = comment("respaldo")
   const mg = vlanName(s.mgmtVlan, "gestion")
@@ -725,13 +727,13 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { 
     `add name=DSX-sync-importar interval=1h start-time=00:20:00 on-event=DSX-sync-importar ${c("cada hora")}`,
   ].join("\n")
   const undoMain = [
-    ':do {/system scheduler remove [find where name="DSX-sync"]} on-error={}',
-    ':do {/system script remove [find where name="DSX-sync"]} on-error={}',
+    ':do {/system scheduler remove [find where name~"^DSX-sync"]} on-error={}',
+    ':do {/system script remove [find where name~"^DSX-sync"]} on-error={}',
     `/ip pool set [find where name="DS-clientes"] ranges=${intToIp(first)}-${intToIp(last)}`,
     `{ /ip address remove [find where comment~"^DSX respaldo: "]; /interface vrrp remove [find where name="DSX-vrrp"]; /ip address add address=${vip}/${p} interface=${rosString(mg)} comment="DS: gestion de la OLT" }`,
   ].join("\n")
   issues.push({ code: "links", level: "info" }, { code: "sameSetup", level: "info" })
-  return { main, backup, undoMain, issues }
+  return { main, backup, undoMain, backupIp, issues }
 }
 
 // ── 10 Fixed exit per destination ───────────────────────────────────────────

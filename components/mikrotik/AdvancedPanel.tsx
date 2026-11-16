@@ -34,6 +34,23 @@ import {
   type ClientAction,
   type RouteRule,
 } from "@/lib/mikrotik/advanced"
+import {
+  DEFAULT_ALERTS,
+  DEFAULT_FAILOVER,
+  DEFAULT_FILTERS,
+  alertsScript,
+  bondScript,
+  defaultProbes,
+  exportInterfaces,
+  failoverScript,
+  filtersScript,
+  fullExportScript,
+  priorityScript,
+  profileSyncScripts,
+  publicIpScript,
+  remapExport,
+  type PublicIpRow,
+} from "@/lib/mikrotik/advanced2"
 import { setupPlans } from "@/lib/mikrotik/setup"
 import type { LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
@@ -43,8 +60,15 @@ import { NumberField } from "./NumberField"
 import { SelectField } from "./SelectField"
 import { TextField } from "./TextField"
 
-export const MODULES = ["morosos", "acceso", "dns", "uso", "escudo", "velocidad", "monitoreo", "respaldo", "destinos", "bgp"] as const
-type Module = (typeof MODULES)[number]
+/** Generators by what they're for (the picker's groups). */
+export const GROUPS = {
+  enlaces: ["failover", "destinos", "bond", "respaldo", "repuesto"],
+  clientes: ["morosos", "velocidad", "uso", "ippublica", "prioridad"],
+  seguridad: ["filtros", "escudo", "dns", "acceso"],
+  operacion: ["monitoreo", "alertas"],
+  crecer: ["bgp"],
+} as const
+type Module = (typeof GROUPS)[keyof typeof GROUPS][number]
 
 type T = ReturnType<typeof useTranslations>
 
@@ -101,18 +125,22 @@ function Output({ t, issues, script, undo, label, extra }: { t: T; issues: AdvIs
 /** Advanced scripts for the open deployment, each with its own undo (owner, 2026-11-16: run everything by hand). */
 export function AdvancedPanel({ state }: { state: LabState }) {
   const t = useTranslations("mikrotik.advanced")
-  const [mod, setMod] = useState<Module>("morosos")
-  const ctx: AdvContext = { name: state.deployment, setup: state.setup, wans: state.wans, queue: state.queueKind }
+  const [mod, setMod] = useState<Module>("failover")
+  const ctx: AdvContext = { name: state.deployment, setup: state.setup, wans: state.wans, queue: state.queueKind, failover: state.balance.failover }
   const planNames = useMemo(() => setupPlans(state.setup.plans, state.setup.rule).map((p) => p.name), [state.setup.plans, state.setup.rule])
 
   return (
     <div className="surface grid min-w-0 gap-6 rounded-2xl p-5 sm:p-7 [&>*]:min-w-0">
       <div className="grid gap-2 sm:max-w-md">
         <SelectField label={t("pick")} value={mod} onChange={(v) => setMod(v as Module)}>
-          {MODULES.map((m) => (
-            <option key={m} value={m}>
-              {t(`modules.${m}.name`)}
-            </option>
+          {Object.entries(GROUPS).map(([g, mods]) => (
+            <optgroup key={g} label={t(`groups.${g}`)}>
+              {mods.map((m) => (
+                <option key={m} value={m}>
+                  {t(`modules.${m}.name`)}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </SelectField>
       </div>
@@ -130,6 +158,13 @@ export function AdvancedPanel({ state }: { state: LabState }) {
       {mod === "respaldo" && <BackupRouter t={t} ctx={ctx} />}
       {mod === "destinos" && <Destinations t={t} ctx={ctx} />}
       {mod === "bgp" && <Bgp t={t} />}
+      {mod === "failover" && <Failover t={t} ctx={ctx} />}
+      {mod === "bond" && <Bond t={t} ctx={ctx} />}
+      {mod === "repuesto" && <Spare t={t} ctx={ctx} />}
+      {mod === "filtros" && <Filters t={t} ctx={ctx} />}
+      {mod === "alertas" && <Alerts t={t} ctx={ctx} />}
+      {mod === "prioridad" && <Priority t={t} ctx={ctx} />}
+      {mod === "ippublica" && <PublicIps t={t} ctx={ctx} />}
       <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("note")}</p>
     </div>
   )
@@ -307,7 +342,11 @@ function Monitor({ t, ctx }: { t: T; ctx: AdvContext }) {
 
 function BackupRouter({ t, ctx }: { t: T; ctx: AdvContext }) {
   const [o, setO] = useState(DEFAULT_BACKUP_ROUTER)
+  const [profiles, setProfiles] = useState(true)
   const r = backupRouterScripts(ctx, o)
+  const sync = r.backupIp && profiles ? profileSyncScripts(o.syncUser, r.backupIp) : null
+  const main = sync ? `${r.main}\n${sync.main}` : r.main
+  const backup = sync ? `${r.backup}\n${sync.backup}` : r.backup
   return (
     <>
       <div className={grid}>
@@ -315,14 +354,8 @@ function BackupRouter({ t, ctx }: { t: T; ctx: AdvContext }) {
         <NumberField label={t("respaldo.pado")} unit="ms" value={o.padoDelay} integer min={100} max={5000} onChange={(v) => v !== null && setO({ ...o, padoDelay: v })} hint={t("respaldo.padoHint")} />
         <TextField label={t("respaldo.user")} value={o.syncUser} onChange={(v) => setO({ ...o, syncUser: v.trim() })} />
       </div>
-      <Output
-        t={t}
-        issues={r.issues}
-        script={r.main}
-        undo={r.undoMain}
-        label={t("respaldo.main")}
-        extra={r.backup ? <CodeBlock code={r.backup} label={t("respaldo.backup")} /> : undefined}
-      />
+      <Toggle label={t("respaldo.profiles")} hint={t("respaldo.profilesHint")} on={profiles} set={setProfiles} />
+      <Output t={t} issues={r.issues} script={main} undo={r.undoMain} label={t("respaldo.main")} extra={backup ? <CodeBlock code={backup} label={t("respaldo.backup")} /> : undefined} />
     </>
   )
 }
@@ -382,6 +415,162 @@ function Bgp({ t }: { t: T }) {
       </div>
       <Area label={t("bgp.peers")} hint={t("bgp.peersHint")} value={o.peers} set={(v) => setO({ ...o, peers: v })} placeholder={"carrier1,198.51.100.1,65010,0\ncarrier2,203.0.113.5,65020,2"} />
       <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("bgp.label")} />
+    </>
+  )
+}
+
+function Failover({ t, ctx }: { t: T; ctx: AdvContext }) {
+  const initial = useMemo(() => defaultProbes(ctx.wans, ctx.wans.map((w) => w.monitor.trim())), [ctx.wans])
+  const [o, setO] = useState({ ...DEFAULT_FAILOVER, probes: initial })
+  // Links added later get a default second probe.
+  const probes = { ...initial, ...o.probes }
+  const r = failoverScript(ctx, { ...o, probes })
+  return (
+    <>
+      <div className={grid}>
+        {ctx.wans.map((w) => (
+          <TextField key={w.name} label={t("failover.probe", { wan: w.name })} value={probes[w.name] ?? ""} onChange={(v) => setO({ ...o, probes: { ...probes, [w.name]: v.trim() } })} hint={t("failover.probeHint", { monitor: w.monitor })} />
+        ))}
+      </div>
+      <div className={grid}>
+        <NumberField label={t("failover.loss")} unit="%" value={o.lossPct} integer min={1} max={100} onChange={(v) => v !== null && setO({ ...o, lossPct: v })} hint={t("failover.lossHint")} />
+        <NumberField label={t("failover.avg")} unit="ms" value={o.avgMs} integer min={10} max={2000} onChange={(v) => v !== null && setO({ ...o, avgMs: v })} hint={t("failover.avgHint")} />
+        <NumberField label={t("failover.hold")} unit="min" value={o.holdMin} max={60} onChange={(v) => v !== null && setO({ ...o, holdMin: v })} hint={t("failover.holdHint")} />
+      </div>
+      <div className={grid}>
+        <TextField label={t("failover.lte")} value={o.lte} onChange={(v) => setO({ ...o, lte: v.trim() })} hint={t("failover.lteHint")} />
+        {o.lte && <NumberField label={t("failover.lteMbps")} unit="Mbps" value={o.lteMbps} max={1000} onChange={(v) => v !== null && setO({ ...o, lteMbps: v })} />}
+      </div>
+      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("failover.label")} />
+    </>
+  )
+}
+
+function Bond({ t, ctx }: { t: T; ctx: AdvContext }) {
+  const [o, setO] = useState({ ports: `${ctx.setup.oltPort.trim()}, `, oltPorts: "0/2/0, 0/3/0" })
+  const r = bondScript(ctx, o)
+  return (
+    <>
+      <div className={grid}>
+        <TextField label={t("bond.ports")} value={o.ports} onChange={(v) => setO({ ...o, ports: v })} hint={t("bond.portsHint", { port: ctx.setup.oltPort })} />
+        <TextField label={t("bond.oltPorts")} value={o.oltPorts} onChange={(v) => setO({ ...o, oltPorts: v })} hint={t("bond.oltPortsHint")} />
+      </div>
+      <Output t={t} issues={r.issues} script={r.router} undo={r.undo} label={t("bond.router")} extra={r.olt ? <CodeBlock code={r.olt} label={t("bond.olt")} /> : undefined} />
+    </>
+  )
+}
+
+function Spare({ t, ctx }: { t: T; ctx: AdvContext }) {
+  const [text, setText] = useState("")
+  const [map, setMap] = useState<Record<string, string>>({})
+  const found = useMemo(() => exportInterfaces(text), [text])
+  const out = text.trim() ? remapExport(text, map) : ""
+  const full = fullExportScript(ctx)
+  return (
+    <>
+      <ol className="grid max-w-3xl gap-1.5 text-sm leading-relaxed text-zinc-300">
+        {(t.raw("repuesto.steps") as string[]).map((x, k) => (
+          <li key={k} className="flex gap-2">
+            <span aria-hidden className="font-mono text-xs text-zinc-400">
+              {String(k + 1).padStart(2, "0")}
+            </span>
+            {x}
+          </li>
+        ))}
+      </ol>
+      <Area label={t("repuesto.paste")} hint={t("repuesto.pasteHint")} value={text} set={setText} rows={8} />
+      {found.length > 0 && (
+        <fieldset className="grid gap-3">
+          <legend className="mb-2 text-sm font-medium text-foreground">{t("repuesto.map")}</legend>
+          <div className={grid}>
+            {found.map((i) => (
+              <TextField key={i} label={t("repuesto.to", { from: i })} value={map[i] ?? ""} onChange={(v) => setMap({ ...map, [i]: v.trim() })} />
+            ))}
+          </div>
+        </fieldset>
+      )}
+      {out && <CodeBlock code={out} label={t("repuesto.result")} />}
+      <div className="grid gap-3 rounded-xl border border-white/10 p-4">
+        <h4 className="text-sm font-medium text-foreground">{t("repuesto.full")}</h4>
+        <Output t={t} issues={full.issues} script={full.script} undo={full.undo} label={t("repuesto.full")} />
+      </div>
+    </>
+  )
+}
+
+function Filters({ t, ctx }: { t: T; ctx: AdvContext }) {
+  const [o, setO] = useState(DEFAULT_FILTERS)
+  const r = filtersScript(ctx, o)
+  return (
+    <>
+      <div className="grid gap-3">
+        {(["spoof", "smb", "ssdp", "telnet"] as const).map((k) => (
+          <Toggle key={k} label={t(`filtros.${k}`)} hint={t(`filtros.${k}Hint`)} on={o[k]} set={(v) => setO({ ...o, [k]: v })} />
+        ))}
+      </div>
+      <div className={grid}>
+        <NumberField label={t("filtros.udp")} unit={t("filtros.udpUnit")} value={o.udpLimit} integer max={10000} onChange={(v) => v !== null && setO({ ...o, udpLimit: v })} hint={t("filtros.udpHint")} />
+        <NumberField label={t("filtros.dns")} unit={t("filtros.dnsUnit")} value={o.dnsRate} integer max={1000} onChange={(v) => v !== null && setO({ ...o, dnsRate: v })} hint={t("filtros.dnsHint")} />
+      </div>
+      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("filtros.label")} />
+    </>
+  )
+}
+
+function Alerts({ t, ctx }: { t: T; ctx: AdvContext }) {
+  const [o, setO] = useState(DEFAULT_ALERTS)
+  const r = alertsScript(ctx, o)
+  return (
+    <>
+      <div className="grid gap-3">
+        {(["config", "version"] as const).map((k) => (
+          <Toggle key={k} label={t(`alertas.${k}`)} hint={t(`alertas.${k}Hint`)} on={o[k]} set={(v) => setO({ ...o, [k]: v })} />
+        ))}
+      </div>
+      <div className={grid}>
+        <NumberField label={t("alertas.ppp")} unit={t("alertas.pppUnit")} value={o.pppFails} integer max={100000} onChange={(v) => v !== null && setO({ ...o, pppFails: v })} hint={t("alertas.pppHint")} />
+      </div>
+      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("alertas.label")} />
+    </>
+  )
+}
+
+function Priority({ t, ctx }: { t: T; ctx: AdvContext }) {
+  const r = priorityScript(ctx)
+  return <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("prioridad.label")} />
+}
+
+function PublicIps({ t, ctx }: { t: T; ctx: AdvContext }) {
+  const wan = ctx.wans[0]?.name ?? ""
+  const [rows, setRows] = useState<PublicIpRow[]>([{ user: "", ip: "", wan }])
+  const r = publicIpScript(ctx, rows)
+  const set = (k: number, patch: Partial<PublicIpRow>) => setRows(rows.map((x, j) => (j === k ? { ...x, ...patch } : x)))
+  return (
+    <>
+      {rows.map((row, k) => (
+        <div key={k} className="grid items-start gap-4 sm:grid-cols-3">
+          <TextField label={t("ippublica.user", { n: k + 1 })} value={row.user} onChange={(v) => set(k, { user: v.trim() })} />
+          <TextField label={t("ippublica.ip", { n: k + 1 })} value={row.ip} onChange={(v) => set(k, { ip: v.trim() })} />
+          <SelectField label={t("ippublica.wan", { n: k + 1 })} value={row.wan} onChange={(v) => set(k, { wan: v })}>
+            {ctx.wans.map((w) => (
+              <option key={w.name} value={w.name}>
+                {w.name}
+              </option>
+            ))}
+          </SelectField>
+        </div>
+      ))}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className="rounded-full border border-white/15 px-4 py-1.5 text-sm text-zinc-200 hover:bg-white/5" onClick={() => setRows([...rows, { user: "", ip: "", wan }])} disabled={rows.length >= 20}>
+          {t("ippublica.add")}
+        </button>
+        {rows.length > 1 && (
+          <button type="button" className="rounded-full border border-white/15 px-4 py-1.5 text-sm text-zinc-200 hover:bg-white/5" onClick={() => setRows(rows.slice(0, -1))}>
+            {t("ippublica.remove")}
+          </button>
+        )}
+      </div>
+      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("ippublica.label")} />
     </>
   )
 }

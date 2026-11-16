@@ -15,7 +15,7 @@ export function CodeBlock({ code, label }: { code: string; label: string }) {
       <pre
         tabIndex={0}
         aria-label={label}
-        className="max-h-[32rem] overflow-auto rounded-lg border border-white/10 bg-black/40 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-100 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="[font-variant-ligatures:none] max-h-[32rem] overflow-auto rounded-lg border border-white/10 bg-black/40 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-100 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <code>
           {code.split("\n").map((line, i) => (
