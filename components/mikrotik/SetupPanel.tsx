@@ -30,7 +30,10 @@ export function SetupPanel({ state, onSetup }: Props) {
   const ctx = {
     clients,
     wanIfaces: state.wans.map((w) => w.iface),
-    balanced: state.capacity.internet === "links" ? state.balance.clients : null,
+    balanced: state.balance.clients,
+    monitors: state.balance.failover === "recursive" ? state.wans.map((w) => w.monitor.trim()) : [],
+    cgnatUpstreams: state.wans.filter((w) => w.upstreamCgnat).map((w) => w.iface.trim()),
+    pppoeIfaces: state.wans.filter((w) => w.type === "pppoe").map((w) => w.iface.trim()),
   }
   const plans = useMemo(() => setupPlans(SPEEDS, state.rule), [state.rule])
   const issues = checkSetup(s, ctx)
@@ -60,19 +63,28 @@ export function SetupPanel({ state, onSetup }: Props) {
           <TextField label={t("dns")} value={s.dns} onChange={(v) => set({ dns: v })} hint={t("dnsHint")} />
           <TextField label={t("service")} value={s.service} onChange={(v) => set({ service: v.trim() })} hint={t("serviceHint")} />
         </div>
-        <div className="grid gap-1.5">
-          <label className="flex w-fit cursor-pointer items-center gap-3 text-sm text-zinc-200">
-            <Switch checked={s.firewall} onCheckedChange={(firewall) => set({ firewall })} />
-            {t("firewall")}
-          </label>
-          <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("firewallHint")}</p>
+        <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <TextField label={t("collector")} value={s.collector} onChange={(v) => set({ collector: v.trim() })} hint={t("collectorHint")} />
         </div>
+        {(["firewall", "mtu1500", "isolate", "blockSmtp"] as const).map((k) => (
+          <div key={k} className="grid gap-1.5">
+            <label className="flex w-fit cursor-pointer items-center gap-3 text-sm text-zinc-200">
+              <Switch checked={s[k]} onCheckedChange={(on) => set({ [k]: on })} />
+              {t(k)}
+            </label>
+            <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t(`${k}Hint`)}</p>
+          </div>
+        ))}
       </fieldset>
 
       <fieldset className="grid gap-4">
         <legend className="mb-3 text-sm font-medium text-foreground">{t("oltTitle")}</legend>
         <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <TextField label={t("oltUplink")} value={s.oltUplink} onChange={(v) => set({ oltUplink: v.trim() })} hint={t("oltUplinkHint")} />
+          <SelectField label={t("ontMode")} value={s.ontMode} onChange={(v) => set({ ontMode: v === "router" ? "router" : "bridge" })} hint={t(`ontModeHint.${s.ontMode}`)}>
+            <option value="bridge">{t("ontModes.bridge")}</option>
+            <option value="router">{t("ontModes.router")}</option>
+          </SelectField>
         </div>
         <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("oltPlans", { pct: Math.round((OLT_HEADROOM - 1) * 100) })}</p>
       </fieldset>
@@ -140,7 +152,7 @@ export function SetupPanel({ state, onSetup }: Props) {
             <TextField label={t("ont.client")} value={ont.client} onChange={(v) => setOnt({ ...ont, client: v })} />
           </div>
           {ontText ? <CodeBlock label={t("ont.script")} code={ontText} /> : <p className="text-sm text-amber-300">{t("ont.bad")}</p>}
-          <p className="max-w-3xl text-sm leading-relaxed text-zinc-400">{t("ont.note", { vlan: s.internetVlan })}</p>
+          <p className="max-w-3xl text-sm leading-relaxed text-zinc-400">{t(`ont.note.${s.ontMode}`, { vlan: s.internetVlan })}</p>
         </TabsContent>
       </Tabs>
     </div>

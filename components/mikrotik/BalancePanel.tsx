@@ -52,7 +52,7 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
   const addWan = () => {
     const n = wans.length + 1
     const last = wans.at(-1)
-    onWans([...wans, { name: `WAN${n}`, type: last?.type ?? "dhcp", iface: `ether${n}`, gateway: "", mbps: last?.mbps ?? 1000, measuredMbps: null, upMbps: null, monitor: nextMonitor(wans) }])
+    onWans([...wans, { name: `WAN${n}`, type: last?.type ?? "dhcp", iface: `ether${n}`, gateway: "", mbps: last?.mbps ?? 1000, measuredMbps: null, upMbps: null, upstreamCgnat: false, monitor: nextMonitor(wans) }])
   }
   const removeWan = (k: number) => onWans(wans.filter((_, i) => i !== k))
   const set = (patch: Partial<BalanceState>) => onBalance({ ...balance, ...patch })

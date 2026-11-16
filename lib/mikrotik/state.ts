@@ -297,12 +297,29 @@ function setDeploymentParams(h: URLSearchParams, f: DeploymentFields) {
   if (f.deployment) h.set("n", f.deployment)
   if (f.status === "existing") h.set("st", "existing")
   const enc = encodeURIComponent
-  h.set("w", [f.balance.classifier, f.balance.failover, f.balance.nat ? "1" : "0", f.balance.clients.map(enc).join(","), ...f.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor), w.type, opt(w.measuredMbps), opt(w.upMbps)].join(","))].join("|"))
+  h.set("w", [f.balance.classifier, f.balance.failover, f.balance.nat ? "1" : "0", f.balance.clients.map(enc).join(","), ...f.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor), w.type, opt(w.measuredMbps), opt(w.upMbps), w.upstreamCgnat ? "1" : "0"].join(","))].join("|"))
   if (f.balance.speed !== "normal") h.set("lf", f.balance.speed)
   const st = f.setup
   h.set(
     "ds",
-    [st.oltPort, num(st.internetVlan), num(st.mgmtVlan), st.mgmtNet, st.pool, st.dns, st.service, st.firewall ? "1" : "0", st.oltUplink].map(encodeURIComponent).join("|")
+    [
+      st.oltPort,
+      num(st.internetVlan),
+      num(st.mgmtVlan),
+      st.mgmtNet,
+      st.pool,
+      st.dns,
+      st.service,
+      st.firewall ? "1" : "0",
+      st.oltUplink,
+      st.collector,
+      st.mtu1500 ? "1" : "0",
+      st.isolate ? "1" : "0",
+      st.blockSmtp ? "1" : "0",
+      st.ontMode,
+    ]
+      .map(encodeURIComponent)
+      .join("|")
   )
   const lq = f.balance.queues
   h.set("lq", [lq.shape, num(lq.sharePct), lq.prio, lq.alerts, lq.flush].map((x) => (x === true ? "1" : x === false ? "0" : x)).join(","))
@@ -322,8 +339,10 @@ function decodeSetup(v: string | null): SetupState {
       return null
     }
   })
-  if (parts.length !== 9 || parts.some((x) => x === null)) return DEFAULT_SETUP
-  const [oltPort, inet, mgmtVlan, mgmtNet, pool, dns, service, firewall, oltUplink] = parts as string[]
+  // 9 fields before the checklist options (collector, MTU, isolation, SMTP, ONT mode): those take the defaults.
+  if ((parts.length !== 9 && parts.length !== 14) || parts.some((x) => x === null)) return DEFAULT_SETUP
+  const [oltPort, inet, mgmtVlan, mgmtNet, pool, dns, service, firewall, oltUplink, collector, mtu1500, isolate, blockSmtp, ontMode] = parts as string[]
+  const flag = (x: string | undefined, fallback: boolean) => (x === "1" ? true : x === "0" ? false : fallback)
   const vlan = (x: string) => finite(x, 1, 4094)
   if (vlan(inet) === null || vlan(mgmtVlan) === null || (firewall !== "0" && firewall !== "1")) return DEFAULT_SETUP
   const cut = (x: string) => x.slice(0, 64)
@@ -337,6 +356,11 @@ function decodeSetup(v: string | null): SetupState {
     service: cut(service),
     firewall: firewall === "1",
     oltUplink: cut(oltUplink),
+    collector: cut(collector ?? DEFAULT_SETUP.collector),
+    mtu1500: flag(mtu1500, DEFAULT_SETUP.mtu1500),
+    isolate: flag(isolate, DEFAULT_SETUP.isolate),
+    blockSmtp: flag(blockSmtp, DEFAULT_SETUP.blockSmtp),
+    ontMode: ontMode === "router" ? "router" : ontMode === "bridge" ? "bridge" : DEFAULT_SETUP.ontMode,
   }
 }
 
@@ -463,7 +487,7 @@ function decodeWans(h: URLSearchParams): { wans: Wan[]; balance: BalanceState } 
   }
   const wans: Wan[] = []
   for (const [k, row] of rows.entries()) {
-    const [name, iface, gateway, mbps, monitor, type, measured, up] = row.split(",")
+    const [name, iface, gateway, mbps, monitor, type, measured, up, cgnat] = row.split(",")
     const w = { name: dec(name), iface: dec(iface), gateway: dec(gateway), mbps: finite(mbps, 1, 1e6), monitor: dec(monitor) }
     if (Object.values(w).some((x) => x === null)) return null
     wans.push({
@@ -474,6 +498,7 @@ function decodeWans(h: URLSearchParams): { wans: Wan[]; balance: BalanceState } 
       mbps: w.mbps as number,
       measuredMbps: finite(measured, 1, 1e6),
       upMbps: finite(up, 1, 1e6),
+      upstreamCgnat: cgnat === "1",
       monitor: (w.monitor as string).slice(0, 64),
     })
   }

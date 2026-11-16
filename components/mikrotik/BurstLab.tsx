@@ -56,6 +56,7 @@ const ComparePanel = dynamic(() => import("./ComparePanel").then((m) => m.Compar
 const SharedPanel = dynamic(() => import("./SharedPanel").then((m) => m.SharedPanel), { ssr: false, loading: frame("min-h-[110rem] sm:min-h-[100rem]") })
 const CapacityPanel = dynamic(() => import("./CapacityPanel").then((m) => m.CapacityPanel), { ssr: false, loading: frame("min-h-[160rem] sm:min-h-[130rem]") })
 const DeploymentsPanel = dynamic(() => import("./DeploymentsPanel").then((m) => m.DeploymentsPanel), { ssr: false, loading: frame("min-h-[40rem] sm:min-h-[32rem]") })
+const GuidePanel = dynamic(() => import("./GuidePanel").then((m) => m.GuidePanel), { ssr: false, loading: frame("min-h-[90rem] sm:min-h-[70rem]") })
 const SetupPanel = dynamic(() => import("./SetupPanel").then((m) => m.SetupPanel), { ssr: false, loading: frame("min-h-[110rem] sm:min-h-[80rem]") })
 const BalancePanel = dynamic(() => import("./BalancePanel").then((m) => m.BalancePanel), { ssr: false, loading: frame("min-h-[120rem] sm:min-h-[90rem]") })
 const ExportPanel = dynamic(() => import("./ExportPanel").then((m) => m.ExportPanel), { ssr: false, loading: frame("min-h-[60rem] sm:min-h-[48rem]") })
@@ -76,12 +77,12 @@ const subscribeHash = (cb: () => void) => {
 }
 const readHash = () => window.location.hash
 
-type Jump = "params" | "sim" | "compare" | "shared" | "deployments" | "capacity" | "links" | "setup" | "solver" | "export" | "bulk" | "how"
+type Jump = "params" | "sim" | "compare" | "shared" | "deployments" | "guide" | "capacity" | "links" | "setup" | "solver" | "export" | "bulk" | "how"
 
 /** The two internal pages: /mikrotik makes the scripts, /calculadora holds the calculators and simulators (owner, 2026-11-15). */
 export type LabPage = "scripts" | "calculators"
 const PAGE_SECTIONS: Record<LabPage, Jump[]> = {
-  scripts: ["params", "deployments", "links", "setup", "export", "bulk"],
+  scripts: ["params", "deployments", "guide", "links", "setup", "export", "bulk"],
   calculators: ["params", "sim", "compare", "shared", "deployments", "capacity", "solver", "how"],
 }
 const OTHER_PAGE: Record<LabPage, string> = { scripts: "/calculadora", calculators: "/mikrotik" }
@@ -91,6 +92,7 @@ const ANCHORS: Record<Jump, string> = {
   compare: "comparar",
   shared: "compartida",
   deployments: "despliegues",
+  guide: "guia",
   capacity: "hora-pico",
   links: "enlaces",
   setup: "configuracion",
@@ -343,6 +345,14 @@ export function BurstLab({ page }: { page: LabPage }) {
         <Section id="despliegues" name="mk-deployments" title={t("deployments.title")} lead={t("deployments.lead")}>
           <Lazy fallback="min-h-[40rem] sm:min-h-[32rem]">
             <DeploymentsPanel state={state} saved={saved} boundId={boundId} actions={deployments} onName={setDeployment} />
+          </Lazy>
+        </Section>
+      )}
+
+      {on("guide") && (
+        <Section id="guia" name="mk-guide" title={t("guide.title")} lead={t("guide.lead")}>
+          <Lazy fallback="min-h-[90rem] sm:min-h-[70rem]">
+            <GuidePanel state={state} boundId={boundId} onWans={setWans} />
           </Lazy>
         </Section>
       )}

@@ -73,6 +73,8 @@ export type Wan = {
   measuredMbps: number | null
   /** Upload when it differs from the download, Mbps; null = same as the download (measured when known). */
   upMbps: number | null
+  /** The provider is CGNAT itself (its gateway is in 100.64/10): 100.64 isn't dropped on this link. */
+  upstreamCgnat: boolean
   /** Public IP watched through this link (recursive failover). */
   monitor: string
 }
@@ -153,6 +155,18 @@ export function pccWeights(mbps: number[]): number[] {
   const sum = w.reduce((a, b) => a + b, 0)
   if (sum > MAX_SLOTS) w = w.map((x) => Math.max(1, Math.round((x * MAX_SLOTS) / sum)))
   return w
+}
+
+/** Each link's PCC buckets as "first–last" (or one number), out of the total: 300/300/200/100/100 → 0–2, 3–5, 6–7, 8, 9. */
+export function pccBuckets(wans: Pick<Wan, "mbps" | "measuredMbps">[]): { buckets: string[]; total: number } {
+  const w = pccWeights(wans.map(linkSpeed))
+  let next = 0
+  const buckets = w.map((n) => {
+    const first = next
+    next += n
+    return n === 1 ? String(first) : `${first}–${next - 1}`
+  })
+  return { buckets, total: next }
 }
 
 export type BalanceIssueCode =
@@ -407,6 +421,7 @@ export function defaultWans(n = 3): Wan[] {
     mbps: 1000,
     measuredMbps: null,
     upMbps: null,
+    upstreamCgnat: false,
     monitor: DEFAULT_MONITORS[k % DEFAULT_MONITORS.length],
   }))
 }
