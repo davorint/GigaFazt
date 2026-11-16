@@ -37,6 +37,8 @@ describe("PCC weights", () => {
     expect(pccWeights([10000, 1000])).toEqual([10, 1])
     // Capped at 24 slots.
     expect(pccWeights([1000, 999]).reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(24)
+    // Rounding after scaling used to go over: 1000/1000/470 gave 10/10/5 = 25.
+    expect(pccWeights([1000, 1000, 470]).reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(24)
   })
 })
 
@@ -50,7 +52,8 @@ describe("load balancing script (RouterOS v7)", () => {
   })
   it("never balances local traffic, marks incoming connections first, then PCC by client", () => {
     const accept = lines.findIndex((l) => l.includes("action=accept src-address-list=LB-clientes dst-address-list=LB-locales"))
-    const incoming = lines.findIndex((l) => l.includes('in-interface="ether1" connection-mark=no-mark new-connection-mark="WAN1"'))
+    // Only connections that start on the link: replies to the router's own pings stay unmarked.
+    const incoming = lines.findIndex((l) => l.includes('in-interface="ether1" connection-state=new connection-mark=no-mark new-connection-mark="WAN1"'))
     const pcc0 = lines.findIndex((l) => l.includes("per-connection-classifier=src-address:3/0"))
     expect(accept).toBeGreaterThan(0)
     expect(incoming).toBeGreaterThan(accept)

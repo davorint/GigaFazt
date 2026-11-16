@@ -41,7 +41,9 @@ export function SetupPanel({ state, onSetup }: Props) {
 
   // One ONT, to copy for each client (not saved).
   const [ont, setOnt] = useState({ plan: 0, ponPort: "0/1/0", ontId: 0, sn: "", client: "" })
-  const ontText = ontTemplate(s, ont)
+  // The chosen plan, kept inside the list when plans are removed (its profiles are numbered by position).
+  const ontPlan = Math.min(ont.plan, Math.max(0, plans.length - 1))
+  const ontText = plans.length ? ontTemplate(s, { ...ont, plan: ontPlan }) : ""
   const pool = parseCidr(s.pool)
 
   return (
@@ -143,7 +145,7 @@ export function SetupPanel({ state, onSetup }: Props) {
         </TabsContent>
         <TabsContent value="ont" className="grid min-w-0 gap-4">
           <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <SelectField label={t("ont.plan")} value={String(ont.plan)} onChange={(v) => setOnt({ ...ont, plan: Number(v) })}>
+            <SelectField label={t("ont.plan")} value={String(ontPlan)} onChange={(v) => setOnt({ ...ont, plan: Number(v) })}>
               {plans.map((p, k) => (
                 <option key={p.name} value={k}>
                   {p.name}

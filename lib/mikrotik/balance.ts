@@ -153,7 +153,11 @@ export function pccWeights(mbps: number[]): number[] {
   const g = ints.reduce((a, b) => gcd(a, b))
   let w = ints.map((x) => x / g)
   const sum = w.reduce((a, b) => a + b, 0)
-  if (sum > MAX_SLOTS) w = w.map((x) => Math.max(1, Math.round((x * MAX_SLOTS) / sum)))
+  if (sum > MAX_SLOTS) {
+    w = w.map((x) => Math.max(1, Math.round((x * MAX_SLOTS) / sum)))
+    // Rounding can go one or two over: take them from the biggest links.
+    while (w.reduce((a, b) => a + b, 0) > MAX_SLOTS && Math.max(...w) > 1) w[w.indexOf(Math.max(...w))]--
+  }
   return w
 }
 
@@ -278,9 +282,13 @@ export function balanceScript(o: BalanceOptions): string {
 
   add("/ip firewall mangle")
   add(`add chain=prerouting action=accept src-address-list=LB-clientes dst-address-list=LB-locales ${c("trafico local sin balancear")}`)
-  // Connections that arrive on a link answer through it.
+  // Connections that start on a link (from the internet) answer through it. Only new ones: the replies to the
+  // router's own pings would otherwise mark them, and when that link dies Netwatch would follow its table to a
+  // backup link and still get an answer.
   for (const w of wans)
-    add(`add chain=prerouting action=mark-connection in-interface=${rosString(w.iface.trim())} connection-mark=no-mark new-connection-mark=${rosString(w.name)} passthrough=yes ${c(`entra por ${w.name}`)}`)
+    add(
+      `add chain=prerouting action=mark-connection in-interface=${rosString(w.iface.trim())} connection-state=new connection-mark=no-mark new-connection-mark=${rosString(w.name)} passthrough=yes ${c(`entra por ${w.name}`)}`
+    )
   // New client connections: PCC slots in proportion to speed.
   let r = 0
   wans.forEach((w, k) => {

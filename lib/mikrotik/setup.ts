@@ -314,6 +314,13 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
     "/ip dns",
     `set allow-remote-requests=yes servers=${dnsList(s.dns).join(",")}`,
   ]
+  // The router answers DNS for the clients; without the basic firewall nothing else stops the internet from using it.
+  if (!s.firewall)
+    pp.push(
+      "/ip firewall filter",
+      `add chain=input action=drop in-interface-list=DS-WAN protocol=udp dst-port=53 ${c("DNS solo para los clientes")}`,
+      `add chain=input action=drop in-interface-list=DS-WAN protocol=tcp dst-port=53 ${c("DNS solo para los clientes")}`
+    )
   const typeLine = queueTypeSetup(ctx.queue)
   if (typeLine) pp.push(typeLine)
   pp.push("/ppp profile")
@@ -354,7 +361,8 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
   )
   const fw: string[] = []
   if (s.blockSmtp) fw.push(`add chain=forward action=drop src-address=${poolNet} protocol=tcp dst-port=25 ${c("sin SMTP directo de los clientes")}`)
-  fw.push(`add chain=forward action=drop src-address=${poolNet} connection-limit=${CONN_LIMIT},32 ${c("tope de conexiones por cliente")}`)
+  // Only new connections: on every packet, a client over the cap would lose the ones it already has.
+  fw.push(`add chain=forward action=drop src-address=${poolNet} connection-state=new connection-limit=${CONN_LIMIT},32 ${c("tope de conexiones por cliente")}`)
   if (s.firewall)
     fw.push(
       `add chain=input action=accept connection-state=established,related,untracked ${c("respuestas")}`,
@@ -383,6 +391,14 @@ export function mikrotikSetup(s: SetupState, ctx: SetupScriptContext): string {
 /** Undo for the MikroTik part (PPP profiles stay: the clients' secrets use them; settings stay as set). */
 export function setupUndo(s: SetupState): string {
   return [
+    // Access and profiles point to the lists: release them first, or the lists can't be removed.
+    "/tool mac-server set allowed-interface-list=all",
+    "/tool mac-server mac-winbox set allowed-interface-list=all",
+    '/ip service set winbox address=""',
+    '/ip service set ssh address=""',
+    '/ppp profile set [find where comment~"^DS: "] interface-list=none',
+    "/system logging remove [find where action=DSremoto]",
+    "/system logging action remove [find where name=DSremoto]",
     `/interface pppoe-server server remove [find where service-name=${rosString(s.service.trim())}]`,
     '/ip firewall filter remove [find where comment~"^DS: "]',
     '/ip firewall raw remove [find where comment~"^DS: "]',
@@ -416,7 +432,8 @@ export function oltSetup(s: SetupState, ctx: { plans: { name: string; down: numb
   if (ctx.plans.length === 0) return ""
   ctx.plans.forEach((p, k) => {
     const id = OLT_FIRST_ID + k
-    lines.push(`traffic table ip index ${id} cir ${oltKbps(p.down)} priority 0 priority-policy local-setting`)
+    // The service-port uses this table in both directions (rx and tx): it covers the faster one.
+    lines.push(`traffic table ip index ${id} cir ${oltKbps(Math.max(p.down, p.up))} priority 0 priority-policy local-setting`)
     lines.push(`dba-profile add profile-id ${id} type4 max ${oltKbps(p.up)}`)
   })
   ctx.plans.forEach((p, k) => {

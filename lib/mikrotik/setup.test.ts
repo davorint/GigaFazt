@@ -57,10 +57,16 @@ describe("deployment setup: MikroTik", () => {
     expect(lines).toContain('add chain=forward action=drop src-address=100.64.0.0/22 dst-address=192.168.10.0/24 comment="DS: los clientes no llegan a la gestion"')
     expect(lines).toContain('add list=DS-WAN interface="ether3" comment="DS: internet"')
     const noFw = mikrotikSetup({ ...DEFAULT_SETUP, firewall: false, blockSmtp: false, isolate: false }, { ...ctx(), name: "", plans })
-    expect(noFw).not.toContain("chain=input")
+    expect(noFw).not.toContain("los clientes no administran el router")
+    // Even without the basic firewall, the router's DNS never answers the internet.
+    expect(noFw).toContain('add chain=input action=drop in-interface-list=DS-WAN protocol=udp dst-port=53 comment="DS: DNS solo para los clientes"')
     expect(noFw).not.toContain("dst-port=25")
     expect(mikrotikSetup({ ...DEFAULT_SETUP, oltPort: "" }, { ...ctx(), name: "", plans })).toBe("")
-    expect(setupUndo(DEFAULT_SETUP).split("\n")[0]).toBe('/interface pppoe-server server remove [find where service-name="gigafazt"]')
+    const undo = setupUndo(DEFAULT_SETUP).split("\n")
+    // Access and profiles let go of the lists before the lists are removed.
+    expect(undo.indexOf("/tool mac-server mac-winbox set allowed-interface-list=all")).toBeLessThan(undo.indexOf('/interface list remove [find where comment~"^DS: "]'))
+    expect(undo.indexOf('/ppp profile set [find where comment~"^DS: "] interface-list=none')).toBeLessThan(undo.indexOf('/interface list remove [find where comment~"^DS: "]'))
+    expect(undo).toContain('/interface pppoe-server server remove [find where service-name="gigafazt"]')
   })
 })
 
@@ -120,7 +126,8 @@ describe("deployment setup: the checklist's phases", () => {
     expect(hd).not.toContain('interface="ether3"] queue=')
     expect(hd).toContain("tcp-established-timeout=2h")
     expect(hd).toContain("protocol=tcp tcp-flags=syn,fin action=drop")
-    expect(hd).toContain("connection-limit=1000,32")
+    // Only new connections count, so a client over the cap keeps the ones it has.
+    expect(hd).toContain("connection-state=new connection-limit=1000,32")
   })
   it("warns when a DNS server is a probe IP and refuses a bad collector", () => {
     const codes = (over = {}) => checkSetup({ ...DEFAULT_SETUP, ...over }, full()).map((i) => i.code)
@@ -142,6 +149,8 @@ describe("deployment setup: plans", () => {
   it("the OLT takes the download for the traffic table and the upload for the DBA", () => {
     const olt = oltSetup(DEFAULT_SETUP, { plans: setupPlans([{ name: "empresa-300", down: 300, up: 100 }], RULES.s20) })
     expect(olt).toContain("traffic table ip index 10 cir 330048 priority 0")
+    // The service-port uses the table both ways: more upload than download takes the upload.
+    expect(oltSetup(DEFAULT_SETUP, { plans: setupPlans([{ name: "sube", down: 100, up: 300 }], RULES.s20) })).toContain("traffic table ip index 10 cir 330048")
     expect(olt).toContain("dba-profile add profile-id 10 type4 max 110016")
     expect(olt).toContain('ont-lineprofile gpon profile-id 10 profile-name "empresa-300"')
   })

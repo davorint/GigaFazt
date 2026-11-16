@@ -58,9 +58,11 @@ function NewClients({ state }: { state: LabState }) {
   const parsed = parseBulk(text, method, KNOWN)
   const usesParent = method === "simple" || method === "pppoe"
   const usesQueueKind = method === "simple" || method === "pppoe"
-  const script = bulkScript(parsed.rows, method, { rule: state.rule, parent: usesParent ? parent : undefined, upsert, queue: state.queueKind })
+  // The deployment's burst rule: the PPPoE profiles this writes are the same ones Configuración writes.
+  const rule = state.setup.rule
+  const script = bulkScript(parsed.rows, method, { rule, parent: usesParent ? parent : undefined, upsert, queue: state.queueKind })
   const missing = parsed.errors.filter((e) => e.code === "password").length
-  const rid = ruleId(state.rule)
+  const rid = ruleId(rule)
   const ruleName = rid === "custom" ? t("compare.ownRule") : t(`params.rules.${rid}`)
 
   return (
