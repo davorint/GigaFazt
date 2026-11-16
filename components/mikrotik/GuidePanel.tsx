@@ -335,8 +335,8 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
             <TextField label={tc("dns")} value={s.dns} onChange={(v) => setS({ dns: v })} hint={tc("dnsHint")} />
             <TextField label={tc("oltUplink")} value={s.oltUplink} onChange={(v) => setS({ oltUplink: v.trim() })} hint={tc("oltUplinkHint")} />
             <SelectField label={tc("ontMode")} value={s.ontMode} onChange={(v) => setS({ ontMode: v === "router" ? "router" : "bridge" })}>
-              <option value="bridge">{tc("ontModes.bridge")}</option>
               <option value="router">{tc("ontModes.router")}</option>
+              <option value="bridge">{tc("ontModes.bridge")}</option>
             </SelectField>
           </>
         )}

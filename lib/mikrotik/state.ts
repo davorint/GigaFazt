@@ -384,7 +384,8 @@ function decodeSetup(v: string | null): SetupState {
     mtu1500: flag(mtu1500, DEFAULT_SETUP.mtu1500),
     isolate: flag(isolate, DEFAULT_SETUP.isolate),
     blockSmtp: flag(blockSmtp, DEFAULT_SETUP.blockSmtp),
-    ontMode: ontMode === "router" ? "router" : ontMode === "bridge" ? "bridge" : DEFAULT_SETUP.ontMode,
+    // Links from before the ONT mode existed (9 fields) meant bridge; the rest take the default.
+    ontMode: ontMode === "router" ? "router" : ontMode === "bridge" ? "bridge" : parts.length === 9 ? "bridge" : DEFAULT_SETUP.ontMode,
     rule: decodeSetupRule(rule) ?? DEFAULT_SETUP.rule,
     plans: decodePlans(plans) ?? DEFAULT_SETUP.plans,
     natMode: NAT_MODES.includes(natMode as NatMode) ? (natMode as NatMode) : DEFAULT_SETUP.natMode,

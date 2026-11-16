@@ -3,7 +3,7 @@ import { adviceFor } from "./advice"
 import { checkBalance, DEFAULT_LINK_QUEUES, defaultWans } from "./balance"
 import { DEFAULT_RULE } from "./burst"
 import { bulkScript, fillPasswords, matchProfile, parseBulk } from "./bulk"
-import { DEFAULT_PLANS, DEFAULT_SETUP, setupParts, setupPlans, setupUndo, type SetupParts } from "./setup"
+import { DEFAULT_PLANS, DEFAULT_SETUP, ontInstall, setupParts, setupPlans, setupUndo, type SetupParts } from "./setup"
 import { deploymentFields, initialState } from "./state"
 
 // The deployment's profiles: the three site plans and a custom asymmetric one.
@@ -79,5 +79,17 @@ describe("advice wording follows the balancing", () => {
     const base = deploymentFields(initialState())
     const f = { ...base, capacity: { ...base.capacity, internet: "links" as const }, balance: { ...base.balance, classifier: "both-addresses" as const } }
     expect(adviceFor(f).capacity.planOverLink).toBe(true)
+  })
+})
+
+describe("ONT install sheet", () => {
+  it("router mode: route WAN PPPoE on the internet VLAN, MTU, IPv6 when on, then security", () => {
+    const keys = (s: Parameters<typeof ontInstall>[0]) => ontInstall(s).map((i) => i.key)
+    expect(ontInstall(DEFAULT_SETUP)).toContainEqual({ key: "vlan", value: 100 })
+    expect(keys(DEFAULT_SETUP)).toEqual(["wanMode", "service", "vlan", "priority", "nat", "account", "mtu1500", "adminPassword", "wifi", "remoteAccess"])
+    expect(keys({ ...DEFAULT_SETUP, mtu1500: false, ipv6Pd: "2001:db8:100::/44" })).toEqual(["wanMode", "service", "vlan", "priority", "nat", "account", "mtu1492", "ipv6", "adminPassword", "wifi", "remoteAccess"])
+  })
+  it("bridge mode: bridge WAN, LAN 1, the client's router dials", () => {
+    expect(ontInstall({ ...DEFAULT_SETUP, ontMode: "bridge", internetVlan: 200 })).toEqual([{ key: "bridgeWan" }, { key: "vlan", value: 200 }, { key: "bridgePort" }, { key: "clientRouter" }])
   })
 })

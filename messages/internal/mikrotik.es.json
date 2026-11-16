@@ -625,10 +625,11 @@
             "Servidor PPPoE en la VLAN de la OLT, keepalive de 10 s y un perfil por plan con tu ráfaga (script abajo).",
             "MTU 1500: VLAN con MTU 1508; verifica desde un CPE con ping do-not-fragment size=1472 8.8.8.8.",
             "Cuentas locales para arrancar («Varios clientes» → PPPoE); RADIUS cuando tengas el sistema de cobro.",
-            "OLT: ONT en modo puente, un GEM y un service-port por ONT hacia la VLAN de internet, tablas de tráfico arriba de cualquier plan.",
+            "OLT: un GEM y un service-port por ONT hacia la VLAN de internet, tablas de tráfico arriba de cualquier plan; ONT Wi-Fi de la empresa en modo router (el ONT marca PPPoE), puente solo si el cliente pone su router.",
             "Verifica que la ruta GPON lleve tramas de 1508 bytes (subida de la OLT y el ONT).",
             "Seguridad en la OLT: anti-macspoofing (máximo 1 MAC por service-port), anti-ipspoofing, anti-macduplicate, anti-dos, anti-ipattack y control de tormentas del lado de los ONT.",
-            "La gestión de la OLT, en su VLAN y solo desde la red de gestión."
+            "La gestión de la OLT, en su VLAN y solo desde la red de gestión.",
+            "Instalación del ONT: WAN de ruta PPPoE en la VLAN de internet con la cuenta del cliente, contraseña de administrador de la empresa (no la de fábrica) y Wi-Fi propio del cliente (lista en «Alta de un ONT»)."
           ]
         },
         "p5": {
@@ -1157,7 +1158,7 @@
       "oltNotes": [
         "Los IDs empiezan en 10 y siguen el orden de los planes (10 el primero, 11 el segundo…). Si ya los usas en la OLT, cámbialos antes de pegar.",
         "Las tablas de tráfico y los DBA quedan un poco arriba del plan: el límite y la ráfaga los pone el MikroTik.",
-        "El perfil de servicio «router» deja los puertos del ONT en automático; ajústalo a tus modelos de ONT.",
+        "El perfil de servicio deja los puertos del ONT en automático, como lo usan los ONT HGU en modo router (el ONT marca PPPoE en la VLAN de internet); en modo puente, la plantilla del ONT agrega native-vlan al puerto 1.",
         "Anti-ipspoofing y PITP solo funcionan activos en todos sus niveles: global y por VLAN (perfil de servicio de VLAN, aquí) y por service-port (plantilla «Alta de un ONT»). PITP además tiene nivel de puerto (pitp port / pitp board); su sintaxis cambia por versión, revísalo con display pitp config."
       ],
       "ont": {
@@ -1172,7 +1173,7 @@
         "bad": "Escribe el puerto PON como marco/ranura/puerto (p. ej. 0/1/0).",
         "note": {
           "bridge": "En modo puente, conecta el router del cliente al puerto 1 del ONT y configúralo con PPPoE (sin VLAN) con el usuario y la contraseña de su cuenta.",
-          "router": "En el ONT, configura la conexión WAN como PPPoE en la VLAN {vlan} con el usuario y la contraseña del cliente (los mismos de su cuenta PPPoE en el MikroTik)."
+          "router": "El ONT marca PPPoE en la VLAN {vlan}: la del service-port de arriba. Si no coinciden, el ONT no navega."
         },
         "servicePort": "Índice del service-port",
         "index": "índice",
@@ -1189,12 +1190,12 @@
       "blockSmtpHint": "Bloquea el puerto 25 saliente de los clientes (correo basura de equipos infectados); el correo normal usa 465/587. También pone un tope de 1,000 conexiones por cliente.",
       "ontMode": "Modo del ONT",
       "ontModes": {
-        "bridge": "Puente (el router del cliente hace PPPoE)",
-        "router": "Router (el ONT hace PPPoE)"
+        "router": "Router (el ONT marca PPPoE): ONT Wi-Fi de la empresa",
+        "bridge": "Puente (el router del cliente marca PPPoE)"
       },
       "ontModeHint": {
-        "bridge": "El primer puerto del ONT entra sin etiqueta a la VLAN de internet; el router del cliente marca PPPoE.",
-        "router": "El ONT marca PPPoE en la VLAN de internet con el usuario del cliente."
+        "router": "Lo normal con ONT Wi-Fi propios (HGU): el ONT marca PPPoE en la VLAN de internet, hace NAT y Wi-Fi. El técnico lo configura al instalar (lista en «Alta de un ONT»).",
+        "bridge": "Para un cliente con su propio router: el primer puerto del ONT entra sin etiqueta a la VLAN de internet y su router marca PPPoE."
       },
       "plans": {
         "title": "Planes de este despliegue",
@@ -1310,6 +1311,28 @@
         "snmp": "SNMP (gráficas en LibreNMS, Zabbix…)",
         "snmpHint": "SNMP v2c de solo lectura, aceptado solo desde la red de gestión. Da gráficas por enlace, CPU y sesiones: lo que necesitas para medir la hora pico real de este despliegue.",
         "secrets": "Las contraseñas nunca se guardan en esta página: el script deja PEGA-AQUI-… (clave del respaldo, del correo, de SFTP, token del bot, comunidad SNMP) para que las cambies antes de pegarlo."
+      },
+      "install": {
+        "title": "Valores para el técnico (página web del ONT)",
+        "lead": "Lo que se escribe en el ONT al instalarlo en el departamento, con los datos de este despliegue.",
+        "items": {
+          "wanMode": "Nueva conexión WAN en modo «Route WAN» (ruta).",
+          "service": "Tipo de servicio INTERNET, encapsulado PPPoE, marcado automático (siempre conectado).",
+          "vlan": "VLAN activada con ID {value} (la VLAN de internet, igual a la del service-port de la OLT).",
+          "priority": "Prioridad 802.1p: {value}.",
+          "nat": "NAT activado; los puertos LAN y el Wi-Fi ligados a esta WAN.",
+          "account": "Usuario y contraseña PPPoE: los de la cuenta del cliente en el MikroTik (los de «Varios clientes»).",
+          "mtu1500": "MTU 1500 si el ONT lo permite (el MikroTik ofrece 1500, RFC 4638); si no, deja 1492.",
+          "mtu1492": "MTU 1492.",
+          "ipv6": "Protocolo IPv4/IPv6, con prefijo por DHCPv6-PD (el MikroTik entrega uno por sesión).",
+          "adminPassword": "Cambia la contraseña de administrador de fábrica (telecomadmin) por la de la empresa: es pública en los manuales.",
+          "wifi": "Wi-Fi con nombre y contraseña propios del cliente (WPA2 o WPA3).",
+          "remoteAccess": "Sin acceso web ni Telnet desde la WAN.",
+          "bridgeWan": "Conexión WAN en modo «Bridge WAN», tipo INTERNET.",
+          "bridgePort": "Liga el puerto LAN 1 a esa WAN: ahí se conecta el router del cliente.",
+          "clientRouter": "El router del cliente marca PPPoE (sin VLAN) con el usuario y la contraseña de su cuenta."
+        },
+        "note": "Nombres de menú como en la guía del EG8145V5; cambian un poco entre modelos y firmware. La OLT (OMCI) o un servidor TR-069 como GenieACS también pueden mandar estos datos a distancia; no se generan aquí porque no confirmamos la sintaxis para tu OLT. Si un día los usas, que un solo lugar mande el PPPoE, o se pisan."
       }
     },
     "setup": {

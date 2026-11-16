@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { clientsOf } from "@/lib/mikrotik/deployments"
-import { checkSetup, mikrotikSetup, OLT_HEADROOM, oltSetup, ontTemplate, parseCidr, poolHosts, setupPlans, setupUndo, type SetupState } from "@/lib/mikrotik/setup"
+import { checkSetup, mikrotikSetup, OLT_HEADROOM, oltSetup, ontInstall, ontTemplate, parseCidr, poolHosts, setupPlans, setupUndo, type SetupState } from "@/lib/mikrotik/setup"
 import type { LabState } from "@/lib/mikrotik/state"
 import type { Wan } from "@/lib/mikrotik/balance"
 import { fmtNum } from "@/lib/mikrotik/format"
@@ -102,8 +102,8 @@ export function SetupPanel({ state, onSetup, onWans }: Props) {
         <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <TextField label={t("oltUplink")} value={s.oltUplink} onChange={(v) => set({ oltUplink: v.trim() })} hint={t("oltUplinkHint")} />
           <SelectField label={t("ontMode")} value={s.ontMode} onChange={(v) => set({ ontMode: v === "router" ? "router" : "bridge" })} hint={t(`ontModeHint.${s.ontMode}`)}>
-            <option value="bridge">{t("ontModes.bridge")}</option>
             <option value="router">{t("ontModes.router")}</option>
+            <option value="bridge">{t("ontModes.bridge")}</option>
           </SelectField>
         </div>
         <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("oltPlans", { pct: Math.round((OLT_HEADROOM - 1) * 100) })}</p>
@@ -174,6 +174,16 @@ export function SetupPanel({ state, onSetup, onWans }: Props) {
           </div>
           {ontText ? <CodeBlock label={t("ont.script")} code={ontText} /> : <p className="text-sm text-amber-300">{t("ont.bad")}</p>}
           <p className="max-w-3xl text-sm leading-relaxed text-zinc-400">{t(`ont.note.${s.ontMode}`, { vlan: s.internetVlan })}</p>
+          <div className="grid gap-3 rounded-xl border border-white/10 p-4">
+            <p className="text-sm font-medium text-foreground">{t("install.title")}</p>
+            <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("install.lead")}</p>
+            <ol className="grid list-decimal gap-1.5 pl-5 text-sm leading-relaxed text-zinc-200 marker:text-zinc-500">
+              {ontInstall(s).map((it) => (
+                <li key={it.key}>{t(`install.items.${it.key}`, { value: it.value ?? "" })}</li>
+              ))}
+            </ol>
+            <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("install.note")}</p>
+          </div>
           <p className="max-w-3xl text-sm leading-relaxed text-zinc-400">{t("ont.spoofNote", { sp: ont.servicePort })}</p>
         </TabsContent>
       </Tabs>

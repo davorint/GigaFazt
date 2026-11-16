@@ -89,7 +89,7 @@ describe("deployment setup: Huawei OLT", () => {
     expect(olt.slice(i + 1, i + 6)).toEqual([" tcont 1 dba-profile-id 11", " gem add 1 eth tcont 1", " gem mapping 1 0 vlan 100", " commit", " quit"])
   })
   it("adds one ONT with its plan (bridge: the ONT's first port goes untagged into the internet VLAN)", () => {
-    expect(ontTemplate(DEFAULT_SETUP, { plan: 1, ponPort: "0/1/3", ontId: 5, sn: "HWTC1A2B3C4D", client: 'Juan "Pérez"', servicePort: 105 }).split("\n")).toEqual([
+    expect(ontTemplate({ ...DEFAULT_SETUP, ontMode: "bridge" }, { plan: 1, ponPort: "0/1/3", ontId: 5, sn: "HWTC1A2B3C4D", client: 'Juan "Pérez"', servicePort: 105 }).split("\n")).toEqual([
       "interface gpon 0/1",
       ' ont add 3 5 sn-auth "HWTC1A2B3C4D" omci ont-lineprofile-id 11 ont-srvprofile-id 10 desc "Juan Pérez"',
       " ont port native-vlan 3 5 eth 1 vlan 100 priority 0",
@@ -100,7 +100,9 @@ describe("deployment setup: Huawei OLT", () => {
       "pitp permit-forwarding service-port 105 enable",
     ])
     expect(ontTemplate(DEFAULT_SETUP, { plan: 0, ponPort: "x", ontId: 0, sn: "", client: "", servicePort: 1 })).toBe("")
-    expect(ontTemplate({ ...DEFAULT_SETUP, ontMode: "router" }, { plan: 0, ponPort: "0/1/0", ontId: 1, sn: "", client: "", servicePort: 1 })).not.toContain("native-vlan")
+    // Router mode (the default: the company's HGU ONTs dial PPPoE) needs no native VLAN on the ONT port.
+    expect(DEFAULT_SETUP.ontMode).toBe("router")
+    expect(ontTemplate(DEFAULT_SETUP, { plan: 0, ponPort: "0/1/0", ontId: 1, sn: "", client: "", servicePort: 1 })).not.toContain("native-vlan")
     expect(oltSetup(DEFAULT_SETUP, { plans: plans.slice(0, 1) })).toContain("security anti-macspoofing enable\nsecurity anti-ipspoofing enable")
   })
 })

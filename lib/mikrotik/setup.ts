@@ -142,7 +142,8 @@ export const DEFAULT_SETUP: SetupState = {
   mtu1500: true,
   isolate: true,
   blockSmtp: true,
-  ontMode: "bridge",
+  // The company's own Huawei HGU ONTs (Wi-Fi 6 / Wi-Fi 7) dial PPPoE themselves; bridge is for a client's own router.
+  ontMode: "router",
   plans: DEFAULT_PLANS,
   rule: DEFAULT_RULE,
   natMode: "masquerade",
@@ -737,6 +738,26 @@ export function oltSetup(s: SetupState, ctx: { plans: { name: string; down: numb
 }
 
 /** servicePort: the service-port's index (it switches anti-spoofing and PITP on for that ONT). */
+/** What the installer types on the ONT's web page, in order; the page words each item. */
+export type InstallItem = { key: string; value?: number }
+
+export function ontInstall(s: SetupState): InstallItem[] {
+  if (s.ontMode === "bridge") return [{ key: "bridgeWan" }, { key: "vlan", value: s.internetVlan }, { key: "bridgePort" }, { key: "clientRouter" }]
+  return [
+    { key: "wanMode" },
+    { key: "service" },
+    { key: "vlan", value: s.internetVlan },
+    { key: "priority", value: 0 },
+    { key: "nat" },
+    { key: "account" },
+    { key: s.mtu1500 ? "mtu1500" : "mtu1492" },
+    ...(s.ipv6Pd.trim() ? [{ key: "ipv6" }] : []),
+    { key: "adminPassword" },
+    { key: "wifi" },
+    { key: "remoteAccess" },
+  ]
+}
+
 export type OntInput = { plan: number; ponPort: string; ontId: number; sn: string; client: string; servicePort: number }
 
 /** Adding one ONT on a PON port with a plan's line profile and traffic table. */
