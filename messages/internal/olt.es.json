@@ -21,6 +21,7 @@
         "boards": "Tarjetas",
         "optics": "Ópticas",
         "compat": "Compatibilidad",
+        "modified": "Chasis modificados",
         "buying": "Guía de compra",
         "sources": "Fuentes"
       }
@@ -243,6 +244,78 @@
         "noOntData": "Algunas tarjetas GPON no publican ONT por puerto: el total de ONT no las incluye."
       },
       "note": "El consumo máximo suma el máximo de cada tarjeta (o el estático si es el único publicado) y la charola de ventiladores; la corriente es ese máximo entre 48 V. Dimensiona rectificador, baterías o UPS con margen. Los ONT máximos son el tope del puerto (128 en la mayoría), no lo recomendable: la división real la marca tu óptica (ver Ópticas)."
+    },
+    "modified": {
+      "title": "Chasis modificados (no oficiales)",
+      "lead": "En AliExpress y otras tiendas se venden chasis MA5608T modificados que aceptan tarjetas de control MA5800 (MPLA, MPLB, MPSA). Huawei no los fabrica ni los documenta: aquí está lo que sí se sabe, lo que hay que preguntar al vendedor y lo que hay que probar antes de ponerles clientes.",
+      "warning": "Ninguna fuente pública documenta estos chasis: todo lo que diga el anuncio es palabra del vendedor. Huawei no da soporte a un equipo modificado y una actualización de software puede dejarlo sin funcionar.",
+      "compareTitle": "Qué tendría que cambiar el modificado",
+      "caption": "MA5608T oficial, MA5800-X2 oficial y MA5608T modificado",
+      "cols": {
+        "item": "",
+        "ma5608t": "MA5608T (oficial)",
+        "x2": "MA5800-X2 (oficial)",
+        "mod": "MA5608T modificado"
+      },
+      "ask": "pregúntalo",
+      "rows": {
+        "depth": "Fondo del chasis",
+        "boardDepth": "Fondo de las tarjetas de servicio",
+        "backplane": "Backplane",
+        "controlSlots": "Slots de control",
+        "controlBoards": "Tarjetas de control",
+        "serviceBoards": "Tarjetas de servicio",
+        "powerBoards": "Tarjetas de energía",
+        "software": "Software",
+        "support": "Soporte de Huawei"
+      },
+      "values": {
+        "depth608": "244.5 mm",
+        "depthX2": "268.7 mm",
+        "boardDepth608": "237 mm (tarjetas H80x)",
+        "boardDepthX2": "≈ 258 mm (tarjetas H90x)",
+        "serviceBoards608": "GPON H80x (GPBD, GPBH, GPFD) y XG-PON H802XGBC",
+        "serviceBoardsX2": "Toda la línea MA5800: GPON, XG-PON, XGS-PON, combo (CSHF, CGHF)",
+        "software608": "V800R0xx (MA5600T)",
+        "softwareX2": "V100R017C10 o más nuevo (MA5800)",
+        "supportYes": "Sí",
+        "supportNo": "No",
+        "modDepth": "Si acepta tarjetas MA5800, no puede ser el chasis original: las tarjetas H90x son más profundas que el MA5608T",
+        "modBackplane": "Pide el código impreso y lo que reporta display board 0",
+        "modControl": "MPLA, MPLB o MPSA según el anuncio (en el X2 oficial van MPSA, MPSG o MPSD)",
+        "modService": "Pregunta cuáles probó el vendedor: con control MA5800 serían tarjetas MA5800, no las H80x que ya tienes",
+        "modPower": "¿MPWC/MPWD del MA5608T o PISA/PISB del X2?",
+        "modSoftware": "Con control MA5800 corre software MA5800 (V100R0xx): pregunta la versión exacta",
+        "modSupport": "No"
+      },
+      "insight": "En la práctica sería un MA5800-X2 hecho a mano en otra caja. Compara su precio con un MA5800-X2 oficial (mismo tamaño 2 U, mismos 2 slots, AC o DC, documentado y actualizable) antes de decidir.",
+      "sourceNote": "Fondos de chasis: Huawei (descripción de hardware MA5600T 2013 y datasheet MA5800 2023). Fondo de las tarjetas: Huawei para las H80x, revendedor para las H90x.",
+      "claimsTitle": "Ficha para cada anuncio",
+      "claimsLead": "Copia esta ficha, pídele al vendedor que la llene (o llénala con el anuncio) y compara anuncios con los mismos datos.",
+      "claims": [
+        "Tienda / vendedor:",
+        "Título y enlace del anuncio:",
+        "Backplane (código impreso en el chasis):",
+        "Tarjetas de control incluidas (código completo, p. ej. H901MPSA):",
+        "Software instalado (salida de display version):",
+        "Lo que reporta display board 0 con todas las tarjetas puestas (captura o video):",
+        "Tarjetas de servicio que dice soportar (códigos):",
+        "Tarjetas de servicio que probó él mismo:",
+        "Tarjetas de energía (MPWC/MPWD o PISA/PISB) y entrada AC o DC:",
+        "Ventiladores (modelo):",
+        "Fondo del chasis (mm):"
+      ],
+      "copy": "Copiar ficha",
+      "copied": "Copiada",
+      "testTitle": "Antes de ponerle clientes",
+      "test": [
+        "display version y display board 0: qué producto dice ser (¿MA5800-X2?), versión de software y todas las tarjetas en estado normal.",
+        "Las dos tarjetas de control: una activa y otra en reserva; quita la activa y comprueba que la otra toma el control sin cortar.",
+        "Pon las tarjetas de servicio que vas a usar en los dos slots y registra un EG8145B7-50 en cada una; mide tráfico real en los dos.",
+        "Corta y regresa la energía: que arranque solo con la misma configuración.",
+        "No le instales actualizaciones de software sin probarlas antes en otra unidad: el software oficial no espera un backplane modificado.",
+        "Déjalo una o dos semanas con carga de prueba antes de pasar clientes."
+      ]
     }
   }
 }

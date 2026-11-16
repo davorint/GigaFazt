@@ -5,16 +5,18 @@ import { useTranslations } from "next-intl"
 import { Input } from "@/components/ui/input"
 import { SectionNav } from "@/components/mikrotik/SectionNav"
 import { SelectField } from "@/components/mikrotik/SelectField"
+import { ModifiedChassis } from "./ModifiedChassis"
 import { OltBuilder } from "./OltBuilder"
 import { BOARD_KINDS, BOARDS, CHASSIS, OPTICS, SOURCES, chassisName, sourceOf, type Board, type BoardKind, type Chassis, type Fact, type Family } from "@/lib/olt-kb"
 
-const SECTIONS = ["chassis", "builder", "boards", "optics", "compat", "buying", "sources"] as const
+const SECTIONS = ["chassis", "builder", "boards", "optics", "compat", "modified", "buying", "sources"] as const
 const ANCHOR: Record<(typeof SECTIONS)[number], string> = {
   chassis: "chasis",
   builder: "armar",
   boards: "tarjetas",
   optics: "opticas",
   compat: "compatibilidad",
+  modified: "modificados",
   buying: "compra",
   sources: "fuentes",
 }
@@ -377,6 +379,10 @@ export function OltKnowledgeBase() {
           </div>
           <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("compat.note")}</p>
         </div>
+      </Section>
+
+      <Section id={ANCHOR.modified} name="olt-modified" title={t("modified.title")} lead={t("modified.lead")}>
+        <ModifiedChassis />
       </Section>
 
       <Section id={ANCHOR.buying} name="olt-buying" title={t("buying.title")} lead={t("buying.lead")}>
