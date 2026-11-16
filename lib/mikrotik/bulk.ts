@@ -38,9 +38,13 @@ export const BULK_METHODS: BulkMethod[] = ["simple", "pppoe", "usermanager", "pc
 export const byIp = (m: BulkMethod) => m === "simple" || m === "pcq"
 export const MAX_ROWS = 5000
 
-export type BulkRow = { line: number; name: string; id: string; planMbps: number; password: string | null }
+/** profile: the deployment's PPP profile (PPPoE with the deployment's plans). */
+export type BulkRow = { line: number; name: string; id: string; planMbps: number; password: string | null; profile?: string }
 
-export type BulkErrorCode = "columns" | "plan" | "ip" | "user" | "duplicateName" | "duplicateId" | "password" | "tooMany"
+/** A deployment plan as PPPoE secrets reference it: its profile name and download speed. */
+export type BulkProfile = { name: string; down: number }
+
+export type BulkErrorCode = "columns" | "plan" | "planAmbiguous" | "ip" | "user" | "duplicateName" | "duplicateId" | "password" | "tooMany"
 export type BulkError = { line: number; code: BulkErrorCode }
 
 export type BulkParse = { rows: BulkRow[]; errors: BulkError[]; header: boolean }
@@ -100,7 +104,23 @@ function delimiter(text: string): string {
   return ","
 }
 
-export function parseBulk(text: string, method: BulkMethod, known: { id: string; mbps: number }[] = []): BulkParse {
+/**
+ * The deployment plan a PPPoE line asks for: by profile name (any case) or by download speed when only one plan has it.
+ * "ambiguous" when two plans share that speed.
+ */
+export function matchProfile(text: string, profiles: BulkProfile[], known: { id: string; mbps: number }[] = []): BulkProfile | "ambiguous" | null {
+  const t = text.trim().toLowerCase()
+  const byName = profiles.find((p) => p.name.toLowerCase() === t)
+  if (byName) return byName
+  const mbps = parsePlan(text, known)
+  if (mbps === null) return null
+  const hits = profiles.filter((p) => p.down === mbps)
+  return hits.length === 1 ? hits[0] : hits.length > 1 ? "ambiguous" : null
+}
+
+/** profiles: the deployment's plans; with them (PPPoE only), lines are matched to those profiles and none are created. */
+export function parseBulk(text: string, method: BulkMethod, known: { id: string; mbps: number }[] = [], profiles?: BulkProfile[]): BulkParse {
+  const deployment = method === "pppoe" && profiles && profiles.length > 0 ? profiles : null
   const sep = delimiter(text)
   const rows: BulkRow[] = []
   const errors: BulkError[] = []
@@ -115,9 +135,10 @@ export function parseBulk(text: string, method: BulkMethod, known: { id: string;
     seen++
     const cols = splitLine(raw, sep)
     const [name = "", id = "", plan = "", password = ""] = cols
-    const planMbps = parsePlan(plan, known)
+    const match = deployment ? matchProfile(plan, deployment, known) : null
+    const planMbps = deployment ? (match && match !== "ambiguous" ? match.down : null) : parsePlan(plan, known)
     // First line that isn't a client: a header.
-    if (seen === 1 && planMbps === null && cols.length >= 3) {
+    if (seen === 1 && planMbps === null && match !== "ambiguous" && cols.length >= 3) {
       header = true
       return
     }
@@ -126,6 +147,7 @@ export function parseBulk(text: string, method: BulkMethod, known: { id: string;
       return
     }
     if (cols.length < 3 || !name || !id) return void errors.push({ line, code: "columns" })
+    if (match === "ambiguous") return void errors.push({ line, code: "planAmbiguous" })
     if (planMbps === null) return void errors.push({ line, code: "plan" })
     let target = id
     if (byIp(method)) {
@@ -140,7 +162,7 @@ export function parseBulk(text: string, method: BulkMethod, known: { id: string;
     if (!byIp(method) && !password) return void errors.push({ line, code: "password" })
     names.add(queueName)
     ids.add(target.toLowerCase())
-    rows.push({ line, name, id: target, planMbps, password: password || null })
+    rows.push({ line, name, id: target, planMbps, password: password || null, ...(match ? { profile: match.name } : {}) })
   })
   return { rows, errors, header }
 }
@@ -164,9 +186,9 @@ export function randomPassword(length = 12, random: (n: number) => Uint8Array = 
  * password. Lines with errors other than the missing password are left as
  * they are; so is the header.
  */
-export function fillPasswords(text: string, method: BulkMethod, known: { id: string; mbps: number }[], make: () => string): string {
+export function fillPasswords(text: string, method: BulkMethod, known: { id: string; mbps: number }[], make: () => string, profiles?: BulkProfile[]): string {
   const sep = delimiter(text)
-  const parsed = parseBulk(text, byIp(method) ? "pppoe" : method, known)
+  const parsed = parseBulk(text, byIp(method) ? "pppoe" : method, known, method === "pppoe" ? profiles : undefined)
   const missing = new Set(parsed.errors.filter((e) => e.code === "password").map((e) => e.line))
   const gap = sep === "\t" ? "\t" : `${sep} `
   return text
@@ -258,6 +280,21 @@ export function bulkScript(rows: BulkRow[], method: BulkMethod, o: BulkOptions):
       return o.upsert ? [`remove [find where address=${rosString(address)} and list~"^plan-"]`, add] : [add]
     })
     return ["/queue type", ...types, "/queue tree", ...trees, "/ip firewall mangle", ...mangle, "/ip firewall address-list", ...lists].join("\n")
+  }
+
+  // PPPoE on the deployment's plans: Configuración made the profiles (pool, DNS, session log, IPv6…); only the secrets go here.
+  if (method === "pppoe" && rows.every((r) => r.profile)) {
+    const used = [...new Set(rows.map((r) => r.profile as string))]
+    const guard = used.map(
+      (p) => `:if ([:len [/ppp profile find where name=${rosString(p)}]] = 0) do={:error ${rosString(`Falta el perfil ${p}: pega antes la configuracion del despliegue`)}}`
+    )
+    const parents = parent ? ["/ppp profile", ...used.map((p) => `set [find where name=${rosString(p)}] parent-queue=${rosString(parent)}`)] : []
+    const secrets = rows.map((r) => {
+      const profile = `profile=${rosString(r.profile as string)}`
+      const add = [`name=${rosString(r.id)}`, `password=${rosString(r.password ?? "")}`, "service=pppoe", profile, `comment=${rosString(r.name)}`]
+      return o.upsert ? upsert("/ppp secret", r.id, [profile], add) : `add ${add.join(" ")}`
+    })
+    return [...guard, ...parents, "/ppp secret", ...secrets].join("\n")
   }
 
   const { lines, names } = pppProfiles(

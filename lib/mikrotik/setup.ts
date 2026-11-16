@@ -483,7 +483,16 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
   const v6 = s.ipv6Pd.trim()
   const v6wan = s.ipv6Wan.trim()
   // Official example "IPv6 PD over PPP": the profile's dhcpv6-pd-pool makes a DHCPv6 server per session.
-  if (v6) pp.push("/ipv6 pool", `add name=DS-pd prefix=${v6} prefix-length=${s.ipv6PdLength}`, ...(v6wan ? [`add name=DS-wan6 prefix=${v6wan} prefix-length=64`] : []))
+  if (v6)
+    pp.push(
+      "/ipv6 pool",
+      `add name=DS-pd prefix=${v6} prefix-length=${s.ipv6PdLength}`,
+      ...(v6wan ? [`add name=DS-wan6 prefix=${v6wan} prefix-length=64`] : []),
+      // Each session installs its own route; the rest of the block goes nowhere instead of bouncing back to the provider.
+      "/ipv6 route",
+      `add dst-address=${v6} blackhole ${c("prefijos de clientes sin uso")}`,
+      ...(v6wan ? [`add dst-address=${v6wan} blackhole ${c("prefijos WAN sin uso")}`] : [])
+    )
   // The session log: who had which address, and when (the NAT lookup ends here).
   const session = (what: string) => `:log info ("DS-sesion ${what} usuario=" . $user . " ip=" . $"remote-address" . " mac=" . $"caller-id")`
   pp.push("/ppp profile")
@@ -555,6 +564,11 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
       `add chain=forward action=drop in-interface-list=DS-WAN connection-nat-state=!dstnat ${c("nada nuevo desde internet")}`
     )
   if (fw.length) hd.push("/ip firewall filter", ...fw)
+  // IPv6 skips the IPv4 rules: the same SMTP block and isolation, whether or not the basic firewall is on.
+  const fw6: string[] = []
+  if (v6 && s.blockSmtp) fw6.push(`add chain=forward action=drop in-interface-list=DS-LAN protocol=tcp dst-port=25 ${c("sin SMTP directo de los clientes")}`)
+  if (v6 && s.isolate) fw6.push(`add chain=forward action=drop in-interface-list=DS-LAN out-interface-list=DS-LAN ${c("clientes aislados entre si")}`)
+  if (fw6.length) hd.push("/ipv6 firewall filter", ...fw6)
   if (v6 && s.firewall)
     hd.push(
       "/ipv6 firewall filter",
@@ -649,7 +663,8 @@ export function setupUndo(s: SetupState): string {
     "/tool mac-server mac-winbox set allowed-interface-list=all",
     '/ip service set winbox address=""',
     '/ip service set ssh address=""',
-    '/ppp profile set [find where comment~"^DS: "] interface-list=none on-up="" on-down=""',
+    '/ppp profile set [find where comment~"^DS: "] on-up="" on-down=""',
+    ':do {/ppp profile set [find where comment~"^DS: "] interface-list=""} on-error={:do {/ppp profile set [find where comment~"^DS: "] interface-list=none} on-error={}}',
     "/system logging remove [find where action=DSremoto]",
     "/system logging remove [find where action=DSsesiones]",
     "/system logging action remove [find where name=DSsesiones]",
@@ -658,6 +673,7 @@ export function setupUndo(s: SetupState): string {
     '/ip firewall filter remove [find where comment~"^DS: "]',
     '/ip firewall nat remove [find where comment~"^DS: "]',
     '/ipv6 firewall filter remove [find where comment~"^DS: "]',
+    '/ipv6 route remove [find where comment~"^DS: "]',
     '/ip firewall raw remove [find where comment~"^DS: "]',
     '/ip route remove [find where comment~"^DS: "]',
     '/interface list member remove [find where comment~"^DS: "]',

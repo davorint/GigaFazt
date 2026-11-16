@@ -179,6 +179,8 @@ export type BalanceIssueCode =
   | "oneLink"
   | "missingIface"
   | "duplicateIface"
+  | "duplicateName"
+  | "missingName"
   | "missingMonitor"
   | "duplicateMonitor"
   | "badMonitor"
@@ -201,7 +203,13 @@ export function checkBalance(o: BalanceOptions): BalanceIssue[] {
   if (o.wans.length < 2) out.push({ code: "oneLink", level: "info" })
   const ifaces = new Set<string>()
   const monitors = new Set<string>()
+  const names = new Set<string>()
   for (const w of o.wans) {
+    // The name is in connection marks, routing tables (to-<name>), queue trees and NAT chains: unique and not empty.
+    const nm = w.name.trim().toLowerCase()
+    if (!nm) out.push({ code: "missingName", level: "error", wan: w.name })
+    else if (names.has(nm)) out.push({ code: "duplicateName", level: "error", wan: w.name, value: w.name })
+    names.add(nm)
     const iface = w.iface.trim()
     if (!iface) out.push({ code: "missingIface", level: "error", wan: w.name })
     else if (ifaces.has(iface)) out.push({ code: "duplicateIface", level: "error", wan: w.name, value: iface })

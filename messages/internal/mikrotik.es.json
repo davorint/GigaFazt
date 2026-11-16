@@ -757,7 +757,7 @@
           "title": "Capacidad de internet",
           "load": "Demanda promedio en hora pico ≈ {demand} contra {internet} que dan los enlaces después de sus colas ({pct} %). Es con el promedio supuesto por cliente: arriba de ~{warn} % las ráfagas llenan los enlaces a ratos (Hora pico, en /calculadora, dice cuánto).",
           "loadMeasured": "Tráfico medido en hora pico ≈ {demand} contra {internet} que dan los enlaces después de sus colas ({pct} %). Arriba de ~{warn} % las ráfagas llenan los enlaces a ratos; si un enlace ya iba lleno al medir, la demanda real es mayor.",
-          "planOverLink": "Balanceando por cliente, uno de {plan} nunca pasa de un enlace ({link}): una sola prueba de velocidad llena ese enlace.",
+          "planOverLink": "Con este reparto, una prueba de velocidad (un cliente hacia un servidor) nunca pasa de un enlace ({link}): un cliente de {plan} llena ese enlace él solo.",
           "best": "Lo óptimo: un enlace de 10 Gbps (o 2 × 10 Gbps para respaldo) en vez de varios de 1 Gbps; ninguna configuración da más capacidad de la contratada.",
           "measure": "Todavía es una suposición: mide el tráfico real en hora pico (Despliegues → Ya opera, o SNMP abajo) antes de comprar."
         },
@@ -1052,7 +1052,9 @@
         "noClients": "Falta al menos una red de clientes.",
         "unevenSlots": "Las velocidades no se dividen bien en partes enteras: el reparto queda aproximado.",
         "shapeNominal": "Sin velocidad medida, la cola usa la contratada: si el enlace da menos, la fila se sigue formando en el módem.",
-        "netwatchRecursive": "Los avisos y la limpieza de conexiones necesitan «Vigilar una IP pública» (Netwatch revisa cada enlace por esa IP)."
+        "netwatchRecursive": "Los avisos y la limpieza de conexiones necesitan «Vigilar una IP pública» (Netwatch revisa cada enlace por esa IP).",
+        "duplicateName": "Hay dos enlaces llamados {value}: el nombre va en las marcas, las tablas de ruteo, las colas y el NAT; cada enlace necesita el suyo.",
+        "missingName": "Un enlace no tiene nombre."
       },
       "script": "Script de balanceo (RouterOS v7)",
       "notes": [
@@ -1339,7 +1341,7 @@
       },
       "methodHint": {
         "simple": "Una simple queue por cliente, con su IP como target.",
-        "pppoe": "Un perfil por plan con su rate-limit y un secret por cliente.",
+        "pppoe": "Un secret por cliente con el perfil de su plan. Los perfiles son los de Configuración del despliegue (pool, DNS, ráfaga, registro de sesiones, IPv6): aquí no se crean.",
         "usermanager": "Una limitación y un perfil por plan, y un usuario por cliente con su perfil asignado.",
         "pcq": "Una cola PCQ por plan y dirección; cada cliente entra a la address list de su plan. Escala mejor con muchos clientes."
       },
@@ -1361,19 +1363,20 @@
       "error": "Línea {line}: {reason}",
       "errors": {
         "columns": "faltan columnas (nombre, IP o usuario, plan).",
-        "plan": "no se entiende el plan. Usa 200, 500M, 1G o 1000 Mbps.",
+        "plan": "no se entiende el plan. Usa 200, 500M, 1G o 1000 Mbps (en PPPoE, también el nombre del perfil).",
         "ip": "la IP no es válida (p. ej. 10.0.0.2 o 10.0.0.0/29).",
         "user": "el usuario no puede llevar espacios ni comillas.",
         "duplicateName": "el nombre se repite (las colas necesitan nombres distintos).",
         "duplicateId": "la IP o el usuario se repite.",
         "password": "falta la contraseña.",
-        "tooMany": "hay más de {max} clientes; se tomaron los primeros {max}."
+        "tooMany": "hay más de {max} clientes; se tomaron los primeros {max}.",
+        "planAmbiguous": "dos perfiles tienen esa velocidad: escribe el nombre del perfil."
       },
       "more": "{count, plural, one {# error más} other {# errores más}}.",
       "fill": "{count, plural, one {Generar la contraseña que falta} other {Generar las # contraseñas que faltan}}",
       "notes": {
         "simple": "Si escribiste una cola padre, tiene que existir antes y su target debe incluir las IP de los clientes. Los nombres de cola van sin acentos; el nombre completo queda en comment.",
-        "pppoe": "Los perfiles solo llevan el rate-limit: agrega local-address y remote-address (o tu pool) como en tu perfil actual. Guarda las contraseñas antes de cerrar la página.",
+        "pppoe": "Pega antes la configuración del despliegue: si falta un perfil, el script se detiene en la primera línea con un aviso. Guarda las contraseñas antes de cerrar la página.",
         "usermanager": "Hace falta User Manager activo con perfiles y que el router de los clientes use RADIUS hacia él. Velocidades en bps. Guarda las contraseñas antes de cerrar la página.",
         "pcq": "Las reglas de mangle van al final de la cadena forward con passthrough=yes; si antes hay reglas con passthrough=no que agarren este tráfico, muévelas. Cada IP es un sub-stream con su propia ráfaga. Las colas usan parent=global; para un padre por enlace, crea uno por dirección y cámbialo."
       },
@@ -1385,7 +1388,7 @@
       "upsert": "Si ya existe, actualizarlo",
       "upsertHint": {
         "simple": "Cada línea actualiza la cola con ese nombre o la crea: sirve para volver a correr el script o cambiar a todos de regla.",
-        "pppoe": "Actualiza los perfiles; a los secrets que ya existen solo les cambia el perfil (la contraseña se queda).",
+        "pppoe": "A los secrets que ya existen solo les cambia el perfil (la contraseña se queda).",
         "usermanager": "Actualiza las limitaciones, crea lo que falte y reasigna el perfil de cada usuario (los que ya existen conservan su contraseña).",
         "pcq": "Actualiza los tipos y las colas, no duplica las reglas de mangle y mueve cada IP a la lista de su plan."
       },
@@ -1506,7 +1509,8 @@
         "migrateSummary": "{changed, plural, =0 {Nada que cambiar} one {Cambia # entrada} other {Cambia # entradas}} · {skipped, plural, =0 {todas tienen plan reconocido} one {# sin plan reconocido se queda igual} other {# sin plan reconocido se quedan igual}}.",
         "migrateLabel": "Comandos set",
         "migrateNote": "Cambia max-limit y la ráfaga; limit-at, target, parent y nombres se quedan. Las colas quedan simétricas, como los planes. Pruébalo primero con un cliente."
-      }
+      },
+      "profilesHint": "Plan: el nombre del perfil o su velocidad de bajada. Perfiles de este despliegue: {list}."
     }
   }
 }

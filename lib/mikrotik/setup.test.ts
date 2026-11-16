@@ -67,7 +67,9 @@ describe("deployment setup: MikroTik", () => {
     const undo = setupUndo(DEFAULT_SETUP).split("\n")
     // Access and profiles let go of the lists before the lists are removed.
     expect(undo.indexOf("/tool mac-server mac-winbox set allowed-interface-list=all")).toBeLessThan(undo.indexOf('/interface list remove [find where comment~"^DS: "]'))
-    expect(undo.indexOf('/ppp profile set [find where comment~"^DS: "] interface-list=none')).toBeLessThan(undo.indexOf('/interface list remove [find where comment~"^DS: "]'))
+    const release = undo.findIndex((l) => l.startsWith(':do {/ppp profile set [find where comment~"^DS: "] interface-list=""}'))
+    expect(release).toBeGreaterThanOrEqual(0)
+    expect(release).toBeLessThan(undo.indexOf('/interface list remove [find where comment~"^DS: "]'))
     expect(undo).toContain('/interface pppoe-server server remove [find where service-name="gigafazt"]')
   })
 })

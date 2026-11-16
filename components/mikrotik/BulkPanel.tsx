@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { ruleId } from "@/lib/mikrotik/burst"
 import { BULK_METHODS, bulkScript, byIp, fillPasswords, MAX_ROWS, parseBulk, randomPassword, type BulkMethod } from "@/lib/mikrotik/bulk"
+import { setupPlans } from "@/lib/mikrotik/setup"
 import { fmtNum } from "@/lib/mikrotik/format"
 import { PRESETS, type LabState } from "@/lib/mikrotik/state"
 import { AuditPanel } from "./AuditPanel"
@@ -55,7 +56,9 @@ function NewClients({ state }: { state: LabState }) {
   const [parent, setParent] = useState("")
   const [upsert, setUpsert] = useState(false)
 
-  const parsed = parseBulk(text, method, KNOWN)
+  // PPPoE secrets point at the deployment's own profiles (Configuración → Planes): by profile name or download speed.
+  const profiles = setupPlans(state.setup.plans, state.setup.rule).map((p) => ({ name: p.name, down: p.down }))
+  const parsed = parseBulk(text, method, KNOWN, profiles)
   const usesParent = method === "simple" || method === "pppoe"
   const usesQueueKind = method === "simple" || method === "pppoe"
   // The deployment's burst rule: the PPPoE profiles this writes are the same ones Configuración writes.
@@ -91,6 +94,9 @@ function NewClients({ state }: { state: LabState }) {
         <p id={`${id}-hint`} className="text-xs leading-snug text-zinc-400">
           {t(`bulk.columns.${byIp(method) ? "ip" : "user"}`)} {t("bulk.privacy")}
         </p>
+        {method === "pppoe" && profiles.length > 0 && (
+          <p className="text-xs leading-snug text-zinc-400">{t("bulk.profilesHint", { list: profiles.map((p) => p.name).join(", ") })}</p>
+        )}
       </div>
 
       <div className="grid items-start gap-4 sm:grid-cols-2">
@@ -135,7 +141,7 @@ function NewClients({ state }: { state: LabState }) {
           )}
           {missing > 0 && (
             <div>
-              <Button type="button" variant="outline" onClick={() => setText(fillPasswords(text, method, KNOWN, () => randomPassword()))}>
+              <Button type="button" variant="outline" onClick={() => setText(fillPasswords(text, method, KNOWN, () => randomPassword(), profiles))}>
                 <KeyRound aria-hidden />
                 {t("bulk.fill", { count: missing })}
               </Button>
