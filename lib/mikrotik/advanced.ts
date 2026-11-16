@@ -129,8 +129,9 @@ export function morososScript(ctx: AdvContext, o: MorososOptions): AdvResult {
     "/ip proxy",
     `set enabled=yes port=${NOTICE_PORT}`,
     "/ip proxy access",
-    `add src-address=${n.poolText} dst-host=${host} action=allow ${c("el aviso")}`,
-    `add src-address=${n.poolText} action=redirect action-data=${rosString(o.noticeUrl.trim())} ${c("todo lo demas al aviso")}`,
+    // No src-address: suspended business clients with a fixed public IP aren't in the pool; only DSX-morosos reach the proxy anyway.
+    `add dst-host=${host} action=allow ${c("el aviso")}`,
+    `add action=redirect action-data=${rosString(o.noticeUrl.trim())} ${c("todo lo demas al aviso")}`,
     `add action=deny ${c("nadie mas usa el proxy")}`,
     // The basic firewall drops everything from the clients to the router: let the suspended ones reach the proxy first.
     `{ :local d [/ip firewall filter find where comment="DS: los clientes no administran el router"]; :if ([:len $d] > 0) do={/ip firewall filter add chain=input src-address-list=DSX-morosos protocol=tcp dst-port=${NOTICE_PORT} action=accept ${c("aviso por el proxy")} place-before=[:pick $d 0]} else={/ip firewall filter add chain=input src-address-list=DSX-morosos protocol=tcp dst-port=${NOTICE_PORT} action=accept ${c("aviso por el proxy")}} }`,
@@ -388,7 +389,7 @@ export function usageScript(ctx: AdvContext, o: UsageOptions): AdvResult {
     ':local msg ("mas uso del mes (MB de bajada):"); :for i from=1 to=' + o.top + ' do={:local top ""; :local max -1',
     ':foreach u,d in=$best do={:if ($d > $max) do={:set max $d; :set top $u}}',
     ':if ($max >= 0) do={:set msg ($msg . " " . $top . "=" . $max); :set ($best->$top) -2}}',
-    ":global DSmsg $msg; /system script run DS-aviso",
+    ':if ([:len $best] > 0) do={:global DSmsg $msg; /system script run DS-aviso}',
   ].join(STMT).replace(/\{; /g, "{").replace(/; \}/g, "}")
   const out = [
     "/system script",
@@ -438,7 +439,7 @@ export function shieldScript(ctx: AdvContext, o: ShieldOptions): AdvResult {
     `add chain=DSX-salida action=return dst-limit=${o.rate},${o.rate * 2},src-address/1m ${c("ritmo normal")}`,
     `add chain=DSX-salida action=add-src-to-address-list address-list=DSX-infectados address-list-timeout=1h ${c("ritmo de bot")}`,
   ]
-  if (o.scan) out.push("/ip firewall raw", `add chain=prerouting in-interface-list=DS-LAN psd=21,3s,3,1 action=add-src-to-address-list address-list=DSX-infectados address-list-timeout=1h ${c("escaneo de puertos")}`)
+  if (o.scan) out.push("/ip firewall raw", `add chain=prerouting in-interface-list=DS-LAN protocol=tcp tcp-flags=syn,!ack dst-port=1-1023 psd=21,3s,3,1 action=add-src-to-address-list address-list=DSX-infectados address-list-timeout=1h ${c("escaneo de puertos")}`)
   if (o.block) out.push("/ip firewall raw", `add chain=prerouting in-interface-list=DS-LAN src-address-list=DSX-infectados dst-address-type=!local action=drop ${c("cliente marcado, cortado 1 h")}`)
   if (o.inbound)
     out.push(
@@ -510,7 +511,7 @@ export function boostScript(ctx: AdvContext, o: BoostOptions): AdvResult {
   if (hasError(issues)) return fail(issues)
   const c = comment("velocidad")
   const kick = (plan: string) =>
-    o.reconnect ? `; :foreach s in=[/ppp secret find where profile=${rosString(plan)}] do={/ppp active remove [find where name=[/ppp secret get $s name]]}` : ""
+    o.reconnect ? `; :foreach s in=[/ppp secret find where profile=${rosString(plan)}] do={/ppp active remove [find where name=[/ppp secret get $s name]]; :delay 30ms}` : ""
   // Each plan and its -familia twin (DNS filter), when it exists: a set on an empty find does nothing.
   const apply = (which: "boost" | "normal") =>
     plans.flatMap((p) => [p.name, familyName(p.name)].map((name) => `/ppp profile set [find where name=${rosString(name)}] rate-limit=${rosString(p[which])}${kick(name)}`)).join("; ")
@@ -814,7 +815,14 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { 
     backupV6 += `\n/ipv6 pool set [find where name="${pool}"] prefix=${h[1]}`
   }
   if (mainV6) issues.push({ code: "v6Halves", level: "info" })
-  return { main: main + mainV6, backup: backup + backupV6, undoMain, backupIp, olt, issues }
+  const undoV6 = [
+    ["DS-pd", s.ipv6Pd.trim()],
+    ["DS-wan6", s.ipv6Wan.trim()],
+  ]
+    .filter(([, prefix]) => prefix && v6Halves(prefix))
+    .map(([pool, prefix]) => `\n/ipv6 pool set [find where name="${pool}"] prefix=${prefix}`)
+    .join("")
+  return { main: main + mainV6, backup: backup + backupV6, undoMain: undoMain + undoV6, backupIp, olt, issues }
 }
 
 // ── 10 Fixed exit per destination ───────────────────────────────────────────

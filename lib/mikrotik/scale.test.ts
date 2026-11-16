@@ -297,7 +297,7 @@ describe("bulk: PCQ per plan and updates", () => {
   })
   it("PPPoE upsert keeps passwords; User Manager re-assigns profiles", () => {
     const ppp = bulkScript(rows("Juan, juan, 500, s3cr3t", "pppoe"), "pppoe", { rule: RULES.s80, upsert: true })
-    expect(ppp).toContain(':if ([:len [/ppp secret find where name="juan"]] > 0) do={/ppp secret set [find where name="juan"] profile="plan-500M"} else={/ppp secret add name="juan" password="s3cr3t" service=pppoe profile="plan-500M" comment="Juan"}')
+    expect(ppp).toContain('else={/ppp secret set [find where name="juan"] profile="plan-500M"}}} else={/ppp secret add name="juan" password="s3cr3t" service=pppoe profile="plan-500M" comment="Juan"}')
     const um = bulkScript(rows("Juan, juan, 500, s3cr3t", "usermanager"), "usermanager", { rule: RULES.flat, upsert: true })
     expect(um).toContain('remove [find where user="juan"]')
     expect(um).toContain(':if ([:len [/user-manager user find where name="juan"]] = 0) do={/user-manager user add name="juan"')

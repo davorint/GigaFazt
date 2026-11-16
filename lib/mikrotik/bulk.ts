@@ -223,6 +223,17 @@ export type BulkOptions = {
 /** "10.0.0.2/32" → "10.0.0.2" (address lists show single hosts without the prefix). */
 const listAddress = (target: string) => target.replace(/\/32$/, "")
 
+/**
+ * Update or add a PPPoE secret. An existing account changes plan, except one that is suspended or reduced (a DSX-
+ * profile: reactivating is a separate step) and a "-familia" one, which moves to the familia version of the new plan.
+ * A new account is added with the plan.
+ */
+function secretUpsert(id: string, profile: string, add: string[]): string {
+  const n = rosString(id)
+  const p = rosString(profile)
+  return `:if ([:len [/ppp secret find where name=${n}]] > 0) do={:local c [/ppp secret get [find where name=${n}] profile]; :if ([:pick $c 0 4] != "DSX-") do={:if ([:typeof [:find $c "-familia"]] = "num") do={/ppp secret set [find where name=${n}] profile=(${p} . "-familia")} else={/ppp secret set [find where name=${n}] profile=${p}}}} else={/ppp secret add ${add.join(" ")}}`
+}
+
 /** The RouterOS script for the parsed clients. */
 export function bulkScript(rows: BulkRow[], method: BulkMethod, o: BulkOptions): string {
   if (rows.length === 0) return ""
@@ -292,7 +303,7 @@ export function bulkScript(rows: BulkRow[], method: BulkMethod, o: BulkOptions):
     const secrets = rows.map((r) => {
       const profile = `profile=${rosString(r.profile as string)}`
       const add = [`name=${rosString(r.id)}`, `password=${rosString(r.password ?? "")}`, "service=pppoe", profile, `comment=${rosString(r.name)}`]
-      return o.upsert ? upsert("/ppp secret", r.id, [profile], add) : `add ${add.join(" ")}`
+      return o.upsert ? secretUpsert(r.id, r.profile as string, add) : `add ${add.join(" ")}`
     })
     return [...guard, ...parents, "/ppp secret", ...secrets].join("\n")
   }
@@ -308,7 +319,7 @@ export function bulkScript(rows: BulkRow[], method: BulkMethod, o: BulkOptions):
       const profile = `profile=${rosString(profileOf.get(r.planMbps) ?? "")}`
       const add = [`name=${rosString(r.id)}`, `password=${rosString(r.password ?? "")}`, "service=pppoe", profile, `comment=${rosString(r.name)}`]
       // An existing secret keeps its password; only the plan changes.
-      return o.upsert ? upsert("/ppp secret", r.id, [profile], add) : `add ${add.join(" ")}`
+      return o.upsert ? secretUpsert(r.id, profileOf.get(r.planMbps) ?? "", add) : `add ${add.join(" ")}`
     })
     return [...out, "/ppp profile", ...lines, "/ppp secret", ...secrets].join("\n")
   }

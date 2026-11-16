@@ -1447,7 +1447,7 @@
       "upsert": "Si ya existe, actualizarlo",
       "upsertHint": {
         "simple": "Cada línea actualiza la cola con ese nombre o la crea: sirve para volver a correr el script o cambiar a todos de regla.",
-        "pppoe": "A los secrets que ya existen solo les cambia el perfil (la contraseña se queda).",
+        "pppoe": "A los secrets que ya existen solo les cambia el perfil (la contraseña se queda). Las cuentas suspendidas o reducidas (perfiles DSX-) no se tocan, y las de un plan familia pasan a la versión familia del plan nuevo.",
         "usermanager": "Actualiza las limitaciones, crea lo que falte y reasigna el perfil de cada usuario (los que ya existen conservan su contraseña).",
         "pcq": "Actualiza los tipos y las colas, no duplica las reglas de mangle y mueve cada IP a la lista de su plan."
       },

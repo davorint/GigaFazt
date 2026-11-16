@@ -29,7 +29,9 @@ describe("Varios clientes → PPPoE uses the deployment's profiles", () => {
     expect(script.some((l) => /\/ppp profile$|^add name="plan-/.test(l))).toBe(false)
     // Update mode only changes the profile of an existing secret.
     const up = bulkScript(parsed.rows, "pppoe", { rule: DEFAULT_RULE, upsert: true })
-    expect(up).toContain(':if ([:len [/ppp secret find where name="ana02"]] > 0) do={/ppp secret set [find where name="ana02"] profile="plan-500M"}')
+    // Update keeps suspended/reduced accounts (DSX-) as they are and familia ones on the familia version of the plan.
+    expect(up).toContain(':if ([:len [/ppp secret find where name="ana02"]] > 0) do={:local c [/ppp secret get [find where name="ana02"] profile]; :if ([:pick $c 0 4] != "DSX-") do={')
+    expect(up).toContain('profile=("plan-500M" . "-familia")} else={/ppp secret set [find where name="ana02"] profile="plan-500M"}}}')
     // A parent queue goes on the profiles in use.
     expect(bulkScript(parsed.rows, "pppoe", { rule: DEFAULT_RULE, parent: "torre-B" })).toContain('set [find where name="empresa-300"] parent-queue="torre-B"')
   })

@@ -239,5 +239,15 @@ describe("audit fixes (2026-11-16)", () => {
     expect(v6Halves("2001:db8::/32")).toEqual(["2001:db8::/33", "2001:db8:8000::/33"])
     expect(v6Halves("2001:db8::/64")).toBeNull()
   })
+  it("third audit: notice for any suspended client, scan detection on service ports, spaced reconnections, IPv6 pools restored", () => {
+    const m = morososScript(ctx(), { ...DEFAULT_MOROSOS, noticeUrl: "https://x.com/aviso" })
+    expect(m.script).toContain('add action=redirect action-data="https://x.com/aviso"')
+    expect(m.script).not.toContain("src-address=100.64.0.0/22 action=redirect")
+    expect(shieldScript(ctx(), DEFAULT_SHIELD).script).toContain("protocol=tcp tcp-flags=syn,!ack dst-port=1-1023 psd=21,3s,3,1")
+    expect(boostScript(ctx(), DEFAULT_BOOST).script).toContain(":delay 30ms}")
+    expect(usageScript(ctx(), DEFAULT_USAGE).script).toContain(":if ([:len \\$best] > 0) do={:global DSmsg \\$msg")
+    const r = backupRouterScripts(ctx({ ipv6Pd: "2001:db8:100::/40" }), DEFAULT_BACKUP_ROUTER)
+    expect(r.undoMain).toContain('/ipv6 pool set [find where name="DS-pd"] prefix=2001:db8:100::/40')
+  })
 })
 
