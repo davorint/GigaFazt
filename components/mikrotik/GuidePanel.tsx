@@ -24,11 +24,12 @@ import type { DeploymentStore } from "@/lib/mikrotik/deployment-store"
 import { clientsOf } from "@/lib/mikrotik/deployments"
 import { fmtNum } from "@/lib/mikrotik/format"
 import { checkSetup, CONN_LIMIT, oltSetup, setupParts, setupPlans, type SetupState } from "@/lib/mikrotik/setup"
-import { decodeDeployment, MAX_NAME, MAX_WANS, nextMonitor, PRESETS, type BalanceState, type LabState } from "@/lib/mikrotik/state"
+import { decodeDeployment, MAX_NAME, MAX_WANS, nextMonitor, type BalanceState, type LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
 import { CodeBlock } from "./CodeBlock"
 import { IssueList } from "./IssueList"
 import { NumberField } from "./NumberField"
+import { PlansEditor } from "./PlansEditor"
 import { SelectField } from "./SelectField"
 import { TextField } from "./TextField"
 
@@ -44,7 +45,6 @@ type Props = {
   onName: (name: string) => void
 }
 
-const SPEEDS = PRESETS.map((p) => p.downMbps)
 const PHASES = ["p0", "p1", "p2", "p3", "p4", "p5", "p6"] as const
 type Phase = (typeof PHASES)[number]
 const TESTS = 14
@@ -119,7 +119,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
   }
 
   const clients = clientsOf({ status: state.status, capacity: state.capacity })
-  const plans = useMemo(() => setupPlans(SPEEDS, state.rule), [state.rule])
+  const plans = useMemo(() => setupPlans(s.plans, s.rule), [s.plans, s.rule])
   const ctx = {
     clients,
     wanIfaces: wans.map((w) => w.iface),
@@ -130,7 +130,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
   }
   const parts = setupParts(s, { ...ctx, name: state.deployment, plans, queue: state.queueKind })
   const balance = balanceScript({ ...b, wans })
-  const olt = oltSetup(s, { speeds: SPEEDS, names: plans.map((p) => p.name) })
+  const olt = oltSetup(s, { plans })
   const { buckets, total } = pccBuckets(wans)
   const perIp = wans.length > 0 ? Math.ceil(clients / wans.length) : clients
   const issues = [
@@ -334,7 +334,10 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
           </>
         )}
         {toggleRow(tc("mtu1500"), s.mtu1500, (mtu1500) => setS({ mtu1500 }))}
-        <p className="text-xs text-zinc-400">{t("plansFrom")}</p>
+        <div className="grid min-w-0 gap-2">
+          <p className="text-sm font-medium text-foreground">{tc("plans.title")}</p>
+          <PlansEditor plans={s.plans} rule={s.rule} onPlans={(p) => setS({ plans: p })} onRule={(rule) => setS({ rule })} label={tc("plans.captionGuide")} />
+        </div>
       </>
     ),
     p5: (

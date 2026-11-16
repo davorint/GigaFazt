@@ -2,13 +2,14 @@
 
 import { useTranslations } from "next-intl"
 import { Switch } from "@/components/ui/switch"
-import { RULE_IDS, RULES, ruleId, type PlanRule, type QueueParams } from "@/lib/mikrotik/burst"
+import type { PlanRule, QueueParams } from "@/lib/mikrotik/burst"
 import { rosRate } from "@/lib/mikrotik/routeros"
 import { fmtPct } from "@/lib/mikrotik/format"
 import { PRESETS, type Direction, type LabState } from "@/lib/mikrotik/state"
 import { speedLabel } from "@/lib/format"
 import { Choice } from "./Choice"
 import { NumberField } from "./NumberField"
+import { RuleFields } from "./RuleFields"
 
 type Props = {
   state: LabState
@@ -18,63 +19,6 @@ type Props = {
   onLineCap: (v: number | null) => void
   onPlan: (v: number | null) => void
   onRule: (rule: PlanRule) => void
-}
-
-/** How a plan speed becomes queue values: named rules or custom shares. */
-function RuleFields({ rule, onRule }: { rule: PlanRule; onRule: (rule: PlanRule) => void }) {
-  const t = useTranslations("mikrotik.params")
-  const id = ruleId(rule)
-  const flat = rule.sustained >= 1
-  return (
-    <div className="grid gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="font-mono text-xs text-zinc-300">{t("rule")}</p>
-      <Choice
-        label={t("rule")}
-        value={id}
-        onChange={(v) => v !== "custom" && onRule(RULES[v])}
-        options={[...RULE_IDS.map((k) => ({ value: k, label: t(`rulesShort.${k}`) })), { value: "custom" as const, label: t("customRule") }]}
-      />
-      <div className="grid items-start gap-4 sm:grid-cols-3">
-        <NumberField
-          label={t("ruleSustained")}
-          hint={t("ruleSustainedHint")}
-          unit="%"
-          value={Math.round(rule.sustained * 1000) / 10}
-          min={1}
-          max={100}
-          onChange={(v) => v !== null && onRule({ ...rule, sustained: v / 100 })}
-        />
-        {!flat && (
-          <>
-            <NumberField
-              label={t("ruleThreshold")}
-              hint={t("ruleThresholdHint")}
-              unit="%"
-              value={Math.round(rule.threshold * 1000) / 10}
-              min={1}
-              max={200}
-              onChange={(v) => v !== null && onRule({ ...rule, threshold: v / 100 })}
-            />
-            <NumberField
-              label={t("ruleBurstTime")}
-              unit={t("unitS")}
-              value={rule.burstTime}
-              integer
-              min={1}
-              max={3600}
-              onChange={(v) => v !== null && onRule({ ...rule, burstTime: v })}
-            />
-          </>
-        )}
-      </div>
-      <p className="text-xs leading-snug text-zinc-400">
-        {flat
-          ? t("ruleFlat")
-          : t("ruleHint", { sustained: fmtPct(rule.sustained), threshold: fmtPct(rule.threshold), time: rule.burstTime })}{" "}
-        {t("ruleUse")}
-      </p>
-    </div>
-  )
 }
 
 export function ParamsPanel({ state, onPreset, onSymmetric, onQueue, onLineCap, onPlan, onRule }: Props) {

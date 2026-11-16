@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { RULES } from "./burst"
-import { checkSetup, DEFAULT_SETUP, mikrotikSetup, oltSetup, ontTemplate, parseCidr, poolHosts, setupParts, setupPlans, setupUndo, type SetupContext } from "./setup"
+import { checkSetup, DEFAULT_PLANS, DEFAULT_SETUP, mikrotikSetup, oltSetup, ontTemplate, parseCidr, poolHosts, setupParts, setupPlans, setupUndo, type SetupContext } from "./setup"
 import { decodeState, encodeState, initialState } from "./state"
 
 const ctx = (over: Partial<SetupContext> = {}): SetupContext => ({
@@ -9,7 +9,7 @@ const ctx = (over: Partial<SetupContext> = {}): SetupContext => ({
   balanced: ["10.0.0.0/8", "100.64.0.0/10"],
   ...over,
 })
-const plans = setupPlans([200, 500, 1000], RULES.s20)
+const plans = setupPlans(DEFAULT_PLANS, RULES.s20)
 const codes = (s = DEFAULT_SETUP, c = ctx()) => checkSetup(s, c).map((i) => i.code)
 
 describe("deployment setup: addresses and checks", () => {
@@ -65,7 +65,7 @@ describe("deployment setup: MikroTik", () => {
 })
 
 describe("deployment setup: Huawei OLT", () => {
-  const olt = oltSetup(DEFAULT_SETUP, { speeds: [200, 500, 1000], names: plans.map((p) => p.name) }).split("\n")
+  const olt = oltSetup(DEFAULT_SETUP, { plans }).split("\n")
   it("smart VLANs on the uplink and the management address", () => {
     expect(olt.slice(0, 6)).toEqual(["enable", "config", "vlan 100 smart", "port vlan 100 0/9 0", "vlan 10 smart", "port vlan 10 0/9 0"])
     expect(olt).toContain(" ip address 192.168.10.2 255.255.255.0")
@@ -88,7 +88,7 @@ describe("deployment setup: Huawei OLT", () => {
     ])
     expect(ontTemplate(DEFAULT_SETUP, { plan: 0, ponPort: "x", ontId: 0, sn: "", client: "" })).toBe("")
     expect(ontTemplate({ ...DEFAULT_SETUP, ontMode: "router" }, { plan: 0, ponPort: "0/1/0", ontId: 1, sn: "", client: "" })).not.toContain("native-vlan")
-    expect(oltSetup(DEFAULT_SETUP, { speeds: [200], names: ["plan-200M"] })).toContain("security anti-macspoofing enable\nsecurity anti-ipspoofing enable")
+    expect(oltSetup(DEFAULT_SETUP, { plans: plans.slice(0, 1) })).toContain("security anti-macspoofing enable\nsecurity anti-ipspoofing enable")
   })
 })
 
@@ -130,11 +130,35 @@ describe("deployment setup: the checklist's phases", () => {
   })
 })
 
+describe("deployment setup: plans", () => {
+  it("custom and asymmetric plans with the deployment's burst rule", () => {
+    const list = setupPlans([...DEFAULT_PLANS, { name: "empresa-300", down: 300, up: 100 }, { name: "", down: 50, up: 10 }], RULES.s50)
+    expect(list.map((p) => p.name)).toEqual(["plan-200M", "plan-500M", "plan-1000M", "empresa-300", "plan-50M"])
+    // 50 % sustained, 75 % threshold (whole Mbps), 16 s: 300/100 → max 150/50, burst 300/100, threshold 113/38.
+    const script = mikrotikSetup({ ...DEFAULT_SETUP, plans: [{ name: "empresa-300", down: 300, up: 100 }], rule: RULES.s50 }, { ...ctx(), name: "", plans: setupPlans([{ name: "empresa-300", down: 300, up: 100 }], RULES.s50) })
+    expect(script).toContain('rate-limit="50M/150M 100M/300M 38M/113M 16/16"')
+    expect(script).toContain('default-profile="empresa-300"')
+  })
+  it("the OLT takes the download for the traffic table and the upload for the DBA", () => {
+    const olt = oltSetup(DEFAULT_SETUP, { plans: setupPlans([{ name: "empresa-300", down: 300, up: 100 }], RULES.s20) })
+    expect(olt).toContain("traffic table ip index 10 cir 330048 priority 0")
+    expect(olt).toContain("dba-profile add profile-id 10 type4 max 110016")
+    expect(olt).toContain('ont-lineprofile gpon profile-id 10 profile-name "empresa-300"')
+  })
+  it("checks names, speeds and repeats", () => {
+    const codes = (plans: typeof DEFAULT_PLANS) => checkSetup({ ...DEFAULT_SETUP, plans }, ctx()).map((i) => i.code)
+    expect(codes([])).toContain("noPlans")
+    expect(codes([{ name: "a b", down: 10, up: 10 }])).toContain("badPlanName")
+    expect(codes([{ name: "", down: 0, up: 10 }])).toContain("badPlanSpeed")
+    expect(codes([{ name: "", down: 200, up: 200 }, { name: "plan-200M", down: 300, up: 300 }])).toContain("duplicatePlan")
+  })
+})
+
 describe("deployment setup: share link", () => {
   it("round-trips and falls back to the defaults", () => {
     const s = {
       ...initialState(),
-      setup: { ...DEFAULT_SETUP, oltPort: "ether5", internetVlan: 200, pool: "100.64.8.0/21", dns: "9.9.9.9", firewall: false, oltUplink: "0/19/0", collector: "10.9.9.9", mtu1500: false, ontMode: "router" as const },
+      setup: { ...DEFAULT_SETUP, oltPort: "ether5", internetVlan: 200, pool: "100.64.8.0/21", dns: "9.9.9.9", firewall: false, oltUplink: "0/19/0", collector: "10.9.9.9", mtu1500: false, ontMode: "router" as const, plans: [...DEFAULT_PLANS, { name: "empresa-300", down: 300, up: 100 }], rule: RULES.s50 },
     }
     expect(decodeState(encodeState(s))).toEqual(s)
     expect(decodeState("#d=100,500,75,16,0")?.setup).toEqual(DEFAULT_SETUP)

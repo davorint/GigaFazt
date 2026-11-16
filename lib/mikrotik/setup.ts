@@ -36,10 +36,18 @@
  * Pure functions; the UI shows the text and its notes.
  */
 
-import { planDefaults, type PlanRule } from "./burst"
+import { plans as catalog } from "../plans"
+import { DEFAULT_RULE, planDefaults, type PlanRule } from "./burst"
 import { rateLimit, planName, rosString, upsert, queueTypeSetup, type Pair, type QueueKind } from "./routeros"
 
 export type OntMode = "bridge" | "router"
+
+/** A plan the deployment sells: download and upload, Mbps; name empty = "plan-<speed>" like the bulk export. */
+export type SetupPlan = { name: string; down: number; up: number }
+
+/** The site's plans (200 Mbps, 500 Mbps, 1 Gbps, symmetric): what a deployment starts with. */
+export const DEFAULT_PLANS: SetupPlan[] = catalog.map((p) => ({ name: "", down: p.downMbps, up: p.upMbps }))
+export const MAX_PLANS = 12
 
 export type SetupState = {
   /** MikroTik port toward the OLT's uplink. */
@@ -68,6 +76,9 @@ export type SetupState = {
   blockSmtp: boolean
   /** ONT in bridge mode (the client's router does PPPoE) or router mode (the ONT does it). */
   ontMode: OntMode
+  /** Plans sold in this deployment, and the burst rule that turns them into queues. */
+  plans: SetupPlan[]
+  rule: PlanRule
 }
 
 export const DEFAULT_SETUP: SetupState = {
@@ -86,6 +97,8 @@ export const DEFAULT_SETUP: SetupState = {
   isolate: true,
   blockSmtp: true,
   ontMode: "bridge",
+  plans: DEFAULT_PLANS,
+  rule: DEFAULT_RULE,
 }
 
 /** OLT downstream table and upstream DBA: the plan + 10 %, so the MikroTik's burst queue is what limits. */
@@ -139,6 +152,10 @@ export type SetupIssueCode =
   | "badService"
   | "badUplink"
   | "badCollector"
+  | "noPlans"
+  | "badPlanSpeed"
+  | "badPlanName"
+  | "duplicatePlan"
 export type SetupIssue = { code: SetupIssueCode; level: "error" | "warn" | "info"; value?: string; need?: number; have?: number }
 
 export type SetupContext = {
@@ -183,20 +200,29 @@ export function checkSetup(s: SetupState, ctx: SetupContext): SetupIssue[] {
   if (!/^[A-Za-z0-9_-]{1,32}$/.test(s.service.trim())) out.push({ code: "badService", level: "error", value: s.service })
   if (!/^\d{1,2}\/\d{1,2}\/\d{1,2}$/.test(s.oltUplink.trim())) out.push({ code: "badUplink", level: "error", value: s.oltUplink })
   if (s.collector.trim() && !isIp(s.collector.trim())) out.push({ code: "badCollector", level: "error", value: s.collector })
+  if (s.plans.length === 0) out.push({ code: "noPlans", level: "error" })
+  const names = new Set<string>()
+  for (const p of s.plans) {
+    if (!(p.down > 0 && p.up > 0)) out.push({ code: "badPlanSpeed", level: "error", value: p.name || String(p.down) })
+    if (p.name.trim() && !/^[A-Za-z0-9_.-]{1,32}$/.test(p.name.trim())) out.push({ code: "badPlanName", level: "error", value: p.name })
+    const n = planLabel(p, s.rule)
+    if (names.has(n)) out.push({ code: "duplicatePlan", level: "error", value: n })
+    names.add(n)
+  }
   return out
 }
 
 // ── MikroTik ───────────────────────────────────────────────────────────────
 
-export type SetupPlans = { name: string; pair: Pair }[]
+export type SetupPlans = { name: string; pair: Pair; down: number; up: number }[]
 
-/** The plans as PPP profiles take them (the deployment's burst rule), named as the bulk PPPoE export names them. */
-export function setupPlans(speeds: number[], rule: PlanRule): SetupPlans {
-  return speeds.map((mbps) => {
-    const q = planDefaults(mbps, rule)
-    const pair = { up: q, down: q }
-    return { name: planName(pair), pair }
-  })
+const planPair = (p: SetupPlan, rule: PlanRule): Pair => ({ down: planDefaults(p.down, rule), up: planDefaults(p.up, rule) })
+/** The profile name: the one typed, or "plan-<top speed>" as the bulk PPPoE export names it. */
+export const planLabel = (p: SetupPlan, rule: PlanRule) => p.name.trim() || planName(planPair(p, rule))
+
+/** The plans as PPP profiles take them: each with the deployment's burst rule. */
+export function setupPlans(list: SetupPlan[], rule: PlanRule): SetupPlans {
+  return list.filter((p) => p.down > 0 && p.up > 0).map((p) => ({ name: planLabel(p, rule), pair: planPair(p, rule), down: p.down, up: p.up }))
 }
 
 const vlanName = (id: number, what: string) => `vlan${id}-${what}`
@@ -379,23 +405,24 @@ const frameSlot = (fsp: string) => {
   return { fs: `${f}/${sl}`, port: p }
 }
 
-/** Plan speeds as the OLT gets them: a traffic table, a DBA profile and a line profile each; then the security set. */
-export function oltSetup(s: SetupState, ctx: { speeds: number[]; names: string[] }): string {
+/** Plans as the OLT gets them: a traffic table (download), a DBA profile (upload) and a line profile each; then the security set. */
+export function oltSetup(s: SetupState, ctx: { plans: { name: string; down: number; up: number }[] }): string {
   const mgmt = parseCidr(s.mgmtNet)
   if (!mgmt || !/^\d{1,2}\/\d{1,2}\/\d{1,2}$/.test(s.oltUplink.trim())) return ""
   const up = frameSlot(s.oltUplink)
   const lines = ["enable", "config"]
   for (const v of [s.internetVlan, s.mgmtVlan]) lines.push(`vlan ${v} smart`, `port vlan ${v} ${up.fs} ${up.port}`)
   lines.push(`interface vlanif ${s.mgmtVlan}`, ` ip address ${intToIp(mgmt.net + 2)} ${mask(mgmt.prefix)}`, " quit", `ip route-static 0.0.0.0 0.0.0.0 ${intToIp(mgmt.net + 1)}`)
-  ctx.speeds.forEach((mbps, k) => {
+  if (ctx.plans.length === 0) return ""
+  ctx.plans.forEach((p, k) => {
     const id = OLT_FIRST_ID + k
-    lines.push(`traffic table ip index ${id} cir ${oltKbps(mbps)} priority 0 priority-policy local-setting`)
-    lines.push(`dba-profile add profile-id ${id} type4 max ${oltKbps(mbps)}`)
+    lines.push(`traffic table ip index ${id} cir ${oltKbps(p.down)} priority 0 priority-policy local-setting`)
+    lines.push(`dba-profile add profile-id ${id} type4 max ${oltKbps(p.up)}`)
   })
-  ctx.speeds.forEach((_, k) => {
+  ctx.plans.forEach((p, k) => {
     const id = OLT_FIRST_ID + k
     lines.push(
-      `ont-lineprofile gpon profile-id ${id} profile-name "${ctx.names[k]}"`,
+      `ont-lineprofile gpon profile-id ${id} profile-name "${p.name}"`,
       ` tcont 1 dba-profile-id ${id}`,
       " gem add 1 eth tcont 1",
       ` gem mapping 1 0 vlan ${s.internetVlan}`,

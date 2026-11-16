@@ -5,20 +5,19 @@ import { useTranslations } from "next-intl"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { clientsOf } from "@/lib/mikrotik/deployments"
-import { speedLabel } from "@/lib/format"
 import { checkSetup, mikrotikSetup, OLT_HEADROOM, oltSetup, ontTemplate, parseCidr, poolHosts, setupPlans, setupUndo, type SetupState } from "@/lib/mikrotik/setup"
-import { PRESETS, type LabState } from "@/lib/mikrotik/state"
+import type { LabState } from "@/lib/mikrotik/state"
 import { fmtNum } from "@/lib/mikrotik/format"
 import { CodeBlock } from "./CodeBlock"
 import { IssueList } from "./IssueList"
 import { NumberField } from "./NumberField"
+import { PlansEditor } from "./PlansEditor"
 import { SelectField } from "./SelectField"
 import { TextField } from "./TextField"
 
 type Props = { state: LabState; onSetup: (s: SetupState) => void }
 
 /** The plans, by download speed (all symmetric). */
-const SPEEDS = PRESETS.map((p) => p.downMbps)
 
 /** VLANs, PPPoE and the OLT for a new deployment: MikroTik and Huawei commands that match. */
 export function SetupPanel({ state, onSetup }: Props) {
@@ -35,10 +34,10 @@ export function SetupPanel({ state, onSetup }: Props) {
     cgnatUpstreams: state.wans.filter((w) => w.upstreamCgnat).map((w) => w.iface.trim()),
     pppoeIfaces: state.wans.filter((w) => w.type === "pppoe").map((w) => w.iface.trim()),
   }
-  const plans = useMemo(() => setupPlans(SPEEDS, state.rule), [state.rule])
+  const plans = useMemo(() => setupPlans(s.plans, s.rule), [s.plans, s.rule])
   const issues = checkSetup(s, ctx)
   const router = mikrotikSetup(s, { ...ctx, name: state.deployment, plans, queue: state.queueKind })
-  const olt = oltSetup(s, { speeds: SPEEDS, names: plans.map((p) => p.name) })
+  const olt = oltSetup(s, { plans })
 
   // One ONT, to copy for each client (not saved).
   const [ont, setOnt] = useState({ plan: 0, ponPort: "0/1/0", ontId: 0, sn: "", client: "" })
@@ -75,6 +74,11 @@ export function SetupPanel({ state, onSetup }: Props) {
             <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t(`${k}Hint`)}</p>
           </div>
         ))}
+      </fieldset>
+
+      <fieldset className="grid min-w-0 gap-4">
+        <legend className="mb-3 text-sm font-medium text-foreground">{t("plans.title")}</legend>
+        <PlansEditor plans={s.plans} rule={s.rule} onPlans={(p) => set({ plans: p })} onRule={(rule) => set({ rule })} />
       </fieldset>
 
       <fieldset className="grid gap-4">
@@ -140,9 +144,9 @@ export function SetupPanel({ state, onSetup }: Props) {
         <TabsContent value="ont" className="grid min-w-0 gap-4">
           <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <SelectField label={t("ont.plan")} value={String(ont.plan)} onChange={(v) => setOnt({ ...ont, plan: Number(v) })}>
-              {PRESETS.map((p, k) => (
-                <option key={p.id} value={k}>
-                  {speedLabel(p.downMbps)}
+              {plans.map((p, k) => (
+                <option key={p.name} value={k}>
+                  {p.name}
                 </option>
               ))}
             </SelectField>

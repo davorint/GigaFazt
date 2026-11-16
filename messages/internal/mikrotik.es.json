@@ -725,7 +725,6 @@
       },
       "fixAbove": "Corrige los avisos de arriba para generar los comandos.",
       "dataFor": "Datos de «{name}» para esta fase",
-      "plansFrom": "Los perfiles PPP salen de los planes con la regla de ráfaga de «Parámetros» (arriba en esta página).",
       "deploy": {
         "pick": "Despliegue",
         "pickHint": "Los guardados en este navegador. Al cambiar, todos los comandos se generan para ese despliegue.",
@@ -1057,7 +1056,7 @@
       "oltTitle": "OLT Huawei",
       "oltUplink": "Puerto de subida de la OLT",
       "oltUplinkHint": "Marco/ranura/puerto del puerto conectado al MikroTik (p. ej. 0/9/0). Revísalo con display board 0.",
-      "oltPlans": "Por plan: una tabla de tráfico (bajada) y un perfil DBA (subida) {pct} % arriba del plan, para que el límite (con la ráfaga) lo ponga la cola del MikroTik, y un perfil de línea que lleva el GEM 1 a la VLAN de internet.",
+      "oltPlans": "Por plan: una tabla de tráfico (bajada) y un perfil DBA (subida) {pct} % arriba del plan, para que el límite (con la ráfaga) lo ponga la cola del MikroTik, y un perfil de línea que lleva el GEM 1 a la VLAN de internet. Los IDs empiezan en 10, en el orden de la lista de planes.",
       "issues": {
         "missingPort": "Falta el puerto hacia la OLT.",
         "portIsWan": "{value} es un enlace a internet; la OLT va en otro puerto.",
@@ -1072,7 +1071,11 @@
         "badService": "{value}: usa solo letras, números, - y _.",
         "badUplink": "{value}: escribe marco/ranura/puerto, p. ej. 0/9/0.",
         "dnsIsProbe": "{value} es una IP vigilada: sale por un solo enlace y deja de responder cuando ese enlace cae. Usa otros resolutores.",
-        "badCollector": "{value} no es una IP válida para el colector."
+        "badCollector": "{value} no es una IP válida para el colector.",
+        "noPlans": "Agrega al menos un plan.",
+        "badPlanSpeed": "{value}: la bajada y la subida deben ser mayores que 0.",
+        "badPlanName": "{value}: usa solo letras, números, punto, - y _.",
+        "duplicatePlan": "Hay dos planes llamados {value}; cada perfil necesita su nombre."
       },
       "tabs": {
         "router": "MikroTik",
@@ -1094,7 +1097,7 @@
       "oltWarning": "Punto de partida, no probado en tu OLT: la sintaxis de Huawei cambia con la tarjeta y la versión. Revisa cada comando (con ? en la consola) antes de usarlo, sobre todo en la MA5800 y con XG-PON o XGS-PON.",
       "oltScript": "Configuración de la OLT Huawei",
       "oltNotes": [
-        "Los IDs 10, 11 y 12 son los de los planes en orden (200 Mbps, 500 Mbps, 1 Gbps). Si ya los usas, cámbialos antes de pegar.",
+        "Los IDs empiezan en 10 y siguen el orden de los planes (10 el primero, 11 el segundo…). Si ya los usas en la OLT, cámbialos antes de pegar.",
         "Las tablas de tráfico y los DBA quedan un poco arriba del plan: el límite y la ráfaga los pone el MikroTik.",
         "El perfil de servicio «router» deja los puertos del ONT en automático; ajústalo a tus modelos de ONT."
       ],
@@ -1129,6 +1132,23 @@
       "ontModeHint": {
         "bridge": "El primer puerto del ONT entra sin etiqueta a la VLAN de internet; el router del cliente marca PPPoE.",
         "router": "El ONT marca PPPoE en la VLAN de internet con el usuario del cliente."
+      },
+      "plans": {
+        "title": "Planes de este despliegue",
+        "caption": "Planes y sus colas",
+        "cols": {
+          "name": "Nombre del perfil",
+          "down": "Bajada (Mbps)",
+          "up": "Subida (Mbps)",
+          "queue": "rate-limit que genera",
+          "remove": "Quitar"
+        },
+        "field": "{what} del plan {n}",
+        "remove": "Quitar {name}",
+        "add": "Agregar plan",
+        "hint": "Empieza con los de la página (200 Mbps, 500 Mbps y 1 Gbps). Agrega los personalizados que vendas aquí; la subida puede ser distinta de la bajada. Sin nombre, el perfil se llama plan-<velocidad> (como en «Varios clientes», así las cuentas caen en el perfil correcto).",
+        "ruleNote": "Esta regla convierte cada plan en su cola con ráfaga: perfiles PPP, tablas de tráfico y DBA de la OLT. Se guarda con el despliegue.",
+        "captionGuide": "Planes y sus colas (guía, fase 4)"
       }
     },
     "setup": {

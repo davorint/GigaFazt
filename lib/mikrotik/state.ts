@@ -17,7 +17,7 @@ import {
 import { DEFAULT_PON_EFFICIENCY, type PonTech } from "./capacity"
 import { OLT_MODELS, type OltModelId } from "./olt"
 import { QUEUE_KINDS, type Pair, type QueueKind } from "./routeros"
-import { DEFAULT_SETUP, type SetupState } from "./setup"
+import { DEFAULT_SETUP, MAX_PLANS, type SetupPlan, type SetupState } from "./setup"
 
 /**
  * State of the /mikrotik burst tool and its share link (#hash, so nothing
@@ -317,6 +317,8 @@ function setDeploymentParams(h: URLSearchParams, f: DeploymentFields) {
       st.isolate ? "1" : "0",
       st.blockSmtp ? "1" : "0",
       st.ontMode,
+      [st.rule.sustained, st.rule.threshold, st.rule.burstTime].map(num).join(";"),
+      st.plans.map((p) => [p.name, num(p.down), num(p.up)].join(":")).join(";"),
     ]
       .map(encodeURIComponent)
       .join("|")
@@ -339,9 +341,9 @@ function decodeSetup(v: string | null): SetupState {
       return null
     }
   })
-  // 9 fields before the checklist options (collector, MTU, isolation, SMTP, ONT mode): those take the defaults.
-  if ((parts.length !== 9 && parts.length !== 14) || parts.some((x) => x === null)) return DEFAULT_SETUP
-  const [oltPort, inet, mgmtVlan, mgmtNet, pool, dns, service, firewall, oltUplink, collector, mtu1500, isolate, blockSmtp, ontMode] = parts as string[]
+  // 9 fields before the checklist options (collector, MTU, isolation, SMTP, ONT mode), 14 before the plans: those take the defaults.
+  if (![9, 14, 16].includes(parts.length) || parts.some((x) => x === null)) return DEFAULT_SETUP
+  const [oltPort, inet, mgmtVlan, mgmtNet, pool, dns, service, firewall, oltUplink, collector, mtu1500, isolate, blockSmtp, ontMode, rule, plans] = parts as string[]
   const flag = (x: string | undefined, fallback: boolean) => (x === "1" ? true : x === "0" ? false : fallback)
   const vlan = (x: string) => finite(x, 1, 4094)
   if (vlan(inet) === null || vlan(mgmtVlan) === null || (firewall !== "0" && firewall !== "1")) return DEFAULT_SETUP
@@ -361,7 +363,30 @@ function decodeSetup(v: string | null): SetupState {
     isolate: flag(isolate, DEFAULT_SETUP.isolate),
     blockSmtp: flag(blockSmtp, DEFAULT_SETUP.blockSmtp),
     ontMode: ontMode === "router" ? "router" : ontMode === "bridge" ? "bridge" : DEFAULT_SETUP.ontMode,
+    rule: decodeSetupRule(rule) ?? DEFAULT_SETUP.rule,
+    plans: decodePlans(plans) ?? DEFAULT_SETUP.plans,
   }
+}
+
+function decodeSetupRule(v: string | undefined): PlanRule | null {
+  if (!v) return null
+  const [sustained, threshold, burstTime] = v.split(";").map((x) => finite(x, 0, 3600))
+  if (sustained === null || threshold === null || burstTime === null) return null
+  if (!(sustained >= 0.01 && sustained <= 1) || !(threshold >= 0.01 && threshold <= 2) || !(burstTime >= 1)) return null
+  return { sustained, threshold, burstTime: Math.round(burstTime) }
+}
+
+function decodePlans(v: string | undefined): SetupPlan[] | null {
+  if (!v) return null
+  const out: SetupPlan[] = []
+  for (const row of v.split(";").slice(0, MAX_PLANS)) {
+    const [name, down, up] = row.split(":")
+    const d = finite(down, 0.001, 1e6)
+    const u = finite(up, 0.001, 1e6)
+    if (d === null || u === null) return null
+    out.push({ name: (name ?? "").slice(0, 32), down: d, up: u })
+  }
+  return out.length ? out : null
 }
 
 /** A deployment as text (how the browser and the backup file keep it). */
