@@ -35,7 +35,8 @@ describe("what the model takes from a deployment", () => {
 describe("comparison summary", () => {
   it("averages against the internet links and the OLT uplink", () => {
     const s = summarize(example())
-    expect(s).toMatchObject({ clients: 600, offeredMbps: 2040, internetMbps: 2850, links: 3, ports: 19, maxPorts: 32, problems: 0 })
+    // The 3 example links sit behind the provider's NAT (no public IP yet): one warning each.
+    expect(s).toMatchObject({ clients: 600, offeredMbps: 2040, internetMbps: 2850, links: 3, ports: 19, maxPorts: 32, problems: 3 })
     expect(s.oltLoad).toBeCloseTo(0.204)
     const measured = summarize(running())
     expect(measured).toMatchObject({ offeredMbps: 1860, measured: true, ports: 12 })

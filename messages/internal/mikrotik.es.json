@@ -552,7 +552,7 @@
           "up": "Subida",
           "probe": "IP vigilada",
           "buckets": "Partes PCC (de {total})",
-          "cgnat": "Gateway en 100.64/10",
+          "cgnat": "Salida del proveedor",
           "remove": "Quitar"
         },
         "types": {
@@ -560,12 +560,16 @@
           "static": "IP fija",
           "pppoe": "PPPoE"
         },
-        "cgnatOne": "El gateway de {name} está en 100.64/10",
-        "hint": "Mide cada enlace solo, en hora pico, y escribe lo medido (vacío = la contratada, en gris): el reparto y las colas salen de ahí. Marca los proveedores que te dan una dirección en 100.64/10.",
+        "hint": "Mide cada enlace solo, en hora pico, y escribe lo medido (vacío = la contratada, en gris): el reparto y las colas salen de ahí. En «Salida del proveedor» marca si el MikroTik recibe una IP pública o queda detrás del NAT del proveedor (módem con IP privada o CGNAT en 100.64/10); con CGNAT no se bloquea 100.64 en ese enlace.",
         "field": "{what} de {name}",
         "gatewayAuto": {
           "dhcp": "del DHCP",
           "pppoe": "la sesión"
+        },
+        "exits": {
+          "nat": "NAT del proveedor (IP privada)",
+          "cgnat": "CGNAT del proveedor (100.64/10)",
+          "public": "IP pública en el MikroTik"
         }
       },
       "phases": {
@@ -780,9 +784,18 @@
           "backupLocal": "El respaldo no sale del router: si el router muere se pierde con él. Mándalo por correo o SFTP (fase 5).",
           "noSnmp": "Sin SNMP: actívalo para graficar enlaces, CPU y sesiones y medir la hora pico real.",
           "spare": "Ten un router de repuesto del mismo modelo con el último respaldo: con un solo router por despliegue, es el punto único de falla (pasar sesiones PPPoE a otro router sin cortar no es práctico en RouterOS).",
-          "version": "Usa una sola versión estable de RouterOS 7.x en todos los despliegues y prueba cada actualización en un router de laboratorio: hay reportes de reconexiones PPPoE masivas en CCR2216 con 7.21.4."
+          "version": "Los scripts están revisados contra la referencia de comandos de RouterOS 7.25 (la estable al 16 de noviembre de 2026). Como siempre usas la estable más reciente, prueba cada actualización en un router de laboratorio antes de los despliegues: hay reportes de reconexiones PPPoE masivas en CCR2216 con 7.21.4."
         },
-        "sources": "Fuentes: manual de MikroTik («Securing your router», DNS), RFC 5382 (tiempo mínimo de TCP en un NAT), foro de MikroTik (CPU de CCR2004/CCR2116/CCR2216 con PPPoE). Los umbrales de esta tarjeta son reglas prácticas, no cifras del fabricante."
+        "sources": "Fuentes: manual de MikroTik («Securing your router», DNS), RFC 5382 (tiempo mínimo de TCP en un NAT), foro de MikroTik (CPU de CCR2004/CCR2116/CCR2216 con PPPoE). Los umbrales de esta tarjeta son reglas prácticas, no cifras del fabricante.",
+        "exit": {
+          "title": "Salida a internet (IPs públicas)",
+          "ok": "Todos los enlaces le dan una IP pública al MikroTik: el NAT de los clientes es solo el tuyo.",
+          "all": "Ningún enlace da IP pública ({links}): todo el despliegue sale por el NAT de los proveedores, un segundo NAT después del tuyo.",
+          "some": "{count, plural, one {El enlace {links} no da} other {Los enlaces {links} no dan}} IP pública: lo que sale por ahí pasa por el NAT del proveedor, un segundo NAT después del tuyo.",
+          "limits": "Para el proveedor todo el despliegue es un solo cliente: su módem (tabla de conexiones de un equipo de casa) o su CGNAT (tope de puertos por línea) limita a todos tus clientes juntos, con cientos de clientes es lo primero que se llena. Pregunta a cada proveedor su tope de sesiones o puertos por línea.",
+          "trace": "Para saber quién fue: el proveedor traduce su IP pública y puerto a la IP y el puerto de tu enlace (su registro); con eso, tu registro NAT o tus bloques de puertos fijos dan el cliente. Sin el registro del proveedor no se puede.",
+          "best": "Lo óptimo: una IP pública fija por enlace (servicio empresarial o dedicado), o el módem del proveedor en modo puente para que el MikroTik reciba la IP pública. Cambia «Salida del proveedor» en la fase 0 cuando la tengas."
+        }
       }
     },
     "capacity": {
@@ -1055,7 +1068,8 @@
         "shapeNominal": "Sin velocidad medida, la cola usa la contratada: si el enlace da menos, la fila se sigue formando en el módem.",
         "netwatchRecursive": "Los avisos y la limpieza de conexiones necesitan «Vigilar una IP pública» (Netwatch revisa cada enlace por esa IP).",
         "duplicateName": "Hay dos enlaces llamados {value}: el nombre va en las marcas, las tablas de ruteo, las colas y el NAT; cada enlace necesita el suyo.",
-        "missingName": "Un enlace no tiene nombre."
+        "missingName": "Un enlace no tiene nombre.",
+        "providerNat": "{value} sale por el NAT del proveedor (sin IP pública): su módem o su CGNAT ve todo el despliegue como un solo cliente, con su tope de conexiones y puertos. Ver «Salida a internet» en la Guía."
       },
       "script": "Script de balanceo (RouterOS v7)",
       "notes": [
@@ -1250,7 +1264,8 @@
           "empty": "Escribe el puerto que te dieron (y la IP si el enlace tiene varias).",
           "found": "Fue {address}: usa los puertos {from}–{to} de {ip}.",
           "none": "Ningún cliente usa ese puerto en ese enlace (debajo de 1024, fuera del rango o IP de otro enlace).",
-          "then": "Luego busca qué usuario PPPoE tenía esa dirección a esa hora: /log print muestra lo reciente; lo anterior está en los archivos DS-sesiones (Files) y en el colector."
+          "then": "Luego busca qué usuario PPPoE tenía esa dirección a esa hora: /log print muestra lo reciente; lo anterior está en los archivos DS-sesiones (Files) y en el colector.",
+          "providerNat": "{name} sale por el NAT del proveedor: busca con la IP y el puerto de tu enlace que te dé el registro del proveedor, no con la IP pública que ve el mundo."
         },
         "sessionLog": "Registro de sesiones PPPoE",
         "sessionLogHint": "Cada alta y baja escribe una línea con el usuario, su dirección 100.64 y la MAC de su equipo, guardada en disco (20 archivos de 20,000 líneas) y en el colector si hay. Es lo que une una dirección 100.64 con un cliente.",

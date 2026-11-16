@@ -423,8 +423,9 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
   // Last, so a paste over the management network isn't cut halfway.
   base.push(
     "/ip service disable telnet,ftp,www,api,api-ssl",
-    `/ip service set winbox address=${mgmtNet}`,
-    `/ip service set ssh address=${mgmtNet}`,
+    // RouterOS 7.25: "address" is the deprecated name of available-from.
+    `/ip service set winbox available-from=${mgmtNet}`,
+    `/ip service set ssh available-from=${mgmtNet}`,
     "/tool mac-server set allowed-interface-list=DS-MGMT",
     "/tool mac-server mac-winbox set allowed-interface-list=DS-MGMT",
     // MikroTik's "Securing your router": no discovery on the links, no bandwidth-test server, no proxy/SOCKS/UPnP/cloud.
@@ -433,7 +434,8 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
     "/ip socks set enabled=no",
     "/ip proxy set enabled=no",
     "/ip upnp set enabled=no",
-    "/ip cloud set ddns-enabled=no update-time=no"
+    // 7.25 takes auto|yes (no "no"); MikroTik's hardening guide uses auto with update-time off.
+    "/ip cloud set ddns-enabled=auto update-time=no"
   )
 
   // Phase 3: CGNAT boundary, isolation and the NAT log.
@@ -526,7 +528,7 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
     )
   pp.push(
     "/interface pppoe-server server",
-    `add service-name=${rosString(s.service.trim())} interface=${rosString(inet)} default-profile=${rosString(ctx.plans[0].name)} authentication=pap,chap one-session-per-host=yes max-sessions=${poolHosts(pool)} keepalive-timeout=10${s.mtu1500 ? " max-mtu=1500 max-mru=1500 mrru=disabled" : ""} disabled=no`
+    `add service-name=${rosString(s.service.trim())} interface=${rosString(inet)} default-profile=${rosString(ctx.plans[0].name)} authentication=pap,chap one-session-per-host=yes max-sessions=${poolHosts(pool)} keepalive-timeout=10${s.mtu1500 ? " max-mtu=1500 max-mru=1500" : ""} disabled=no`
   )
 
   // Phase 5: queues on the ports, connection tracking, firewall.
@@ -602,7 +604,7 @@ function opsScript(s: SetupState, name: string, mgmtNet: string): string {
         ? `/tool fetch url="https://api.telegram.org/bot${SECRET.telegram}/sendMessage" http-method=post http-header-field="Content-Type: application/json" http-data=("{\\"chat_id\\":\\"${s.telegramChat.trim()}\\",\\"text\\":\\"" . $m . "\\"}") output=none`
         : `/tool e-mail send to="${s.mailTo.trim()}" subject=$m body=$m`
     const aviso = `:global DSmsg; :local m ([/system identity get name] . ": " . $DSmsg); ${send}`
-    const cpu = `:global DScpu; :if ([:typeof $DScpu] = "nothing") do={:set DScpu 0}; :if ([/system resource get cpu-load] > ${CPU_ALERT_PCT}) do={:set DScpu ($DScpu + 1)} else={:set DScpu 0}; :if ($DScpu = ${CPU_ALERT_MIN}) do={:global DSmsg "CPU arriba de ${CPU_ALERT_PCT} % por ${CPU_ALERT_MIN} min"; /system script run DS-aviso}`
+    const cpu = `:global DScpu; :if ([:typeof $DScpu] != "num") do={:set DScpu 0}; :if ([/system resource get cpu-load] > ${CPU_ALERT_PCT}) do={:set DScpu ($DScpu + 1)} else={:set DScpu 0}; :if ($DScpu = ${CPU_ALERT_MIN}) do={:global DSmsg "CPU arriba de ${CPU_ALERT_PCT} % por ${CPU_ALERT_MIN} min"; /system script run DS-aviso}`
     out.push(
       "/system script",
       `add name=DS-aviso policy=read,write,test dont-require-permissions=yes source=${rosString(aviso)} ${c("avisos")}`,
@@ -662,8 +664,8 @@ export function setupUndo(s: SetupState): string {
     '/system script remove [find where name~"^DS-"]',
     "/snmp set enabled=no",
     "/tool mac-server mac-winbox set allowed-interface-list=all",
-    '/ip service set winbox address=""',
-    '/ip service set ssh address=""',
+    '/ip service set winbox available-from=""',
+    '/ip service set ssh available-from=""',
     '/ppp profile set [find where comment~"^DS: "] on-up="" on-down=""',
     ':do {/ppp profile set [find where comment~"^DS: "] interface-list=""} on-error={:do {/ppp profile set [find where comment~"^DS: "] interface-list=none} on-error={}}',
     "/system logging remove [find where action=DSremoto]",

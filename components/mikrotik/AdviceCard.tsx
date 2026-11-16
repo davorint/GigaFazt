@@ -36,6 +36,20 @@ export function AdviceCard({ fields, name }: { fields: DeploymentFields; name: s
       ],
     },
     {
+      key: "exit",
+      level: a.exit.level,
+      title: t("exit.title"),
+      body:
+        a.exit.natLinks.length === 0
+          ? [t("exit.ok")]
+          : [
+              t(a.exit.level === "bad" ? "exit.all" : "exit.some", { links: a.exit.natLinks.join(", "), count: a.exit.natLinks.length }),
+              t("exit.limits"),
+              t("exit.trace"),
+              t("exit.best"),
+            ],
+    },
+    {
       key: "burst",
       level: a.burst.level,
       title: t("burst.title"),

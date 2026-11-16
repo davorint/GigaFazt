@@ -51,7 +51,7 @@ describe("deployment setup: MikroTik", () => {
     expect(p200).toContain("local-address=100.64.0.1 remote-address=DS-clientes dns-server=100.64.0.1")
     expect(p200).toContain("interface-list=DS-LAN")
     expect(lines).toContain(
-      'add service-name="gigafazt" interface="vlan100-internet" default-profile="plan-200M" authentication=pap,chap one-session-per-host=yes max-sessions=1021 keepalive-timeout=10 max-mtu=1500 max-mru=1500 mrru=disabled disabled=no'
+      'add service-name="gigafazt" interface="vlan100-internet" default-profile="plan-200M" authentication=pap,chap one-session-per-host=yes max-sessions=1021 keepalive-timeout=10 max-mtu=1500 max-mru=1500 disabled=no'
     )
     expect(p200).toContain("use-compression=no use-encryption=no use-upnp=no")
   })
@@ -113,7 +113,7 @@ describe("deployment setup: the checklist's phases", () => {
   it("phase 0: hardened base, services and MAC access only from management, remote logging", () => {
     const base = parts?.base.split("\n") ?? []
     expect(base).toContain("/ip settings set tcp-syncookies=yes rp-filter=loose")
-    expect(base).toContain("/ip service set winbox address=192.168.10.0/24")
+    expect(base).toContain("/ip service set winbox available-from=192.168.10.0/24")
     expect(base).toContain('add name=DSremoto target=remote remote=192.168.10.50')
     // Access is narrowed last, so a paste over management isn't cut halfway.
     expect(base.indexOf("/tool mac-server mac-winbox set allowed-interface-list=DS-MGMT")).toBeGreaterThan(base.indexOf('add name=DSremoto target=remote remote=192.168.10.50'))
@@ -124,7 +124,7 @@ describe("deployment setup: the checklist's phases", () => {
       "/ip socks set enabled=no",
       "/ip proxy set enabled=no",
       "/ip upnp set enabled=no",
-      "/ip cloud set ddns-enabled=no update-time=no",
+      "/ip cloud set ddns-enabled=auto update-time=no",
     ])
   })
   it("phase 3: 100.64 dropped on links that aren't CGNAT, pool blackholed, isolation, IPFIX", () => {

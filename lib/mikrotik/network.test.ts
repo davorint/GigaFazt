@@ -70,7 +70,7 @@ describe("load balancing script (RouterOS v7)", () => {
     expect(lines).toContain('add chain=srcnat action=masquerade out-interface="ether2" comment="LB: NAT WAN2"')
   })
   it("gateway failover and PPPoE links (the gateway is the pppoe-out interface)", () => {
-    const s = balanceScript(opts({ failover: "gateway", wans: [{ name: "WAN1", type: "pppoe", iface: "pppoe-out1", gateway: "", mbps: 1000, measuredMbps: null, upMbps: null, upstreamCgnat: false, monitor: "", natIps: "" }, ...opts().wans.slice(1)] }))
+    const s = balanceScript(opts({ failover: "gateway", wans: [{ name: "WAN1", type: "pppoe", iface: "pppoe-out1", gateway: "", mbps: 1000, measuredMbps: null, upMbps: null, upstreamCgnat: false, providerNat: true, monitor: "", natIps: "" }, ...opts().wans.slice(1)] }))
     expect(s).toContain('add dst-address=0.0.0.0/0 gateway=pppoe-out1 routing-table="to-WAN1" distance=1 check-gateway=ping')
     expect(s).not.toContain("scope=10")
     expect(s).not.toContain("/ip dhcp-client")
@@ -153,7 +153,10 @@ describe("load balancing script (RouterOS v7)", () => {
     const codes = (w: BalanceOptions["wans"]) => checkBalance(opts({ wans: w })).filter((i) => i.level !== "info").map((i) => i.code)
     expect(codes([{ ...base[0], gateway: "" }, base[1]])).toContain("missingGateway")
     expect(codes([{ ...base[0], type: "pppoe" }, base[1]])).toContain("pppoeIface")
-    expect(codes([{ ...base[0], type: "dhcp", gateway: "" }, base[1]])).toEqual([])
+    // Links with a public IP on the MikroTik: nothing to flag.
+    expect(codes([{ ...base[0], type: "dhcp", gateway: "", providerNat: false }, { ...base[1], providerNat: false }])).toEqual([])
+    // Behind the provider's NAT (the default today): one warning per link.
+    expect(codes([base[0], base[1]]).filter((c) => c === "providerNat")).toHaveLength(2)
   })
   it("unequal links get proportional slots", () => {
     const s = balanceScript(opts({ wans: opts().wans.map((w, k) => ({ ...w, mbps: k === 2 ? 500 : 1000 })) }))
@@ -243,9 +246,9 @@ describe("share link: deployment, OLT and links", () => {
       ...initialState(),
       deployment: "Pedregal, torre B | 2",
       wans: [
-        { name: "WAN1", type: "static" as const, iface: "sfp-sfpplus1", gateway: "201.150.1.1", mbps: 1000, measuredMbps: 941.5, upMbps: 500, upstreamCgnat: true, monitor: "1.1.1.1", natIps: "201.150.1.8-201.150.1.15" },
-        { name: "Telmex", type: "pppoe" as const, iface: "pppoe-out1", gateway: "", mbps: 500, measuredMbps: null, upMbps: null, upstreamCgnat: false, monitor: "8.8.8.8", natIps: "" },
-        { name: "Izzi", type: "dhcp" as const, iface: "ether3", gateway: "", mbps: 1000, measuredMbps: null, upMbps: null, upstreamCgnat: false, monitor: "9.9.9.9", natIps: "" },
+        { name: "WAN1", type: "static" as const, iface: "sfp-sfpplus1", gateway: "201.150.1.1", mbps: 1000, measuredMbps: 941.5, upMbps: 500, upstreamCgnat: true, providerNat: true, monitor: "1.1.1.1", natIps: "201.150.1.8-201.150.1.15" },
+        { name: "Telmex", type: "pppoe" as const, iface: "pppoe-out1", gateway: "", mbps: 500, measuredMbps: null, upMbps: null, upstreamCgnat: false, providerNat: false, monitor: "8.8.8.8", natIps: "" },
+        { name: "Izzi", type: "dhcp" as const, iface: "ether3", gateway: "", mbps: 1000, measuredMbps: null, upMbps: null, upstreamCgnat: false, providerNat: true, monitor: "9.9.9.9", natIps: "" },
       ],
       balance: { ...DEFAULT_BALANCE, classifier: "both-addresses" as const, failover: "gateway" as const, speed: "fast" as const, queues: { shape: true, sharePct: 90, prio: false, alerts: true, flush: false }, nat: false, clients: ["10.20.0.0/16", "192.168.88.0/24"] },
       capacity: { ...DEFAULT_CAPACITY, oltModel: "ma5800x7" as const, pon: "xgspon" as const, oltUplinkMbps: 20_000, internet: "single" as const, ponEfficiency: 0.9 },

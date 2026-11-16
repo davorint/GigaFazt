@@ -91,6 +91,7 @@ export function NatFields({ setup: s, wans, onSetup, onWans, where }: Props) {
 
           <div className="grid gap-3 rounded-xl border border-white/10 p-4">
             <p className="text-sm font-medium text-foreground">{t("lookup.title")}</p>
+            {wans[k]?.providerNat && <p className="max-w-3xl text-xs leading-snug text-amber-200">{t("lookup.providerNat", { name: wans[k].name })}</p>}
             <div className="grid items-start gap-4 sm:grid-cols-3">
               <SelectField label={t("lookup.link")} value={String(k)} onChange={(v) => setPick(Number(v))}>
                 {wans.map((w, i) => (

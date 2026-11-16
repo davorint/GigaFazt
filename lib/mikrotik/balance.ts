@@ -75,6 +75,8 @@ export type Wan = {
   upMbps: number | null
   /** The provider is CGNAT itself (its gateway is in 100.64/10): 100.64 isn't dropped on this link. */
   upstreamCgnat: boolean
+  /** No public IP on the MikroTik: the provider's modem or CGNAT translates again (true for CGNAT too). */
+  providerNat: boolean
   /** Public IP watched through this link (recursive failover). */
   monitor: string
   /** Public IPs this link lends to fixed CGNAT ("201.1.1.8" or "201.1.1.8-201.1.1.15"); empty = its own address. */
@@ -181,6 +183,7 @@ export type BalanceIssueCode =
   | "duplicateIface"
   | "duplicateName"
   | "missingName"
+  | "providerNat"
   | "missingMonitor"
   | "duplicateMonitor"
   | "badMonitor"
@@ -210,6 +213,8 @@ export function checkBalance(o: BalanceOptions): BalanceIssue[] {
     if (!nm) out.push({ code: "missingName", level: "error", wan: w.name })
     else if (names.has(nm)) out.push({ code: "duplicateName", level: "error", wan: w.name, value: w.name })
     names.add(nm)
+    // Behind the provider's NAT the whole deployment is one subscriber to it: its session/port limits apply to everyone.
+    if (w.providerNat) out.push({ code: "providerNat", level: "warn", wan: w.name, value: w.name })
     const iface = w.iface.trim()
     if (!iface) out.push({ code: "missingIface", level: "error", wan: w.name })
     else if (ifaces.has(iface)) out.push({ code: "duplicateIface", level: "error", wan: w.name, value: iface })
@@ -445,6 +450,8 @@ export function defaultWans(n = 3): Wan[] {
     measuredMbps: null,
     upMbps: null,
     upstreamCgnat: false,
+    // The owner's links today: no public IP, the provider does NAT.
+    providerNat: true,
     natIps: "",
     monitor: DEFAULT_MONITORS[k % DEFAULT_MONITORS.length],
   }))

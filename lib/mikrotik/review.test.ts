@@ -93,3 +93,25 @@ describe("ONT install sheet", () => {
     expect(ontInstall({ ...DEFAULT_SETUP, ontMode: "bridge", internetVlan: 200 })).toEqual([{ key: "bridgeWan" }, { key: "vlan", value: 200 }, { key: "bridgePort" }, { key: "clientRouter" }])
   })
 })
+
+describe("RouterOS 7.25 syntax and provider NAT", () => {
+  const ctx = { clients: 600, wanIfaces: ["ether1", "ether2"], balanced: null, name: "Norte", plans: setupPlans(DEFAULT_PLANS, DEFAULT_RULE) }
+  it("uses the 7.25 names and values", () => {
+    const p = setupParts({ ...DEFAULT_SETUP, alert: "telegram", telegramChat: "-100" }, ctx) as SetupParts
+    expect(p.base).toContain("/ip service set winbox available-from=192.168.10.0/24")
+    expect(p.base).not.toMatch(/service set \w+ address=/)
+    expect(p.base).toContain("/ip cloud set ddns-enabled=auto update-time=no")
+    expect(p.pppoe).not.toContain("mrru=")
+    expect(p.ops).toContain(':if ([:typeof \\$DScpu] != \\"num\\") do={:set DScpu 0}')
+    expect(setupUndo(DEFAULT_SETUP)).toContain('/ip service set winbox available-from=""')
+  })
+  it("links default to the provider's NAT; the advice says how many and what to ask for", () => {
+    expect(defaultWans(3).every((w) => w.providerNat)).toBe(true)
+    const base = deploymentFields(initialState())
+    expect(adviceFor(base).exit).toMatchObject({ level: "bad", total: base.wans.length })
+    const one = { ...base, wans: base.wans.map((w, k) => ({ ...w, providerNat: k === 0 })) }
+    expect(adviceFor(one).exit).toMatchObject({ level: "warn", natLinks: [base.wans[0].name] })
+    const none = { ...base, wans: base.wans.map((w) => ({ ...w, providerNat: false })) }
+    expect(adviceFor(none).exit.level).toBe("ok")
+  })
+})

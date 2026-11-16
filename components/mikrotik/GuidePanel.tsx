@@ -118,7 +118,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
   const addWan = () => {
     const n = wans.length + 1
     const last = wans.at(-1)
-    onWans([...wans, { name: `WAN${n}`, type: last?.type ?? "dhcp", iface: `ether${n}`, gateway: "", mbps: last?.mbps ?? 1000, measuredMbps: null, upMbps: null, upstreamCgnat: false, monitor: nextMonitor(wans), natIps: "" }])
+    onWans([...wans, { name: `WAN${n}`, type: last?.type ?? "dhcp", iface: `ether${n}`, gateway: "", mbps: last?.mbps ?? 1000, measuredMbps: null, upMbps: null, upstreamCgnat: false, providerNat: last?.providerNat ?? true, monitor: nextMonitor(wans), natIps: "" }])
   }
 
   const clients = clientsOf({ status: state.status, capacity: state.capacity })
@@ -257,7 +257,18 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
                   </td>
                   <td className={`${cell} py-4 font-mono text-xs`}>{buckets[k]}</td>
                   <td className={`${cell} py-3.5`}>
-                    <Checkbox checked={w.upstreamCgnat} onCheckedChange={(on) => setWan(k, { upstreamCgnat: on === true })} aria-label={t("upstreams.cgnatOne", { name: w.name })} />
+                    <select
+                      className="h-9 rounded-md border border-input bg-zinc-950 px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                      value={w.upstreamCgnat ? "cgnat" : w.providerNat ? "nat" : "public"}
+                      aria-label={label(t("upstreams.cols.cgnat"))}
+                      onChange={(e) => setWan(k, { providerNat: e.target.value !== "public", upstreamCgnat: e.target.value === "cgnat" })}
+                    >
+                      {(["nat", "cgnat", "public"] as const).map((x) => (
+                        <option key={x} value={x}>
+                          {t(`upstreams.exits.${x}`)}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td className={cell}>
                     <Button type="button" variant="ghost" size="icon-sm" onClick={() => onWans(wans.filter((_, i) => i !== k))} disabled={wans.length <= 1} aria-label={tl("remove", { name: w.name })}>

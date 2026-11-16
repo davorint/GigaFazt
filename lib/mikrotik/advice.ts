@@ -24,6 +24,8 @@ export type Advice = {
   burst: { level: AdviceLevel; sustainedPct: number; topPlanMbps: number; sustainedMbps: number }
   router: { level: AdviceLevel; clients: number; demandMbps: number; model: "ccr2004" | "ccr2116" }
   ops: { level: AdviceLevel; alerts: boolean; backupOff: boolean; snmp: boolean }
+  /** Links without a public IP on the MikroTik (the provider's modem or CGNAT translates again). */
+  exit: { level: AdviceLevel; natLinks: string[]; total: number }
 }
 
 export function adviceFor(f: DeploymentFields): Advice {
@@ -55,5 +57,11 @@ export function adviceFor(f: DeploymentFields): Advice {
     burst: { level: sustained < SUSTAIN_WARN ? "warn" : "ok", sustainedPct: Math.round(sustained * 100), topPlanMbps, sustainedMbps: topPlanMbps * sustained },
     router: { level: sum.clients >= CCR2116_FROM ? "bad" : routerModel === "ccr2116" ? "warn" : "ok", clients: sum.clients, demandMbps: sum.offeredMbps, model: routerModel },
     ops: { level: alerts && !backupOff && f.setup.snmp ? "ok" : "warn", alerts, backupOff, snmp: f.setup.snmp },
+    exit: (() => {
+      const natLinks = f.wans.filter((w) => w.providerNat).map((w) => w.name)
+      // All behind the provider's NAT: every client shares its per-subscriber limits; some: only those links.
+      const level: AdviceLevel = natLinks.length === 0 ? "ok" : natLinks.length === f.wans.length ? "bad" : "warn"
+      return { level, natLinks, total: f.wans.length }
+    })(),
   }
 }
