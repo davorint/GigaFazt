@@ -19,7 +19,7 @@ import { ToneMappingMode } from "postprocessing"
 /**
  * Studio product shot of the 1 Gbps plan's Wi-Fi 7 modem (owner, 2026-11-08:
  * "truly spectacular, hyper expensive"), modeled on the actual unit
- * (BUSINESS.md: Huawei OptiXstar EG8145B7N-50, 150 × 108 × 40 mm): a flat
+ * (BUSINESS.md: Huawei OptiXstar EG8145B7-50, 150 × 108 × 40 mm): a flat
  * white box whose beveled lid overhangs a louvered lower body, two tapered
  * blade antennas on hinge ears at the back corners, status LEDs set into the
  * lid. No logo or brand (BUSINESS.md). Captioned "Ilustración" by its wrapper.

@@ -12,7 +12,7 @@
         "calculators": "Calculadoras y simuladores"
       },
       "lead": {
-        "scripts": "Los comandos para tus routers: colas con ráfaga para uno o muchos clientes, la configuración de un despliegue nuevo (VLANs, PPPoE y la OLT Huawei) y el balanceo entre tus proveedores. Elige los valores en Parámetros y el despliegue en Despliegues.",
+        "scripts": "Los comandos para tus routers: colas con ráfaga para uno o muchos clientes, la configuración de un despliegue nuevo (VLANs, PPPoE y la OLT Huawei) y el balanceo entre tus carriers. Elige los valores en Parámetros y el despliegue en Despliegues.",
         "calculators": "Calcula y prueba antes de configurar: cuánto dura la ráfaga, qué ve el cliente en una prueba de velocidad, cómo se comparan planes y reglas, cómo se reparte una cola padre y qué pasa en la hora pico de cada despliegue."
       },
       "share": "Copiar enlace con esta configuración",
@@ -464,7 +464,7 @@
     },
     "deployments": {
       "title": "Despliegues",
-      "lead": "Guarda cada despliegue (una OLT y su router, con sus proveedores): los que ya operan, con lo que mides en ellos, y los que planeas. Ábrelos para calcularlos en Hora pico y armar su balanceo en Varios enlaces.",
+      "lead": "Guarda cada despliegue (una OLT y su router, con sus carriers): los que ya operan, con lo que mides en ellos, y los que planeas. Ábrelos para calcularlos en Hora pico y armar su balanceo en Varios enlaces.",
       "openNow": "Abierto: «{name}». Lo que cambies en Hora pico y Varios enlaces se guarda solo.",
       "unsaved": "Lo que ves en Hora pico y Varios enlaces no está guardado como despliegue.",
       "name": "Nombre del despliegue",
@@ -516,7 +516,7 @@
     },
     "guide": {
       "title": "Guía paso a paso",
-      "lead": "Tu lista para montar un despliegue (MikroTik como BNG, varios proveedores con PCC y CGNAT), fase por fase, con los comandos de este despliegue. Prueba cada fase antes de seguir.",
+      "lead": "Tu lista para montar un despliegue (MikroTik como BNG, varios carriers con PCC y CGNAT), fase por fase, con los comandos de este despliegue. Prueba cada fase antes de seguir.",
       "unnamed": "Sin nombre",
       "progress": "{done} de {total}",
       "missing": "Falta corregir datos en",
@@ -542,7 +542,7 @@
         "ops": "Avisos, respaldos y SNMP"
       },
       "upstreams": {
-        "caption": "Proveedores de este despliegue",
+        "caption": "Carriers de este despliegue",
         "cols": {
           "link": "Enlace",
           "type": "Conexión",
@@ -552,7 +552,7 @@
           "up": "Subida",
           "probe": "IP vigilada",
           "buckets": "Partes PCC (de {total})",
-          "cgnat": "Salida del proveedor",
+          "cgnat": "Salida del carrier",
           "remove": "Quitar"
         },
         "types": {
@@ -560,16 +560,16 @@
           "static": "IP fija",
           "pppoe": "PPPoE"
         },
-        "hint": "Mide cada enlace solo, en hora pico, y escribe lo medido (vacío = la contratada, en gris): el reparto y las colas salen de ahí. En «Salida del proveedor» marca si el MikroTik recibe una IP pública o queda detrás del NAT del proveedor (módem con IP privada o CGNAT en 100.64/10); con CGNAT no se bloquea 100.64 en ese enlace.",
+        "hint": "Mide cada enlace solo, en hora pico, y escribe lo medido (vacío = la contratada, en gris): el reparto y las colas salen de ahí. En «Salida del carrier» marca si el carrier le da al MikroTik una IP pública o lo deja detrás de su NAT (una IP privada o una en 100.64/10); con 100.64/10 no se bloquea 100.64 en ese enlace.",
         "field": "{what} de {name}",
         "gatewayAuto": {
           "dhcp": "del DHCP",
           "pppoe": "la sesión"
         },
         "exits": {
-          "nat": "NAT del proveedor (IP privada)",
-          "cgnat": "CGNAT del proveedor (100.64/10)",
-          "public": "IP pública en el MikroTik"
+          "nat": "NAT del carrier (IP privada)",
+          "cgnat": "CGNAT del carrier (100.64/10)",
+          "public": "IP pública en tu MikroTik"
         }
       },
       "phases": {
@@ -579,8 +579,8 @@
           "items": [
             "Instala el canal long-term de RouterOS (7.23.x en noviembre de 2026; desde 7.23.4 trae un arreglo de seguridad). No uses 7.20.0 a 7.20.5 en un servidor PPPoE (falla con varios nombres de servicio; se arregló en 7.20.6).",
             "Respalda la configuración de fábrica (comandos abajo).",
-            "Mide cada proveedor solo, en hora pico (bajada y subida), y anótalo en la tabla de abajo: el reparto y las colas salen de lo medido, nunca del contrato.",
-            "Lee la dirección y el gateway de cada proveedor con /ip dhcp-client print detail y marca en la tabla los que estén en 100.64.0.0/10 (el proveedor ya hace CGNAT).",
+            "Mide cada carrier solo, en hora pico (bajada y subida), y anótalo en la tabla de abajo: el reparto y las colas salen de lo medido, nunca del contrato.",
+            "Lee la dirección y el gateway de cada carrier con /ip dhcp-client print detail y marca en la tabla los que estén en 100.64.0.0/10 (el carrier ya hace CGNAT).",
             "Ten acceso fuera de banda: la VLAN de gestión o un router pequeño aparte. Nunca administres el router solo por un enlace a internet.",
             "Pega la base conectado por la VLAN de gestión (al final limita Winbox, SSH y el acceso por MAC a esa red).",
             "Antes de comprar: confirma que cada contrato permita revender (los residenciales casi nunca) y elige el colector IPFIX y cuánto tiempo guardarlo según la ley.",
@@ -589,9 +589,9 @@
         },
         "p1": {
           "title": "Fase 1 · Rutas y respaldo",
-          "goal": "Cada proveedor con su tabla de ruteo, respaldo que depende de que haya internet de verdad, y un cambio de gateway por DHCP nunca deja rutas viejas.",
+          "goal": "Cada carrier con su tabla de ruteo, respaldo que depende de que haya internet de verdad, y un cambio de gateway por DHCP nunca deja rutas viejas.",
           "items": [
-            "Una tabla de ruteo por proveedor y rutas de respaldo hacia los demás (script abajo).",
+            "Una tabla de ruteo por carrier y rutas de respaldo hacia los demás (script abajo).",
             "Clientes DHCP sin ruta propia, con un script que actualiza el gateway de nuestras rutas cuando cambia.",
             "Una IP vigilada distinta por enlace; en «Varios enlaces» deja «Vigilar una IP pública».",
             "Netwatch por enlace: aviso en el log y limpieza de sus conexiones al caer y al volver (Varios enlaces → Colas y avisos).",
@@ -601,7 +601,7 @@
         },
         "p2": {
           "title": "Fase 2 · Reparto PCC",
-          "goal": "Las conexiones nuevas se reparten entre los proveedores según su velocidad medida, cada cliente siempre sale por el mismo, y nada local se marca.",
+          "goal": "Las conexiones nuevas se reparten entre los carriers según su velocidad medida, cada cliente siempre sale por el mismo, y nada local se marca.",
           "items": [
             "Primero las excepciones: tráfico al router, entre clientes y hacia la gestión no se marca.",
             "Reparto por cliente (src-address) con las partes de la tabla de la fase 0.",
@@ -618,7 +618,7 @@
             "Masquerade por enlace (fase 1) o bloques de puertos fijos por cliente (abajo): con bloques fijos, la IP pública y el puerto dicen quién fue sin registro NAT.",
             "Revisa el presupuesto de puertos: unos {perIp} clientes por IP pública. Vuelve a revisarlo si un enlace se cae mucho tiempo o pasas de 500 clientes.",
             "Exporta los eventos NAT por IPFIX al colector: guarda la dirección y el puerto antes y después del NAT, la hora y qué usuario PPPoE tenía cada 100.64.",
-            "Bloquea 100.64 desde internet (salvo en enlaces cuyo proveedor ya es CGNAT), manda el pool a blackhole y aísla a los clientes entre sí.",
+            "Bloquea 100.64 desde internet (salvo en enlaces cuyo carrier ya es CGNAT), manda el pool a blackhole y aísla a los clientes entre sí.",
             "Deja activos los ayudantes NAT (SIP, PPTP, H323, TFTP) y pon en el contrato las limitaciones de CGNAT: sin abrir puertos, IP compartida, NAT estricto en consolas."
           ]
         },
@@ -640,7 +640,7 @@
           "title": "Fase 5 · Colas, connection tracking y firewall",
           "goal": "Sin bufferbloat en ningún enlace, límites por plan desde el perfil, connection tracking a la medida de CGNAT y el router inaccesible salvo desde gestión.",
           "items": [
-            "fq-codel en los puertos de los proveedores y de la OLT.",
+            "fq-codel en los puertos de los carriers y de la OLT.",
             "Cola por enlace al 95 % de lo medido con CAKE (Varios enlaces → Colas y avisos).",
             "Límites por cliente desde el perfil PPP (o RADIUS); no hace falta una cola por cliente.",
             "Connection tracking para CGNAT: tcp-established de 2 h 4 min (lo mínimo según RFC 5382 para un NAT) y UDP no menos de 30 s. Revisa cada semana: arriba del 60 % del máximo, sube el límite o acorta.",
@@ -790,17 +790,17 @@
         "exit": {
           "title": "Salida a internet (IPs públicas)",
           "ok": "Todos los enlaces le dan una IP pública al MikroTik: el NAT de los clientes es solo el tuyo.",
-          "all": "Ningún enlace da IP pública ({links}): todo el despliegue sale por el NAT de los proveedores, un segundo NAT después del tuyo.",
-          "some": "{count, plural, one {El enlace {links} no da} other {Los enlaces {links} no dan}} IP pública: lo que sale por ahí pasa por el NAT del proveedor, un segundo NAT después del tuyo.",
-          "limits": "Para el proveedor todo el despliegue es un solo cliente: su módem (tabla de conexiones de un equipo de casa) o su CGNAT (tope de puertos por línea) limita a todos tus clientes juntos, con cientos de clientes es lo primero que se llena. Pregunta a cada proveedor su tope de sesiones o puertos por línea.",
-          "trace": "Para saber quién fue: el proveedor traduce su IP pública y puerto a la IP y el puerto de tu enlace (su registro); con eso, tu registro NAT o tus bloques de puertos fijos dan el cliente. Sin el registro del proveedor no se puede.",
-          "best": "Lo óptimo: una IP pública fija por enlace (servicio empresarial o dedicado), o el módem del proveedor en modo puente para que el MikroTik reciba la IP pública. Cambia «Salida del proveedor» en la fase 0 cuando la tengas."
+          "all": "Ningún enlace da IP pública ({links}): todo el despliegue sale por el NAT de los carriers, un segundo NAT después del tuyo.",
+          "some": "{count, plural, one {El enlace {links} no da} other {Los enlaces {links} no dan}} IP pública: lo que sale por ahí pasa por el NAT del carrier, un segundo NAT después del tuyo.",
+          "limits": "Para el carrier todo el despliegue (todo el edificio) es un solo cliente: su NAT, con su tope de conexiones o de puertos por línea, limita a todos tus clientes juntos; con cientos de departamentos es lo primero que se llena. Pregunta a cada carrier su tope de sesiones o puertos por línea.",
+          "trace": "Para saber quién fue: el carrier traduce su IP pública y puerto a la IP y el puerto de tu enlace (su registro); con eso, tu registro NAT o tus bloques de puertos fijos dan el cliente. Sin el registro del carrier no se puede.",
+          "best": "Lo óptimo: una IP pública fija por enlace (servicio empresarial o dedicado del carrier). Si el carrier entrega con un equipo suyo que hace NAT (su router u ONT), pídele que lo ponga en modo puente para que tu MikroTik reciba la IP pública. Cambia «Salida del carrier» en la fase 0 cuando la tengas."
         }
       }
     },
     "capacity": {
       "title": "Capacidad en hora pico",
-      "lead": "Un despliegue (una OLT y su router, con sus propios proveedores de internet) a la hora de más uso: cuánto se usa cada tramo, qué marca una prueba de velocidad a esa hora, y cuántos enlaces y clientes por puerto necesitas.",
+      "lead": "Un despliegue (una OLT y su router, con sus propios carriers) a la hora de más uso: cuánto se usa cada tramo, qué marca una prueba de velocidad a esa hora, y cuántos enlaces y clientes por puerto necesitas.",
       "direction": "Dirección",
       "pon": "Red de acceso",
       "pons": {
@@ -895,7 +895,7 @@
       "traffic": "Tráfico en hora pico",
       "deployment": {
         "title": "Despliegue",
-        "lead": "Una OLT y su router, con sus propios proveedores de internet. Cada despliegue se calcula por separado.",
+        "lead": "Una OLT y su router, con sus propios carriers. Cada despliegue se calcula por separado.",
         "status": "Estado",
         "statuses": {
           "existing": "Ya opera",
@@ -933,7 +933,7 @@
         "linksEdit": "Editar en Varios enlaces",
         "issues": {
           "unsupported": "La {model} no tiene tarjetas {tech}: el XGS-PON es de la serie MA5800.",
-          "unconfirmed": "XG-PON en la {model}: solo la lista de un distribuidor menciona tarjetas (XGBC de 4 puertos, XGBD de 8). Confírmalo con Huawei o tu proveedor antes de contar con ellas.",
+          "unconfirmed": "XG-PON en la {model}: solo la lista de un distribuidor menciona tarjetas (XGBC de 4 puertos, XGBD de 8). Confírmalo con Huawei o con quien te vende el equipo antes de contar con ellas.",
           "tooManyPorts": "Con {homes} clientes por puerto se necesitan {need} puertos y la {model} admite como mucho {max} {tech}: no caben en una OLT.",
           "tooManyHomes": "Más de {max} clientes por puerto: el divisor más grande que se toma en cuenta es 1:{max}.",
           "tooManyUsers": "Más de {max} clientes: lo más que admite la {model}.",
@@ -945,7 +945,7 @@
         "measured": "Tráfico del router en hora pico",
         "measuredDown": "Bajada total medida",
         "measuredUp": "Subida total medida",
-        "measuredHint": "Suma lo que reciben (rx, bajada) y envían (tx, subida) las interfaces de tus proveedores cerca de las 9 p. m.; mejor el promedio de 5 minutos de las gráficas del router que una sola lectura. Con esto, el promedio por cliente sale de lo medido ÷ los clientes. Vacío = se usa el promedio de abajo.",
+        "measuredHint": "Suma lo que reciben (rx, bajada) y envían (tx, subida) las interfaces de tus carriers cerca de las 9 p. m.; mejor el promedio de 5 minutos de las gráficas del router que una sola lectura. Con esto, el promedio por cliente sale de lo medido ÷ los clientes. Vacío = se usa el promedio de abajo.",
         "measureCmd": "Lectura rápida en el router:"
       },
       "overLinks": "{n, plural, one {# de tus {count} enlaces recibe} other {# de tus {count} enlaces reciben}} en promedio más de lo que da (el más cargado: {offered} en {cap}): sus descargas se acumulan sin parar y los resultados de abajo no se estabilizan.",
@@ -967,7 +967,7 @@
     },
     "links": {
       "title": "Varios enlaces a internet",
-      "lead": "Balanceo de carga entre los proveedores del router de un despliegue: reparte a los clientes entre los enlaces según su velocidad, con respaldo si uno se cae. Script para RouterOS v7.",
+      "lead": "Balanceo de carga entre los carriers del router de un despliegue: reparte a los clientes entre los enlaces según su velocidad, con respaldo si uno se cae. Script para RouterOS v7.",
       "wansTitle": "Enlaces del router",
       "total": "{count, plural, one {# enlace} other {# enlaces}} · {total}",
       "slots": "{n} de {total} partes del reparto",
@@ -980,22 +980,22 @@
         "pppoe": "PPPoE"
       },
       "typeHint": {
-        "dhcp": "El proveedor da la IP y el gateway; el script los sigue si cambian.",
-        "static": "La IP y el gateway que te asignó el proveedor.",
-        "pppoe": "Usuario y contraseña del proveedor; el gateway es la sesión."
+        "dhcp": "El carrier da la IP y el gateway; el script los sigue si cambian.",
+        "static": "La IP y el gateway que te asignó el carrier.",
+        "pppoe": "Usuario y contraseña del carrier; el gateway es la sesión."
       },
       "iface": "Interfaz",
       "ifaceHint": {
-        "dhcp": "El puerto con el cliente DHCP del proveedor (ether1, sfp-sfpplus1…).",
-        "static": "El puerto con la IP fija del proveedor.",
+        "dhcp": "El puerto con el cliente DHCP del carrier (ether1, sfp-sfpplus1…).",
+        "static": "El puerto con la IP fija del carrier.",
         "pppoe": "La interfaz pppoe-out del enlace, no el puerto físico."
       },
-      "gateway": "Gateway del proveedor",
+      "gateway": "Gateway del carrier",
       "mbps": "Velocidad contratada",
       "measuredMbps": "Velocidad medida",
       "measuredHint": "Opcional: lo que da de verdad (una prueba de velocidad por ese enlace, fuera de hora pico). Si la escribes, el reparto y Hora pico usan esta.",
       "upMbps": "Subida (si es distinta)",
-      "upHint": "Opcional: la subida real si el proveedor da menos que de bajada. Vacío = igual que la bajada.",
+      "upHint": "Opcional: la subida real si el carrier da menos que de bajada. Vacío = igual que la bajada.",
       "monitor": "IP a vigilar",
       "monitorHint": "Una IP pública distinta por enlace; se vigila a través de ese enlace.",
       "add": "Agregar enlace",
@@ -1022,8 +1022,8 @@
         "gateway": "Vigilar el gateway"
       },
       "failoverHint": {
-        "recursive": "Cada enlace hace ping a una IP pública a través de sí mismo: también detecta una falla más allá del gateway del proveedor.",
-        "gateway": "Solo hace ping al gateway del proveedor: no ve fallas más adentro de su red. Con PPPoE, la ruta cae cuando cae la sesión."
+        "recursive": "Cada enlace hace ping a una IP pública a través de sí mismo: también detecta una falla más allá del gateway del carrier.",
+        "gateway": "Solo hace ping al gateway del carrier: no ve fallas más adentro de su red. Con PPPoE, la ruta cae cuando cae la sesión."
       },
       "detect": "Detección de la caída",
       "detects": {
@@ -1039,7 +1039,7 @@
       "queues": {
         "title": "Colas y avisos por enlace",
         "shape": "Cola por enlace (bajada y subida)",
-        "shapeHint": "Limita cada enlace un poco por debajo de lo que da de verdad, para que la fila se forme en tu MikroTik (reparto parejo por cliente con CAKE, latencia baja) y no en el módem del proveedor. Se suma a las colas con burst de cada cliente, que siguen igual.",
+        "shapeHint": "Limita cada enlace un poco por debajo de lo que da de verdad, para que la fila se forme en tu MikroTik (reparto parejo por cliente con CAKE, latencia baja) y no en el equipo del carrier. Se suma a las colas con burst de cada cliente, que siguen igual.",
         "share": "Hasta",
         "shareHint": "% de la velocidad medida (o la contratada si no la mediste). 95 % es lo usual; bájalo si a la hora pico la latencia sigue subiendo.",
         "prio": "Prioridad para lo interactivo",
@@ -1059,26 +1059,26 @@
         "missingMonitor": "Falta la IP a vigilar.",
         "duplicateMonitor": "Otro enlace ya vigila {value}: cada enlace necesita la suya.",
         "badMonitor": "{value} no es una IP válida.",
-        "missingGateway": "Falta el gateway del proveedor (con IP fija hay que escribirlo).",
+        "missingGateway": "Falta el gateway del carrier (con IP fija hay que escribirlo).",
         "badGateway": "{value} no es una IP válida.",
         "pppoeIface": "{value} parece un puerto físico: con PPPoE la ruta sale por la interfaz pppoe-out (p. ej. pppoe-out1).",
         "badClients": "{value} no es una red válida (CIDR).",
         "noClients": "Falta al menos una red de clientes.",
         "unevenSlots": "Las velocidades no se dividen bien en partes enteras: el reparto queda aproximado.",
-        "shapeNominal": "Sin velocidad medida, la cola usa la contratada: si el enlace da menos, la fila se sigue formando en el módem.",
+        "shapeNominal": "Sin velocidad medida, la cola usa la contratada: si el enlace da menos, la fila se sigue formando en el equipo del carrier.",
         "netwatchRecursive": "Los avisos y la limpieza de conexiones necesitan «Vigilar una IP pública» (Netwatch revisa cada enlace por esa IP).",
         "duplicateName": "Hay dos enlaces llamados {value}: el nombre va en las marcas, las tablas de ruteo, las colas y el NAT; cada enlace necesita el suyo.",
         "missingName": "Un enlace no tiene nombre.",
-        "providerNat": "{value} sale por el NAT del proveedor (sin IP pública): su módem o su CGNAT ve todo el despliegue como un solo cliente, con su tope de conexiones y puertos. Ver «Salida a internet» en la Guía."
+        "providerNat": "{value} sale por el NAT del carrier (sin IP pública): para el carrier todo el despliegue es un solo cliente, con su tope de conexiones y puertos. Ver «Salida a internet» en la Guía."
       },
       "script": "Script de balanceo (RouterOS v7)",
       "notes": [
         "Pruébalo primero en una ventana de mantenimiento: cambia por dónde sale todo el tráfico del router.",
         "Cada enlace ya debe estar conectado al pegarlo: su IP fija, su cliente DHCP con lease (status bound) o su sesión PPPoE. El script solo agrega tablas de ruteo, listas, marcas, NAT y rutas, y ajusta los clientes DHCP.",
-        "Enlaces DHCP: las rutas toman el gateway que tiene el cliente DHCP al pegar; el cliente deja de poner su propia ruta por defecto (add-default-route=no) y recibe un script que cambia el gateway de esas rutas si el proveedor lo cambia. Si ese cliente ya tenía un script, este lo reemplaza.",
+        "Enlaces DHCP: las rutas toman el gateway que tiene el cliente DHCP al pegar; el cliente deja de poner su propia ruta por defecto (add-default-route=no) y recibe un script que cambia el gateway de esas rutas si el carrier lo cambia. Si ese cliente ya tenía un script, este lo reemplaza.",
         "Quita antes las rutas por defecto que pusiste a mano y, en PPPoE, apaga add-default-route en el cliente PPPoE; si no, competirán con estas.",
         "Detección rápida o muy rápida: el script ajusta check-gateway-ping-interval, -timeout y -count en /routing settings. Si tu versión de RouterOS no los tiene, ese renglón marca error y lo demás queda igual, con la detección normal (≈ 20 s).",
-        "El reparto usa la velocidad medida de cada enlace cuando la escribes; si no, la contratada. Mídela fuera de hora pico y repítela de vez en cuando: si un proveedor da menos, recibe menos clientes.",
+        "El reparto usa la velocidad medida de cada enlace cuando la escribes; si no, la contratada. Mídela fuera de hora pico y repítela de vez en cuando: si un carrier da menos, recibe menos clientes.",
         "Colas por enlace: van en queue tree con parent=global (antes de las colas de cada cliente) y usan CAKE, que existe desde RouterOS 7.1. Como las colas de clientes, FastTrack las salta: debe estar apagado para ese tráfico.",
         "Si vuelves a pegar el script, primero usa «Quitar el balanceo»: los nombres de colas y tipos ya existirían y RouterOS marcaría error.",
         "FastTrack y el balanceo no se llevan bien: agrega connection-mark=no-mark a la regla de FastTrack (o desactívala) para que las conexiones balanceadas sigan su marca.",
@@ -1141,7 +1141,7 @@
         "natOwnIp": "{value} sale con su propia IP: si es DHCP o PPPoE y cambia, la búsqueda necesita saber qué IP tenía a esa hora.",
         "badIpv6": "{value} no es un prefijo IPv6 válido (dirección de red, de /16 a /64, y el prefijo de cada cliente entre /48 y /64, no más grande que el bloque).",
         "ipv6Small": "El prefijo IPv6 da {have} prefijos y hacen falta unos {need} (los clientes + 10 %).",
-        "ipv6Upstream": "IPv6 con varios proveedores: este prefijo tiene que llegarte por el proveedor que lo enruta (o por los tuyos con BGP si es tu propio bloque). El balanceo PCC de este despliegue es solo IPv4.",
+        "ipv6Upstream": "IPv6 con varios carriers: este prefijo tiene que llegarte por el carrier que lo enruta (o por los tuyos con BGP si es tu propio bloque). El balanceo PCC de este despliegue es solo IPv4.",
         "queueCpu": "{have} clientes con colas {value} por cliente: un reporte del foro de MikroTik tiene ~560 clientes PPPoE con colas fq-codel llenando un núcleo. Vigila /system resource cpu o usa la cola default.",
         "badChat": "{value}: el ID del chat de Telegram es un número (puede empezar con -).",
         "badMail": "Para correo: escribe el servidor SMTP y dos correos válidos (el que envía y el que recibe).",
@@ -1265,14 +1265,14 @@
           "found": "Fue {address}: usa los puertos {from}–{to} de {ip}.",
           "none": "Ningún cliente usa ese puerto en ese enlace (debajo de 1024, fuera del rango o IP de otro enlace).",
           "then": "Luego busca qué usuario PPPoE tenía esa dirección a esa hora: /log print muestra lo reciente; lo anterior está en los archivos DS-sesiones (Files) y en el colector.",
-          "providerNat": "{name} sale por el NAT del proveedor: busca con la IP y el puerto de tu enlace que te dé el registro del proveedor, no con la IP pública que ve el mundo."
+          "providerNat": "{name} sale por el NAT del carrier: busca con la IP y el puerto de tu enlace que te dé el registro del carrier, no con la IP pública que ve el mundo."
         },
         "sessionLog": "Registro de sesiones PPPoE",
         "sessionLogHint": "Cada alta y baja escribe una línea con el usuario, su dirección 100.64 y la MAC de su equipo, guardada en disco (20 archivos de 20,000 líneas) y en el colector si hay. Es lo que une una dirección 100.64 con un cliente.",
         "pitp": "PITP en la OLT (etiqueta de ONT en el PPPoE)",
         "pitpHint": "La OLT agrega a cada inicio de PPPoE una etiqueta con el puerto y el ONT de donde viene (Huawei lo recomienda para PPPoE). Qué hace el MikroTik con esa etiqueta no viene en el manual de RouterOS; sirve al usar RADIUS. Se activa global, por VLAN y por service-port (plantilla del ONT).",
         "ipv6Pd": "Prefijo IPv6 para los clientes",
-        "ipv6PdHint": "Vacío = sin IPv6. El bloque que tu proveedor te enruta (p. ej. 2001:db8:100::/44); cada sesión PPPoE recibe uno de este tamaño por DHCPv6-PD.",
+        "ipv6PdHint": "Vacío = sin IPv6. El bloque que tu carrier te enruta (p. ej. 2001:db8:100::/44); cada sesión PPPoE recibe uno de este tamaño por DHCPv6-PD.",
         "ipv6PdLength": "Prefijo de cada cliente",
         "ipv6PdLengthHint": "/56 es lo común (256 redes /64 por casa).",
         "ipv6Wan": "Prefijo para el lado WAN (opcional)",
