@@ -41,6 +41,7 @@ import {
 } from "@/lib/mikrotik/state"
 import { sameQueue } from "@/lib/mikrotik/import"
 import { CopyButton } from "./CopyButton"
+import { SectionNav } from "./SectionNav"
 import { FiguresPanel } from "./FiguresPanel"
 import { ImportPanel } from "./ImportPanel"
 import { ParamsPanel } from "./ParamsPanel"
@@ -289,6 +290,11 @@ export function BurstLab({ page }: { page: LabPage }) {
           <a href={OTHER_PAGE[page]} className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
             {t(`intro.other.${page}`)}
           </a>
+          {" · "}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
+          <a href="/olt" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+            {t("intro.olt")}
+          </a>
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <CopyButton getText={shareUrl} label={t("intro.share")} done={t("intro.shared")} size="default" variant="default" />
@@ -449,62 +455,5 @@ export function BurstLab({ page }: { page: LabPage }) {
         </Section>
       )}
     </main>
-  )
-}
-
-/**
- * Section menu that stays at the top while scrolling (one row, scrolls
- * sideways on phones) and marks the section on screen.
- */
-function SectionNav({ label, items }: { label: string; items: { id: string; label: string }[] }) {
-  const [active, setActive] = useState<string | null>(null)
-
-  useEffect(() => {
-    const sections = items.map((i) => document.getElementById(i.id)).filter((el): el is HTMLElement => el !== null)
-    // The section crossing the middle of the screen is the current one.
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) if (e.isIntersecting) setActive(e.target.id)
-      },
-      { rootMargin: "-45% 0px -50% 0px" }
-    )
-    sections.forEach((el) => io.observe(el))
-    return () => io.disconnect()
-  }, [items])
-
-  // Keep the current link visible in the scrolling row. Only the row moves: scrollIntoView would also
-  // scroll the page back to the menu when it isn't sticky (screenshot captures).
-  useEffect(() => {
-    if (!active) return
-    const link = document.querySelector<HTMLElement>(`[data-nav-link="${active}"]`)
-    const row = link?.closest("ul")
-    if (!link || !row) return
-    const l = link.getBoundingClientRect()
-    const r = row.getBoundingClientRect()
-    if (l.left < r.left) row.scrollLeft -= r.left - l.left
-    else if (l.right > r.right) row.scrollLeft += l.right - r.right
-  }, [active])
-
-  return (
-    // Static in screenshot captures (html[data-shot]) so it doesn't cover the section being shot.
-    <nav
-      aria-label={label}
-      className="sticky top-0 z-30 -mx-4 border-b border-white/10 bg-background/85 px-4 backdrop-blur-md sm:-mx-6 sm:px-6 [html[data-shot]_&]:static"
-    >
-      <ul className="flex gap-1 overflow-x-auto py-2 text-sm [scrollbar-width:none]">
-        {items.map((i) => (
-          <li key={i.id} className="shrink-0">
-            <a
-              href={`#${i.id}`}
-              data-nav-link={i.id}
-              aria-current={active === i.id ? "location" : undefined}
-              className="block rounded-md px-2.5 py-1.5 text-zinc-400 transition-colors hover:text-foreground aria-[current=location]:bg-white/10 aria-[current=location]:text-foreground"
-            >
-              {i.label}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
   )
 }

@@ -37,7 +37,8 @@
       "other": {
         "scripts": "Calculadoras y simuladores →",
         "calculators": "Scripts para el MikroTik →"
-      }
+      },
+      "olt": "Base de conocimiento OLT Huawei"
     },
     "params": {
       "title": "Parámetros de la cola",

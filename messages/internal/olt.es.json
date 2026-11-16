@@ -1,0 +1,196 @@
+{
+  "olt": {
+    "meta": {
+      "title": "OLT Huawei · Interno"
+    },
+    "intro": {
+      "eyebrow": "Base de conocimiento",
+      "private": "Uso interno",
+      "title": "OLT Huawei: chasis, tarjetas y compras",
+      "lead": "Los datos para comprar o reemplazar equipo de las familias MA5600T (MA5608T, MA5603T/MA5683T, MA5600T/MA5680T) y MA5800 (X2, X7, X15, X17): slots, tarjetas compatibles, consumo, ópticas y qué revisar antes de pagar.",
+      "legend": "Cada dato dice de dónde sale: {huawei} viene de un documento de Huawei (descripción de hardware o datasheet); {reseller} viene de la página de un revendedor y conviene confirmarlo. Si nadie publicó un dato, aparece como «sin dato».",
+      "huawei": "Huawei",
+      "reseller": "Revendedor",
+      "links": "Otras páginas internas:",
+      "mikrotik": "Scripts MikroTik",
+      "calc": "Calculadoras y simuladores",
+      "navLabel": "Secciones de la base de conocimiento",
+      "jump": {
+        "chassis": "Chasis",
+        "boards": "Tarjetas",
+        "optics": "Ópticas",
+        "compat": "Compatibilidad",
+        "buying": "Guía de compra",
+        "sources": "Fuentes"
+      }
+    },
+    "missing": "sin dato",
+    "chassis": {
+      "title": "Chasis",
+      "lead": "Lado a lado, los chasis de las dos familias. Las tarjetas de una familia no entran en la otra: MA5600T es centralizada y MA5800 distribuida, con tarjetas H80x y H90x distintas.",
+      "caption": "Comparativa de chasis OLT Huawei",
+      "families": {
+        "ma5600": "Familia MA5600T (hoy)",
+        "ma5800": "Familia MA5800 (siguiente paso)"
+      },
+      "rows": {
+        "alias": "También se vende como",
+        "height": "Altura",
+        "dimensions": "Medidas sin orejas (ancho × fondo × alto, mm)",
+        "weight": "Peso",
+        "backplane": "Backplane",
+        "serviceSlots": "Slots de servicio",
+        "controlSlots": "Slots de control",
+        "controlBoards": "Tarjetas de control",
+        "uplinkSlots": "Slots de uplink",
+        "powerSlots": "Slots de energía",
+        "powerBoards": "Tarjetas de energía",
+        "power": "Alimentación",
+        "maxPower": "Consumo máximo",
+        "fans": "Ventiladores",
+        "gpon": "Puertos GPON máx.",
+        "tenG": "Puertos 10G PON máx.",
+        "ge": "Puertos GE / 10GE máx.",
+        "switching": "Capacidad de conmutación",
+        "temperature": "Ambiente de operación",
+        "minSoftware": "Software mínimo"
+      },
+      "note": "Las alturas del MA5600T ETSI/IEC no vienen en el documento de Huawei. «≈ 11 U» del MA5800-X15/X17 se calcula de su altura (486 mm). Los puertos máximos suponen tarjetas de 16 puertos en todos los slots de servicio."
+    },
+    "boards": {
+      "title": "Tarjetas",
+      "lead": "Cada tarjeta con sus puertos, consumo (estático / máximo), en qué chasis entra, con qué controladora funciona, la versión mínima de software y si Huawei ya la dejó de vender.",
+      "search": "Buscar por código o puerto",
+      "searchHint": "Por ejemplo GPFD, MCUD1, XGS-PON o 10GE.",
+      "family": "Familia",
+      "families": {
+        "all": "Todas",
+        "ma5600": "MA5600T",
+        "ma5800": "MA5800"
+      },
+      "kind": "Tipo",
+      "kinds": {
+        "all": "Todos",
+        "control": "Control",
+        "gpon": "GPON",
+        "tenG": "10G PON",
+        "combo": "Combo / Flex-PON",
+        "uplink": "Uplink",
+        "ethernet": "Ethernet / P2P",
+        "power": "Energía",
+        "fan": "Ventiladores"
+      },
+      "count": "{count, plural, =0 {Ninguna tarjeta} one {# tarjeta} other {# tarjetas}}",
+      "none": "Ninguna tarjeta coincide con la búsqueda.",
+      "fields": {
+        "ports": "Puertos",
+        "power": "Consumo",
+        "chassis": "Chasis",
+        "controls": "Controladoras",
+        "minVersion": "Software mínimo",
+        "lifecycle": "Estado",
+        "replacedBy": "Reemplazo",
+        "detail": "Nota"
+      },
+      "lifecycle": {
+        "EOM": "Ya no se comercializa (EOM)",
+        "EOP": "Ya no se fabrica (EOP)"
+      }
+    },
+    "optics": {
+      "title": "Ópticas",
+      "lead": "El módulo SFP define cuánta pérdida aguanta el puerto, y con eso la distancia y la división. GPON transmite en 1490 nm hacia el cliente y recibe en 1310 nm; XG-PON en 1577 / 1270 nm.",
+      "caption": "Clases de módulos ópticos PON",
+      "cols": {
+        "class": "Clase",
+        "budget": "Presupuesto óptico",
+        "tx": "Potencia de salida",
+        "sensitivity": "Sensibilidad",
+        "split": "División",
+        "use": "Para qué"
+      },
+      "use": {
+        "bPlus": "La común: edificios y distancias cortas.",
+        "cPlus": "Más alcance o divisiones de 1:128.",
+        "cPlusPlus": "Distancias largas o muchas pérdidas en la planta.",
+        "xg": "XG-PON en tarjetas 10G y combo."
+      },
+      "note": "Huawei publica 28.5 dB (B+) y 32 dB (C+) y pide C+ para 1:128; C++ y los rangos de potencia vienen de revendedores. Al comprar, mide la potencia de salida de cada puerto (Guía de compra)."
+    },
+    "compat": {
+      "title": "Compatibilidad y reemplazos",
+      "lead": "Qué tarjeta funciona con qué controladora, y qué la sustituye cuando Huawei dejó de venderla (tabla de ciclo de vida de la descripción de hardware).",
+      "caption": "Tarjetas GPON de la familia MA5600T por controladora",
+      "colBoard": "Tarjeta",
+      "yes": "Sí",
+      "no": "No",
+      "chainsTitle": "Reemplazos de Huawei",
+      "chains": [
+        "H801GPBC (EOM) → H802GPBD, H805GPBD o H806GPBH",
+        "H802GPBD (EOM) → H805GPBD o H806GPBH",
+        "H801SCUL (EOM) → H801SCUN o H802SCUN; H801SCUN → H802SCUN (mismo slot)",
+        "H801X1CA y H801X2CA (EOM) → H801X2CS",
+        "H801PRTA (EOP) y H801PRTG (EOM) → H801PRTE",
+        "Ventiladores: FCBB → FCBI (ETSI), FCBC → FCBH (IEC), FMCA → FCBI (MA5603T)"
+      ],
+      "familyTitle": "Entre familias",
+      "family": [
+        "Las tarjetas H80x (MA5600T) no entran en un MA5800 ni las H90x (MA5800) en un MA5600T: son arquitecturas distintas (centralizada contra distribuida) con backplanes distintos.",
+        "MA5683T = MA5603T y MA5680T = MA5600T: el mismo chasis vendido solo como OLT (según revendedores; las medidas y los slots coinciden con los de Huawei).",
+        "Entre MA5608T, MA5603T y MA5600T las tarjetas de servicio y el software son compatibles (datasheet), pero cada chasis usa sus propias tarjetas de control y de energía: MCU y MPW en el MA5608T, SCU y PRT en los demás."
+      ],
+      "note": "Tabla leída de la descripción de hardware de Huawei (2013). Las tarjetas más nuevas (GPFD H805/H806, GPBD H807, XGBD) no vienen en ese documento: confírmalas con el vendedor o con un equipo de prueba."
+    },
+    "buying": {
+      "title": "Guía de compra",
+      "lead": "Lo que hay que revisar antes de pagar por una OLT o una tarjeta, sobre todo usada, y cómo crecer hacia 10G.",
+      "groups": {
+        "test": {
+          "title": "Pídele al vendedor estas salidas (o pruébalo tú)",
+          "items": [
+            "display version: versión de software (V800R0xx en MA5600T, V100R0xx en MA5800) y el producto que reporta.",
+            "display board 0: todas las tarjetas en «Normal» y las dos controladoras como «Active_normal» y «Standby_normal».",
+            "display board 0/<slot> de cada controladora: las dos con la misma versión de software, BIOS y lógica.",
+            "En cada puerto PON (interface gpon 0/<slot>/<puerto>): módulo «Online» y su potencia de salida dentro del rango de su clase (B+ +1.5 a +5 dBm, C+ +3 a +7, C++ +6 a +10). Valores en blanco o con caracteres raros = módulo dañado.",
+            "Que el LED en verde no basta: los módulos ópticos son la falla más común en tarjetas usadas (según un revendedor que las prueba)."
+          ]
+        },
+        "software": {
+          "title": "Software y licencias",
+          "items": [
+            "Cada tarjeta pide una versión mínima (columna «Software mínimo»): una tarjeta nueva en una OLT con software viejo no arranca.",
+            "Tus clientes usan ONT Huawei (EG8145B7-50): no necesitas la licencia de ONT de otras marcas. Aun así, registra un EG8145B7-50 en la OLT que vas a comprar antes de comprar en cantidad: un ONT nuevo puede pedir una versión de OLT más reciente.",
+            "Las OLT que se venden «desbloqueadas» para ONT de otras marcas suelen traer V800R015 o V800R018; desconfía de software o licencias de origen dudoso (hay quien vende el NMS U2000 crackeado).",
+            "El firmware lo da el comprador por canales legales: pide por escrito qué versión trae y quién la instaló."
+          ]
+        },
+        "hardware": {
+          "title": "Hardware",
+          "items": [
+            "Lleva repuestos de lo que más falla en una OLT de un solo ejemplar: módulos ópticos, una tarjeta de energía y una de control (las dos controladoras van en par activo/reserva).",
+            "Energía: MA5603T/MA5683T y MA5600T/MA5680T son solo DC −48 V (necesitas rectificador y banco de baterías); MA5608T y MA5800-X2 aceptan AC con batería de respaldo.",
+            "Revisa la clase de cada SFP (B+, C+, C++) y que coincida con tus distancias y divisiones; B+ alcanza para un edificio, C+ para 1:128.",
+            "El presupuesto de energía sale de la tabla de chasis: suma el consumo máximo de cada tarjeta y el de los ventiladores para dimensionar UPS y rectificador."
+          ]
+        },
+        "upgrade": {
+          "title": "Para crecer hacia 10G",
+          "items": [
+            "En la familia MA5600T, 10G es XG-PON (H802XGBC de 4 puertos, H801XGBD de 8): bajada 10G y subida 2.5G. XGS-PON (10G simétrico) solo existe en MA5800.",
+            "En MA5800, las tarjetas combo (CGHF para XG-PON, CSHF para XGS-PON) atienden ONT GPON y 10G en el mismo puerto: cambias la OLT y los ONT actuales siguen funcionando.",
+            "Un MA5800-X2 (2 slots, AC o DC, 2 U) es el reemplazo directo de un MA5608T; el X7 (7 slots, 6 U, DC) el de un MA5603T/MA5683T.",
+            "El MA5800-X7 pide software V100R016C00 o más nuevo, el X15 V100R016C10 y el X2 V100R017C10."
+          ]
+        }
+      }
+    },
+    "sources": {
+      "title": "Fuentes",
+      "lead": "De dónde sale cada dato. Los documentos de Huawei se leyeron en copias públicas; la descripción de hardware es de 2013 (versión V800R013), así que no cubre tarjetas más nuevas.",
+      "kind": {
+        "huawei": "Documento de Huawei",
+        "reseller": "Revendedor"
+      }
+    }
+  }
+}

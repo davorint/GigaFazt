@@ -9,7 +9,7 @@ import { INTERNAL_HEADERS, matchInternal, type InternalMatch } from "./lib/inter
 const handleI18n = createMiddleware(routing)
 
 /**
- * Internal pages (/mikrotik, /calculadora): open, noindex. Any capitalization
+ * Internal pages (/mikrotik, /calculadora, /olt): open, noindex. Any capitalization
  * is rewritten to the Spanish route it is served from.
  */
 function handleInternal(request: NextRequest, match: InternalMatch): NextResponse {
@@ -46,5 +46,7 @@ export const config = {
     "/:locale/:page([Mm][Ii][Kk][Rr][Oo][Tt][Ii][Kk])(.*)",
     "/:page([Cc][Aa][Ll][Cc][Uu][Ll][Aa][Dd][Oo][Rr][Aa])(.*)",
     "/:locale/:page([Cc][Aa][Ll][Cc][Uu][Ll][Aa][Dd][Oo][Rr][Aa])(.*)",
+    "/:page([Oo][Ll][Tt])(.*)",
+    "/:locale/:page([Oo][Ll][Tt])(.*)",
   ],
 }
