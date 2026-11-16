@@ -5,11 +5,15 @@ import { useTranslations } from "next-intl"
 import { Input } from "@/components/ui/input"
 import { SectionNav } from "@/components/mikrotik/SectionNav"
 import { SelectField } from "@/components/mikrotik/SelectField"
+import { BoardCompare } from "./BoardCompare"
 import { ModifiedChassis } from "./ModifiedChassis"
+import { OltCommands } from "./OltCommands"
+import { OpticBudget } from "./OpticBudget"
+import { Src } from "./Src"
 import { OltBuilder } from "./OltBuilder"
-import { BOARD_KINDS, BOARDS, CHASSIS, OPTICS, SOURCES, chassisName, sourceOf, type Board, type BoardKind, type Chassis, type Fact, type Family } from "@/lib/olt-kb"
+import { BOARD_KINDS, BOARDS, CHASSIS, OPTICS, SOURCES, chassisName, type Board, type BoardKind, type Chassis, type Fact, type Family } from "@/lib/olt-kb"
 
-const SECTIONS = ["chassis", "builder", "boards", "optics", "compat", "modified", "buying", "sources"] as const
+const SECTIONS = ["chassis", "builder", "boards", "optics", "compat", "modified", "buying", "commands", "sources"] as const
 const ANCHOR: Record<(typeof SECTIONS)[number], string> = {
   chassis: "chasis",
   builder: "armar",
@@ -18,26 +22,8 @@ const ANCHOR: Record<(typeof SECTIONS)[number], string> = {
   compat: "compatibilidad",
   modified: "modificados",
   buying: "compra",
+  commands: "comandos",
   sources: "fuentes",
-}
-
-/** Small tag that says where a value comes from; links to its entry in Fuentes. */
-function Src({ id }: { id: string }) {
-  const t = useTranslations("olt")
-  const s = sourceOf(id)
-  if (!s) return null
-  const huawei = s.kind === "huawei"
-  return (
-    <a
-      href={`#fuente-${s.id}`}
-      title={s.title}
-      className={`ml-1.5 inline-block rounded border px-1 py-px align-middle font-mono text-[10px] leading-none tracking-wide no-underline ${
-        huawei ? "border-cyan-400/30 text-cyan-300" : "border-amber-400/30 text-amber-300"
-      }`}
-    >
-      {huawei ? t("intro.huawei") : t("intro.reseller")}
-    </a>
-  )
 }
 
 function Value({ fact }: { fact?: Fact }) {
@@ -319,7 +305,13 @@ export function OltKnowledgeBase() {
       </Section>
 
       <Section id={ANCHOR.boards} name="olt-boards" title={t("boards.title")} lead={t("boards.lead")}>
-        <Boards />
+        <div className="grid gap-8">
+          <div className="grid gap-3">
+            <h3 className="text-base font-medium text-foreground">{t("boards.compareTitle")}</h3>
+            <BoardCompare />
+          </div>
+          <Boards />
+        </div>
       </Section>
 
       <Section id={ANCHOR.optics} name="olt-optics" title={t("optics.title")} lead={t("optics.lead")}>
@@ -361,6 +353,7 @@ export function OltKnowledgeBase() {
             </table>
           </div>
           <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("optics.note")}</p>
+          <OpticBudget />
         </div>
       </Section>
 
@@ -394,6 +387,10 @@ export function OltKnowledgeBase() {
             </div>
           ))}
         </div>
+      </Section>
+
+      <Section id={ANCHOR.commands} name="olt-commands" title={t("commands.title")} lead={t("commands.lead")}>
+        <OltCommands />
       </Section>
 
       <Section id={ANCHOR.sources} name="olt-sources" title={t("sources.title")} lead={t("sources.lead")}>

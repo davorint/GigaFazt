@@ -32,6 +32,10 @@ export const SOURCES: Source[] = [
     date: "2023-06-29",
   },
   { id: "brochure5600", kind: "huawei", title: "Huawei SmartAX MA5600T/MA5603T Brief Product Brochure", url: "http://www.german-electric.net/download/access-systems/huawei/Huawei%20SmartAX%20MA5600T%20%20MA5603T%20Brief%20Product%20Brochure(9-Feb-2012).pdf", date: "2012-02-09" },
+  { id: "cfg5600", kind: "huawei", title: "SmartAX MA5600T/MA5603T/MA5608T Configuration Guide (copia en ManualsLib)", url: "https://www.manualslib.com/manual/1233685/Huawei-Smartax-Ma5603t.html" },
+  { id: "pitpTs", kind: "huawei", title: "Huawei: «PITP Configuration Is Incorrect» (guía de solución de fallas)", url: "https://info.support.huawei.com/network/ptmngsys/Web/tsrev_access/en/content/access/13_IP_address_fails_to_be_obtained_through_PPPoE_dialup/trouble_511147.html" },
+  { id: "iatec", kind: "reseller", title: "IA Tecnologia: GenieACS y TR-069 con ONU Huawei (MA5800, EG8145V5)", url: "https://iatecnologia.net/genieacs-tr069-onu-huawei/", date: "2026-10-04" },
+  { id: "fibermall", kind: "reseller", title: "Fibermall: pérdida de inserción de splitters PLC (típica / máxima)", url: "https://www.fibermall.com/store-17106-plc-splitter.htm" },
   { id: "telecomate", kind: "reseller", title: "Telecomate: fichas MA5800 (X7, X17, MPLB, GPHF, XGHD, CGHF) y MA5603T vs MA5683T", url: "https://www.telecomate.com/huawei-ma5800-olt/" },
   { id: "thunderlink", kind: "reseller", title: "Thunder-link: fichas GPFD/GPBD y procedimiento de prueba de MA5600T", url: "https://www.thunder-link.com/huawei-smartax-ma5600t-system-test-procedure" },
   { id: "fiberolt", kind: "reseller", title: "Fiberolt: MA5608T, MA5683T, H806GPBD, H807GPBD", url: "https://www.fiberolt.com/huawei-ma5608t.html" },
@@ -320,9 +324,15 @@ export const BOARDS: Board[] = [
   { code: "H801GICF", kind: "uplink", family: "ma5600", ports: h("2 × GE SFP"), power: h("3.9 W"), chassis: BIG_5600, controls: h(["SCUL", "SCUN", "SCUH"]) },
   { code: "H801GICG", kind: "uplink", family: "ma5600", ports: h("2 × GE eléctricos"), power: h("6.3 / 9.2 W"), chassis: BIG_5600, controls: h(["SCUL", "SCUN", "SCUH"]) },
   { code: "H801GICK", kind: "uplink", family: "ma5600", ports: h("2 × GE SFP, SyncE"), power: h("6.6 / 7 W"), chassis: BIG_5600, controls: h(["SCUF (1 puerto)", "SCUL", "SCUN", "SCUH", "SCUV"]) },
+  { code: "H801GICE", kind: "uplink", family: "ma5600", ports: h("4 × GE eléctricos"), power: h("5.8 / 11.8 W"), chassis: BIG_5600, controls: h(["SCUB", "SCUF", "SCUH", "SCUV"]) },
+  { code: "H801GSCA", kind: "uplink", family: "ma5600", ports: h("4 × GE SFP, SyncE"), power: h("8 / 10 W"), chassis: BIG_5600, controls: h(["SCUB", "SCUF"]) },
+  { code: "H802P2CA", kind: "uplink", family: "ma5600", ports: h("2 × PON SFP (GPON/EPON) como uplink"), power: h("9 / 10 W"), chassis: BIG_5600 },
   { code: "H801GICD", kind: "uplink", family: "ma5600", ports: h("4 × GE SFP"), power: h("5.3 W"), chassis: BIG_5600, controls: h(["SCUB", "SCUF", "SCUH", "SCUV"]) },
   // ── MA5600T family: Ethernet / P2P ────────────────────────────────────────
   { code: "H801ETHB", kind: "ethernet", family: "ma5600", ports: h("8 × GE ópticos o eléctricos"), power: h("20 / 21 W"), chassis: ALL_5600, detail: h("Uplink extra, cascada y agregación entre tarjetas") },
+  { code: "H801ETHA", kind: "ethernet", family: "ma5600", ports: h("8 × GE SFP (en dos subtarjetas O4GS)"), power: h("19.6 / 27 W"), chassis: BIG_5600, lifecycle: h("EOP"), replacedBy: h(["H801ETHB"]) },
+  { code: "H801OPFA", kind: "ethernet", family: "ma5600", ports: h("16 × FE ópticos (eSFF), P2P"), power: h("20.2 / 28.5 W"), chassis: BIG_5600, controls: h(["SCUB", "SCUF", "SCUL", "SCUN", "SCUH"]) },
+  { code: "H802OPGD", kind: "ethernet", family: "ma5600", ports: h("24 o 48 × GE/FE, P2P"), power: h("70 / 100 W"), chassis: BIG_5600 },
   { code: "H802OPGE", kind: "ethernet", family: "ma5600", ports: h("24 o 48 × GE/FE ópticos, 1588v2/SyncE"), power: h("53 / 90 W"), chassis: ALL_5600, detail: ds("Agregación, P2P a empresas y backhaul móvil") },
   // ── MA5600T family: power and fans ────────────────────────────────────────
   { code: "H801PRTE", kind: "power", family: "ma5600", ports: h("1 entrada −48 V DC, filtro, límite de corriente, bajo voltaje"), power: h("1.5 W"), chassis: BIG_5600, detail: h("El reemplazo de PRTA y PRTG") },
@@ -339,6 +349,16 @@ export const BOARDS: Board[] = [
   { code: "H901MPLG", kind: "control", family: "ma5800", ports: d8("2 × 100GE + 4 × 10GE/GE (con dos tarjetas)"), chassis: BIG_5800, detail: d8("7.3 Tbit/s, 200 Gbit/s por slot") },
   { code: "H901MPSA", kind: "control", family: "ma5800", ports: d8("4 × 10GE/GE + 4 × GE (con dos tarjetas)"), chassis: ["ma5800-x2"], detail: d8("248 Gbit/s, 40 Gbit/s por slot (igual MPSG)") },
   { code: "H901MPSD", kind: "control", family: "ma5800", ports: d8("8 × 10GE/GE (MPSD-G)"), chassis: ["ma5800-x2"], detail: d8("560 Gbit/s, 100 Gbit/s por slot") },
+  { code: "H901MPSG", kind: "control", family: "ma5800", ports: d8("4 × 10GE/GE + 4 × GE (con dos tarjetas)"), chassis: ["ma5800-x2"], detail: d8("248 Gbit/s, 40 Gbit/s por slot (igual MPSA)") },
+  { code: "H901MPSC", kind: "control", family: "ma5800", ports: r("4 × 10GE/GE", "telecomate"), chassis: ["ma5800-x2"], detail: r("80 Gbit/s por slot; con entradas de alarma y reloj BITS/ToD", "telecomate") },
+  { code: "H901GPSF", kind: "gpon", family: "ma5800", ports: r("16 × GPON", "telecomate"), chassis: ALL_5800 },
+  { code: "H901GPUF", kind: "gpon", family: "ma5800", ports: r("16 × GPON", "telecomate"), chassis: ALL_5800 },
+  { code: "H901GPLF", kind: "gpon", family: "ma5800", ports: r("16 × GPON", "telecomate"), chassis: ALL_5800 },
+  { code: "H901XGSF", kind: "tenG", family: "ma5800", ports: r("16 × XG-PON", "telecomate"), chassis: ALL_5800 },
+  { code: "H902XSHD", kind: "tenG", family: "ma5800", ports: r("8 × XGS-PON", "telecomate"), chassis: ALL_5800 },
+  { code: "H901TWED", kind: "tenG", family: "ma5800", ports: r("8 × TWDM-PON", "telecomate"), chassis: ALL_5800 },
+  { code: "H902CGHD", kind: "combo", family: "ma5800", ports: r("8 × combo XG-PON + GPON, 100 Gbit/s", "telecomate"), chassis: ALL_5800 },
+  { code: "H902CSHD", kind: "combo", family: "ma5800", ports: r("8 × combo XGS-PON + GPON, 100 Gbit/s", "telecomate"), chassis: ALL_5800 },
   { code: "H901GPHF", kind: "gpon", family: "ma5800", ports: r("16 × GPON, B+/C+/C++, 1:64 (B+) o 1:128 (C+/C++)", "telecomate"), power: r("25 / 50 W", "telecomate"), chassis: ALL_5800 },
   { code: "H901XGHD", kind: "tenG", family: "ma5800", ports: r("8 × XG-PON (N1/N2a), 1:256", "telecomate"), power: r("42 / 61 W", "telecomate"), chassis: ALL_5800 },
   { code: "H901XSHF", kind: "tenG", family: "ma5800", ports: r("16 × XGS-PON", "telecomate"), chassis: ALL_5800 },
@@ -359,6 +379,39 @@ export const OPTICS: OpticClass[] = [
   { id: "C+", budget: h("32 dB"), tx: r("+3 a +7 dBm", "thunderlink"), sensitivity: r("−32 dBm", "thunderlink"), split: h("1:128 (Huawei pide C+ para llegar a 1:128)", "brochure5600"), use: "cPlus" },
   { id: "C++", budget: r("35 dB", "telecomate"), tx: r("+6 a +10 dBm", "thunderlink"), sensitivity: r("−35 dBm", "thunderlink"), split: r("1:128", "telecomate"), use: "cPlusPlus" },
   { id: "N1 / N2a (XG-PON)", budget: r("N1 / N2a", "telecomate"), split: r("1:256", "telecomate"), use: "xg" },
+]
+
+/** PLC splitter insertion loss, maximum dB (connectorized), by ratio. */
+export const SPLITTERS: { ratio: number; loss: Fact<number> }[] = [
+  { ratio: 2, loss: r(4.0, "fibermall") },
+  { ratio: 4, loss: r(7.4, "fibermall") },
+  { ratio: 8, loss: r(10.7, "fibermall") },
+  { ratio: 16, loss: r(14.0, "fibermall") },
+  { ratio: 32, loss: r(17.2, "fibermall") },
+  { ratio: 64, loss: r(21.5, "fibermall") },
+]
+
+/** Optical budget per class, dB (for the calculator; same figures as OPTICS). */
+export const BUDGETS: { id: string; budget: Fact<number> }[] = [
+  { id: "B+", budget: h(28.5) },
+  { id: "C+", budget: h(32) },
+  { id: "C++", budget: r(35, "telecomate") },
+]
+
+/** OLT commands worth having at hand, each from the source that shows it (what it does: messages olt.commands.items.<id>). */
+export type Command = { id: string; cmd: string; src: string; group: "check" | "ont" | "save" }
+export const COMMANDS: Command[] = [
+  { id: "version", cmd: "display version", src: "thunderlink", group: "check" },
+  { id: "boards", cmd: "display board 0", src: "thunderlink", group: "check" },
+  { id: "board", cmd: "display board 0/<slot>", src: "thunderlink", group: "check" },
+  { id: "pitpConfig", cmd: "display pitp config", src: "pitpTs", group: "check" },
+  { id: "autofind", cmd: "display ont autofind all", src: "cfg5600", group: "ont" },
+  { id: "ontAdd", cmd: "interface gpon 0/<slot>\n ont add <puerto> <ont-id> sn-auth \"<SN>\" omci ont-lineprofile-id <id> ont-srvprofile-id <id> desc \"<cliente>\"", src: "cfg5600", group: "ont" },
+  { id: "servicePort", cmd: "service-port <índice> vlan <vlan> gpon 0/<slot>/<puerto> ont <ont-id> gemport 1 multi-service user-vlan <vlan>", src: "cfg5600", group: "ont" },
+  { id: "servicePorts", cmd: "display service-port all", src: "cfg5600", group: "ont" },
+  { id: "pitpPort", cmd: "pitp permit-forwarding service-port <índice> enable", src: "pitpTs", group: "ont" },
+  { id: "wanInfo", cmd: "display ont wan-info 0/<slot> <puerto> <ont-id>", src: "iatec", group: "ont" },
+  { id: "save", cmd: "save", src: "iatec", group: "save" },
 ]
 
 export const sourceOf = (id: string) => SOURCES.find((s) => s.id === id)

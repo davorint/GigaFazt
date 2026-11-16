@@ -23,6 +23,7 @@
         "compat": "Compatibilidad",
         "modified": "Chasis modificados",
         "buying": "Guía de compra",
+        "commands": "Comandos",
         "sources": "Fuentes"
       }
     },
@@ -92,12 +93,14 @@
         "minVersion": "Software mínimo",
         "lifecycle": "Estado",
         "replacedBy": "Reemplazo",
-        "detail": "Nota"
+        "detail": "Nota",
+        "kind": "Tipo"
       },
       "lifecycle": {
         "EOM": "Ya no se comercializa (EOM)",
         "EOP": "Ya no se fabrica (EOP)"
-      }
+      },
+      "compareTitle": "Comparar tarjetas"
     },
     "optics": {
       "title": "Ópticas",
@@ -316,6 +319,70 @@
         "No le instales actualizaciones de software sin probarlas antes en otra unidad: el software oficial no espera un backplane modificado.",
         "Déjalo una o dos semanas con carga de prueba antes de pasar clientes."
       ]
+    },
+    "compare": {
+      "pick": "Tarjeta {n}",
+      "empty": "Ninguna",
+      "caption": "Comparación de tarjetas",
+      "none": "sin dato",
+      "current": "Se sigue vendiendo (sin aviso de fin)"
+    },
+    "budget": {
+      "title": "¿Qué óptica necesito?",
+      "lead": "Suma la pérdida desde el puerto de la OLT hasta el ONT más lejano (splitters, fibra, conectores y empalmes) y la compara con lo que aguanta cada clase de módulo, dejando un margen para el envejecimiento y las reparaciones.",
+      "splitters": "Splitters en cascada",
+      "stage": "Nivel {n}",
+      "addStage": "Agregar un nivel de splitter",
+      "removeStage": "Quitar el último nivel",
+      "km": "Distancia al ONT más lejano",
+      "connectors": "Conectores en el camino",
+      "splices": "Empalmes por fusión",
+      "units": "pzas",
+      "typicalTitle": "Valores por pieza (típicos, ajústalos a tus materiales)",
+      "typicalHint": "Valores comunes de planeación, no de un fabricante: fibra monomodo a 1310 nm (la subida, el peor caso), conector y empalme por fusión. Usa los de tus hojas de datos o tus mediciones con OTDR si los tienes.",
+      "fiberDb": "Fibra",
+      "connectorDb": "Por conector",
+      "spliceDb": "Por empalme",
+      "marginDb": "Margen",
+      "ratio": "División total",
+      "splitLoss": "Splitters (máximo)",
+      "fiberLoss": "Fibra",
+      "connectorLoss": "Conectores y empalmes",
+      "total": "Pérdida total",
+      "verdict": {
+        "ok": "Alcanza: sobran {spare} dB después del margen",
+        "tight": "Solo comiéndose el margen ({spare} dB)",
+        "no": "No alcanza"
+      },
+      "pick": "Con estos datos te basta un módulo {id}.",
+      "pickNone": "Ninguna clase alcanza con el margen: acorta la distancia, quita un nivel de división o revisa conectores y empalmes.",
+      "over128": "Más de 1:128: las tarjetas GPON de Huawei aceptan hasta 128 ONT por puerto.",
+      "note": "Las pérdidas de splitter son las máximas de una tabla de revendedor (ya incluyen sus conectores); los presupuestos de clase son de Huawei (B+, C+) y de revendedor (C++). Mide con un medidor de potencia en la instalación: este cálculo es para elegir el módulo, no para garantizar el enlace."
+    },
+    "commands": {
+      "title": "Comandos",
+      "lead": "Los comandos que usa esta base y /mikrotik, para revisar una OLT y dar de alta un ONT. La sintaxis puede cambiar entre versiones: confírmala en la tuya.",
+      "groups": {
+        "check": "Revisar la OLT",
+        "ont": "Dar de alta y revisar un ONT",
+        "save": "Guardar"
+      },
+      "items": {
+        "version": "Versión de software y producto (lo primero que pides al comprar).",
+        "boards": "Todas las tarjetas del chasis y su estado: deben decir Normal, y las dos de control Active_normal y Standby_normal.",
+        "board": "El detalle de una tarjeta: versión de software, BIOS y, en una tarjeta PON, el estado del módulo óptico de cada puerto.",
+        "pitpConfig": "En qué modo está PITP (la etiqueta de ONT en PPPoE); útil si el PPPoE falla tras activarlo.",
+        "autofind": "Los ONT conectados que la OLT ve pero aún no están dados de alta, con su número de serie.",
+        "ontAdd": "Da de alta un ONT en un puerto PON con su perfil de línea (plan) y de servicio. En /mikrotik → Configuración → Alta de un ONT sale ya armado con tus datos.",
+        "servicePort": "Une el ONT a la VLAN de internet; el índice debe estar libre.",
+        "servicePorts": "Los service-port existentes: para elegir un índice libre.",
+        "pitpPort": "Activa PITP en el service-port de un ONT (también hace falta global y por VLAN).",
+        "wanInfo": "Las conexiones WAN que reporta un ONT (en un HGU: su PPPoE y su IP).",
+        "save": "Guarda la configuración: sin esto se pierde al reiniciar la OLT."
+      },
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "note": "Los <…> son datos tuyos (slot, puerto, índice). Fuentes: la guía de configuración de Huawei (copia en ManualsLib), una página de solución de fallas de Huawei y dos sitios de terceros, marcados en cada comando."
     }
   }
 }
