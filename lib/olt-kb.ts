@@ -36,6 +36,10 @@ export const SOURCES: Source[] = [
   { id: "pitpTs", kind: "huawei", title: "Huawei: «PITP Configuration Is Incorrect» (guía de solución de fallas)", url: "https://info.support.huawei.com/network/ptmngsys/Web/tsrev_access/en/content/access/13_IP_address_fails_to_be_obtained_through_PPPoE_dialup/trouble_511147.html" },
   { id: "iatec", kind: "reseller", title: "IA Tecnologia: GenieACS y TR-069 con ONU Huawei (MA5800, EG8145V5)", url: "https://iatecnologia.net/genieacs-tr069-onu-huawei/", date: "2026-10-04" },
   { id: "fibermall", kind: "reseller", title: "Fibermall: pérdida de inserción de splitters PLC (típica / máxima)", url: "https://www.fibermall.com/store-17106-plc-splitter.htm" },
+  { id: "airlive", kind: "reseller", title: "AirLive: GPON OLT SFP C+++/C++++, hoja de especificaciones", url: "https://www.airlive.com/data/download/file/Airlive%20GPON%20OLT%20SFP%20C+++_SpecSheet_07072023.pdf", date: "2023-07-07" },
+  { id: "vsol", kind: "reseller", title: "VSOL: GPON OLT SFP C++++", url: "https://www.vsolcn.com/product/gpon-olt-sfp-c-optical-module" },
+  { id: "philisun", kind: "reseller", title: "Philisun: C+++ 9 dBm GPON OLT SFP", url: "https://www.philisun.com/products/gpon-olt-c-9dbm-2g-1g-1490-1310nm-20km-sc-sx/" },
+  { id: "eg8145", kind: "huawei", title: "Huawei OptiXstar EG8145B7-50 (página de producto)", url: "https://e.huawei.com/en/products/optical-terminal/optixstar-eg8145b7-50" },
   { id: "telecomate", kind: "reseller", title: "Telecomate: fichas MA5800 (X7, X17, MPLB, GPHF, XGHD, CGHF) y MA5603T vs MA5683T", url: "https://www.telecomate.com/huawei-ma5800-olt/" },
   { id: "thunderlink", kind: "reseller", title: "Thunder-link: fichas GPFD/GPBD y procedimiento de prueba de MA5600T", url: "https://www.thunder-link.com/huawei-smartax-ma5600t-system-test-procedure" },
   { id: "fiberolt", kind: "reseller", title: "Fiberolt: MA5608T, MA5683T, H806GPBD, H807GPBD", url: "https://www.fiberolt.com/huawei-ma5608t.html" },
@@ -373,11 +377,13 @@ export const BOARDS: Board[] = [
 ]
 
 /** GPON/XG-PON optical module classes. */
-export type OpticClass = { id: string; budget: Fact; tx?: Fact; sensitivity?: Fact; split: Fact; use: string }
+export type OpticClass = { id: string; budget: Fact; tx?: Fact; sensitivity?: Fact; split?: Fact; use: string }
 export const OPTICS: OpticClass[] = [
   { id: "B+", budget: h("28.5 dB"), tx: r("+1.5 a +5 dBm", "thunderlink"), sensitivity: r("−28 dBm", "thunderlink"), split: r("1:64 en la práctica", "telecomate"), use: "bPlus" },
   { id: "C+", budget: h("32 dB"), tx: r("+3 a +7 dBm", "thunderlink"), sensitivity: r("−32 dBm", "thunderlink"), split: h("1:128 (Huawei pide C+ para llegar a 1:128)", "brochure5600"), use: "cPlus" },
   { id: "C++", budget: r("35 dB", "telecomate"), tx: r("+6 a +10 dBm", "thunderlink"), sensitivity: r("−35 dBm", "thunderlink"), split: r("1:128", "telecomate"), use: "cPlusPlus" },
+  { id: "C+++", budget: r("No publicado (la calculadora lo estima)", "airlive"), tx: r("+6 a +10 dBm (Philisun: +8 a +11)", "airlive"), sensitivity: r("−33 dBm (Philisun: −31)", "airlive"), use: "cPlus3" },
+  { id: "C++++", budget: r("No publicado (la calculadora lo estima)", "airlive"), tx: r("+9 a +13 dBm (igual VSOL)", "airlive"), sensitivity: r("−33 dBm (igual VSOL)", "airlive"), use: "cPlus4" },
   { id: "N1 / N2a (XG-PON)", budget: r("N1 / N2a", "telecomate"), split: r("1:256", "telecomate"), use: "xg" },
 ]
 
@@ -391,12 +397,22 @@ export const SPLITTERS: { ratio: number; loss: Fact<number> }[] = [
   { ratio: 64, loss: r(21.5, "fibermall") },
 ]
 
-/** Optical budget per class, dB (for the calculator; same figures as OPTICS). */
-export const BUDGETS: { id: string; budget: Fact<number> }[] = [
-  { id: "B+", budget: h(28.5) },
-  { id: "C+", budget: h(32) },
-  { id: "C++", budget: r(35, "telecomate") },
+/**
+ * OLT module classes for the calculator. B+/C+/C++ have a published class budget; C+++/C++++ (vendor extensions, not
+ * ITU classes) only publish transmit power and sensitivity, so their budget is computed from both directions.
+ * txMax: the strongest the module transmits (for the ONT overload check).
+ */
+export type BudgetClass = { id: string; budget?: Fact<number>; txMin?: Fact<number>; txMax: Fact<number>; sensitivity?: Fact<number> }
+export const BUDGETS: BudgetClass[] = [
+  { id: "B+", budget: h(28.5), txMax: r(5, "thunderlink") },
+  { id: "C+", budget: h(32), txMax: r(7, "thunderlink") },
+  { id: "C++", budget: r(35, "telecomate"), txMax: r(10, "thunderlink") },
+  { id: "C+++", txMin: r(6, "airlive"), txMax: r(10, "airlive"), sensitivity: r(-33, "airlive") },
+  { id: "C++++", txMin: r(9, "airlive"), txMax: r(13, "airlive"), sensitivity: r(-33, "airlive") },
 ]
+
+/** The company's ONT (EG8145B7-50): GPON Class B+, receiver sensitivity −27 dBm. */
+export const ONT_SENSITIVITY: Fact<number> = h(-27, "eg8145")
 
 /** OLT commands worth having at hand, each from the source that shows it (what it does: messages olt.commands.items.<id>). */
 export type Command = { id: string; cmd: string; src: string; group: "check" | "ont" | "save" }

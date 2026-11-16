@@ -1,9 +1,13 @@
 /**
  * PON optical budget: the loss between the OLT port and the farthest ONT, against what each module class allows.
- * Splitter losses and class budgets are sourced (lib/olt-kb); fiber, connector and splice losses are typical values
- * the user can change (the page says so).
+ * Splitter losses and class figures are sourced (lib/olt-kb); fiber, connector and splice losses and the ONT's transmit
+ * power and overload are typical values the user can change (the page says so).
+ *
+ * B+/C+/C++ have a published class budget. C+++/C++++ only publish their transmit power and sensitivity, so their budget
+ * is the weaker direction: downstream (module minimum transmit − ONT sensitivity) or upstream (ONT minimum transmit −
+ * module sensitivity). A stronger transmitter can also overload the ONT on a short, low-loss run.
  */
-import { BUDGETS, SPLITTERS } from "./olt-kb"
+import { BUDGETS, ONT_SENSITIVITY, SPLITTERS } from "./olt-kb"
 
 export type BudgetInput = {
   /** Fiber from the OLT to the farthest ONT, km. */
@@ -18,10 +22,42 @@ export type BudgetInput = {
   spliceDb: number
   /** Margin kept for aging, repairs and bends, dB. */
   marginDb: number
+  /** ONT receiver sensitivity, dBm (EG8145B7-50: −27, Huawei). */
+  ontSensitivity: number
+  /** ONT minimum transmit power, dBm (typical Class B+ ONT value). */
+  ontTx: number
+  /** Highest power the ONT receiver takes, dBm (typical Class B+ ONT value). */
+  ontOverload: number
 }
 
-/** Common planning values; the page labels them as typical, not as facts. */
-export const DEFAULT_BUDGET: BudgetInput = { km: 2, splitters: [8, 8], connectors: 4, splices: 4, fiberDb: 0.35, connectorDb: 0.5, spliceDb: 0.1, marginDb: 3 }
+/** Common planning values; the page labels the typical ones as such. */
+export const DEFAULT_BUDGET: BudgetInput = {
+  km: 2,
+  splitters: [8, 8],
+  connectors: 4,
+  splices: 4,
+  fiberDb: 0.35,
+  connectorDb: 0.5,
+  spliceDb: 0.1,
+  marginDb: 3,
+  ontSensitivity: ONT_SENSITIVITY.v,
+  ontTx: 0.5,
+  ontOverload: -8,
+}
+
+export type ClassResult = {
+  id: string
+  budget: number
+  /** Which direction sets the budget (computed classes only). */
+  limit?: "down" | "up"
+  /** budget − total − margin (≥ 0 = fits with the margin). */
+  spare: number
+  verdict: "ok" | "tight" | "no"
+  /** The strongest signal reaching the ONT is above its overload: needs more loss (an attenuator). */
+  overload: boolean
+  /** Least total loss so the ONT isn't overloaded, dB. */
+  minLoss: number
+}
 
 export type BudgetResult = {
   splitDb: number
@@ -32,9 +68,8 @@ export type BudgetResult = {
   total: number
   /** 1:N overall split. */
   ratio: number
-  /** Per class: budget − total − margin (≥ 0 = fits with the margin). */
-  classes: { id: string; budget: number; spare: number; verdict: "ok" | "tight" | "no" }[]
-  /** Cheapest class that fits with the margin, null if none. */
+  classes: ClassResult[]
+  /** Cheapest class that fits with the margin and doesn't overload the ONT, null if none. */
   pick: string | null
 }
 
@@ -50,11 +85,20 @@ export function opticBudget(i: BudgetInput): BudgetResult {
   const connectorDb = Math.max(0, i.connectors) * Math.max(0, i.connectorDb)
   const spliceDb = Math.max(0, i.splices) * Math.max(0, i.spliceDb)
   const total = splitDb + fiberDb + connectorDb + spliceDb
-  const classes = BUDGETS.map((b) => {
-    const spare = b.budget.v - total - Math.max(0, i.marginDb)
+  const classes = BUDGETS.map((b): ClassResult => {
+    let budget = b.budget?.v ?? 0
+    let limit: "down" | "up" | undefined
+    if (!b.budget && b.txMin && b.sensitivity) {
+      const down = b.txMin.v - i.ontSensitivity
+      const up = i.ontTx - b.sensitivity.v
+      budget = Math.min(down, up)
+      limit = down <= up ? "down" : "up"
+    }
+    const spare = budget - total - Math.max(0, i.marginDb)
     // Fits with the margin = ok; fits only by eating into the margin = tight; over the budget = no.
-    const verdict: "ok" | "tight" | "no" = spare >= 0 ? "ok" : b.budget.v - total >= 0 ? "tight" : "no"
-    return { id: b.id, budget: b.budget.v, spare: round(spare), verdict }
+    const verdict: "ok" | "tight" | "no" = spare >= 0 ? "ok" : budget - total >= 0 ? "tight" : "no"
+    const minLoss = b.txMax.v - i.ontOverload
+    return { id: b.id, budget: round(budget), limit, spare: round(spare), verdict, overload: total < minLoss, minLoss: round(minLoss) }
   })
   return {
     splitDb: round(splitDb),
@@ -64,6 +108,6 @@ export function opticBudget(i: BudgetInput): BudgetResult {
     total: round(total),
     ratio: i.splitters.reduce((a, r) => a * r, 1),
     classes,
-    pick: classes.find((c) => c.verdict === "ok")?.id ?? null,
+    pick: classes.find((c) => c.verdict === "ok" && !c.overload)?.id ?? null,
   }
 }

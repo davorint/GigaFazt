@@ -118,9 +118,11 @@
         "bPlus": "La común: edificios y distancias cortas.",
         "cPlus": "Más alcance o divisiones de 1:128.",
         "cPlusPlus": "Distancias largas o muchas pérdidas en la planta.",
-        "xg": "XG-PON en tarjetas 10G y combo."
+        "xg": "XG-PON en tarjetas 10G y combo.",
+        "cPlus3": "Más potencia de bajada; no es clase ITU (extensión de fabricantes).",
+        "cPlus4": "La de más potencia; ojo con saturar el ONT en tramos cortos."
       },
-      "note": "Huawei publica 28.5 dB (B+) y 32 dB (C+) y pide C+ para 1:128; C++ y los rangos de potencia vienen de revendedores. Al comprar, mide la potencia de salida de cada puerto (Guía de compra)."
+      "note": "Huawei publica 28.5 dB (B+) y 32 dB (C+) y pide C+ para 1:128; C++ y los rangos de potencia vienen de revendedores. C+++ y C++++ no son clases de la ITU: cada fabricante pone sus cifras (aquí las de AirLive, comparadas con VSOL y Philisun) y no publican un presupuesto; la calculadora lo estima con tu ONT. Revisa que el módulo diga ser compatible con tu tarjeta Huawei. Al comprar, mide la potencia de salida de cada puerto (Guía de compra)."
     },
     "compat": {
       "title": "Compatibilidad y reemplazos",
@@ -357,7 +359,16 @@
       "pick": "Con estos datos te basta un módulo {id}.",
       "pickNone": "Ninguna clase alcanza con el margen: acorta la distancia, quita un nivel de división o revisa conectores y empalmes.",
       "over128": "Más de 1:128: las tarjetas GPON de Huawei aceptan hasta 128 ONT por puerto.",
-      "note": "Las pérdidas de splitter son las máximas de una tabla de revendedor (ya incluyen sus conectores); los presupuestos de clase son de Huawei (B+, C+) y de revendedor (C++). Mide con un medidor de potencia en la instalación: este cálculo es para elegir el módulo, no para garantizar el enlace."
+      "note": "Las pérdidas de splitter son las máximas de una tabla de revendedor (ya incluyen sus conectores). Presupuestos: B+ y C+ de Huawei, C++ de revendedor; C+++ y C++++ estimados con la potencia y la sensibilidad que publica el fabricante del módulo y los valores de tu ONT. Mide con un medidor de potencia en la instalación: este cálculo es para elegir el módulo, no para garantizar el enlace.",
+      "ontHint": "Tu ONT: la sensibilidad es la del EG8145B7-50 (Huawei, clase B+); su potencia mínima de salida y la máxima que aguanta su receptor son valores típicos de un ONT B+: usa los de su hoja si los tienes. Sirven para estimar C+++ y C++++ y para ver si un módulo potente satura el ONT.",
+      "ontSensitivity": "Sensibilidad del ONT",
+      "ontTx": "Potencia mínima del ONT",
+      "ontOverload": "Máximo que aguanta el ONT",
+      "limit": {
+        "down": "Estimado: lo limita la bajada (potencia mínima del módulo contra la sensibilidad del ONT).",
+        "up": "Estimado: lo limita la subida (potencia del ONT contra la sensibilidad del módulo): más potencia de bajada ya no ayuda."
+      },
+      "overload": "Satura el ONT: con esta pérdida le llega demasiada luz. Necesita al menos {min} dB de pérdida (un atenuador) o una clase menor."
     },
     "commands": {
       "title": "Comandos",

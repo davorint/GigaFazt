@@ -67,6 +67,12 @@ export function OpticBudget() {
                 <NumberField label={t("spliceDb")} unit="dB" value={i.spliceDb} max={1} onChange={(v) => v !== null && set({ spliceDb: v })} />
                 <NumberField label={t("marginDb")} unit="dB" value={i.marginDb} max={10} onChange={(v) => v !== null && set({ marginDb: v })} />
               </div>
+              <p className="text-xs leading-snug text-zinc-400">{t("ontHint")}</p>
+              <div className="grid items-start gap-4 sm:grid-cols-3">
+                <NumberField label={t("ontSensitivity")} unit="dBm" value={i.ontSensitivity} min={-40} max={0} onChange={(v) => v !== null && set({ ontSensitivity: v })} />
+                <NumberField label={t("ontTx")} unit="dBm" value={i.ontTx} min={-10} max={10} onChange={(v) => v !== null && set({ ontTx: v })} />
+                <NumberField label={t("ontOverload")} unit="dBm" value={i.ontOverload} min={-30} max={10} onChange={(v) => v !== null && set({ ontOverload: v })} />
+              </div>
             </div>
           </details>
         </div>
@@ -89,11 +95,15 @@ export function OpticBudget() {
           </dl>
           <ul className="grid gap-2">
             {r.classes.map((c) => (
-              <li key={c.id} className="flex flex-wrap items-baseline justify-between gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm">
-                <span className="font-mono text-foreground">
-                  {c.id} · {fmt(c.budget)} dB
-                </span>
-                <span className={VERDICT[c.verdict]}>{t(`verdict.${c.verdict}`, { spare: fmt(c.spare) })}</span>
+              <li key={c.id} className="grid gap-1 rounded-lg border border-white/10 px-3 py-2 text-sm">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="font-mono text-foreground">
+                    {c.id} · {fmt(c.budget)} dB
+                  </span>
+                  <span className={VERDICT[c.verdict]}>{t(`verdict.${c.verdict}`, { spare: fmt(c.spare) })}</span>
+                </div>
+                {c.limit && <span className="text-xs text-zinc-400">{t(`limit.${c.limit}`)}</span>}
+                {c.overload && <span className="text-xs text-rose-300">{t("overload", { min: fmt(c.minLoss) })}</span>}
               </li>
             ))}
           </ul>

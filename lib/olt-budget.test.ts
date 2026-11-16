@@ -16,7 +16,13 @@ describe("PON optical budget", () => {
       ["B+", 1, "ok"],
       ["C+", 4.5, "ok"],
       ["C++", 7.5, "ok"],
+      // C+++: min(6 − (−27), 0.5 − (−33)) = min(33, 33.5) = 33 dB, set by the downstream.
+      ["C+++", 5.5, "ok"],
+      // C++++: min(9 + 27, 0.5 + 33) = 33.5 dB: the upstream limits it, barely above C+++.
+      ["C++++", 6, "ok"],
     ])
+    expect(r.classes.find((c) => c.id === "C++++")).toMatchObject({ budget: 33.5, limit: "up" })
+    expect(r.classes.find((c) => c.id === "C+++")).toMatchObject({ budget: 33, limit: "down" })
     expect(r.pick).toBe("B+")
   })
   it("1:128 (1:4 + 1:32) over 10 km needs C+, and a long run with many connectors needs C++ or nothing", () => {
@@ -27,5 +33,24 @@ describe("PON optical budget", () => {
     expect(r.classes.find((c) => c.id === "C+")?.verdict).toBe("tight")
     expect(r.pick).toBe("C++")
     expect(opticBudget({ ...DEFAULT_BUDGET, km: 20, splitters: [64, 2], connectors: 10 }).pick).toBeNull()
+  })
+})
+
+describe("high-power modules on short runs", () => {
+  it("C++++ overloads the ONT when the loss is low; the pick skips it", () => {
+    // One 1:32 splitter, 0.3 km, 2 connectors, no splices: 17.2 + 0.1 + 1 = 18.3 dB.
+    const r = opticBudget({ ...DEFAULT_BUDGET, km: 0.3, splitters: [32], connectors: 2, splices: 0 })
+    expect(r.total).toBe(18.3)
+    // C++++ transmits up to +13 dBm; the ONT takes up to −8: it needs at least 21 dB of loss.
+    expect(r.classes.find((c) => c.id === "C++++")).toMatchObject({ overload: true, minLoss: 21 })
+    // C+++ (+10) needs 18 dB: just fine.
+    expect(r.classes.find((c) => c.id === "C+++")).toMatchObject({ overload: false, minLoss: 18 })
+    expect(r.classes.find((c) => c.id === "B+")?.overload).toBe(false)
+    expect(r.pick).toBe("B+")
+  })
+  it("a stronger ONT raises the upstream limit of C++++", () => {
+    const r = opticBudget({ ...DEFAULT_BUDGET, ontTx: 4 })
+    // min(9 + 27, 4 + 33) = 36: now the downstream sets it.
+    expect(r.classes.find((c) => c.id === "C++++")).toMatchObject({ budget: 36, limit: "down" })
   })
 })
