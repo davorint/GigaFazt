@@ -24,13 +24,15 @@ import type { DeploymentStore } from "@/lib/mikrotik/deployment-store"
 import { clientsOf } from "@/lib/mikrotik/deployments"
 import { fmtNum } from "@/lib/mikrotik/format"
 import { checkSetup, CONN_LIMIT, oltSetup, setupParts, setupPlans, type SetupState } from "@/lib/mikrotik/setup"
-import { decodeDeployment, MAX_NAME, MAX_WANS, nextMonitor, type BalanceState, type LabState } from "@/lib/mikrotik/state"
+import { decodeDeployment, deploymentFields, MAX_NAME, MAX_WANS, nextMonitor, type BalanceState, type LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
 import { CodeBlock } from "./CodeBlock"
 import { IssueList } from "./IssueList"
 import { NumberField } from "./NumberField"
 import { PlansEditor } from "./PlansEditor"
 import { AccessFields, NatFields } from "./TracePanel"
+import { AdviceCard } from "./AdviceCard"
+import { OpsFields } from "./OpsFields"
 import { SelectField } from "./SelectField"
 import { TextField } from "./TextField"
 
@@ -159,6 +161,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
           parts.cgnat,
           `# ${t("phases.p5.title")}`,
           parts.hardening,
+          ...(parts.ops ? [`# ${t("scripts.ops")}`, parts.ops] : []),
           "",
         ].join("\n")
       : ""
@@ -353,6 +356,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
         </div>
         {toggleRow(tc("firewall"), s.firewall, (firewall) => setS({ firewall }))}
         {toggleRow(tc("blockSmtp"), s.blockSmtp, (blockSmtp) => setS({ blockSmtp }))}
+        <OpsFields setup={s} onSetup={setS} />
       </>
     ),
     p6: null,
@@ -391,7 +395,14 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
         </p>
       </>
     ),
-    p5: parts ? <CodeBlock label={t("scripts.hardening")} code={parts.hardening} /> : missing,
+    p5: parts ? (
+      <>
+        <CodeBlock label={t("scripts.hardening")} code={parts.hardening} />
+        {parts.ops && <CodeBlock label={t("scripts.ops")} code={parts.ops} />}
+      </>
+    ) : (
+      missing
+    ),
     p6: (
       <>
         <div className="overflow-x-auto rounded-xl border border-white/10" tabIndex={0} role="region" aria-label={t("tests.caption")}>
@@ -472,6 +483,8 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
           <p className="max-w-xl text-xs leading-snug text-zinc-400">{ready ? t("deploy.downloadHint") : t("fixAbove")}</p>
         </div>
       </div>
+
+      <AdviceCard fields={deploymentFields(state)} name={name} />
 
       {PHASES.map((ph, n) => {
         const items = t.raw(`phases.${ph}.items`) as string[]

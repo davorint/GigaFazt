@@ -384,7 +384,12 @@ export function balanceScript(o: BalanceOptions): string {
     add("/tool netwatch")
     for (const w of wans) {
       const code = (event: "down" | "up") =>
-        [q.alerts ? `:log warning ${rosString(`LB: ${w.name} ${event === "down" ? "sin internet" : "volvio"}`)}` : "", q.flush ? `/ip firewall connection remove [find where connection-mark=${rosString(w.name)}]` : ""]
+        [
+          q.alerts ? `:log warning ${rosString(`LB: ${w.name} ${event === "down" ? "sin internet" : "volvio"}`)}` : "",
+          // The deployment's alert (Configuración → avisos), when that script exists.
+          q.alerts ? `:global DSmsg ${rosString(`${w.name} ${event === "down" ? "sin internet" : "volvio"}`)}; :do {/system script run DS-aviso} on-error={}` : "",
+          q.flush ? `/ip firewall connection remove [find where connection-mark=${rosString(w.name)}]` : "",
+        ]
           .filter(Boolean)
           .join("; ")
       add(

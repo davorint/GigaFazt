@@ -538,7 +538,8 @@
         "radius": "RADIUS, cuando tengas el sistema de cobro",
         "olt": "OLT Huawei: VLANs, perfiles por plan y seguridad",
         "hardening": "Colas en los puertos, connection tracking y firewall",
-        "export": "Exportación final"
+        "export": "Exportación final",
+        "ops": "Avisos, respaldos y SNMP"
       },
       "upstreams": {
         "caption": "Proveedores de este despliegue",
@@ -578,7 +579,8 @@
             "Lee la dirección y el gateway de cada proveedor con /ip dhcp-client print detail y marca en la tabla los que estén en 100.64.0.0/10 (el proveedor ya hace CGNAT).",
             "Ten acceso fuera de banda: la VLAN de gestión o un router pequeño aparte. Nunca administres el router solo por un enlace a internet.",
             "Pega la base conectado por la VLAN de gestión (al final limita Winbox, SSH y el acceso por MAC a esa red).",
-            "Antes de comprar: confirma que cada contrato permita revender (los residenciales casi nunca) y elige el colector IPFIX y cuánto tiempo guardarlo según la ley."
+            "Antes de comprar: confirma que cada contrato permita revender (los residenciales casi nunca) y elige el colector IPFIX y cuánto tiempo guardarlo según la ley.",
+            "Protecciones de MikroTik (en el script base): descubrimiento de vecinos solo en gestión, sin btest server, proxy, SOCKS, UPnP ni DDNS de la nube."
           ]
         },
         "p1": {
@@ -636,9 +638,11 @@
             "fq-codel en los puertos de los proveedores y de la OLT.",
             "Cola por enlace al 95 % de lo medido con CAKE (Varios enlaces → Colas y avisos).",
             "Límites por cliente desde el perfil PPP (o RADIUS); no hace falta una cola por cliente.",
-            "Connection tracking para CGNAT: tcp-established de 2 h y UDP no menos de 30 s. Revisa cada semana: arriba del 60 % del máximo, sube el límite o acorta.",
+            "Connection tracking para CGNAT: tcp-established de 2 h 4 min (lo mínimo según RFC 5382 para un NAT) y UDP no menos de 30 s. Revisa cada semana: arriba del 60 % del máximo, sube el límite o acorta.",
             "Firewall: raw (bogones, banderas TCP inválidas, 100.64 desde internet), input y forward básicos.",
-            "Abuso: sin SMTP directo y tope de {limit} conexiones por cliente."
+            "Abuso: sin SMTP directo y tope de {limit} conexiones por cliente.",
+            "DNS: caché del router dimensionada para el despliegue, o los clientes directo a los resolutores.",
+            "Avisos al celular (Telegram o correo), respaldo diario fuera del router y SNMP para graficar enlaces, CPU y sesiones."
           ]
         },
         "p6": {
@@ -740,7 +744,45 @@
       "file": {
         "order": "Orden: base, rutas y PCC, PPPoE, CGNAT, colas y firewall. Revisa cada fase antes de aplicarla."
       },
-      "noCollectorFixed": "Sin colector: con bloques de puertos fijos no hace falta el registro NAT, pero sí el de sesiones PPPoE (en disco en el router; agrega el colector para tener copia fuera)."
+      "noCollectorFixed": "Sin colector: con bloques de puertos fijos no hace falta el registro NAT, pero sí el de sesiones PPPoE (en disco en el router; agrega el colector para tener copia fuera).",
+      "advice": {
+        "title": "Recomendaciones para {name}",
+        "lead": "Con los datos de este despliegue (Despliegues, Hora pico, Varios enlaces y Configuración). Lo que más pesa no es un comando: es la capacidad, la regla de ráfaga y el equipo.",
+        "levels": {
+          "ok": "bien",
+          "warn": "revisar",
+          "bad": "atender"
+        },
+        "capacity": {
+          "title": "Capacidad de internet",
+          "load": "Demanda promedio en hora pico ≈ {demand} contra {internet} que dan los enlaces después de sus colas ({pct} %). Es con el promedio supuesto por cliente: arriba de ~{warn} % las ráfagas llenan los enlaces a ratos (Hora pico, en /calculadora, dice cuánto).",
+          "loadMeasured": "Tráfico medido en hora pico ≈ {demand} contra {internet} que dan los enlaces después de sus colas ({pct} %). Arriba de ~{warn} % las ráfagas llenan los enlaces a ratos; si un enlace ya iba lleno al medir, la demanda real es mayor.",
+          "planOverLink": "Balanceando por cliente, uno de {plan} nunca pasa de un enlace ({link}): una sola prueba de velocidad llena ese enlace.",
+          "best": "Lo óptimo: un enlace de 10 Gbps (o 2 × 10 Gbps para respaldo) en vez de varios de 1 Gbps; ninguna configuración da más capacidad de la contratada.",
+          "measure": "Todavía es una suposición: mide el tráfico real en hora pico (Despliegues → Ya opera, o SNMP abajo) antes de comprar."
+        },
+        "burst": {
+          "title": "Regla de ráfaga",
+          "low": "La regla sostiene {pct} % del plan: un cliente de {plan} baja a {sustained} cuando se acaba la ráfaga, y sus pruebas de velocidad marcan mucho menos que el plan. Sube a {min}–80 % cuando la capacidad alcance: sigue siendo ráfaga.",
+          "ok": "La regla sostiene {pct} % del plan: un cliente de {plan} se queda en {sustained} después de la ráfaga. Bien, mientras la capacidad de internet alcance.",
+          "legal": "Qué velocidad se puede anunciar con ráfaga depende de la regulación vigente: está en las preguntas para el abogado."
+        },
+        "router": {
+          "title": "Router de este despliegue",
+          "ccr2004": "{clients} clientes y ≈ {demand} en hora pico: un CCR2004-16G-2S+ alcanza. Al pasar de ~{small} clientes o ~1.5 Gbps, cambia a CCR2116.",
+          "ccr2116": "{clients} clientes y ≈ {demand} en hora pico: usa un CCR2116-12G-4S+ (o CCR2216); el CCR2004 se queda corto, y desde ~{big} clientes es necesario.",
+          "why": "Sin FastTrack (lo exigen las colas) el CPU hace todo, y cada sesión PPPoE usa un solo núcleo. Un operador reporta un CCR2004 al 100 % con ~800 clientes PPPoE con colas; son reportes de foro: mide tu CPU en hora pico."
+        },
+        "ops": {
+          "title": "Operación",
+          "noAlerts": "Sin avisos: activa Telegram o correo en la fase 5 para enterarte de una caída sin abrir el router.",
+          "backupLocal": "El respaldo no sale del router: si el router muere se pierde con él. Mándalo por correo o SFTP (fase 5).",
+          "noSnmp": "Sin SNMP: actívalo para graficar enlaces, CPU y sesiones y medir la hora pico real.",
+          "spare": "Ten un router de repuesto del mismo modelo con el último respaldo: con un solo router por despliegue, es el punto único de falla (pasar sesiones PPPoE a otro router sin cortar no es práctico en RouterOS).",
+          "version": "Usa una sola versión estable de RouterOS 7.x en todos los despliegues y prueba cada actualización en un router de laboratorio: hay reportes de reconexiones PPPoE masivas en CCR2216 con 7.21.4."
+        },
+        "sources": "Fuentes: manual de MikroTik («Securing your router», DNS), RFC 5382 (tiempo mínimo de TCP en un NAT), foro de MikroTik (CPU de CCR2004/CCR2116/CCR2216 con PPPoE). Los umbrales de esta tarjeta son reglas prácticas, no cifras del fabricante."
+      }
     },
     "capacity": {
       "title": "Capacidad en hora pico",
@@ -1083,7 +1125,11 @@
         "badIpv6": "{value} no es un prefijo IPv6 válido (dirección de red, de /16 a /64, y el prefijo de cada cliente entre /48 y /64, no más grande que el bloque).",
         "ipv6Small": "El prefijo IPv6 da {have} prefijos y hacen falta unos {need} (los clientes + 10 %).",
         "ipv6Upstream": "IPv6 con varios proveedores: este prefijo tiene que llegarte por el proveedor que lo enruta (o por los tuyos con BGP si es tu propio bloque). El balanceo PCC de este despliegue es solo IPv4.",
-        "queueCpu": "{have} clientes con colas {value} por cliente: un reporte del foro de MikroTik tiene ~560 clientes PPPoE con colas fq-codel llenando un núcleo. Vigila /system resource cpu o usa la cola default."
+        "queueCpu": "{have} clientes con colas {value} por cliente: un reporte del foro de MikroTik tiene ~560 clientes PPPoE con colas fq-codel llenando un núcleo. Vigila /system resource cpu o usa la cola default.",
+        "badChat": "{value}: el ID del chat de Telegram es un número (puede empezar con -).",
+        "badMail": "Para correo: escribe el servidor SMTP y dos correos válidos (el que envía y el que recibe).",
+        "badBackup": "Para SFTP: escribe el servidor y el usuario; la carpeta no puede llevar comillas, \\ ni $.",
+        "secretsPending": "El script lleva PEGA-AQUI-… donde va cada contraseña: cámbialas antes de pegarlo en el router."
       },
       "tabs": {
         "router": "MikroTik",
@@ -1097,7 +1143,8 @@
         "Cada plan es un perfil PPP con tu regla de ráfaga y las direcciones del despliegue; si el perfil ya existe, se actualiza.",
         "change-tcp-mss=yes ya ajusta el MSS: no hace falta una regla de mangle para eso.",
         "Sin FastTrack: las colas de los clientes y el PCC lo necesitan apagado.",
-        "Con bloques de puertos fijos: después de pegar, las conexiones que ya existían siguen con su traducción vieja; se corrigen solas al cerrarse o al limpiar /ip firewall connection (corta todas las conexiones un momento)."
+        "Con bloques de puertos fijos: después de pegar, las conexiones que ya existían siguen con su traducción vieja; se corrigen solas al cerrarse o al limpiar /ip firewall connection (corta todas las conexiones un momento).",
+        "Al final de la base van las protecciones de «Securing your router» de MikroTik: descubrimiento de vecinos solo en gestión, sin servidor de prueba de ancho de banda, sin proxy, SOCKS, UPnP ni DDNS de la nube."
       ],
       "undoTitle": "Quitar esta configuración",
       "undoHint": "Quita lo que lleva el comentario «DS: » y el servidor PPPoE. Los perfiles PPP se quedan, porque las cuentas de los clientes los usan. La identidad, la zona horaria y el DNS quedan como estén.",
@@ -1212,6 +1259,55 @@
         "ipv6PdLengthHint": "/56 es lo común (256 redes /64 por casa).",
         "ipv6Wan": "Prefijo para el lado WAN (opcional)",
         "ipv6WanHint": "Un /64 por sesión para la WAN del router del cliente. Vacío = solo prefijo delegado (la WAN usa link-local)."
+      },
+      "ops": {
+        "title": "DNS, avisos, respaldos y monitoreo",
+        "dnsMode": "DNS de los clientes",
+        "dnsModes": {
+          "router": "El router (con caché)",
+          "direct": "Directo a los resolutores"
+        },
+        "dnsModeHint": {
+          "router": "Los clientes le preguntan al router, que guarda las respuestas. Va con caché de 20 MB y hasta 1,000 consultas a la vez (de fábrica: 2 MB y 100, pensados para una casa); son valores de arranque: vigila /ip dns cache y el CPU.",
+          "direct": "Cada sesión PPPoE recibe los dos primeros DNS de la lista y el router no atiende consultas de los clientes: cero carga de DNS en el router, sin caché local."
+        },
+        "alert": "Avisos al celular",
+        "alerts": {
+          "none": "Sin avisos (solo el log)",
+          "telegram": "Telegram",
+          "email": "Correo"
+        },
+        "alertHint": {
+          "none": "Las caídas de enlace quedan solo en el log del router.",
+          "telegram": "Mensaje cuando un enlace cae o vuelve (Netwatch), cuando el router arranca y con CPU arriba de 85 % por 5 minutos. Crea un bot con @BotFather; su token se pega a mano en el script.",
+          "email": "Lo mismo por correo (puerto 587 con STARTTLS). La contraseña del correo se pega a mano en el script."
+        },
+        "telegramChat": "Chat de Telegram (ID)",
+        "telegramChatHint": "Número del chat o grupo que recibe los avisos (p. ej. -1001234567890); @userinfobot te lo da.",
+        "mailServer": "Servidor de correo (SMTP)",
+        "mailServerHint": "Por ejemplo smtp.gmail.com (con contraseña de aplicación).",
+        "mailFrom": "Cuenta que envía",
+        "mailTo": "Correo que recibe",
+        "backup": "Respaldo diario",
+        "backups": {
+          "none": "Sin respaldo",
+          "local": "En el router",
+          "email": "En el router y por correo",
+          "sftp": "En el router y a un servidor SFTP"
+        },
+        "backupHint": {
+          "none": "Sin respaldo automático: si el router muere, se reconstruye con esta guía.",
+          "local": "Cada día a las 3:30: respaldo cifrado (.backup) y export (.rsc, sin contraseñas). Protege de un error de configuración, no de que el router muera: mándalo fuera.",
+          "email": "Lo mismo y se manda por correo cada día.",
+          "sftp": "Lo mismo y se sube por SFTP con la fecha en el nombre (RouterOS 7.10 o más nuevo, por el formato de la fecha)."
+        },
+        "backupHost": "Servidor SFTP",
+        "backupUser": "Usuario SFTP",
+        "backupPath": "Carpeta en el servidor",
+        "backupPathHint": "Opcional, p. ej. respaldos/norte.",
+        "snmp": "SNMP (gráficas en LibreNMS, Zabbix…)",
+        "snmpHint": "SNMP v2c de solo lectura, aceptado solo desde la red de gestión. Da gráficas por enlace, CPU y sesiones: lo que necesitas para medir la hora pico real de este despliegue.",
+        "secrets": "Las contraseñas nunca se guardan en esta página: el script deja PEGA-AQUI-… (clave del respaldo, del correo, de SFTP, token del bot, comunidad SNMP) para que las cambies antes de pegarlo."
       }
     },
     "setup": {

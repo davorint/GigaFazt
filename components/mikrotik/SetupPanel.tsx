@@ -16,6 +16,7 @@ import { PlansEditor } from "./PlansEditor"
 import { SelectField } from "./SelectField"
 import { TextField } from "./TextField"
 import { AccessFields, NatFields } from "./TracePanel"
+import { OpsFields } from "./OpsFields"
 
 type Props = { state: LabState; onSetup: (s: SetupState) => void; onWans: (w: Wan[]) => void }
 
@@ -89,6 +90,11 @@ export function SetupPanel({ state, onSetup, onWans }: Props) {
         <legend className="mb-3 text-sm font-medium text-foreground">{t("trace.title")}</legend>
         <NatFields setup={s} wans={state.wans} onSetup={set} onWans={onWans} where={t("trace.whereSetup")} />
         <AccessFields setup={s} onSetup={set} />
+      </fieldset>
+
+      <fieldset className="grid min-w-0 gap-4">
+        <legend className="mb-3 text-sm font-medium text-foreground">{t("ops.title")}</legend>
+        <OpsFields setup={s} onSetup={set} />
       </fieldset>
 
       <fieldset className="grid gap-4">

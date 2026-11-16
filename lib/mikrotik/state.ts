@@ -17,7 +17,7 @@ import {
 import { DEFAULT_PON_EFFICIENCY, type PonTech } from "./capacity"
 import { OLT_MODELS, type OltModelId } from "./olt"
 import { QUEUE_KINDS, type Pair, type QueueKind } from "./routeros"
-import { DEFAULT_SETUP, MAX_PLANS, NAT_MODES, type NatMode, type SetupPlan, type SetupState } from "./setup"
+import { ALERT_MODES, BACKUP_MODES, DEFAULT_SETUP, DNS_MODES, MAX_PLANS, NAT_MODES, type NatMode, type SetupPlan, type SetupState } from "./setup"
 
 /**
  * State of the /mikrotik burst tool and its share link (#hash, so nothing
@@ -325,6 +325,17 @@ function setDeploymentParams(h: URLSearchParams, f: DeploymentFields) {
       st.ipv6Pd,
       num(st.ipv6PdLength),
       st.ipv6Wan,
+      st.dnsMode,
+      st.alert,
+      st.telegramChat,
+      st.mailServer,
+      st.mailFrom,
+      st.mailTo,
+      st.backup,
+      st.backupHost,
+      st.backupUser,
+      st.backupPath,
+      st.snmp ? "1" : "0",
     ]
       .map(encodeURIComponent)
       .join("|")
@@ -348,10 +359,13 @@ function decodeSetup(v: string | null): SetupState {
     }
   })
   // 9 fields before the checklist options (collector, MTU, isolation, SMTP, ONT mode), 14 before the plans: those take the defaults.
-  // 22 with NAT mode, session log, PITP and IPv6.
-  if (![9, 14, 16, 22].includes(parts.length) || parts.some((x) => x === null)) return DEFAULT_SETUP
+  // 22 with NAT mode, session log, PITP and IPv6; 33 with DNS mode, alerts, backups and SNMP.
+  if (![9, 14, 16, 22, 33].includes(parts.length) || parts.some((x) => x === null)) return DEFAULT_SETUP
   const [oltPort, inet, mgmtVlan, mgmtNet, pool, dns, service, firewall, oltUplink, collector, mtu1500, isolate, blockSmtp, ontMode, rule, plans, natMode, sessionLog, pitp, ipv6Pd, pdLen, ipv6Wan] =
     parts as string[]
+  const [dnsMode, alert, telegramChat, mailServer, mailFrom, mailTo, backup, backupHost, backupUser, backupPath, snmp] = parts.slice(22) as string[]
+  const pick = <T extends string>(x: string | undefined, all: readonly T[], fallback: T) => (all.includes(x as T) ? (x as T) : fallback)
+  const text = (x: string | undefined, fallback: string) => (x ?? fallback).slice(0, 64)
   const flag = (x: string | undefined, fallback: boolean) => (x === "1" ? true : x === "0" ? false : fallback)
   const vlan = (x: string) => finite(x, 1, 4094)
   if (vlan(inet) === null || vlan(mgmtVlan) === null || (firewall !== "0" && firewall !== "1")) return DEFAULT_SETUP
@@ -379,6 +393,17 @@ function decodeSetup(v: string | null): SetupState {
     ipv6Pd: (ipv6Pd ?? DEFAULT_SETUP.ipv6Pd).slice(0, 64),
     ipv6PdLength: Math.round(finite(pdLen, 16, 128) ?? DEFAULT_SETUP.ipv6PdLength),
     ipv6Wan: (ipv6Wan ?? DEFAULT_SETUP.ipv6Wan).slice(0, 64),
+    dnsMode: pick(dnsMode, DNS_MODES, DEFAULT_SETUP.dnsMode),
+    alert: pick(alert, ALERT_MODES, DEFAULT_SETUP.alert),
+    telegramChat: text(telegramChat, DEFAULT_SETUP.telegramChat),
+    mailServer: text(mailServer, DEFAULT_SETUP.mailServer),
+    mailFrom: text(mailFrom, DEFAULT_SETUP.mailFrom),
+    mailTo: text(mailTo, DEFAULT_SETUP.mailTo),
+    backup: pick(backup, BACKUP_MODES, DEFAULT_SETUP.backup),
+    backupHost: text(backupHost, DEFAULT_SETUP.backupHost),
+    backupUser: text(backupUser, DEFAULT_SETUP.backupUser),
+    backupPath: text(backupPath, DEFAULT_SETUP.backupPath),
+    snmp: flag(snmp, DEFAULT_SETUP.snmp),
   }
 }
 

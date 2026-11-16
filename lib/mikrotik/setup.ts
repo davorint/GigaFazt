@@ -45,6 +45,24 @@ export type OntMode = "bridge" | "router"
 /** How subscribers leave: masquerade (any port, needs the NAT log) or fixed port blocks (no log needed). */
 export type NatMode = "masquerade" | "fixed"
 export const NAT_MODES: NatMode[] = ["masquerade", "fixed"]
+/** Clients ask the router (cache) or the resolvers directly. */
+export type DnsMode = "router" | "direct"
+export const DNS_MODES: DnsMode[] = ["router", "direct"]
+/** Where the router sends its alerts. */
+export type AlertMode = "none" | "telegram" | "email"
+export const ALERT_MODES: AlertMode[] = ["none", "telegram", "email"]
+/** Daily backup: on the router only, or also sent out. */
+export type BackupMode = "none" | "local" | "email" | "sftp"
+export const BACKUP_MODES: BackupMode[] = ["none", "local", "email", "sftp"]
+/** Passwords never live on this page: the script leaves these for the owner to replace before pasting. */
+export const SECRET = {
+  backup: "PEGA-AQUI-CLAVE-DEL-RESPALDO",
+  mail: "PEGA-AQUI-CLAVE-DEL-CORREO",
+  sftp: "PEGA-AQUI-CLAVE-SFTP",
+  telegram: "PEGA-AQUI-TOKEN-DEL-BOT",
+  snmp: "PEGA-AQUI-COMUNIDAD-SNMP",
+} as const
+export const SECRET_MARK = "PEGA-AQUI-"
 
 /** A plan the deployment sells: download and upload, Mbps; name empty = "plan-<speed>" like the bulk export. */
 export type SetupPlan = { name: string; down: number; up: number }
@@ -93,6 +111,20 @@ export type SetupState = {
   ipv6Pd: string
   ipv6PdLength: number
   ipv6Wan: string
+  dnsMode: DnsMode
+  alert: AlertMode
+  /** Telegram chat id (the bot's token goes in by hand). */
+  telegramChat: string
+  /** Mail server for alerts and backups (port 587, STARTTLS), sender and recipient. */
+  mailServer: string
+  mailFrom: string
+  mailTo: string
+  backup: BackupMode
+  backupHost: string
+  backupUser: string
+  backupPath: string
+  /** SNMP v2c, read only, from the management network. */
+  snmp: boolean
 }
 
 export const DEFAULT_SETUP: SetupState = {
@@ -119,7 +151,26 @@ export const DEFAULT_SETUP: SetupState = {
   ipv6Pd: "",
   ipv6PdLength: 56,
   ipv6Wan: "",
+  dnsMode: "router",
+  alert: "none",
+  telegramChat: "",
+  mailServer: "",
+  mailFrom: "",
+  mailTo: "",
+  backup: "local",
+  backupHost: "",
+  backupUser: "",
+  backupPath: "",
+  snmp: false,
 }
+
+/** The router's DNS sized for an ISP (defaults are 2,048 KiB and 100 queries): starting points, not vendor figures. */
+export const DNS_CACHE_KIB = 20480
+export const DNS_QUERIES = 1000
+export const DNS_TCP = 100
+/** CPU alert: this % for this many minutes in a row. */
+export const CPU_ALERT_PCT = 85
+export const CPU_ALERT_MIN = 5
 
 /** Per-client fq-codel / CAKE PPP queues: a forum report has ~560 PPPoE clients pegging one core. */
 export const QUEUE_CPU_CLIENTS = 500
@@ -209,6 +260,10 @@ export type SetupIssueCode =
   | "ipv6Small"
   | "ipv6Upstream"
   | "queueCpu"
+  | "badChat"
+  | "badMail"
+  | "badBackup"
+  | "secretsPending"
 export type SetupIssue = { code: SetupIssueCode; level: "error" | "warn" | "info"; value?: string; need?: number; have?: number }
 
 export type SetupContext = {
@@ -288,6 +343,13 @@ export function checkSetup(s: SetupState, ctx: SetupContext): SetupIssue[] {
     }
     if (ctx.wanIfaces.filter((w) => w.trim()).length > 1) out.push({ code: "ipv6Upstream", level: "info" })
   }
+  const mail = (x: string) => /^[^\s@"]+@[^\s@"]+\.[^\s@"]+$/.test(x.trim())
+  if (s.alert === "telegram" && !/^-?\d{3,20}$/.test(s.telegramChat.trim())) out.push({ code: "badChat", level: "error", value: s.telegramChat })
+  if ((s.alert === "email" || s.backup === "email") && (!/^[A-Za-z0-9.-]+$/.test(s.mailServer.trim()) || !mail(s.mailFrom) || !mail(s.mailTo)))
+    out.push({ code: "badMail", level: "error" })
+  if (s.backup === "sftp" && (!/^[A-Za-z0-9.:-]+$/.test(s.backupHost.trim()) || !/^[A-Za-z0-9._-]+$/.test(s.backupUser.trim()) || /["\\$]/.test(s.backupPath)))
+    out.push({ code: "badBackup", level: "error" })
+  if (s.backup !== "none" || s.alert !== "none" || s.snmp) out.push({ code: "secretsPending", level: "info" })
   if ((ctx.queue === "fq-codel" || ctx.queue === "cake") && ctx.clients >= QUEUE_CPU_CLIENTS) out.push({ code: "queueCpu", level: "warn", have: ctx.clients, value: ctx.queue })
   return out
 }
@@ -308,7 +370,7 @@ export function setupPlans(list: SetupPlan[], rule: PlanRule): SetupPlans {
 const vlanName = (id: number, what: string) => `vlan${id}-${what}`
 
 /** The router script by phase of the checklist. */
-export type SetupParts = { base: string; cgnat: string; pppoe: string; hardening: string }
+export type SetupParts = { base: string; cgnat: string; pppoe: string; hardening: string; ops: string }
 
 export type SetupScriptContext = SetupContext & { name: string; plans: SetupPlans }
 
@@ -363,7 +425,14 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
     `/ip service set winbox address=${mgmtNet}`,
     `/ip service set ssh address=${mgmtNet}`,
     "/tool mac-server set allowed-interface-list=DS-MGMT",
-    "/tool mac-server mac-winbox set allowed-interface-list=DS-MGMT"
+    "/tool mac-server mac-winbox set allowed-interface-list=DS-MGMT",
+    // MikroTik's "Securing your router": no discovery on the links, no bandwidth-test server, no proxy/SOCKS/UPnP/cloud.
+    "/ip neighbor discovery-settings set discover-interface-list=DS-MGMT",
+    "/tool bandwidth-server set enabled=no",
+    "/ip socks set enabled=no",
+    "/ip proxy set enabled=no",
+    "/ip upnp set enabled=no",
+    "/ip cloud set ddns-enabled=no update-time=no"
   )
 
   // Phase 3: CGNAT boundary, isolation and the NAT log.
@@ -397,10 +466,13 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
     "/ip pool",
     `add name=DS-clientes ranges=${intToIp(pool.net + 2)}-${intToIp(pool.net + size(pool) - 2)} ${c("clientes PPPoE")}`,
     "/ip dns",
-    `set allow-remote-requests=yes servers=${dnsList(s.dns).join(",")}`,
+    s.dnsMode === "router"
+      ? `set allow-remote-requests=yes servers=${dnsList(s.dns).join(",")} cache-size=${DNS_CACHE_KIB} max-concurrent-queries=${DNS_QUERIES} max-concurrent-tcp-sessions=${DNS_TCP}`
+      : `set allow-remote-requests=no servers=${dnsList(s.dns).join(",")}`,
   ]
+  const clientDns = s.dnsMode === "router" ? local : dnsList(s.dns).slice(0, 2).join(",")
   // The router answers DNS for the clients; without the basic firewall nothing else stops the internet from using it.
-  if (!s.firewall)
+  if (!s.firewall && s.dnsMode === "router")
     pp.push(
       "/ip firewall filter",
       `add chain=input action=drop in-interface-list=DS-WAN protocol=udp dst-port=53 ${c("DNS solo para los clientes")}`,
@@ -419,7 +491,7 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
     const props = [
       `local-address=${local}`,
       "remote-address=DS-clientes",
-      `dns-server=${local}`,
+      `dns-server=${clientDns}`,
       `rate-limit=${rosString(rateLimit(p.pair))}`,
       "only-one=yes",
       "change-tcp-mss=yes",
@@ -451,7 +523,7 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
   const hd: string[] = ["/queue type", `add name=DS-fq-codel kind=fq-codel`, "/queue interface"]
   for (const i of [...wans.filter((w) => !ctx.pppoeIfaces?.includes(w)), s.oltPort.trim()]) hd.push(`set [find where interface=${rosString(i)}] queue=DS-fq-codel`)
   hd.push(
-    "/ip firewall connection tracking set enabled=yes loose-tcp-tracking=yes tcp-established-timeout=2h tcp-syn-sent-timeout=30s tcp-syn-received-timeout=30s tcp-fin-wait-timeout=1m tcp-close-wait-timeout=1m tcp-last-ack-timeout=30s tcp-time-wait-timeout=1m tcp-close-timeout=10s udp-timeout=30s udp-stream-timeout=3m icmp-timeout=30s generic-timeout=10m",
+    "/ip firewall connection tracking set enabled=yes loose-tcp-tracking=yes tcp-established-timeout=2h4m tcp-syn-sent-timeout=30s tcp-syn-received-timeout=30s tcp-fin-wait-timeout=1m tcp-close-wait-timeout=1m tcp-last-ack-timeout=30s tcp-time-wait-timeout=1m tcp-close-timeout=10s udp-timeout=30s udp-stream-timeout=3m icmp-timeout=30s generic-timeout=10m",
     "/ip firewall raw",
     `add chain=prerouting in-interface-list=DS-WAN src-address=0.0.0.0/8 action=drop ${c("bogon")}`,
     `add chain=prerouting in-interface-list=DS-WAN src-address=127.0.0.0/8 action=drop ${c("bogon")}`,
@@ -469,8 +541,12 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
       `add chain=input action=accept connection-state=established,related,untracked ${c("respuestas")}`,
       `add chain=input action=drop connection-state=invalid ${c("invalidas")}`,
       `add chain=input action=accept protocol=icmp limit=50,100:packet ${c("ping")}`,
-      `add chain=input action=accept src-address=${poolNet} protocol=udp dst-port=53 ${c("DNS de los clientes")}`,
-      `add chain=input action=accept src-address=${poolNet} protocol=tcp dst-port=53 ${c("DNS de los clientes")}`,
+      ...(s.dnsMode === "router"
+        ? [
+            `add chain=input action=accept src-address=${poolNet} protocol=udp dst-port=53 ${c("DNS de los clientes")}`,
+            `add chain=input action=accept src-address=${poolNet} protocol=tcp dst-port=53 ${c("DNS de los clientes")}`,
+          ]
+        : []),
       `add chain=input action=drop src-address=${poolNet} ${c("los clientes no administran el router")}`,
       `add chain=input action=drop in-interface-list=DS-WAN ${c("nada desde internet al router")}`,
       `add chain=forward action=accept connection-state=established,related,untracked ${c("respuestas")}`,
@@ -491,13 +567,74 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
       `add chain=forward action=drop connection-state=invalid ${c("invalidas")}`
     )
 
-  return { base: base.join("\n"), cgnat: cg.join("\n"), pppoe: pp.join("\n"), hardening: hd.join("\n") }
+  return { base: base.join("\n"), cgnat: cg.join("\n"), pppoe: pp.join("\n"), hardening: hd.join("\n"), ops: opsScript(s, ctx.name, mgmtNet) }
+}
+
+/** Alerts (Telegram or e-mail), daily backup, SNMP. Passwords stay as PEGA-AQUI-… for the owner to fill in. */
+function opsScript(s: SetupState, name: string, mgmtNet: string): string {
+  const out: string[] = []
+  const c = (text: string) => `comment=${rosString(`DS: ${text}`)}`
+  const mailOn = s.alert === "email" || s.backup === "email"
+  if (mailOn)
+    out.push(
+      "/tool e-mail",
+      `set server=${s.mailServer.trim()} port=587 tls=starttls from=${rosString(s.mailFrom.trim())} user=${rosString(s.mailFrom.trim())} password=${rosString(SECRET.mail)}`
+    )
+  if (s.alert !== "none") {
+    // DSmsg carries the text: Netwatch, the scheduler and anything else set it and run DS-aviso.
+    const send =
+      s.alert === "telegram"
+        ? `/tool fetch url="https://api.telegram.org/bot${SECRET.telegram}/sendMessage" http-method=post http-header-field="Content-Type: application/json" http-data=("{\\"chat_id\\":\\"${s.telegramChat.trim()}\\",\\"text\\":\\"" . $m . "\\"}") output=none`
+        : `/tool e-mail send to="${s.mailTo.trim()}" subject=$m body=$m`
+    const aviso = `:global DSmsg; :local m ([/system identity get name] . ": " . $DSmsg); ${send}`
+    const cpu = `:global DScpu; :if ([:typeof $DScpu] = "nothing") do={:set DScpu 0}; :if ([/system resource get cpu-load] > ${CPU_ALERT_PCT}) do={:set DScpu ($DScpu + 1)} else={:set DScpu 0}; :if ($DScpu = ${CPU_ALERT_MIN}) do={:global DSmsg "CPU arriba de ${CPU_ALERT_PCT} % por ${CPU_ALERT_MIN} min"; /system script run DS-aviso}`
+    out.push(
+      "/system script",
+      `add name=DS-aviso policy=read,write,test dont-require-permissions=yes source=${rosString(aviso)} ${c("avisos")}`,
+      "/system scheduler",
+      `add name=DS-arranque start-time=startup on-event=${rosString(':delay 60s; :global DSmsg "el router arranco"; /system script run DS-aviso')} ${c("aviso al arrancar")}`,
+      `add name=DS-cpu interval=1m on-event=${rosString(cpu)} ${c("aviso de CPU")}`
+    )
+  }
+  if (s.backup !== "none") {
+    const send =
+      s.backup === "email"
+        ? [`/tool e-mail send to="${s.mailTo.trim()}" subject=("Respaldo " . $n . " " . $d) body="Respaldo diario" file=DS-respaldo.backup,DS-respaldo.rsc`]
+        : s.backup === "sftp"
+          ? ["backup", "rsc"].map(
+              (ext) =>
+                `/tool fetch upload=yes mode=sftp address=${s.backupHost.trim()} user=${s.backupUser.trim()} password="${SECRET.sftp}" src-path=DS-respaldo.${ext} dst-path=("${s.backupPath.trim().replace(/\/+$/, "")}${s.backupPath.trim() ? "/" : ""}" . $n . "-" . $d . ".${ext}")`
+            )
+          : []
+    // The .backup is encrypted with its password; the .rsc export leaves passwords out (RouterOS v7 default).
+    const src = [
+      ":local n [/system identity get name]",
+      ":local d [:pick [/system clock get date] 0 10]",
+      `/system backup save name=DS-respaldo password="${SECRET.backup}"`,
+      "/export file=DS-respaldo",
+      ":delay 10s",
+      ...send,
+    ].join("; ")
+    out.push(
+      "/system script",
+      `add name=DS-respaldo policy=ftp,read,write,policy,test,sensitive dont-require-permissions=yes source=${rosString(src)} ${c("respaldo diario")}`,
+      "/system scheduler",
+      `add name=DS-respaldo start-time=03:30:00 interval=1d on-event="/system script run DS-respaldo" ${c("respaldo diario")}`
+    )
+  }
+  if (s.snmp)
+    out.push(
+      "/snmp community",
+      `set [find default=yes] name=${rosString(SECRET.snmp)} addresses=${mgmtNet} read-access=yes write-access=no`,
+      `/snmp set enabled=yes contact="GigaFazt" location=${rosString(name.trim() || "despliegue")}`
+    )
+  return out.join("\n")
 }
 
 /** The whole router script in order (base, PPPoE, CGNAT, hardening). Empty when there are errors. */
 export function mikrotikSetup(s: SetupState, ctx: SetupScriptContext): string {
   const p = setupParts(s, ctx)
-  return p ? [p.base, p.pppoe, p.cgnat, p.hardening].join("\n") : ""
+  return p ? [p.base, p.pppoe, p.cgnat, p.hardening, p.ops].filter(Boolean).join("\n") : ""
 }
 
 /** Undo for the MikroTik part (PPP profiles stay: the clients' secrets use them; settings stay as set). */
@@ -505,6 +642,10 @@ export function setupUndo(s: SetupState): string {
   return [
     // Access and profiles point to the lists: release them first, or the lists can't be removed.
     "/tool mac-server set allowed-interface-list=all",
+    "/ip neighbor discovery-settings set discover-interface-list=all",
+    '/system scheduler remove [find where name~"^DS-"]',
+    '/system script remove [find where name~"^DS-"]',
+    "/snmp set enabled=no",
     "/tool mac-server mac-winbox set allowed-interface-list=all",
     '/ip service set winbox address=""',
     '/ip service set ssh address=""',

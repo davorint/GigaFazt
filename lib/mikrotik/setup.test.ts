@@ -11,7 +11,8 @@ const ctx = (over: Partial<SetupContext> = {}): SetupContext => ({
   ...over,
 })
 const plans = setupPlans(DEFAULT_PLANS, RULES.s20)
-const codes = (s = DEFAULT_SETUP, c = ctx()) => checkSetup(s, c).map((i) => i.code)
+// "secretsPending" is the reminder to replace the PEGA-AQUI- passwords: on by default (daily backup), tested on its own.
+const codes = (s = DEFAULT_SETUP, c = ctx()) => checkSetup(s, c).map((i) => i.code).filter((x) => x !== "secretsPending")
 
 describe("deployment setup: addresses and checks", () => {
   it("reads CIDR networks and sizes the pool", () => {
@@ -111,7 +112,16 @@ describe("deployment setup: the checklist's phases", () => {
     expect(base).toContain("/ip service set winbox address=192.168.10.0/24")
     expect(base).toContain('add name=DSremoto target=remote remote=192.168.10.50')
     // Access is narrowed last, so a paste over management isn't cut halfway.
-    expect(base.at(-1)).toBe("/tool mac-server mac-winbox set allowed-interface-list=DS-MGMT")
+    expect(base.indexOf("/tool mac-server mac-winbox set allowed-interface-list=DS-MGMT")).toBeGreaterThan(base.indexOf('add name=DSremoto target=remote remote=192.168.10.50'))
+    // The rest of MikroTik's "Securing your router" closes the base.
+    expect(base.slice(-6)).toEqual([
+      "/ip neighbor discovery-settings set discover-interface-list=DS-MGMT",
+      "/tool bandwidth-server set enabled=no",
+      "/ip socks set enabled=no",
+      "/ip proxy set enabled=no",
+      "/ip upnp set enabled=no",
+      "/ip cloud set ddns-enabled=no update-time=no",
+    ])
   })
   it("phase 3: 100.64 dropped on links that aren't CGNAT, pool blackholed, isolation, IPFIX", () => {
     const cg = parts?.cgnat ?? ""
@@ -134,7 +144,7 @@ describe("deployment setup: the checklist's phases", () => {
     expect(hd).toContain("connection-state=new connection-limit=1000,32")
   })
   it("warns when a DNS server is a probe IP and refuses a bad collector", () => {
-    const codes = (over = {}) => checkSetup({ ...DEFAULT_SETUP, ...over }, full()).map((i) => i.code)
+    const codes = (over = {}) => checkSetup({ ...DEFAULT_SETUP, ...over }, full()).map((i) => i.code).filter((x) => x !== "secretsPending")
     expect(codes({ dns: "1.1.1.1,9.9.9.10" })).toContain("dnsIsProbe")
     expect(codes()).toEqual([])
     expect(codes({ collector: "nope" })).toContain("badCollector")

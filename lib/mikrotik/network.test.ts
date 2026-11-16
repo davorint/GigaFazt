@@ -137,10 +137,10 @@ describe("load balancing script (RouterOS v7)", () => {
   it("Netwatch per link: log lines and fresh connections when it drops or comes back", () => {
     const lines = balanceScript(opts({ speed: "fast" })).split("\n")
     expect(lines).toContain(
-      'add host=1.1.1.1 type=simple interval=5s down-script=":log warning \\"LB: WAN1 sin internet\\"; /ip firewall connection remove [find where connection-mark=\\"WAN1\\"]" up-script=":log warning \\"LB: WAN1 volvio\\"; /ip firewall connection remove [find where connection-mark=\\"WAN1\\"]" comment="LB: aviso WAN1"'
+      'add host=1.1.1.1 type=simple interval=5s down-script=":log warning \\"LB: WAN1 sin internet\\"; :global DSmsg \\"WAN1 sin internet\\"; :do {/system script run DS-aviso} on-error={}; /ip firewall connection remove [find where connection-mark=\\"WAN1\\"]" up-script=":log warning \\"LB: WAN1 volvio\\"; :global DSmsg \\"WAN1 volvio\\"; :do {/system script run DS-aviso} on-error={}; /ip firewall connection remove [find where connection-mark=\\"WAN1\\"]" comment="LB: aviso WAN1"'
     )
     const logOnly = balanceScript(opts({ queues: { ...DEFAULT_LINK_QUEUES, flush: false } }))
-    expect(logOnly).toContain('down-script=":log warning \\"LB: WAN2 sin internet\\""')
+    expect(logOnly).toContain('down-script=":log warning \\"LB: WAN2 sin internet\\"; :global DSmsg \\"WAN2 sin internet\\"; :do {/system script run DS-aviso} on-error={}"')
     expect(logOnly).not.toContain("connection remove")
     // Watching the gateway: the monitored IPs aren't routed per link, so no Netwatch.
     expect(balanceScript(opts({ failover: "gateway" }))).not.toContain("/tool netwatch")
