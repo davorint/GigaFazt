@@ -185,8 +185,8 @@ export const CONN_LIMIT = 1000
 
 // ── Addresses ──────────────────────────────────────────────────────────────
 
-const ipToInt = (ip: string) => ip.split(".").reduce((a, o) => a * 256 + Number(o), 0)
-const intToIp = (n: number) => [24, 16, 8, 0].map((s) => Math.floor(n / 2 ** s) % 256).join(".")
+export const ipToInt = (ip: string) => ip.split(".").reduce((a, o) => a * 256 + Number(o), 0)
+export const intToIp = (n: number) => [24, 16, 8, 0].map((s) => Math.floor(n / 2 ** s) % 256).join(".")
 
 export type Cidr = { net: number; prefix: number }
 
@@ -201,11 +201,11 @@ export function parseCidr(text: string): Cidr | null {
   return net % 2 ** (32 - prefix) === 0 ? { net, prefix } : null
 }
 
-const size = (c: Cidr) => 2 ** (32 - c.prefix)
+export const size = (c: Cidr) => 2 ** (32 - c.prefix)
 const inside = (inner: Cidr, outer: Cidr) => inner.prefix >= outer.prefix && Math.floor(inner.net / size(outer)) === Math.floor(outer.net / size(outer))
 const overlap = (a: Cidr, b: Cidr) => inside(a, b) || inside(b, a)
 const mask = (prefix: number) => intToIp(2 ** 32 - 2 ** (32 - prefix))
-const cidrText = (c: Cidr) => `${intToIp(c.net)}/${c.prefix}`
+export const cidrText = (c: Cidr) => `${intToIp(c.net)}/${c.prefix}`
 
 /** Addresses the pool hands out: all but the network, the router's and the broadcast. */
 export const poolHosts = (c: Cidr) => Math.max(0, size(c) - 3)
@@ -368,7 +368,40 @@ export function setupPlans(list: SetupPlan[], rule: PlanRule): SetupPlans {
   return list.filter((p) => p.down > 0 && p.up > 0).map((p) => ({ name: planLabel(p, rule), pair: planPair(p, rule), down: p.down, up: p.up }))
 }
 
-const vlanName = (id: number, what: string) => `vlan${id}-${what}`
+export const vlanName = (id: number, what: string) => `vlan${id}-${what}`
+
+/** The DNS the clients get: the router's address (first of the pool) or the first two resolvers. */
+export function clientDnsOf(s: SetupState): string {
+  const pool = parseCidr(s.pool)
+  return s.dnsMode === "router" && pool ? intToIp(pool.net + 1) : dnsList(s.dns).slice(0, 2).join(",")
+}
+
+/**
+ * A PPP profile's properties for the deployment (without name and comment): addresses, DNS, the rate limit, IPv6,
+ * the session log and the queue type. The plan profiles and the advanced generators' profiles share them.
+ */
+export function profileProps(s: SetupState, rate: string, queue?: QueueKind): string[] {
+  const pool = parseCidr(s.pool)
+  const local = pool ? intToIp(pool.net + 1) : ""
+  const v6 = s.ipv6Pd.trim()
+  const v6wan = s.ipv6Wan.trim()
+  const session = (what: string) => `:log info ("DS-sesion ${what} usuario=" . $user . " ip=" . $"remote-address" . " mac=" . $"caller-id")`
+  return [
+    `local-address=${local}`,
+    "remote-address=DS-clientes",
+    `dns-server=${clientDnsOf(s)}`,
+    `rate-limit=${rosString(rate)}`,
+    "only-one=yes",
+    "change-tcp-mss=yes",
+    "use-compression=no",
+    "use-encryption=no",
+    "use-upnp=no",
+    "interface-list=DS-LAN",
+    ...(v6 ? ["use-ipv6=yes", "dhcpv6-pd-pool=DS-pd", ...(v6wan ? ["remote-ipv6-prefix-pool=DS-wan6"] : [])] : []),
+    ...(s.sessionLog ? [`on-up=${rosString(session("alta"))}`, `on-down=${rosString(session("baja"))}`] : []),
+    ...(queue && queue !== "default" ? [`queue-type=${rosString(queue)}`] : []),
+  ]
+}
 
 /** The router script by phase of the checklist. */
 export type SetupParts = { base: string; cgnat: string; pppoe: string; hardening: string; ops: string }
@@ -383,7 +416,6 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
   const port = rosString(s.oltPort.trim())
   const inet = vlanName(s.internetVlan, "internet")
   const mg = vlanName(s.mgmtVlan, "gestion")
-  const local = intToIp(pool.net + 1)
   const poolNet = cidrText(pool)
   const mgmtNet = cidrText(mgmt)
   const collector = s.collector.trim()
@@ -473,7 +505,6 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
       ? `set allow-remote-requests=yes servers=${dnsList(s.dns).join(",")} cache-size=${DNS_CACHE_KIB} max-concurrent-queries=${DNS_QUERIES} max-concurrent-tcp-sessions=${DNS_TCP}`
       : `set allow-remote-requests=no servers=${dnsList(s.dns).join(",")}`,
   ]
-  const clientDns = s.dnsMode === "router" ? local : dnsList(s.dns).slice(0, 2).join(",")
   // The router answers DNS for the clients; without the basic firewall nothing else stops the internet from using it.
   if (!s.firewall && s.dnsMode === "router")
     pp.push(
@@ -496,26 +527,10 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
       `add dst-address=${v6} blackhole ${c("prefijos de clientes sin uso")}`,
       ...(v6wan ? [`add dst-address=${v6wan} blackhole ${c("prefijos WAN sin uso")}`] : [])
     )
-  // The session log: who had which address, and when (the NAT lookup ends here).
-  const session = (what: string) => `:log info ("DS-sesion ${what} usuario=" . $user . " ip=" . $"remote-address" . " mac=" . $"caller-id")`
+  // The session log (on-up / on-down in profileProps): who had which address, and when (the NAT lookup ends here).
   pp.push("/ppp profile")
   for (const p of ctx.plans) {
-    const props = [
-      `local-address=${local}`,
-      "remote-address=DS-clientes",
-      `dns-server=${clientDns}`,
-      `rate-limit=${rosString(rateLimit(p.pair))}`,
-      "only-one=yes",
-      "change-tcp-mss=yes",
-      "use-compression=no",
-      "use-encryption=no",
-      "use-upnp=no",
-      "interface-list=DS-LAN",
-      ...(v6 ? ["use-ipv6=yes", "dhcpv6-pd-pool=DS-pd", ...(v6wan ? ["remote-ipv6-prefix-pool=DS-wan6"] : [])] : []),
-      ...(s.sessionLog ? [`on-up=${rosString(session("alta"))}`, `on-down=${rosString(session("baja"))}`] : []),
-      ...(ctx.queue && ctx.queue !== "default" ? [`queue-type=${rosString(ctx.queue)}`] : []),
-      c(`plan ${p.name}`),
-    ]
+    const props = [...profileProps(s, rateLimit(p.pair), ctx.queue), c(`plan ${p.name}`)]
     pp.push(upsert("/ppp profile", p.name, props, [`name=${rosString(p.name)}`, ...props]))
   }
   if (s.sessionLog)

@@ -28,6 +28,7 @@
         "capacity": "Hora pico",
         "links": "Varios enlaces",
         "setup": "Configuración",
+        "advanced": "Generadores avanzados",
         "solver": "Calculadora",
         "export": "Exportar",
         "bulk": "Varios clientes",
@@ -578,14 +579,16 @@
           "title": "Fase 0 · Base y seguridad",
           "goal": "Un router asegurado y documentado, con RouterOS long-term, antes de que pase tráfico de clientes.",
           "items": [
-            "Instala el canal long-term de RouterOS (7.23.x en noviembre de 2026; desde 7.23.4 trae un arreglo de seguridad). No uses 7.20.0 a 7.20.5 en un servidor PPPoE (falla con varios nombres de servicio; se arregló en 7.20.6).",
+            "Instala la última versión estable de RouterOS (7.25.1 el 16 de noviembre de 2026) y después actualiza el firmware de la RouterBOARD (System → RouterBOARD → Upgrade y reinicia). No uses 7.20.0 a 7.20.5 en un servidor PPPoE (falla con varios nombres de servicio; se arregló en 7.20.6).",
             "Respalda la configuración de fábrica (comandos abajo).",
             "Mide cada carrier solo, en hora pico (bajada y subida), y anótalo en la tabla de abajo: el reparto y las colas salen de lo medido, nunca del contrato.",
             "Lee la dirección y el gateway de cada carrier con /ip dhcp-client print detail y marca en la tabla los que estén en 100.64.0.0/10 (el carrier ya hace CGNAT).",
             "Ten acceso fuera de banda: la VLAN de gestión o un router pequeño aparte. Nunca administres el router solo por un enlace a internet.",
             "Pega la base conectado por la VLAN de gestión (al final limita Winbox, SSH y el acceso por MAC a esa red).",
             "Antes de comprar: confirma que cada contrato permita revender (los residenciales casi nunca) y elige el colector IPFIX y cuánto tiempo guardarlo según la ley.",
-            "Protecciones de MikroTik (en el script base): descubrimiento de vecinos solo en gestión, sin btest server, proxy, SOCKS, UPnP ni DDNS de la nube."
+            "Protecciones de MikroTik (en el script base): descubrimiento de vecinos solo en gestión, sin btest server, proxy, SOCKS, UPnP ni DDNS de la nube.",
+            "Acceso remoto antes de irte del sitio: Back To Home funciona sin IP pública (Generadores avanzados → Acceso remoto).",
+            "Energía: router y OLT con respaldo (UPS, o −48 V con baterías; ver /olt → Energía) y el watchdog de hardware del router (Generadores avanzados → Monitoreo)."
           ]
         },
         "p1": {
@@ -597,7 +600,8 @@
             "Una IP vigilada distinta por enlace; en «Varios enlaces» deja «Vigilar una IP pública».",
             "Netwatch por enlace: aviso en el log y limpieza de sus conexiones al caer y al volver (Varios enlaces → Colas y avisos).",
             "No des las IPs vigiladas a los clientes como DNS: cada una sale por un solo enlace.",
-            "Prueba: desconecta un enlace. Su ruta se apaga en unos 20–30 s, aparece la línea en el log y las sesiones PPPoE siguen; solo cambia su IP pública."
+            "Prueba: desconecta un enlace. Su ruta se apaga en unos 20–30 s, aparece la línea en el log y las sesiones PPPoE siguen; solo cambia su IP pública.",
+            "Servicios que deben salir siempre por un carrier (la TV de tu proveedor, un banco): Generadores avanzados → Salida fija por destino."
           ]
         },
         "p2": {
@@ -634,7 +638,8 @@
             "Verifica que la ruta GPON lleve tramas de 1508 bytes (subida de la OLT y el ONT).",
             "Seguridad en la OLT: anti-macspoofing (máximo 1 MAC por service-port), anti-ipspoofing, anti-macduplicate, anti-dos, anti-ipattack y control de tormentas del lado de los ONT.",
             "La gestión de la OLT, en su VLAN y solo desde la red de gestión.",
-            "Instalación del ONT: WAN de ruta PPPoE en la VLAN de internet con la cuenta del cliente, contraseña de administrador de la empresa (no la de fábrica) y Wi-Fi propio del cliente (lista en «Alta de un ONT»)."
+            "Instalación del ONT: WAN de ruta PPPoE en la VLAN de internet con la cuenta del cliente, contraseña de administrador de la empresa (no la de fábrica) y Wi-Fi propio del cliente (lista en «Alta de un ONT»).",
+            "Morosos: perfiles DSX-reducido y DSX-suspendido con página de aviso, y los comandos para suspender y reactivar (Generadores avanzados → Morosos)."
           ]
         },
         "p5": {
@@ -648,7 +653,9 @@
             "Firewall: raw (bogones, banderas TCP inválidas, 100.64 desde internet), input y forward básicos.",
             "Abuso: sin SMTP directo y tope de {limit} conexiones por cliente.",
             "DNS: caché del router dimensionada para el despliegue, o los clientes directo a los resolutores.",
-            "Avisos al celular (Telegram o correo), respaldo diario fuera del router y SNMP para graficar enlaces, CPU y sesiones."
+            "Avisos al celular (Telegram o correo), respaldo diario fuera del router y SNMP para graficar enlaces, CPU y sesiones.",
+            "Clientes infectados: marca y avisa a quien abre conexiones a ritmo de bot o escanea puertos (Generadores avanzados → Clientes infectados y DDoS).",
+            "DNS: listas de bloqueo, todo el DNS de los clientes por el router y planes familia (Generadores avanzados → Filtro DNS)."
           ]
         },
         "p6": {
@@ -658,7 +665,10 @@
             "Anota los resultados y la línea base de CPU y connection tracking.",
             "Exporta la configuración al terminar y guárdala fuera del router junto con la de la OLT; vuelve a exportar tras cada cambio.",
             "Monitoreo por SNMP (Zabbix, LibreNMS o The Dude): CPU, connection tracking, tráfico por enlace y sesiones PPPoE, con alertas de Netwatch y de connection tracking arriba del 60 %.",
-            "Paquete legal: este procedimiento, la política de retención de IPFIX, dónde quedan los logs de PPPoE y cómo contestar un requerimiento (IP pública + puerto + hora → 100.64 → usuario PPPoE)."
+            "Paquete legal: este procedimiento, la política de retención de IPFIX, dónde quedan los logs de PPPoE y cómo contestar un requerimiento (IP pública + puerto + hora → 100.64 → usuario PPPoE).",
+            "Restaura un respaldo en un router de prueba al menos una vez: un respaldo que nunca se probó no cuenta.",
+            "Uso por cliente en el comentario de cada cuenta, aviso de caída masiva de sesiones y resumen diario (Generadores avanzados → Uso por cliente y Monitoreo).",
+            "Edificios grandes: router de respaldo en caliente (Generadores avanzados → Router de respaldo)."
           ]
         }
       },
@@ -1555,6 +1565,247 @@
         "migrateNote": "Cambia max-limit y la ráfaga; limit-at, target, parent y nombres se quedan. Las colas quedan simétricas, como los planes. Pruébalo primero con un cliente."
       },
       "profilesHint": "Plan: el nombre del perfil o su velocidad de bajada. Perfiles de este despliegue: {list}."
+    },
+    "advanced": {
+      "title": "Generadores avanzados",
+      "lead": "Scripts para operar el despliegue a mano: morosos, acceso remoto, filtro DNS, uso por cliente, clientes infectados, velocidades programadas, monitoreo, router de respaldo, salida fija por destino y BGP. Usan los datos del despliegue abierto (pool, planes, enlaces, gestión, avisos) y cada uno trae cómo quitarlo.",
+      "pick": "Generador",
+      "undo": "Cómo quitarlo",
+      "undoLabel": "Quitar · {label}",
+      "note": "Comandos revisados contra la referencia de RouterOS 7.25; no se probaron en un router. Pégalos primero en un router de prueba o en una ventana de mantenimiento. Todo lo que agregan lleva «DSX <módulo>:» en el comentario o DSX- en el nombre, así que su «Cómo quitarlo» solo borra lo suyo y el de Configuración no los toca. Las contraseñas quedan como PEGA-AQUI-….",
+      "modules": {
+        "morosos": {
+          "name": "Morosos (reducir y suspender)",
+          "lead": "Dos perfiles: DSX-reducido (navega lento) y DSX-suspendido (solo ve el aviso de pago, los sitios para pagar y el DNS). Mientras dura la sesión, su dirección queda en una lista; la web sin cifrar va al proxy del router, que la manda a tu página de aviso. Celulares y computadoras abren el aviso solos al conectarse."
+        },
+        "acceso": {
+          "name": "Acceso remoto (VPN de gestión)",
+          "lead": "Entrar al router y a la OLT de cada edificio desde la oficina o el celular. Back To Home funciona sin IP pública (MikroTik conecta por su relevo); el hub WireGuard es para cuando tengas un router o servidor con IP pública que junte todos los despliegues."
+        },
+        "dns": {
+          "name": "Filtro DNS",
+          "lead": "Listas de bloqueo en el DNS del router (publicidad y malware; adultos opcional), todo el DNS de los clientes forzado al router, y planes «familia» que resuelven con el DNS de Cloudflare para familias (bloquea malware y contenido para adultos)."
+        },
+        "uso": {
+          "name": "Uso por cliente",
+          "lead": "Cada 10 minutos suma lo que movió cada sesión PPPoE; cada hora escribe el total del mes en el comentario de la cuenta («[uso 2026-11 12345/678 MB]», bajada/subida), visible en Winbox y guardado con la configuración. Opcional: tope de uso justo y reporte diario de quién más usa."
+        },
+        "escudo": {
+          "name": "Clientes infectados y DDoS",
+          "lead": "Marca a los clientes que abren conexiones nuevas a ritmo de bot o escanean puertos (malware, cámaras hackeadas), te avisa con su usuario PPPoE y, si quieres, los corta una hora. Incluye las reglas DDoS de MikroTik para cuando el router tenga IP pública."
+        },
+        "velocidad": {
+          "name": "Velocidades programadas",
+          "lead": "Velocidad nocturna: a una hora los planes suben (×2 por ejemplo) y a otra regresan. Y mejoras temporales por cliente que regresan solas en la fecha que pongas."
+        },
+        "monitoreo": {
+          "name": "Monitoreo sin servidor",
+          "lead": "Gráficas del router (enlaces, puerto de la OLT, CPU y memoria) en su página web, solo desde la red de gestión; watchdog de hardware; aviso cuando se caen muchas sesiones a la vez (una OLT o un puerto PON) y un resumen diario al celular."
+        },
+        "respaldo": {
+          "name": "Router de respaldo (VRRP)",
+          "lead": "Dos routers por edificio, los dos con servidor PPPoE: el principal contesta primero y el de respaldo después de un retraso, cada uno con su mitad del pool. Si el principal muere, los ONT vuelven a marcar y entra el respaldo. El gateway de la OLT (.1) pasa a ser una dirección VRRP y las cuentas se copian cada hora del principal al respaldo."
+        },
+        "destinos": {
+          "name": "Salida fija por destino",
+          "lead": "Servicios que deben salir siempre por un carrier: la TV de tu proveedor por internet, un banco que amarra la sesión a una IP, un juego. Sus dominios o IPs van en una lista y esas conexiones se marcan antes del balanceo; si ese enlace cae, salen por el respaldo de su tabla."
+        },
+        "bgp": {
+          "name": "BGP (preparación)",
+          "lead": "Para cuando tengas ASN y bloques de IP propios: la instancia BGP, los bloques que anuncias, filtros por carrier (recibes solo la ruta por defecto, mandas solo tus bloques, con prepend opcional) y las sesiones, en la sintaxis de RouterOS 7.25."
+        }
+      },
+      "morosos": {
+        "url": "Página de aviso",
+        "urlHint": "Dirección completa, por ejemplo https://gigafazt.com/aviso. Puede ser cualquier página tuya con los datos para pagar.",
+        "allow": "Sitios permitidos",
+        "allowHint": "Dominios o IPs que el suspendido sí puede abrir (tu WhatsApp de pagos, el banco), separados por coma.",
+        "down": "Reducido bajada",
+        "up": "Reducido subida",
+        "label": "Morosos · perfiles y reglas",
+        "clients": "Aplicar a clientes",
+        "action": "Acción",
+        "actions": {
+          "reduce": "Reducir",
+          "suspend": "Suspender",
+          "restore": "Reactivar"
+        },
+        "list": "Clientes",
+        "listHint": "Un usuario PPPoE por línea. Para reactivar, «usuario,plan» con el plan al que regresa ({plans}). Cada cliente se reconecta en segundos con su nuevo perfil."
+      },
+      "acceso": {
+        "mode": "Tipo de acceso",
+        "modes": {
+          "bth": "Back To Home (sin IP pública)",
+          "hub": "Hub WireGuard"
+        },
+        "modeHint": {
+          "bth": "En el celular o la laptop: la app «MikroTik Back To Home» o WireGuard con el QR que da el último comando. Los usuarios entran por la red {net}, que se agrega a Winbox y SSH.",
+          "hub": "El router de cada edificio se conecta al hub y mantiene el túnel abierto (keepalive de 25 s), así que no necesita IP pública; el hub sí. El script del hub agrega este edificio y su red de gestión (la OLT)."
+        },
+        "users": "Usuarios",
+        "usersHint": "Uno por persona o equipo, separados por coma (por ejemplo: oficina, celular-david).",
+        "hub": "Dirección del hub",
+        "hubHint": "IP pública o dominio del router o servidor que junta los túneles.",
+        "port": "Puerto",
+        "tunnel": "Red del túnel",
+        "host": "Número de este router",
+        "hostHint": "Su dirección dentro de la red del túnel; uno distinto por edificio.",
+        "label": "Acceso remoto · este router",
+        "hubSide": "En el hub (interfaz wg-hub)"
+      },
+      "dns": {
+        "ads": "Publicidad y malware",
+        "adsHint": "Lista unificada de StevenBlack (unos 76 mil dominios), la descarga el router y la revisa cada 4 horas.",
+        "adult": "Contenido para adultos (para todos)",
+        "adultHint": "Lista porn-only de StevenBlack (unos 77 mil dominios) para todos los clientes. Para bloquearlo solo a algunos, usa los planes familia.",
+        "force": "Forzar el DNS del router",
+        "forceHint": "Si un equipo pregunta a otro DNS (8.8.8.8, el de su router), la consulta llega igual al router y pasa por el filtro.",
+        "family": "Planes familia",
+        "familyHint": "Un perfil por plan con el mismo precio y velocidad cuyo DNS va a Cloudflare para familias (bloquea malware y adultos): {plans}. Para activarlo a un cliente, cámbialo a ese perfil.",
+        "label": "Filtro DNS"
+      },
+      "uso": {
+        "cap": "Tope mensual (uso justo)",
+        "capHint": "GB de bajada al mes; al pasarlo el cliente queda en DSX-reducido hasta que lo regreses. 0 = sin tope.",
+        "top": "Reporte diario",
+        "topHint": "Cuántos clientes mandar al celular (los que más bajaron en el mes). 0 = sin reporte.",
+        "time": "Hora del reporte",
+        "label": "Uso por cliente"
+      },
+      "escudo": {
+        "rate": "Conexiones nuevas por cliente",
+        "rateUnit": "por s",
+        "rateHint": "Arriba de esto (con ráfaga del doble) se marca. Una casa normal abre pocas decenas por segundo; descargas P2P pueden pasar de 100.",
+        "scan": "Detectar escaneo de puertos",
+        "scanHint": "Un cliente que prueba muchos puertos seguidos (psd): típico de un equipo infectado.",
+        "block": "Cortar 1 hora a los marcados",
+        "blockHint": "Sin esto solo avisa. Con esto, el cliente marcado no navega durante una hora (sí llega al router).",
+        "inbound": "Reglas DDoS desde internet",
+        "inboundHint": "Las de la guía de MikroTik (cuenta SYN por origen y destino y corta al atacante). Sirven cuando el router tenga IP pública; hoy el NAT del carrier ya frena lo que viene de fuera.",
+        "label": "Clientes infectados y DDoS"
+      },
+      "velocidad": {
+        "factor": "Multiplicar por",
+        "start": "Desde (HH:MM:SS)",
+        "end": "Hasta (HH:MM:SS)",
+        "cap": "Tope",
+        "capHint": "Ningún plan pasa de esto (la velocidad de los ONT o del puerto).",
+        "reconnect": "Aplicar de inmediato (reconectar)",
+        "reconnectHint": "Un cambio de perfil llega a la sesión cuando se reconecta: al empezar y al terminar se cortan las sesiones de cada plan y vuelven en segundos (pueden cambiar de IP). Sin esto, cada cliente lo ve en su siguiente conexión.",
+        "row": "{plan}: {down}/{up} Mbps en el horario",
+        "label": "Velocidades programadas",
+        "upgrade": "Mejora temporal de un cliente",
+        "user": "Usuario PPPoE",
+        "to": "Plan temporal",
+        "back": "Regresa a",
+        "date": "Regresa el (AAAA-MM-DD)",
+        "dateHint": "El router lo regresa solo ese día a esa hora.",
+        "time": "A las (HH:MM:SS)"
+      },
+      "monitoreo": {
+        "graphs": "Gráficas del router",
+        "graphsHint": "Enlaces, puerto de la OLT, CPU y memoria cada 5 minutos, guardadas en disco. Se ven en http://<IP de gestión del router>/graphs desde la red de gestión (o Back To Home si lo agregas).",
+        "watchdog": "Watchdog de hardware",
+        "watchdogHint": "Reinicia el router si se congela. Sin IP a vigilar: con una, lo reiniciaría cada vez que se cae internet.",
+        "drop": "Aviso de caída masiva",
+        "dropUnit": "sesiones",
+        "dropHint": "Si en un minuto se caen al menos estas sesiones PPPoE (y el % de abajo), te avisa: suele ser la OLT, un puerto PON o la luz del edificio. 0 = sin aviso.",
+        "dropPct": "y al menos",
+        "summary": "Resumen diario",
+        "summaryHint": "Hora del mensaje con sesiones, CPU, memoria y tiempo encendido (HH:MM:SS; vacío = sin resumen).",
+        "label": "Monitoreo"
+      },
+      "respaldo": {
+        "vrid": "VRRP",
+        "pado": "Retraso del respaldo",
+        "padoHint": "Cuánto espera el respaldo antes de ofrecer PPPoE: los ONT eligen al principal mientras viva.",
+        "user": "Usuario de copia",
+        "main": "Router principal",
+        "backup": "Router de respaldo (después de pegarle la misma Configuración)"
+      },
+      "destinos": {
+        "wan": "Enlace {n}",
+        "dest": "Destinos {n}",
+        "destHint": "Dominios, IPs o redes separados por coma (por ejemplo los servidores de la TV de tu proveedor).",
+        "add": "Agregar enlace",
+        "remove": "Quitar el último",
+        "label": "Salida fija por destino"
+      },
+      "bgp": {
+        "steps": [
+          "Hazte miembro de LACNIC y pide un ASN y un bloque IPv6 (/32 para un proveedor); IPv4 hoy solo se consigue por transferencia (un /24 es lo mínimo que se anuncia en internet).",
+          "Crea los ROA de tus bloques en el portal de LACNIC (RPKI) y regístralos en un IRR, o los carriers los rechazarán.",
+          "Pide a cada carrier una sesión BGP: su ASN, la IP del enlace de cada lado y que te manden solo la ruta por defecto. Necesitarás una carta de autorización (LOA) de tus bloques.",
+          "Con tus propias IPs, el CGNAT sale por tu bloque (Configuración → Bloques de puertos fijos con tu rango) y dejas de depender del NAT de cada carrier."
+        ],
+        "asn": "Tu ASN",
+        "routerId": "Router ID",
+        "routerIdHint": "Una IPv4 tuya (por ejemplo la primera de tu bloque).",
+        "prefixes": "Tus bloques",
+        "prefixesHint": "IPv4 e IPv6 separados por coma, por ejemplo 203.0.113.0/24, 2001:db8::/32.",
+        "peers": "Carriers",
+        "peersHint": "Uno por línea: nombre,IP del carrier,su ASN,prepend (0 a 5). El prepend alarga tu camino por ese carrier para que el tráfico de entrada prefiera los otros.",
+        "label": "BGP"
+      },
+      "issues": {
+        "noPool": "El pool de clientes de Configuración no es válido.",
+        "noMgmt": "La red de gestión de Configuración no es válida.",
+        "noticeUrl": "Falta la página de aviso (http:// o https://).",
+        "badHost": "«{value}» no es un dominio ni una IP.",
+        "reducedRate": "La velocidad reducida debe ser mayor que 0.",
+        "noticeHttp": "Con una página http:// el aviso abre directo; con https:// también funciona, pero el cliente tiene que tocar el aviso del sistema.",
+        "httpsNote": "Los sitios con https (casi todos) no cargan para el suspendido: el aviso aparece en la prueba de conexión del celular o al abrir una página sin cifrar.",
+        "badUser": "Línea {line}: «{value}» no es un usuario válido.",
+        "noPlan": "Para reactivar a {value} falta el plan («usuario,plan»).",
+        "unknownPlan": "«{value}»: ese plan no existe en este despliegue.",
+        "noUsers": "Escribe al menos un usuario.",
+        "bthApp": "Después de pegarlo, el último comando muestra el QR de cada usuario para la app.",
+        "hub": "Falta la dirección del hub (IP o dominio).",
+        "tunnel": "La red del túnel no es válida (máximo /30).",
+        "host": "El número de este router no cabe en la red del túnel.",
+        "hubPort": "Puerto no válido.",
+        "mgmtUnique": "Cada edificio necesita una red de gestión distinta para que el hub sepa a dónde mandar cada OLT.",
+        "needsRouterDns": "Las listas de bloqueo y forzar el DNS necesitan que el router conteste el DNS (Configuración → DNS: el router).",
+        "nothing": "Elige al menos una opción.",
+        "cache": "Las listas ocupan caché de DNS: revisa «cache-used» en /ip dns y súbelo si se llena.",
+        "doh": "Un equipo con DNS cifrado (DoH, por ejemplo en algunos navegadores) se salta cualquier filtro de DNS.",
+        "cap": "El tope no es válido.",
+        "time": "La hora va como HH:MM:SS.",
+        "noAlerts": "Sin avisos en Configuración (Telegram o correo), esta parte no te puede mandar mensajes.",
+        "capNeedsMorosos": "El tope usa el perfil DSX-reducido: pega también el generador de Morosos.",
+        "rate": "Entre 20 y 5,000 conexiones por segundo.",
+        "behindNat": "Tus carriers hacen NAT: lo que viene de internet ya no llega a tus clientes. El riesgo real es al revés: un cliente infectado atacando a otros desde tu red (y tu IP de carrier en listas negras).",
+        "factor": "El multiplicador debe ser mayor que 1 (y hasta 10).",
+        "window": "Revisa las horas (HH:MM:SS, distintas).",
+        "capMbps": "El tope debe ser mayor que 0.",
+        "noPlans": "El despliegue no tiene planes.",
+        "reconnect": "Al empezar y al terminar el horario, los clientes se reconectan en segundos.",
+        "when": "Revisa la fecha (AAAA-MM-DD) y la hora (HH:MM:SS).",
+        "asn": "Falta el ASN (1 a 4294967295).",
+        "privateAsn": "Ese ASN es privado: solo sirve dentro de tu red, no con los carriers.",
+        "routerId": "El router ID va como una IPv4.",
+        "noPrefixes": "Faltan tus bloques.",
+        "badPrefix": "«{value}» no es un bloque válido.",
+        "longPrefix": "{value}: más chico que /24 (IPv4) o /48 (IPv6) casi nadie lo acepta en internet.",
+        "noPeers": "Agrega al menos un carrier.",
+        "badPeer": "Revisa la línea «{value}» (nombre,IP,ASN,prepend).",
+        "v6PeerNoPrefix": "{value} es IPv6 y no hay bloques IPv6 que anunciarle.",
+        "prepare": "Esto es la preparación: pégalo cuando tengas el ASN, los bloques con sus ROA y las sesiones acordadas con los carriers.",
+        "drop": "Revisa el aviso de caída (sesiones y %).",
+        "graphsUrl": "Gráficas en http://{value}/graphs desde la red de gestión.",
+        "vrid": "VRRP del 1 al 255.",
+        "pado": "El retraso va de 100 a 5,000 ms.",
+        "syncUser": "El usuario de copia solo lleva letras, números, - y _.",
+        "mgmtSmall": "La red de gestión necesita al menos /29 (gateway .1, principal .3, respaldo .4 y la OLT .2).",
+        "poolSmall": "El pool es muy chico para partirlo en dos.",
+        "links": "Cada router necesita sus propios enlaces a internet (por ejemplo WAN1 y WAN2 en el principal, WAN3 en el respaldo): un mismo módem no le da IP a los dos.",
+        "sameSetup": "En el respaldo pega primero el mismo script de Configuración (perfiles, pool, PPPoE) y después su parte de aquí. Al caer el principal los clientes se reconectan y cambian de IP.",
+        "needsBalance": "Necesita dos o más enlaces y el balanceo de «Varios enlaces» ya pegado.",
+        "noRules": "Escribe al menos un destino.",
+        "unknownWan": "El enlace «{value}» no existe en este despliegue.",
+        "domains": "Los dominios se vuelven IPs en el router y se renuevan solos; si el servicio usa muchos servidores, agrega también sus redes."
+      }
     }
   }
 }

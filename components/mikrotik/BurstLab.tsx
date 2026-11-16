@@ -61,6 +61,7 @@ const GuidePanel = dynamic(() => import("./GuidePanel").then((m) => m.GuidePanel
 const SetupPanel = dynamic(() => import("./SetupPanel").then((m) => m.SetupPanel), { ssr: false, loading: frame("min-h-[110rem] sm:min-h-[80rem]") })
 const BalancePanel = dynamic(() => import("./BalancePanel").then((m) => m.BalancePanel), { ssr: false, loading: frame("min-h-[120rem] sm:min-h-[90rem]") })
 const ExportPanel = dynamic(() => import("./ExportPanel").then((m) => m.ExportPanel), { ssr: false, loading: frame("min-h-[60rem] sm:min-h-[48rem]") })
+const AdvancedPanel = dynamic(() => import("./AdvancedPanel").then((m) => m.AdvancedPanel), { ssr: false, loading: frame("min-h-[90rem] sm:min-h-[70rem]") })
 const BulkPanel = dynamic(() => import("./BulkPanel").then((m) => m.BulkPanel), { ssr: false, loading: frame("min-h-[100rem] sm:min-h-[70rem]") })
 
 /** Renders `children` once the section is within 800 px of the screen. */
@@ -78,12 +79,12 @@ const subscribeHash = (cb: () => void) => {
 }
 const readHash = () => window.location.hash
 
-type Jump = "params" | "sim" | "compare" | "shared" | "deployments" | "guide" | "capacity" | "links" | "setup" | "solver" | "export" | "bulk" | "how"
+type Jump = "params" | "sim" | "compare" | "shared" | "deployments" | "guide" | "capacity" | "links" | "setup" | "advanced" | "solver" | "export" | "bulk" | "how"
 
 /** The two internal pages: /mikrotik makes the scripts, /calculadora holds the calculators and simulators (owner, 2026-11-15). */
 export type LabPage = "scripts" | "calculators"
 const PAGE_SECTIONS: Record<LabPage, Jump[]> = {
-  scripts: ["params", "deployments", "guide", "links", "setup", "export", "bulk"],
+  scripts: ["params", "deployments", "guide", "links", "setup", "advanced", "export", "bulk"],
   calculators: ["params", "sim", "compare", "shared", "deployments", "capacity", "solver", "how"],
 }
 const OTHER_PAGE: Record<LabPage, string> = { scripts: "/calculadora", calculators: "/mikrotik" }
@@ -97,6 +98,7 @@ const ANCHORS: Record<Jump, string> = {
   capacity: "hora-pico",
   links: "enlaces",
   setup: "configuracion",
+  advanced: "avanzados",
   solver: "calculadora",
   export: "exportar",
   bulk: "varios-clientes",
@@ -397,6 +399,14 @@ export function BurstLab({ page }: { page: LabPage }) {
         <Section id="configuracion" name="mk-setup" title={t("config.title")} lead={t("config.lead")}>
           <Lazy fallback="min-h-[110rem] sm:min-h-[80rem]">
             <SetupPanel state={state} onSetup={setSetup} onWans={setWans} />
+          </Lazy>
+        </Section>
+      )}
+
+      {on("advanced") && (
+        <Section id="avanzados" name="mk-advanced" title={t("advanced.title")} lead={t("advanced.lead")}>
+          <Lazy fallback="min-h-[90rem] sm:min-h-[70rem]">
+            <AdvancedPanel state={state} />
           </Lazy>
         </Section>
       )}
