@@ -17,6 +17,7 @@ import {
 import { DEFAULT_PON_EFFICIENCY, type PonTech } from "./capacity"
 import { OLT_MODELS, type OltModelId } from "./olt"
 import { QUEUE_KINDS, type Pair, type QueueKind } from "./routeros"
+import { DEFAULT_SETUP, type SetupState } from "./setup"
 
 /**
  * State of the /mikrotik burst tool and its share link (#hash, so nothing
@@ -57,12 +58,14 @@ export type LabState = {
   /** That router's internet links (load balancing and the capacity model). */
   wans: Wan[]
   balance: BalanceState
+  /** VLANs, PPPoE and OLT settings for setting the deployment up. */
+  setup: SetupState
 }
 
 export type DeploymentStatus = "existing" | "planned"
 
 /** What belongs to one deployment (saved in the browser, carried by the share link). */
-export type DeploymentFields = Pick<LabState, "deployment" | "status" | "capacity" | "wans" | "balance">
+export type DeploymentFields = Pick<LabState, "deployment" | "status" | "capacity" | "wans" | "balance" | "setup">
 
 export type BalanceState = {
   classifier: Classifier
@@ -214,6 +217,7 @@ export function presetState(preset: Preset, base?: LabState): LabState {
     status: base?.status ?? "planned",
     wans: base?.wans ?? defaultWans(3),
     balance: base?.balance ?? DEFAULT_BALANCE,
+    setup: base?.setup ?? DEFAULT_SETUP,
   }
 }
 
@@ -295,12 +299,45 @@ function setDeploymentParams(h: URLSearchParams, f: DeploymentFields) {
   const enc = encodeURIComponent
   h.set("w", [f.balance.classifier, f.balance.failover, f.balance.nat ? "1" : "0", f.balance.clients.map(enc).join(","), ...f.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor), w.type, opt(w.measuredMbps), opt(w.upMbps)].join(","))].join("|"))
   if (f.balance.speed !== "normal") h.set("lf", f.balance.speed)
+  const st = f.setup
+  h.set(
+    "ds",
+    [st.oltPort, num(st.internetVlan), num(st.mgmtVlan), st.mgmtNet, st.pool, st.dns, st.service, st.firewall ? "1" : "0", st.oltUplink].map(encodeURIComponent).join("|")
+  )
   const lq = f.balance.queues
   h.set("lq", [lq.shape, num(lq.sharePct), lq.prio, lq.alerts, lq.flush].map((x) => (x === true ? "1" : x === false ? "0" : x)).join(","))
 }
 
 export function deploymentFields(s: LabState): DeploymentFields {
-  return { deployment: s.deployment, status: s.status, capacity: s.capacity, wans: s.wans, balance: s.balance }
+  return { deployment: s.deployment, status: s.status, capacity: s.capacity, wans: s.wans, balance: s.balance, setup: s.setup }
+}
+
+/** Setup settings (`ds=`); absent or malformed = the defaults (checks run on what's shown). */
+function decodeSetup(v: string | null): SetupState {
+  if (!v) return DEFAULT_SETUP
+  const parts = v.split("|").map((x) => {
+    try {
+      return decodeURIComponent(x)
+    } catch {
+      return null
+    }
+  })
+  if (parts.length !== 9 || parts.some((x) => x === null)) return DEFAULT_SETUP
+  const [oltPort, inet, mgmtVlan, mgmtNet, pool, dns, service, firewall, oltUplink] = parts as string[]
+  const vlan = (x: string) => finite(x, 1, 4094)
+  if (vlan(inet) === null || vlan(mgmtVlan) === null || (firewall !== "0" && firewall !== "1")) return DEFAULT_SETUP
+  const cut = (x: string) => x.slice(0, 64)
+  return {
+    oltPort: cut(oltPort),
+    internetVlan: Math.round(vlan(inet) as number),
+    mgmtVlan: Math.round(vlan(mgmtVlan) as number),
+    mgmtNet: cut(mgmtNet),
+    pool: cut(pool),
+    dns: cut(dns),
+    service: cut(service),
+    firewall: firewall === "1",
+    oltUplink: cut(oltUplink),
+  }
 }
 
 /** A deployment as text (how the browser and the backup file keep it). */
@@ -315,7 +352,7 @@ export function decodeDeployment(text: string): DeploymentFields | null {
   const h = new URLSearchParams(text)
   const lines = decodeWans(h)
   if (!decodeCapacity(h.get("h")) || !lines) return null
-  return { capacity: decodeCapacityAll(h, DEFAULT_CAPACITY), deployment: nameOf(h), status: statusOf(h), ...lines }
+  return { capacity: decodeCapacityAll(h, DEFAULT_CAPACITY), deployment: nameOf(h), status: statusOf(h), ...lines, setup: decodeSetup(h.get("ds")) }
 }
 
 const nameOf = (h: URLSearchParams) => (h.get("n") ?? "").slice(0, MAX_NAME)
@@ -552,6 +589,7 @@ export function decodeState(hash: string): LabState | null {
     deployment: nameOf(h),
     status: statusOf(h),
     ...(decodeWans(h) ?? { wans: base.wans, balance: base.balance }),
+    setup: decodeSetup(h.get("ds")),
     backgroundMbps: finite(h.get("b") ?? undefined, 0, 1e4) ?? 0,
     queueKind: QUEUE_KINDS.includes(h.get("q") as QueueKind) ? (h.get("q") as QueueKind) : "default",
   }

@@ -20,6 +20,7 @@ import {
   subscribeDeployments,
 } from "@/lib/mikrotik/deployment-store"
 import type { QueueKind } from "@/lib/mikrotik/routeros"
+import type { SetupState } from "@/lib/mikrotik/setup"
 import {
   decodeDeployment,
   decodeState,
@@ -55,6 +56,7 @@ const ComparePanel = dynamic(() => import("./ComparePanel").then((m) => m.Compar
 const SharedPanel = dynamic(() => import("./SharedPanel").then((m) => m.SharedPanel), { ssr: false, loading: frame("min-h-[110rem] sm:min-h-[100rem]") })
 const CapacityPanel = dynamic(() => import("./CapacityPanel").then((m) => m.CapacityPanel), { ssr: false, loading: frame("min-h-[160rem] sm:min-h-[130rem]") })
 const DeploymentsPanel = dynamic(() => import("./DeploymentsPanel").then((m) => m.DeploymentsPanel), { ssr: false, loading: frame("min-h-[40rem] sm:min-h-[32rem]") })
+const SetupPanel = dynamic(() => import("./SetupPanel").then((m) => m.SetupPanel), { ssr: false, loading: frame("min-h-[110rem] sm:min-h-[80rem]") })
 const BalancePanel = dynamic(() => import("./BalancePanel").then((m) => m.BalancePanel), { ssr: false, loading: frame("min-h-[120rem] sm:min-h-[90rem]") })
 const ExportPanel = dynamic(() => import("./ExportPanel").then((m) => m.ExportPanel), { ssr: false, loading: frame("min-h-[60rem] sm:min-h-[48rem]") })
 const BulkPanel = dynamic(() => import("./BulkPanel").then((m) => m.BulkPanel), { ssr: false, loading: frame("min-h-[100rem] sm:min-h-[70rem]") })
@@ -74,7 +76,7 @@ const subscribeHash = (cb: () => void) => {
 }
 const readHash = () => window.location.hash
 
-const JUMP = ["params", "sim", "compare", "shared", "deployments", "capacity", "links", "solver", "export", "bulk", "how"] as const
+const JUMP = ["params", "sim", "compare", "shared", "deployments", "capacity", "links", "setup", "solver", "export", "bulk", "how"] as const
 const ANCHORS: Record<(typeof JUMP)[number], string> = {
   params: "parametros",
   sim: "simulacion",
@@ -83,6 +85,7 @@ const ANCHORS: Record<(typeof JUMP)[number], string> = {
   deployments: "despliegues",
   capacity: "hora-pico",
   links: "enlaces",
+  setup: "configuracion",
   solver: "calculadora",
   export: "exportar",
   bulk: "varios-clientes",
@@ -138,8 +141,8 @@ export function BurstLab() {
 
   // The open deployment saves itself on every change.
   const deploymentData = useMemo(
-    () => encodeDeployment({ deployment: state.deployment, status: state.status, capacity: state.capacity, wans: state.wans, balance: state.balance }),
-    [state.deployment, state.status, state.capacity, state.wans, state.balance]
+    () => encodeDeployment({ deployment: state.deployment, status: state.status, capacity: state.capacity, wans: state.wans, balance: state.balance, setup: state.setup }),
+    [state.deployment, state.status, state.capacity, state.wans, state.balance, state.setup]
   )
   useEffect(() => {
     if (!boundId) return
@@ -221,6 +224,7 @@ export function BurstLab() {
   const setStatus = (status: DeploymentStatus) => set({ status })
   const setWans = (wans: Wan[]) => set({ wans })
   const setBalance = (balance: BalanceState) => set({ balance })
+  const setSetup = (setup: SetupState) => set({ setup })
   // A new rule reloads the current plan with it; custom values stay as they are.
   const setRule = (rule: PlanRule) =>
     setState((s) => {
@@ -335,6 +339,12 @@ export function BurstLab() {
       <Section id="enlaces" name="mk-links" title={t("links.title")} lead={t("links.lead")}>
         <Lazy fallback="min-h-[120rem] sm:min-h-[90rem]">
           <BalancePanel state={state} onWans={setWans} onBalance={setBalance} />
+        </Lazy>
+      </Section>
+
+      <Section id="configuracion" name="mk-setup" title={t("config.title")} lead={t("config.lead")}>
+        <Lazy fallback="min-h-[110rem] sm:min-h-[80rem]">
+          <SetupPanel state={state} onSetup={setSetup} />
         </Lazy>
       </Section>
 
