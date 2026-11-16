@@ -676,9 +676,24 @@
       "slots": "{n} de {total} partes del reparto",
       "remove": "Quitar {name}",
       "name": "Nombre",
+      "type": "Conexión",
+      "types": {
+        "dhcp": "DHCP",
+        "static": "IP fija",
+        "pppoe": "PPPoE"
+      },
+      "typeHint": {
+        "dhcp": "El proveedor da la IP y el gateway; el script los sigue si cambian.",
+        "static": "La IP y el gateway que te asignó el proveedor.",
+        "pppoe": "Usuario y contraseña del proveedor; el gateway es la sesión."
+      },
       "iface": "Interfaz",
+      "ifaceHint": {
+        "dhcp": "El puerto con el cliente DHCP del proveedor (ether1, sfp-sfpplus1…).",
+        "static": "El puerto con la IP fija del proveedor.",
+        "pppoe": "La interfaz pppoe-out del enlace, no el puerto físico."
+      },
       "gateway": "Gateway del proveedor",
-      "gatewayHint": "Vacío = la interfaz misma (PPPoE).",
       "mbps": "Velocidad",
       "monitor": "IP a vigilar",
       "monitorHint": "Una IP pública distinta por enlace; se vigila a través de ese enlace.",
@@ -719,7 +734,9 @@
         "missingMonitor": "Falta la IP a vigilar.",
         "duplicateMonitor": "Otro enlace ya vigila {value}: cada enlace necesita la suya.",
         "badMonitor": "{value} no es una IP válida.",
+        "missingGateway": "Falta el gateway del proveedor (con IP fija hay que escribirlo).",
         "badGateway": "{value} no es una IP válida.",
+        "pppoeIface": "{value} parece un puerto físico: con PPPoE la ruta sale por la interfaz pppoe-out (p. ej. pppoe-out1).",
         "badClients": "{value} no es una red válida (CIDR).",
         "noClients": "Falta al menos una red de clientes.",
         "unevenSlots": "Las velocidades no se dividen bien en partes enteras: el reparto queda aproximado."
@@ -727,8 +744,9 @@
       "script": "Script de balanceo (RouterOS v7)",
       "notes": [
         "Pruébalo primero en una ventana de mantenimiento: cambia por dónde sale todo el tráfico del router.",
-        "Antes, quita las rutas por defecto que ya tengas y apaga add-default-route en los clientes DHCP o PPPoE de los proveedores; si no, competirán con estas.",
-        "El script supone que cada enlace ya tiene su IP o su sesión PPPoE; solo agrega tablas de ruteo, listas, marcas, NAT y rutas.",
+        "Cada enlace ya debe estar conectado al pegarlo: su IP fija, su cliente DHCP con lease (status bound) o su sesión PPPoE. El script solo agrega tablas de ruteo, listas, marcas, NAT y rutas, y ajusta los clientes DHCP.",
+        "Enlaces DHCP: las rutas toman el gateway que tiene el cliente DHCP al pegar; el cliente deja de poner su propia ruta por defecto (add-default-route=no) y recibe un script que cambia el gateway de esas rutas si el proveedor lo cambia. Si ese cliente ya tenía un script, este lo reemplaza.",
+        "Quita antes las rutas por defecto que pusiste a mano y, en PPPoE, apaga add-default-route en el cliente PPPoE; si no, competirán con estas.",
         "FastTrack y el balanceo no se llevan bien: agrega connection-mark=no-mark a la regla de FastTrack (o desactívala) para que las conexiones balanceadas sigan su marca.",
         "Cada IP vigilada queda fija a su enlace: si el router la usa como DNS, solo la alcanzará por ese enlace.",
         "Con reparto por cliente, un cliente nunca pasa de la velocidad de un enlace: con enlaces de 1 Gbps, un plan de 1 Gbps llega al plan solo si su enlace va libre.",
@@ -736,7 +754,7 @@
         "Si los clientes entran por PPPoE en este router, sus pools de IP van en «Redes de los clientes»."
       ],
       "undoTitle": "Quitar el balanceo",
-      "undoHint": "Todo lo que agrega el script lleva un comentario que empieza con «LB: »; estos comandos lo quitan.",
+      "undoHint": "Todo lo que agrega el script lleva un comentario que empieza con «LB: »; estos comandos lo quitan y devuelven a los clientes DHCP su ruta por defecto.",
       "undo": "Comandos para quitarlo",
       "capacity": "¿Te alcanzan estos enlaces en hora pico?",
       "capacityLink": "Calcúlalo en Hora pico",

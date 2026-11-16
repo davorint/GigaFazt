@@ -1,6 +1,6 @@
 import { plans } from "../plans"
 import { DEFAULT_RULE, KINDS, planDefaults, type Pattern, type PatternKind, type PlanRule, type QueueParams } from "./burst"
-import { CLASSIFIERS, DEFAULT_MONITORS, defaultWans, type Classifier, type Failover, type Wan } from "./balance"
+import { CLASSIFIERS, DEFAULT_MONITORS, defaultWans, WAN_TYPES, type Classifier, type Failover, type Wan, type WanType } from "./balance"
 import { DEFAULT_PON_EFFICIENCY, type PonTech } from "./capacity"
 import { OLT_MODELS, type OltModelId } from "./olt"
 import { QUEUE_KINDS, type Pair, type QueueKind } from "./routeros"
@@ -274,7 +274,7 @@ function setDeploymentParams(h: URLSearchParams, f: DeploymentFields) {
   if (f.deployment) h.set("n", f.deployment)
   if (f.status === "existing") h.set("st", "existing")
   const enc = encodeURIComponent
-  h.set("w", [f.balance.classifier, f.balance.failover, f.balance.nat ? "1" : "0", f.balance.clients.map(enc).join(","), ...f.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor)].join(","))].join("|"))
+  h.set("w", [f.balance.classifier, f.balance.failover, f.balance.nat ? "1" : "0", f.balance.clients.map(enc).join(","), ...f.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor), w.type].join(","))].join("|"))
 }
 
 export function deploymentFields(s: LabState): DeploymentFields {
@@ -368,6 +368,16 @@ function decodeOlt(
   }
 }
 
+/**
+ * Links saved before the connection type: a gateway IP was a fixed IP; an
+ * empty one meant "the interface", right for pppoe-out but not for an
+ * Ethernet port, where the provider's DHCP is the likely case.
+ */
+function legacyType(gateway: string, iface: string): WanType {
+  if (gateway.trim()) return "static"
+  return /^pppoe/i.test(iface.trim()) ? "pppoe" : "dhcp"
+}
+
 /** Internet links and balancing (`w=`). */
 function decodeWans(v: string | null): { wans: Wan[]; balance: BalanceState } | null {
   if (!v) return null
@@ -383,11 +393,12 @@ function decodeWans(v: string | null): { wans: Wan[]; balance: BalanceState } | 
   }
   const wans: Wan[] = []
   for (const [k, row] of rows.entries()) {
-    const [name, iface, gateway, mbps, monitor] = row.split(",")
+    const [name, iface, gateway, mbps, monitor, type] = row.split(",")
     const w = { name: dec(name), iface: dec(iface), gateway: dec(gateway), mbps: finite(mbps, 1, 1e6), monitor: dec(monitor) }
     if (Object.values(w).some((x) => x === null)) return null
     wans.push({
       name: (w.name as string).slice(0, 24) || `WAN${k + 1}`,
+      type: WAN_TYPES.includes(type as WanType) ? (type as WanType) : legacyType(w.gateway as string, w.iface as string),
       iface: (w.iface as string).slice(0, 64),
       gateway: (w.gateway as string).slice(0, 64),
       mbps: w.mbps as number,

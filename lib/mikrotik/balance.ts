@@ -18,6 +18,12 @@
  *   failure past the ISP's gateway. "gateway": pings the gateway only.
  * - Connections that come in on a link are marked so replies leave by it.
  * - NAT: masquerade per link.
+ * - How each link gets its address: a fixed IP (its gateway typed in), DHCP
+ *   (the routes take the gateway the DHCP client holds when the script is
+ *   pasted; the client stops adding its own default route and gets a lease
+ *   script that sets the new gateway on exactly those routes when the
+ *   provider changes it: `$bound`, `$"gateway-address"`, help.mikrotik.com
+ *   DHCP), or PPPoE (the pppoe-out interface is the gateway).
  *
  * Pure functions; the UI shows the text and its notes.
  */
@@ -28,13 +34,17 @@ import { rosString } from "./routeros"
 export type Classifier = "src-address" | "both-addresses" | "both-addresses-and-ports"
 export const CLASSIFIERS: Classifier[] = ["src-address", "both-addresses", "both-addresses-and-ports"]
 export type Failover = "recursive" | "gateway"
+export type WanType = "static" | "dhcp" | "pppoe"
+export const WAN_TYPES: WanType[] = ["dhcp", "static", "pppoe"]
 
 export type Wan = {
   /** Short name used in marks and tables (WAN1…). */
   name: string
-  /** Interface the link comes in on (ether1, sfp-sfpplus1, pppoe-out1…). */
+  /** How the link gets its address. */
+  type: WanType
+  /** Interface the link comes in on: the port with the DHCP client or the fixed IP (ether1, sfp-sfpplus1…), or the pppoe-out interface. */
   iface: string
-  /** ISP gateway IP; empty = the interface itself (PPPoE). */
+  /** ISP gateway IP (fixed IP only). */
   gateway: string
   /** Link speed, Mbps (PCC weight). */
   mbps: number
@@ -83,13 +93,16 @@ export type BalanceIssueCode =
   | "missingMonitor"
   | "duplicateMonitor"
   | "badMonitor"
+  | "missingGateway"
   | "badGateway"
+  | "pppoeIface"
   | "badClients"
   | "noClients"
   | "unevenSlots"
 export type BalanceIssue = { code: BalanceIssueCode; level: "error" | "warn" | "info"; wan?: string; value?: string }
 
 const IPV4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/
+const PHYSICAL = /^(ether|sfp|qsfp|combo|wlan|bridge|vlan)/i
 const isIp = (s: string) => IPV4.test(s.trim()) && s.trim().split(".").every((o) => Number(o) <= 255)
 
 export function checkBalance(o: BalanceOptions): BalanceIssue[] {
@@ -102,7 +115,12 @@ export function checkBalance(o: BalanceOptions): BalanceIssue[] {
     if (!iface) out.push({ code: "missingIface", level: "error", wan: w.name })
     else if (ifaces.has(iface)) out.push({ code: "duplicateIface", level: "error", wan: w.name, value: iface })
     ifaces.add(iface)
-    if (w.gateway.trim() && !isIp(w.gateway)) out.push({ code: "badGateway", level: "error", wan: w.name, value: w.gateway })
+    if (w.type === "static") {
+      if (!w.gateway.trim()) out.push({ code: "missingGateway", level: "error", wan: w.name })
+      else if (!isIp(w.gateway)) out.push({ code: "badGateway", level: "error", wan: w.name, value: w.gateway })
+    }
+    // PPPoE routes go out the pppoe-out interface, not the physical port under it.
+    if (w.type === "pppoe" && PHYSICAL.test(iface)) out.push({ code: "pppoeIface", level: "warn", wan: w.name, value: iface })
     if (o.failover === "recursive") {
       const m = w.monitor.trim()
       if (!m) out.push({ code: "missingMonitor", level: "error", wan: w.name })
@@ -124,7 +142,30 @@ export function checkBalance(o: BalanceOptions): BalanceIssue[] {
 
 /** Routing table name of a link. */
 export const tableOf = (w: Wan) => `to-${w.name}`
-const gw = (w: Wan) => (w.gateway.trim() ? w.gateway.trim() : w.iface.trim())
+
+/** The gateway as RouterOS takes it; DHCP reads what the client holds now (its lease script keeps it current). */
+function gw(w: Wan): string {
+  if (w.type === "static") return w.gateway.trim()
+  if (w.type === "pppoe") return w.iface.trim()
+  return `[/ip dhcp-client get [find where interface=${rosString(w.iface.trim())}] gateway]`
+}
+
+/** Comments of the routes, shared by the routes and the DHCP lease scripts that update them. */
+const comments = {
+  watch: (v: Wan) => `vigila ${v.name}`,
+  table: (w: Wan, v: Wan) => `${tableOf(w)} ${v === w ? "por" : "respaldo"} ${v.name}`,
+  main: (v: Wan) => `main por ${v.name}`,
+}
+
+/**
+ * Lease script of a DHCP link: when it has a lease, the routes that go
+ * straight to its gateway take the new one. Everything else is left alone
+ * (a lost lease makes those routes unreachable, so the failover takes over).
+ */
+export function leaseScript(v: Wan, routeComments: string[]): string {
+  const find = routeComments.map((c) => `comment=${rosString(`LB: ${c}`)}`).join(" or ")
+  return `:if ([:tostr $bound] = "1") do={/ip route set [find where ${find}] gateway=$"gateway-address"}`
+}
 
 /** The RouterOS v7 script. Empty when there are errors. */
 export function balanceScript(o: BalanceOptions): string {
@@ -166,28 +207,39 @@ export function balanceScript(o: BalanceOptions): string {
   add("/ip route")
   if (o.failover === "recursive") {
     // Each link watches its public IP; the routes resolve through those host routes.
-    for (const w of wans) add(`add dst-address=${w.monitor.trim()}/32 gateway=${gw(w)} scope=10 ${c(`vigila ${w.name}`)}`)
+    for (const w of wans) add(`add dst-address=${w.monitor.trim()}/32 gateway=${gw(w)} scope=10 ${c(comments.watch(w))}`)
     for (const w of wans) {
       for (const v of wans)
         add(
-          `add dst-address=0.0.0.0/0 gateway=${v.monitor.trim()}@main routing-table=${rosString(tableOf(w))} distance=${v === w ? 1 : 2} target-scope=11 check-gateway=ping ${c(`${tableOf(w)} ${v === w ? "por" : "respaldo"} ${v.name}`)}`
+          `add dst-address=0.0.0.0/0 gateway=${v.monitor.trim()}@main routing-table=${rosString(tableOf(w))} distance=${v === w ? 1 : 2} target-scope=11 check-gateway=ping ${c(comments.table(w, v))}`
         )
     }
-    for (const v of wans) add(`add dst-address=0.0.0.0/0 gateway=${v.monitor.trim()} distance=1 target-scope=11 check-gateway=ping ${c(`main por ${v.name}`)}`)
+    for (const v of wans) add(`add dst-address=0.0.0.0/0 gateway=${v.monitor.trim()} distance=1 target-scope=11 check-gateway=ping ${c(comments.main(v))}`)
   } else {
     for (const w of wans) {
       for (const v of wans)
-        add(
-          `add dst-address=0.0.0.0/0 gateway=${gw(v)} routing-table=${rosString(tableOf(w))} distance=${v === w ? 1 : 2} check-gateway=ping ${c(`${tableOf(w)} ${v === w ? "por" : "respaldo"} ${v.name}`)}`
-        )
+        add(`add dst-address=0.0.0.0/0 gateway=${gw(v)} routing-table=${rosString(tableOf(w))} distance=${v === w ? 1 : 2} check-gateway=ping ${c(comments.table(w, v))}`)
     }
-    for (const v of wans) add(`add dst-address=0.0.0.0/0 gateway=${gw(v)} distance=1 check-gateway=ping ${c(`main por ${v.name}`)}`)
+    for (const v of wans) add(`add dst-address=0.0.0.0/0 gateway=${gw(v)} distance=1 check-gateway=ping ${c(comments.main(v))}`)
+  }
+
+  // DHCP links, after the routes (they read the gateway while the lease is there): the client stops
+  // adding its own default route and keeps ours on the provider's current gateway.
+  const dhcp = wans.filter((w) => w.type === "dhcp")
+  if (dhcp.length > 0) {
+    add("/ip dhcp-client")
+    for (const v of dhcp) {
+      const routes = o.failover === "recursive" ? [comments.watch(v)] : [...wans.map((w) => comments.table(w, v)), comments.main(v)]
+      // rosString escapes the code's quotes and $ so nothing expands when it's pasted.
+      add(`set [find where interface=${rosString(v.iface.trim())}] add-default-route=no script=${rosString(leaseScript(v, routes))}`)
+    }
   }
   return lines.join("\n")
 }
 
-/** Commands that undo the script (everything it adds carries an "LB: " comment). */
+/** Commands that undo the script (everything it adds carries an "LB: " comment; DHCP clients get their default route back). */
 export const BALANCE_UNDO = [
+  '/ip dhcp-client set [find where script~"LB: "] add-default-route=yes script=""',
   '/ip route remove [find where comment~"^LB: "]',
   '/ip firewall nat remove [find where comment~"^LB: "]',
   '/ip firewall mangle remove [find where comment~"^LB: "]',
@@ -195,7 +247,14 @@ export const BALANCE_UNDO = [
   '/routing table remove [find where comment~"^LB: "]',
 ].join("\n")
 
-/** Example links: the owner's 3 × 1 Gbps (interfaces and gateways to fill in). */
+/** Example links: the owner's 3 × 1 Gbps over DHCP (interfaces to fill in). */
 export function defaultWans(n = 3): Wan[] {
-  return Array.from({ length: n }, (_, k) => ({ name: `WAN${k + 1}`, iface: `ether${k + 1}`, gateway: "", mbps: 1000, monitor: DEFAULT_MONITORS[k % DEFAULT_MONITORS.length] }))
+  return Array.from({ length: n }, (_, k) => ({
+    name: `WAN${k + 1}`,
+    type: "dhcp" as const,
+    iface: `ether${k + 1}`,
+    gateway: "",
+    mbps: 1000,
+    monitor: DEFAULT_MONITORS[k % DEFAULT_MONITORS.length],
+  }))
 }

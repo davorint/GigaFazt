@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { balanceScript, BALANCE_UNDO, checkBalance, defaultWans, pccWeights, type BalanceOptions } from "./balance"
+import { balanceScript, BALANCE_UNDO, checkBalance, defaultWans, leaseScript, pccWeights, type BalanceOptions } from "./balance"
 import { planDefaults, RULES } from "./burst"
 import { simulateCapacity, size, type CapacityInput } from "./capacity"
 import { checkOlt, OLT_SPECS, portsNeeded } from "./olt"
 import { decodeState, DEFAULT_BALANCE, DEFAULT_CAPACITY, encodeState, initialState, PRESETS } from "./state"
 
 const opts = (over: Partial<BalanceOptions> = {}): BalanceOptions => ({
-  wans: defaultWans(3).map((w, k) => ({ ...w, gateway: `192.168.${k + 1}.1` })),
+  wans: defaultWans(3).map((w, k) => ({ ...w, type: "static" as const, gateway: `192.168.${k + 1}.1` })),
   clients: ["10.10.0.0/16", "100.64.0.0/10"],
   classifier: "src-address",
   failover: "recursive",
@@ -50,10 +50,38 @@ describe("load balancing script (RouterOS v7)", () => {
     expect(lines).toContain('add dst-address=0.0.0.0/0 gateway=9.9.9.9 distance=1 target-scope=11 check-gateway=ping comment="LB: main por WAN3"')
     expect(lines).toContain('add chain=srcnat action=masquerade out-interface="ether2" comment="LB: NAT WAN2"')
   })
-  it("gateway failover and PPPoE links (no gateway IP: the interface)", () => {
-    const s = balanceScript(opts({ failover: "gateway", wans: [{ name: "WAN1", iface: "pppoe-out1", gateway: "", mbps: 1000, monitor: "" }, ...opts().wans.slice(1)] }))
+  it("gateway failover and PPPoE links (the gateway is the pppoe-out interface)", () => {
+    const s = balanceScript(opts({ failover: "gateway", wans: [{ name: "WAN1", type: "pppoe", iface: "pppoe-out1", gateway: "", mbps: 1000, monitor: "" }, ...opts().wans.slice(1)] }))
     expect(s).toContain('add dst-address=0.0.0.0/0 gateway=pppoe-out1 routing-table="to-WAN1" distance=1 check-gateway=ping')
     expect(s).not.toContain("scope=10")
+    expect(s).not.toContain("/ip dhcp-client")
+  })
+  it("DHCP links: routes take the client's gateway, the client keeps them current", () => {
+    const dhcp = opts({ wans: defaultWans(3) })
+    const lines = balanceScript(dhcp).split("\n")
+    const get = '[/ip dhcp-client get [find where interface="ether1"] gateway]'
+    // Recursive: only the watch route goes straight to the provider.
+    expect(lines).toContain(`add dst-address=1.1.1.1/32 gateway=${get} scope=10 comment="LB: vigila WAN1"`)
+    const client = lines.indexOf("/ip dhcp-client")
+    expect(client).toBeGreaterThan(lines.findIndex((l) => l.includes('comment="LB: main por WAN3"')))
+    expect(lines[client + 1]).toBe(
+      'set [find where interface="ether1"] add-default-route=no script=":if ([:tostr \\$bound] = \\"1\\") do={/ip route set [find where comment=\\"LB: vigila WAN1\\"] gateway=\\$\\"gateway-address\\"}"'
+    )
+    // Gateway failover: every route through that provider.
+    const gwMode = balanceScript(opts({ wans: defaultWans(2), failover: "gateway" }))
+    expect(gwMode).toContain(`add dst-address=0.0.0.0/0 gateway=${get} routing-table="to-WAN2" distance=2 check-gateway=ping comment="LB: to-WAN2 respaldo WAN1"`)
+    expect(leaseScript(defaultWans(1)[0], ["to-WAN1 por WAN1", "main por WAN1"])).toBe(
+      ':if ([:tostr $bound] = "1") do={/ip route set [find where comment="LB: to-WAN1 por WAN1" or comment="LB: main por WAN1"] gateway=$"gateway-address"}'
+    )
+    // Undo gives the clients their own default route back.
+    expect(BALANCE_UNDO.split("\n")[0]).toBe('/ip dhcp-client set [find where script~"LB: "] add-default-route=yes script=""')
+  })
+  it("a fixed IP needs its gateway; PPPoE on a physical port is suspicious", () => {
+    const base = opts().wans
+    const codes = (w: BalanceOptions["wans"]) => checkBalance(opts({ wans: w })).map((i) => i.code)
+    expect(codes([{ ...base[0], gateway: "" }, base[1]])).toContain("missingGateway")
+    expect(codes([{ ...base[0], type: "pppoe" }, base[1]])).toContain("pppoeIface")
+    expect(codes([{ ...base[0], type: "dhcp", gateway: "" }, base[1]])).toEqual([])
   })
   it("unequal links get proportional slots", () => {
     const s = balanceScript(opts({ wans: opts().wans.map((w, k) => ({ ...w, mbps: k === 2 ? 500 : 1000 })) }))
@@ -143,8 +171,9 @@ describe("share link: deployment, OLT and links", () => {
       ...initialState(),
       deployment: "Pedregal, torre B | 2",
       wans: [
-        { name: "WAN1", iface: "sfp-sfpplus1", gateway: "201.150.1.1", mbps: 1000, monitor: "1.1.1.1" },
-        { name: "Telmex", iface: "pppoe-out1", gateway: "", mbps: 500, monitor: "8.8.8.8" },
+        { name: "WAN1", type: "static" as const, iface: "sfp-sfpplus1", gateway: "201.150.1.1", mbps: 1000, monitor: "1.1.1.1" },
+        { name: "Telmex", type: "pppoe" as const, iface: "pppoe-out1", gateway: "", mbps: 500, monitor: "8.8.8.8" },
+        { name: "Izzi", type: "dhcp" as const, iface: "ether3", gateway: "", mbps: 1000, monitor: "9.9.9.9" },
       ],
       balance: { ...DEFAULT_BALANCE, classifier: "both-addresses" as const, failover: "gateway" as const, nat: false, clients: ["10.20.0.0/16", "192.168.88.0/24"] },
       capacity: { ...DEFAULT_CAPACITY, oltModel: "ma5800x7" as const, pon: "xgspon" as const, oltUplinkMbps: 20_000, internet: "single" as const, ponEfficiency: 0.9 },
@@ -158,5 +187,9 @@ describe("share link: deployment, OLT and links", () => {
     const bad = decodeState("#d=100,500,75,16,0&o=0.92,sideways,ma5608t,10000&w=src-address|recursive|1||")
     expect(bad?.capacity).toEqual(DEFAULT_CAPACITY)
     expect(bad?.wans).toEqual(initialState().wans)
+  })
+  it("links saved before the connection type: gateway IP = fixed, pppoe-out = PPPoE, a port without gateway = DHCP", () => {
+    const old = decodeState("#d=100,500,75,16,0&w=src-address|recursive|1|10.0.0.0%2F8|WAN1,ether1,,1000,1.1.1.1|WAN2,ether2,192.168.2.1,1000,8.8.8.8|WAN3,pppoe-out1,,500,9.9.9.9")
+    expect(old?.wans.map((w) => w.type)).toEqual(["dhcp", "static", "pppoe"])
   })
 })

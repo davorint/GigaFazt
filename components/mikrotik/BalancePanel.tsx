@@ -6,13 +6,14 @@ import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import { balanceScript, BALANCE_UNDO, checkBalance, CLASSIFIERS, pccWeights, type Wan } from "@/lib/mikrotik/balance"
+import { balanceScript, BALANCE_UNDO, checkBalance, CLASSIFIERS, pccWeights, WAN_TYPES, type Wan, type WanType } from "@/lib/mikrotik/balance"
 import { fmtRate } from "@/lib/mikrotik/format"
 import { MAX_WANS, nextMonitor, type BalanceState, type LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
 import { CodeBlock } from "./CodeBlock"
 import { IssueList } from "./IssueList"
 import { NumberField } from "./NumberField"
+import { SelectField } from "./SelectField"
 import { SetupChecks } from "./SetupChecks"
 import { TextField } from "./TextField"
 
@@ -34,7 +35,8 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
   const setWan = (k: number, patch: Partial<Wan>) => onWans(wans.map((w, i) => (i === k ? { ...w, ...patch } : w)))
   const addWan = () => {
     const n = wans.length + 1
-    onWans([...wans, { name: `WAN${n}`, iface: `ether${n}`, gateway: "", mbps: wans.at(-1)?.mbps ?? 1000, monitor: nextMonitor(wans) }])
+    const last = wans.at(-1)
+    onWans([...wans, { name: `WAN${n}`, type: last?.type ?? "dhcp", iface: `ether${n}`, gateway: "", mbps: last?.mbps ?? 1000, monitor: nextMonitor(wans) }])
   }
   const removeWan = (k: number) => onWans(wans.filter((_, i) => i !== k))
   const set = (patch: Partial<BalanceState>) => onBalance({ ...balance, ...patch })
@@ -69,10 +71,17 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
                   <X aria-hidden />
                 </Button>
               </div>
-              <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <TextField label={t("name")} value={w.name} onChange={(v) => setWan(k, { name: v.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24) })} />
-                <TextField label={t("iface")} value={w.iface} onChange={(v) => setWan(k, { iface: v.trim() })} />
-                <TextField label={t("gateway")} value={w.gateway} onChange={(v) => setWan(k, { gateway: v.trim() })} hint={k === 0 ? t("gatewayHint") : undefined} />
+                <SelectField label={t("type")} value={w.type} onChange={(v) => setWan(k, { type: v as WanType })} hint={t(`typeHint.${w.type}`)}>
+                  {WAN_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {t(`types.${type}`)}
+                    </option>
+                  ))}
+                </SelectField>
+                <TextField label={t("iface")} value={w.iface} onChange={(v) => setWan(k, { iface: v.trim() })} hint={t(`ifaceHint.${w.type}`)} />
+                {w.type === "static" && <TextField label={t("gateway")} value={w.gateway} onChange={(v) => setWan(k, { gateway: v.trim() })} />}
                 <NumberField label={t("mbps")} unit="Mbps" value={w.mbps} min={1} max={1e6} onChange={(v) => v !== null && setWan(k, { mbps: v })} />
                 {recursive && <TextField label={t("monitor")} value={w.monitor} onChange={(v) => setWan(k, { monitor: v.trim() })} hint={k === 0 ? t("monitorHint") : undefined} />}
               </div>
