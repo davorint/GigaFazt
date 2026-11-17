@@ -16,10 +16,10 @@ export const LAYOUTS: Record<string, Layout> = {
   ma5603t: { service: range(0, 5), control: [6, 7], uplink: [8, 9], power: [10, 11], fanW: 72 },
   "ma5600t-etsi": { service: [...range(1, 8), ...range(11, 18)], control: [9, 10], uplink: [19, 20], power: [21, 22], fanW: 67 },
   "ma5600t-iec": { service: [...range(1, 6), ...range(9, 16)], control: [7, 8], uplink: [17, 18], power: [19, 20], fanW: 88 },
-  "ma5800-x2": { service: [1, 2], control: [3, 4], uplink: [], power: [0] },
-  "ma5800-x7": { service: range(1, 7), control: [8, 9], uplink: [], power: [10, 11] },
-  "ma5800-x15": { service: [...range(1, 7), ...range(10, 17)], control: [8, 9], uplink: [], power: [18, 19] },
-  "ma5800-x17": { service: [...range(1, 8), ...range(11, 19)], control: [9, 10], uplink: [], power: [20, 21] },
+  "ma5800-x2": { service: [1, 2], control: [3, 4], uplink: [], power: [0], fanW: 63 },
+  "ma5800-x7": { service: range(1, 7), control: [8, 9], uplink: [], power: [10, 11], fanW: 189 },
+  "ma5800-x15": { service: [...range(1, 7), ...range(10, 17)], control: [8, 9], uplink: [], power: [18, 19], fanW: 225 },
+  "ma5800-x17": { service: [...range(1, 8), ...range(11, 19)], control: [9, 10], uplink: [], power: [20, 21], fanW: 139 },
 }
 
 export type PonTech = "gpon" | "xgpon" | "xgspon" | "comboXg" | "comboXgs" | "flex"

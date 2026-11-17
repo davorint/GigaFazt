@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { BOARDS, BUDGETS, CHASSIS, CVE_9067, DOWN_CAUSES, MODULES, ONTS, OPTICS, SOURCES, TROUBLE, compareVersions, type Fact } from "./olt-kb"
+import { BOARDS, BUDGETS, CHASSIS, FAN_TRAYS, CVE_9067, DOWN_CAUSES, MODULES, ONTS, OPTICS, SOURCES, TROUBLE, compareVersions, type Fact } from "./olt-kb"
+import { LAYOUTS } from "./olt-build"
 import { matchInternal } from "./internal-pages"
 
 const isFact = (x: unknown): x is Fact<unknown> => !!x && typeof x === "object" && "v" in x && "src" in x
@@ -64,5 +65,25 @@ describe("/olt is an internal page", () => {
     expect(matchInternal("/ES/Olt")).toEqual({ rewriteTo: "/es/olt" })
     expect(matchInternal("/olte")).toBeNull()
     expect(matchInternal("/es/planes")).toBeNull()
+  })
+})
+
+describe("fan trays", () => {
+  it("every chassis has one, each in the board list for that chassis, with its watts and a known source", () => {
+    for (const c of CHASSIS) expect(FAN_TRAYS.some((f) => f.chassis === c.id), c.id).toBe(true)
+    for (const f of FAN_TRAYS) {
+      const b = BOARDS.find((x) => x.code === f.code)
+      expect(b?.kind, f.code).toBe("fan")
+      expect(b?.chassis, f.code).toContain(f.chassis)
+      expect(f.power.v).toBe(`${f.w.s} / ${f.w.m} W`)
+      for (const fact of [f.fans, f.place, f.dimensions, f.weight, f.power]) expect(SOURCES.some((s) => s.id === fact.src), fact.src).toBe(true)
+      if (f.replacedBy) expect(BOARDS.some((x) => x.code === f.replacedBy!.v), f.replacedBy.v).toBe(true)
+    }
+  })
+  it("the builder counts the largest tray of each chassis", () => {
+    for (const c of CHASSIS) {
+      const max = Math.max(...FAN_TRAYS.filter((f) => f.chassis === c.id).map((f) => f.w.m))
+      expect(LAYOUTS[c.id]?.fanW, c.id).toBe(max)
+    }
   })
 })

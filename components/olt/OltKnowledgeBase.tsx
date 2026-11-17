@@ -8,6 +8,7 @@ import { SelectField } from "@/components/mikrotik/SelectField"
 import { BoardCompare } from "./BoardCompare"
 import { ModifiedChassis } from "./ModifiedChassis"
 import { OltCommands } from "./OltCommands"
+import { OltFans } from "./OltFans"
 import { OpticBudget } from "./OpticBudget"
 import { Src } from "./Src"
 import { OltBuilder } from "./OltBuilder"
@@ -18,12 +19,13 @@ import { OltTrouble } from "./OltTrouble"
 import { OpticModules } from "./OpticModules"
 import { BOARD_KINDS, BOARDS, CHASSIS, OPTICS, SOURCES, chassisName, type Board, type BoardKind, type Chassis, type Fact, type Family } from "@/lib/olt-kb"
 
-const SECTIONS = ["chassis", "builder", "boards", "power", "optics", "onts", "compat", "modified", "software", "buying", "trouble", "commands", "sources"] as const
+const SECTIONS = ["chassis", "builder", "boards", "power", "fans", "optics", "onts", "compat", "modified", "software", "buying", "trouble", "commands", "sources"] as const
 const ANCHOR: Record<(typeof SECTIONS)[number], string> = {
   chassis: "chasis",
   builder: "armar",
   boards: "tarjetas",
   power: "energia",
+  fans: "ventiladores",
   optics: "opticas",
   onts: "onts",
   compat: "compatibilidad",
@@ -326,6 +328,10 @@ export function OltKnowledgeBase() {
 
       <Section id={ANCHOR.power} name="olt-power" title={t("power.title")} lead={t("power.lead")}>
         <OltPower />
+      </Section>
+
+      <Section id={ANCHOR.fans} name="olt-fans" title={t("fans.title")} lead={t("fans.lead")}>
+        <OltFans />
       </Section>
 
       <Section id={ANCHOR.optics} name="olt-optics" title={t("optics.title")} lead={t("optics.lead")}>

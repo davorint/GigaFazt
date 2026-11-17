@@ -20,6 +20,7 @@
         "builder": "Arma tu OLT",
         "boards": "Tarjetas",
         "power": "Energía",
+        "fans": "Ventiladores",
         "optics": "Ópticas",
         "onts": "ONT",
         "compat": "Compatibilidad",
@@ -144,7 +145,7 @@
         "H801SCUL (EOM) → H801SCUN o H802SCUN; H801SCUN → H802SCUN (mismo slot)",
         "H801X1CA y H801X2CA (EOM) → H801X2CS",
         "H801PRTA (EOP) y H801PRTG (EOM) → H801PRTE",
-        "Ventiladores: FCBB → FCBI (ETSI), FCBC → FCBH (IEC), FMCA → FCBI (MA5603T)"
+        "Ventiladores: FCBB → FCBI (ETSI), FCBC → FCBH (IEC), FMCA → FCBI (MA5603T); MA5800: H901FMLA → H902FMLA (X15/X17), H901FMMA → H903FMMA (X7)"
       ],
       "familyTitle": "Entre familias",
       "family": [
@@ -660,6 +661,44 @@
         "El ETP4890-A2 avisa por SNMP y web (SMU01A) de falla de luz, batería baja y rectificador dañado: conéctalo a tu VLAN de gestión y súmalo a las alertas.",
         "Al comprar uno usado: que traiga la SMU y rectificadores del modelo que acepta (R4830G1/N2 o R4815G1/N1 en el ETP4890-A2), y pide el cable y el breaker de batería."
       ]
+    },
+    "fans": {
+      "title": "Ventiladores",
+      "lead": "La charola de cada chasis: qué pedir, cuántos ventiladores lleva, por dónde sale el aire, medidas, peso y consumo. Las viejas primero y luego la que las reemplaza.",
+      "family": {
+        "ma5600": "MA5600T, MA5603T y MA5608T",
+        "ma5800": "MA5800"
+      },
+      "caption": "Charolas de ventiladores: {family}",
+      "cols": {
+        "chassis": "Chasis",
+        "code": "Charola o tarjeta",
+        "fans": "Ventiladores",
+        "place": "Dónde va y el aire",
+        "size": "Medidas (an × fondo × al)",
+        "weight": "Peso",
+        "power": "Consumo (estático / máx.)",
+        "next": "Reemplazo"
+      },
+      "place": {
+        "top": "Arriba; saca el aire caliente por arriba",
+        "left": "A la izquierda; el aire entra por la izquierda y sale por la derecha",
+        "right": "A la derecha; el aire entra por la izquierda y sale por la derecha"
+      },
+      "current": "Vigente",
+      "notesTitle": "Para comprar e instalar",
+      "notes": [
+        "H801FCBI son dos charolas distintas con el mismo código: la del MA5600T ETSI va arriba (486 mm de ancho, 4 ventiladores) y la del MA5603T va al costado (53 mm, 6 ventiladores). Pide la de tu chasis.",
+        "En el MA5800-X15 y el X17 la tarjeta de monitoreo es la misma (FMLA), pero las charolas miden distinto (448 y 503 mm de ancho) y llevan 6 y 8 ventiladores: pide la del chasis.",
+        "Reemplazos del MA5800: H901FMLA → H902FMLA y H901FMMA → H903FMMA; las nuevas piden V100R017C10 o posterior.",
+        "Charolas del MA5600T: los interruptores DIP de la tarjeta de monitoreo fijan la dirección del nodo (debe coincidir con la configuración y no repetir la de la tarjeta de monitoreo de ambiente) y el número de ventiladores; si cambias de charola, deja los interruptores como los indica Huawei para esa charola.",
+        "La velocidad va en automático por omisión (el sistema la ajusta con la temperatura de las tarjetas). En manual va del nivel 0 al 6; en el MA5800 también por porcentaje, de 20 a 100 % (X15: de 30 a 100 %). Si la temperatura del lugar pasa los límites del equipo, la OLT da alarma de temperatura alta.",
+        "El MA5608T arranca sus ventiladores a toda velocidad al encender o reiniciar (autoprueba) y luego baja: es normal.",
+        "En las charolas ETSI e IEC del MA5600T cada ventilador se cambia por separado.",
+        "MA5800-X7: la edición 03 de la descripción de hardware (2015) daba 70 W de máximo y la 22 (2019) da 189 W. Dimensiona la energía con 189 W.",
+        "El consumo máximo de la charola de cada chasis ya entra en el total de «Arma tu OLT»."
+      ],
+      "note": "Medidas, peso, número de ventiladores y consumo de las descripciones de hardware de Huawei: MA5600T/MA5603T/MA5608T edición 08 (2013) y MA5800 edición 22 (2019)."
     }
   }
 }

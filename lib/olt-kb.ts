@@ -66,6 +66,8 @@ export const SOURCES: Source[] = [
   { id: "iatecOnu", kind: "reseller", title: "IA Tecnologia: ONU con LOS u offline en OLT Huawei, diagnóstico completo", url: "https://iatecnologia.net/onu-los-offline-olt-huawei/" },
   // Power.
   { id: "etp4890", kind: "huawei", title: "ETP4890-A2 Embedded Power User Manual, Issue 10 (copia publicada por una tienda)", url: "https://cdn.awsli.com.br/147/147951/arquivos/ETP4890-A2%20Embedded%20Power%20User%20Manual.pdf", date: "2017-11-28" },
+  { id: "hd5800i22", kind: "huawei", title: "SmartAX MA5800 Multi-service Access Module Hardware Description, Issue 22 (copia en PDFCOFFEE; texto leído completo)", url: "https://pdfcoffee.com/huawei-14-pdf-free.html", date: "2019-06-30" },
+  { id: "hd5800i03", kind: "huawei", title: "SmartAX MA5800 Multi-service Access Module Hardware Description, Issue 03 (PDF publicado por una tienda; texto extraído localmente)", url: "https://lanmarket.ua/upload/iblock/c4d/vs7ony90amoih5jju6y0i3nkomkt4el9.pdf", date: "2015-04-30" },
   { id: "hd5800", kind: "huawei", title: "MA5800 Hardware Description (copia en Scribd; leída por los extractos del buscador)", url: "https://www.scribd.com/document/431825818/MA5800-Hardware-Description" },
   { id: "tlPila", kind: "reseller", title: "Thunder-link: H901PILA (tarjeta de energía DC del MA5800)", url: "https://www.thunder-link.com/h901pila.html" },
   { id: "tlEtp48100", kind: "reseller", title: "Thunder-link: ETP48100-A1-50A, sistema de energía −48 V", url: "https://www.thunder-link.com/etp48100-a1-50a" },
@@ -153,7 +155,7 @@ export const CHASSIS: Chassis[] = [
     powerBoards: ["H801PRTE", "H801PRTG"],
     power: h("Solo DC −48/−60 V (−38.4 a −72 V), 20 A máx."),
     maxPower: h("816.55 W (2 × SCUH + 6 × H802GPFD, prueba de Huawei)"),
-    fans: h("FMCA (6 ventiladores, 30 W / 72 W) o FCBI (16 W / 67 W)"),
+    fans: h("FMCA (6 ventiladores, 30 W / 72 W) o FCBI (6 ventiladores, 16 W / 67 W)"),
     gpon: ds("96"),
     tenG: ds("48 (10G GPON)"),
     ge: ds("288"),
@@ -176,7 +178,7 @@ export const CHASSIS: Chassis[] = [
     powerBoards: ["H801PRTE", "H801PRTG", "H801PRTA"],
     power: ds("Solo DC −48 V (−38.4 a −72 V), dos entradas"),
     maxPower: h("1810.55 W (configuración P2P); con 16 × H805GPBD: 803 W estático, 899 W típico, 995 W máx."),
-    fans: h("FCBB (4 ventiladores, 23 W / 65 W) o FCBI (13 W / 67 W)"),
+    fans: h("FCBB (4 ventiladores, 23 W / 65 W) o FCBI (4 ventiladores, 13 W / 67 W)"),
     gpon: ds("256"),
     tenG: ds("128 (10G GPON)"),
     ge: ds("768"),
@@ -199,7 +201,7 @@ export const CHASSIS: Chassis[] = [
     powerBoards: ["H801PRTE", "H801PRTG", "H801PRTA"],
     power: ds("Solo DC −48 V (−38.4 a −72 V)"),
     maxPower: h("1379.55 W (configuración VDSL2 de prueba)"),
-    fans: h("FCBH (10 ventiladores, 21 W / 88 W)"),
+    fans: h("FCBC (8 ventiladores, 49 W / 69 W) o FCBH (10 ventiladores, 21 W / 88 W)"),
     gpon: r("224", "isphome"),
     switching: ds("Backplane 3.2 Tbit/s"),
     temperature: ds("−25 a +55 °C, 5–95 % HR"),
@@ -219,6 +221,7 @@ export const CHASSIS: Chassis[] = [
     powerSlots: d8("1 (slot 0)"),
     powerBoards: ["H901PISA", "H901PISB"],
     power: d8("DC −48/−60 V (−38.4 a −72 V, 20 A) o AC 100–240 V (8 A) con batería de respaldo"),
+    fans: r("H901FMSA (2 ventiladores, a la derecha, 6 W / 63 W)", "hd5800i22"),
     gpon: d8("32"),
     tenG: d8("32 XG-PON o 32 XGS-PON"),
     ge: d8("96 GE, 16 × 10GE"),
@@ -241,6 +244,7 @@ export const CHASSIS: Chassis[] = [
     powerSlots: d8("2 (slots 10–11)"),
     powerBoards: ["H901PILA"],
     power: d8("DC −48/−60 V (−38.4 a −72 V), doble entrada, 40 A"),
+    fans: r("H901FMMA o H903FMMA (6 ventiladores, a la derecha, 14 W / 189 W)", "hd5800i22"),
     gpon: d8("112"),
     tenG: d8("112 XG-PON o 112 XGS-PON"),
     ge: d8("336 GE, 168 × 10GE"),
@@ -263,6 +267,7 @@ export const CHASSIS: Chassis[] = [
     powerSlots: d8("2 (slots 18–19)"),
     powerBoards: ["H901PILA"],
     power: d8("DC −48/−60 V (−38.4 a −72 V), doble entrada, 60 A"),
+    fans: r("H901FMLA o H902FMLA (6 ventiladores, arriba, 18 W / 225 W)", "hd5800i22"),
     gpon: d8("240"),
     tenG: d8("240 XG-PON o 240 XGS-PON"),
     ge: d8("720 GE, 360 × 10GE"),
@@ -285,6 +290,7 @@ export const CHASSIS: Chassis[] = [
     powerSlots: d8("2 (slots 20–21)"),
     powerBoards: ["H901PILA"],
     power: d8("DC −48/−60 V (−38.4 a −72 V), doble entrada, 60 A"),
+    fans: r("H901FMLA o H902FMLA (8 ventiladores, arriba, 20 W / 139 W)", "hd5800i22"),
     gpon: d8("272"),
     tenG: d8("272 XG-PON o 272 XGS-PON"),
     ge: d8("816 GE, 408 × 10GE"),
@@ -372,9 +378,12 @@ export const BOARDS: Board[] = [
   { code: "H801MPWC", kind: "power", family: "ma5600", ports: h("2 entradas −48 V DC (10 A cada una)"), power: h("2.5 W"), chassis: ["ma5608t"], minVersion: h("V800R012C00") },
   { code: "H801MPWE", kind: "power", family: "ma5600", ports: ds("1 entrada −48 V DC (tarjeta DC sencilla)"), chassis: ["ma5608t"], detail: ds("Solo aparece en la lista de partes del datasheet; sin ficha en la descripción de hardware") },
   { code: "H801MPWD", kind: "power", family: "ma5600", ports: h("AC 100–240 V, 6 A; salida −48 V, 400 W; entrada de batería"), power: h("2 W; eficiencia máx. 93 %"), chassis: ["ma5608t"], minVersion: h("V800R012C00") },
-  { code: "H801FCBI", kind: "fan", family: "ma5600", ports: h("Charola de ventiladores ETSI o MA5603T"), power: h("13–16 / 67 W"), chassis: ["ma5600t-etsi", "ma5603t"], detail: h("Reemplaza a FCBB (ETSI) y a FMCA (MA5603T)") },
-  { code: "H801FCBH", kind: "fan", family: "ma5600", ports: h("Charola IEC, 10 ventiladores"), power: h("21 / 88 W"), chassis: ["ma5600t-iec"], detail: h("Reemplaza a FCBC") },
-  { code: "H831FCBB", kind: "fan", family: "ma5600", ports: h("Charola MA5608T, 2 ventiladores"), power: h("4 / 39 W"), chassis: ["ma5608t"], minVersion: h("V800R012C00") },
+  { code: "H801FCBB", kind: "fan", family: "ma5600", ports: h("Charola ETSI (arriba), 4 ventiladores; 486 × 245.2 × 44 mm, 2.9 kg"), power: h("23 / 65 W"), chassis: ["ma5600t-etsi"], replacedBy: h(["H801FCBI"]) },
+  { code: "H801FCBI", kind: "fan", family: "ma5600", ports: h("Charola ETSI (arriba, 4 ventiladores, 486 × 245.2 × 44 mm, 2.9 kg) o MA5603T (lateral, 6 ventiladores, 53 × 272.5 × 245.7 mm, 2 kg)"), power: h("13 / 67 W (ETSI) · 16 / 67 W (MA5603T)"), chassis: ["ma5600t-etsi", "ma5603t"], detail: h("Mismo código para dos charolas distintas: pide la de tu chasis. Reemplaza a FCBB (ETSI) y a FMCA (MA5603T)") },
+  { code: "H801FCBC", kind: "fan", family: "ma5600", ports: h("Charola IEC (arriba), 8 ventiladores; 438 × 245 × 38.5 mm, 2.2 kg"), power: h("49 / 69 W"), chassis: ["ma5600t-iec"], replacedBy: h(["H801FCBH"]) },
+  { code: "H801FCBH", kind: "fan", family: "ma5600", ports: h("Charola IEC (arriba), 10 ventiladores; 438 × 245 × 38.5 mm, 2.55 kg"), power: h("21 / 88 W"), chassis: ["ma5600t-iec"], detail: h("Reemplaza a FCBC") },
+  { code: "H801FMCA", kind: "fan", family: "ma5600", ports: h("Charola MA5603T (lateral), 6 ventiladores; 53 × 272.5 × 245.7 mm, 0.7 kg"), power: h("30 / 72 W"), chassis: ["ma5603t"], replacedBy: h(["H801FCBI"]) },
+  { code: "H831FCBB", kind: "fan", family: "ma5600", ports: h("Charola MA5608T (lateral), 2 ventiladores; 29 × 220 × 85.5 mm, 0.5 kg"), power: h("4 / 39 W"), chassis: ["ma5608t"], minVersion: h("V800R012C00"), detail: ds("En la lista de partes: H831FCBB0") },
   // ── MA5800 ────────────────────────────────────────────────────────────────
   { code: "H901MPLB", kind: "control", family: "ma5800", ports: d8("4 × 10GE/GE por tarjeta (8 con dos tarjetas)"), chassis: BIG_5800, detail: d8("7.0 Tbit/s, 200 Gbit/s por slot") },
   { code: "H901MPLA", kind: "control", family: "ma5800", ports: d8("4 × 10GE/GE por tarjeta"), chassis: BIG_5800, detail: d8("3.6 Tbit/s, 100 Gbit/s por slot") },
@@ -401,11 +410,51 @@ export const BOARDS: Board[] = [
   { code: "H902NCEB", kind: "uplink", family: "ma5800", ports: r("2 × 100GE", "telecomate"), chassis: BIG_5800 },
   { code: "H901PILA", kind: "power", family: "ma5800", ports: r("1 entrada −48/−60 V DC (−38.4 a −72 V) por 2 terminales OT de 100 A", "tlPila"), power: r("0.5 / 4 W", "tlPila"), chassis: BIG_5800, detail: r("Número de parte 03022RVX; dos tarjetas = doble alimentación", "tlPila") },
   { code: "H901PISB", kind: "power", family: "ma5800", ports: h("1 entrada AC 220 V o 110 V, salida de 600 W, respaldo con batería", "hd5800"), chassis: ["ma5800-x2"] },
+  { code: "H901FMLA", kind: "fan", family: "ma5800", ports: r("Monitoreo de la charola del X17 (8 ventiladores, 503 × 284 × 76 mm, 4.4 kg) y del X15 (6 ventiladores, 448 × 284 × 76 mm, 4.9 kg)", "hd5800i22"), power: r("X17: 20 / 139 W · X15: 18 / 225 W", "hd5800i22"), chassis: ["ma5800-x15", "ma5800-x17"], replacedBy: r(["H902FMLA"], "hd5800i22"), detail: r("Misma tarjeta en las dos, pero las charolas miden distinto: pide la de tu chasis", "hd5800i22") },
+  { code: "H902FMLA", kind: "fan", family: "ma5800", ports: r("Monitoreo de la charola del X17 y del X15 (sucesora de H901FMLA)", "hd5800i22"), chassis: ["ma5800-x15", "ma5800-x17"], minVersion: r("V100R017C10", "hd5800i22") },
+  { code: "H901FMMA", kind: "fan", family: "ma5800", ports: r("Monitoreo de la charola del X7 (a la derecha, 6 ventiladores, 43.6 × 257.5 × 260.4 mm, 2 kg)", "hd5800i22"), power: r("14 / 189 W", "hd5800i22"), chassis: ["ma5800-x7"], minVersion: r("V100R016C00", "hd5800i22"), replacedBy: r(["H903FMMA"], "hd5800i22"), detail: r("La edición 03 (2015) daba 70 W de máximo y 1.7 kg; la 22 (2019) da 189 W: dimensiona con 189 W", "hd5800i03") },
+  { code: "H903FMMA", kind: "fan", family: "ma5800", ports: r("Monitoreo de la charola del X7 (sucesora de H901FMMA)", "hd5800i22"), chassis: ["ma5800-x7"], minVersion: r("V100R017C10", "hd5800i22") },
+  { code: "H901FMSA", kind: "fan", family: "ma5800", ports: r("Monitoreo de la charola del X2 (a la derecha, 2 ventiladores, 43.6 × 286.7 × 88.1 mm, 0.7 kg)", "hd5800i22"), power: r("6 / 63 W", "hd5800i22"), chassis: ["ma5800-x2"] },
   { code: "H901PISA", kind: "power", family: "ma5800", ports: r("DC (MA5800-X2)", "telecomate"), chassis: ["ma5800-x2"] },
 ]
 
+/**
+ * The fan tray of each chassis (owner, 2026-11-17: "add the fan trays"): what to order, how many fans, where it sits and
+ * which way the air goes, size (width × depth × height, mm; Huawei lists the MA5800-X2/X7 ones as height × width ×
+ * depth), weight and static / max power. Older trays first, then the one that replaces them.
+ */
+export type FanTray = {
+  chassis: string
+  code: string
+  fans: Fact<number>
+  /** Where it sits and the air path. */
+  place: Fact<"top" | "left" | "right">
+  dimensions: Fact
+  weight: Fact
+  power: Fact
+  /** Static and max W, for checks against the builder. */
+  w: { s: number; m: number }
+  replacedBy?: Fact<string>
+}
+
+const i22 = <T>(v: T): Fact<T> => ({ v, src: "hd5800i22" })
+
+export const FAN_TRAYS: FanTray[] = [
+  { chassis: "ma5608t", code: "H831FCBB", fans: h(2), place: h("left"), dimensions: h("29 × 220 × 85.5"), weight: h("0.5 kg"), power: h("4 / 39 W"), w: { s: 4, m: 39 } },
+  { chassis: "ma5603t", code: "H801FMCA", fans: h(6), place: h("left"), dimensions: h("53 × 272.5 × 245.7"), weight: h("0.7 kg"), power: h("30 / 72 W"), w: { s: 30, m: 72 }, replacedBy: h("H801FCBI") },
+  { chassis: "ma5603t", code: "H801FCBI", fans: h(6), place: h("left"), dimensions: h("53 × 272.5 × 245.7"), weight: h("2.0 kg"), power: h("16 / 67 W"), w: { s: 16, m: 67 } },
+  { chassis: "ma5600t-etsi", code: "H801FCBB", fans: h(4), place: h("top"), dimensions: h("486 × 245.2 × 44"), weight: h("2.9 kg"), power: h("23 / 65 W"), w: { s: 23, m: 65 }, replacedBy: h("H801FCBI") },
+  { chassis: "ma5600t-etsi", code: "H801FCBI", fans: h(4), place: h("top"), dimensions: h("486 × 245.2 × 44"), weight: h("2.9 kg"), power: h("13 / 67 W"), w: { s: 13, m: 67 } },
+  { chassis: "ma5600t-iec", code: "H801FCBC", fans: h(8), place: h("top"), dimensions: h("438 × 245 × 38.5"), weight: h("2.2 kg"), power: h("49 / 69 W"), w: { s: 49, m: 69 }, replacedBy: h("H801FCBH") },
+  { chassis: "ma5600t-iec", code: "H801FCBH", fans: h(10), place: h("top"), dimensions: h("438 × 245 × 38.5"), weight: h("2.55 kg"), power: h("21 / 88 W"), w: { s: 21, m: 88 } },
+  { chassis: "ma5800-x2", code: "H901FMSA", fans: i22(2), place: i22("right"), dimensions: i22("286.7 × 88.1 × 43.6"), weight: i22("0.7 kg"), power: i22("6 / 63 W"), w: { s: 6, m: 63 } },
+  { chassis: "ma5800-x7", code: "H901FMMA", fans: i22(6), place: i22("right"), dimensions: i22("257.5 × 260.4 × 43.6"), weight: i22("2.0 kg"), power: i22("14 / 189 W"), w: { s: 14, m: 189 }, replacedBy: i22("H903FMMA") },
+  { chassis: "ma5800-x15", code: "H901FMLA", fans: i22(6), place: i22("top"), dimensions: i22("448 × 284 × 76"), weight: i22("4.9 kg"), power: i22("18 / 225 W"), w: { s: 18, m: 225 }, replacedBy: i22("H902FMLA") },
+  { chassis: "ma5800-x17", code: "H901FMLA", fans: i22(8), place: i22("top"), dimensions: i22("503 × 284 × 76"), weight: i22("4.4 kg"), power: i22("20 / 139 W"), w: { s: 20, m: 139 }, replacedBy: i22("H902FMLA") },
+]
+
 /** GPON/XG-PON optical module classes. */
-export type OpticClass = { id: string; budget: Fact; tx?: Fact; sensitivity?: Fact; split?: Fact; use: string }
+export type OpticClass ={ id: string; budget: Fact; tx?: Fact; sensitivity?: Fact; split?: Fact; use: string }
 export const OPTICS: OpticClass[] = [
   { id: "B+", budget: h("28.5 dB"), tx: r("+1.5 a +5 dBm", "thunderlink"), sensitivity: r("−28 dBm", "thunderlink"), split: r("1:64 en la práctica", "telecomate"), use: "bPlus" },
   { id: "C+", budget: h("32 dB"), tx: r("+3 a +7 dBm", "thunderlink"), sensitivity: r("−32 dBm", "thunderlink"), split: h("1:128 (Huawei pide C+ para llegar a 1:128)", "brochure5600"), use: "cPlus" },
