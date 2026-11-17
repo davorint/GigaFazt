@@ -1,0 +1,270 @@
+{
+  "levantamientos": {
+    "meta": {
+      "title": "Levantamientos · Interno"
+    },
+    "kicker": "Uso interno",
+    "title": "Levantamientos",
+    "lead": "Todo lo del edificio antes de un despliegue: contactos y permisos, lo comercial, el cuarto de telecomunicaciones, cada torre por piso, rutas, Wi-Fi de áreas comunes, carriers y pendientes. Se llena en el celular durante la visita.",
+    "back": "Herramientas internas",
+    "storage": "Se guarda solo en este navegador. Para pasarlo al teléfono o a la computadora de tu socio, usa «Exportar» y luego «Importar» allá.",
+    "noStorage": "Este navegador no deja guardar: lo que llenes se pierde al cerrar la página. Exporta antes de salir.",
+    "list": {
+      "new": "Nuevo levantamiento",
+      "empty": "Todavía no hay levantamientos en este navegador.",
+      "open": "Abrir",
+      "untitled": "Sin nombre",
+      "updated": "Actualizado {date}",
+      "progress": "{done} de {total} datos",
+      "exportAll": "Exportar todos",
+      "import": "Importar archivo",
+      "imported": "Importado: {added} nuevos, {replaced} actualizados, {kept} sin cambio (tu copia era más nueva).",
+      "badFile": "Ese archivo no es un levantamiento de GigaFazt.",
+      "status": {
+        "draft": "Borrador",
+        "done": "Terminado"
+      }
+    },
+    "editor": {
+      "backToList": "Todos los levantamientos",
+      "section": "Sección",
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "status": "Estado",
+      "export": "Exportar este",
+      "delete": "Borrar levantamiento",
+      "confirmDelete": "¿Borrar «{name}» de este navegador? No se puede deshacer (si lo exportaste, el archivo sigue).",
+      "saved": "Guardado en este navegador",
+      "notFound": "Ese levantamiento no está en este navegador. Puede estar en otro teléfono: impórtalo desde su archivo.",
+      "add": "Agregar",
+      "remove": "Quitar",
+      "yes": "Sí",
+      "no": "No",
+      "unknown": "Sin dato",
+      "pendingApproval": "Pendiente"
+    },
+    "sections": {
+      "ident": "Identificación",
+      "contacts": "Contactos y permisos",
+      "commercial": "Comercial",
+      "room": "Cuarto de telecom",
+      "towers": "Torres y pisos",
+      "routes": "Rutas",
+      "areas": "Áreas comunes",
+      "carriers": "Carriers",
+      "pending": "Pendientes"
+    },
+    "ident": {
+      "name": "Nombre del inmueble",
+      "address": "Dirección",
+      "municipality": "Alcaldía o municipio",
+      "location": "Ubicación",
+      "locate": "Usar mi ubicación",
+      "locating": "Buscando…",
+      "locateError": "No se pudo leer la ubicación del teléfono (permiso o señal). Puedes escribirla.",
+      "lat": "Latitud",
+      "lng": "Longitud",
+      "visitDate": "Fecha de la visita",
+      "surveyors": "Quién hizo el levantamiento"
+    },
+    "contacts": {
+      "title": "Contactos",
+      "role": "Cargo",
+      "roles": {
+        "administrador": "Administrador",
+        "comite": "Comité / mesa directiva",
+        "mantenimiento": "Mantenimiento / ingeniero",
+        "otro": "Otro"
+      },
+      "name": "Nombre",
+      "phone": "Teléfono",
+      "email": "Correo",
+      "notes": "Notas",
+      "permitsTitle": "Permisos",
+      "assembly": "Aprobación de la asamblea",
+      "assemblyDate": "Fecha de la asamblea",
+      "agreement": "Convenio firmado",
+      "agreementDate": "Fecha del convenio",
+      "workHours": "Horario para trabajar",
+      "workHoursHint": "Ej.: lunes a viernes de 9 a 18 h, sábado de 9 a 14 h.",
+      "accessRules": "Reglas de acceso",
+      "accessRulesHint": "Identificación, aviso previo, seguro, quién abre el cuarto, estacionamiento para el técnico.",
+      "rules": "Lo que dice el reglamento interno",
+      "rulesHint": "Restricciones en áreas comunes: perforar, canaletas a la vista, fachada, horarios. La ley de condominios deja esto al reglamento y a la asamblea."
+    },
+    "commercial": {
+      "units": "Departamentos en total",
+      "occupied": "Departamentos habitados",
+      "expected": "Clientes esperados",
+      "expectedHint": "Tu estimado para el primer año. No cuentes a todos: algunos ya tienen otro proveedor.",
+      "providersTitle": "Proveedores que ya están",
+      "provider": "Proveedor",
+      "tech": "Tecnología",
+      "techs": {
+        "fibra": "Fibra",
+        "coaxial": "Coaxial",
+        "cobre": "Cobre (DSL)",
+        "inalambrico": "Inalámbrico",
+        "none": "Sin dato"
+      },
+      "providerNotes": "Qué tienen en el ducto o en el cuarto",
+      "costsTitle": "Lo que cobra el edificio",
+      "rent": "Renta del espacio",
+      "power": "Luz",
+      "deposit": "Depósito",
+      "perMonth": "MXN/mes",
+      "mxn": "MXN",
+      "exclusivity": "Exclusividad",
+      "powerPaidBy": "Quién paga la luz del equipo",
+      "payers": {
+        "nosotros": "Nosotros",
+        "edificio": "El edificio",
+        "pendiente": "Pendiente",
+        "none": "Sin dato"
+      },
+      "notes": "Notas comerciales"
+    },
+    "room": {
+      "intro": "El cuarto de telecomunicaciones que ya tiene el edificio, donde van la OLT y el MikroTik.",
+      "location": "Dónde está",
+      "sharedWith": "Quién más tiene equipo ahí",
+      "rackU": "Espacio libre en rack",
+      "rackUUnit": "U",
+      "outlets": "Contactos libres",
+      "outletsUnit": "contactos",
+      "dedicatedBreaker": "Pastilla (interruptor) dedicada",
+      "amps": "Amperes de esa pastilla",
+      "ground": "Barra o punto de tierra",
+      "ventilation": "Ventilación o aire",
+      "access": "Acceso (llave, horario, quién abre)",
+      "carrierEntry": "Por dónde entran los carriers",
+      "toDuct": "Distancia al ducto de servicio",
+      "notes": "Notas del cuarto",
+      "energyLink": "Para elegir UPS o −48 V con baterías: /interno/olt → Energía."
+    },
+    "towers": {
+      "add": "Agregar torre",
+      "name": "Nombre de la torre",
+      "floorsAbove": "Niveles sobre la calle",
+      "floorsAboveHint": "Contando la planta baja (PB + 10 pisos = 11).",
+      "floorsBelow": "Sótanos",
+      "floorHeight": "Altura entre pisos",
+      "ductTitle": "Ducto de servicio",
+      "ductType": "Tipo de ducto",
+      "ductTypeHint": "Ej.: ducto vertical con registro en cada piso, tubo de 2 pulgadas, charola.",
+      "ductSpace": "Espacio libre en el ducto",
+      "spaces": {
+        "amplio": "Amplio",
+        "justo": "Justo",
+        "lleno": "Lleno",
+        "none": "Sin dato"
+      },
+      "ductOthers": "Qué hay ya en el ducto",
+      "firestop": "Sello cortafuego entre pisos",
+      "floorsTitle": "Pisos",
+      "floorsEmpty": "Escribe los niveles sobre la calle para ver los pisos.",
+      "floor": "Piso {n}",
+      "ground": "Planta baja",
+      "basement": "Sótano {n}",
+      "units": "Departamentos",
+      "farthest": "Al depto. más lejano",
+      "conduit": "Tubería a los departamentos",
+      "conduits": {
+        "si": "Sí, a todos",
+        "algunos": "A algunos",
+        "no": "No hay",
+        "obstruido": "Obstruida",
+        "none": "Sin dato"
+      },
+      "boxSpot": "Dónde va la caja",
+      "floorNotes": "Notas del piso",
+      "copy": "Copiar a los pisos vacíos",
+      "copyHint": "Pone departamentos, distancia y tubería de este piso en los pisos que aún no tienen datos.",
+      "unitsTotal": "{units} departamentos en {floors} pisos",
+      "notes": "Notas de la torre",
+      "remove": "Quitar torre",
+      "defaultName": "Torre {l}"
+    },
+    "routes": {
+      "intro": "Tramos por áreas comunes y entre torres: del cuarto al ducto, por estacionamiento, pasillos o jardines.",
+      "add": "Agregar tramo",
+      "item": "Tramo {n}",
+      "from": "Desde",
+      "to": "Hasta",
+      "kind": "Por dónde",
+      "kinds": {
+        "ducto": "Ducto",
+        "charola": "Charola",
+        "muro": "Muro (canaleta)",
+        "plafon": "Plafón",
+        "subterraneo": "Subterráneo",
+        "aereo": "Aéreo",
+        "otro": "Otro"
+      },
+      "meters": "Largo",
+      "obstacles": "Obstáculos",
+      "obstaclesHint": "Perforaciones, acabados que no se pueden tocar, horarios, humedad."
+    },
+    "areas": {
+      "intro": "Lobby, gimnasio, alberca, roof garden, salones: si quieren Wi-Fi y cómo llegar con cable.",
+      "add": "Agregar área",
+      "item": "Área {n}",
+      "kind": "Área",
+      "kinds": {
+        "lobby": "Lobby",
+        "gimnasio": "Gimnasio",
+        "alberca": "Alberca",
+        "roofgarden": "Roof garden",
+        "salon": "Salón de eventos",
+        "coworking": "Coworking",
+        "estacionamiento": "Estacionamiento",
+        "otro": "Otra"
+      },
+      "name": "Nombre o ubicación",
+      "wifi": "¿Quieren Wi-Fi?",
+      "m2": "Superficie aproximada",
+      "walls": "Muros y techo",
+      "wallsHint": "Concreto, tablaroca, vidrio; techo alto, plafón.",
+      "power": "Contacto cerca",
+      "route": "Cómo llega el cable",
+      "notes": "Notas"
+    },
+    "carriers": {
+      "intro": "Quién puede llevar fibra a esta dirección: velocidad, tiempo de entrega y tipo de IP.",
+      "add": "Agregar carrier",
+      "item": "Carrier {n}",
+      "name": "Carrier",
+      "available": "¿Da servicio aquí?",
+      "mbps": "Velocidad",
+      "leadDays": "Tiempo de entrega",
+      "days": "días",
+      "ip": "IP",
+      "ips": {
+        "publica": "Pública",
+        "nat": "Detrás de NAT",
+        "none": "Sin dato"
+      },
+      "entry": "Por dónde entraría",
+      "notes": "Notas"
+    },
+    "pending": {
+      "intro": "Lo que falta antes de instalar. Lo que le toca al edificio irá en el reporte para la administración.",
+      "add": "Agregar pendiente",
+      "text": "Pendiente",
+      "who": "Le toca a",
+      "whos": {
+        "edificio": "El edificio",
+        "nosotros": "Nosotros"
+      },
+      "done": "Hecho",
+      "empty": "Sin pendientes."
+    },
+    "contactItem": "Contacto {n}",
+    "providerItem": "Proveedor {n}",
+    "unit": {
+      "units": "deptos",
+      "clients": "clientes",
+      "levels": "niveles"
+    }
+  }
+}

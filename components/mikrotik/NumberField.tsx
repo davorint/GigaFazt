@@ -17,20 +17,22 @@ type Props = {
   /** Whole numbers only (burst-time). */
   integer?: boolean
   optional?: boolean
+  /** Decimals shown (default 3; coordinates need 6). */
+  precision?: number
   className?: string
 }
 
 const parse = (text: string) => Number(text.replace(/,/g, "").trim())
-const show = (v: number | null) => (v === null ? "" : String(Math.round(v * 1000) / 1000))
+const show = (v: number | null, precision = 3) => (v === null ? "" : String(Math.round(v * 10 ** precision) / 10 ** precision))
 
 /**
  * Numeric input that keeps what the user is typing (so "1." or "" don't jump)
  * and only reports valid values. External changes (a preset) replace the text.
  */
-export function NumberField({ label, value, onChange, unit, hint, min = 0, max = 1e6, integer, optional, className }: Props) {
+export function NumberField({ label, value, onChange, unit, hint, min = 0, max = 1e6, integer, optional, precision = 3, className }: Props) {
   const t = useTranslations("mikrotik.params")
   const id = useId()
-  const [text, setText] = useState(show(value))
+  const [text, setText] = useState(show(value, precision))
   const [invalid, setInvalid] = useState(false)
   const [prev, setPrev] = useState(value)
 
@@ -40,7 +42,7 @@ export function NumberField({ label, value, onChange, unit, hint, min = 0, max =
     setPrev(value)
     const typed = text.trim() === "" ? null : parse(text)
     if (typed !== value) {
-      setText(show(value))
+      setText(show(value, precision))
       setInvalid(false)
     }
   }
@@ -75,11 +77,11 @@ export function NumberField({ label, value, onChange, unit, hint, min = 0, max =
           onChange={(e) => commit(e.target.value)}
           onBlur={() => {
             if (invalid) return
-            setText(show(value))
+            setText(show(value, precision))
           }}
           className="h-10 bg-white/[0.03] pr-14 font-mono text-base tabular-nums md:text-sm"
         />
-        <span aria-hidden className="pointer-events-none absolute inset-y-0 right-3 flex items-center font-mono text-xs text-zinc-500">
+        <span aria-hidden className="pointer-events-none absolute inset-y-0 right-3 flex items-center font-mono text-xs text-zinc-400">
           {unit}
         </span>
       </div>

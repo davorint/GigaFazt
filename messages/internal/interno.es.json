@@ -8,6 +8,10 @@
     "title": "Herramientas internas",
     "lead": "Para el equipo de GigaFazt. Estas páginas no aparecen en el sitio público ni en buscadores.",
     "tools": {
+      "levantamientos": {
+        "name": "Levantamientos",
+        "desc": "Todo lo del edificio antes de un despliegue: contactos y permisos, lo comercial, cuarto de telecom, torres por piso, rutas, Wi-Fi de áreas comunes y carriers."
+      },
       "mikrotik-optimo": {
         "name": "Guía óptima MikroTik",
         "desc": "La guía paso a paso de cada despliegue, el archivo listo para pegar en el router y la revisión de lo que ya tiene instalado."
