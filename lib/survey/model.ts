@@ -15,6 +15,9 @@
  * providers), and the CDMX condominium law (the internal rules and the assembly decide on common areas).
  */
 
+import { DEFAULT_OPTICS, decodeDesign, decodeOptics, type Design, type Optics } from "./design"
+import { newId } from "./id"
+
 export const SURVEY_VERSION = 1
 
 /** Yes / no / not known yet. */
@@ -54,6 +57,8 @@ export type Tower = {
   firestop: Tri
   floors: Floor[]
   notes: string
+  /** The fiber design of this tower (phase 2), or null until one is made. */
+  design: Design | null
 }
 export type Route = { id: string; from: string; to: string; kind: RouteKind; meters: number | null; obstacles: string }
 export type Area = { id: string; kind: AreaKind; name: string; wifi: Tri; m2: number | null; walls: string; power: Tri; route: string; notes: string }
@@ -100,9 +105,11 @@ export type Survey = {
   areas: Area[]
   carriers: Carrier[]
   pending: Pending[]
+  /** Optical values for the design: module class, power, losses (shared by every tower). */
+  optics: Optics
 }
 
-export const SECTIONS = ["ident", "contacts", "commercial", "room", "towers", "routes", "areas", "carriers", "pending"] as const
+export const SECTIONS = ["ident", "contacts", "commercial", "room", "towers", "design", "routes", "areas", "carriers", "pending"] as const
 export type Section = (typeof SECTIONS)[number]
 
 /** Most floors a tower can have above or below ground in the form. */
@@ -110,15 +117,12 @@ export const MAX_FLOORS_ABOVE = 80
 export const MAX_FLOORS_BELOW = 10
 export const MAX_ITEMS = 50
 
-export function newId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID()
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
-}
+export { newId }
 
 const today = () => new Date().toISOString().slice(0, 10)
 
 export function emptyTower(name: string): Tower {
-  return { id: newId(), name, floorsAbove: null, floorsBelow: 0, floorHeightM: null, ductType: "", ductSpace: "", ductOthers: "", firestop: "", floors: [], notes: "" }
+  return { id: newId(), name, floorsAbove: null, floorsBelow: 0, floorHeightM: null, ductType: "", ductSpace: "", ductOthers: "", firestop: "", floors: [], notes: "", design: null }
 }
 
 export function newSurvey(firstTower = "Torre A", now = new Date().toISOString()): Survey {
@@ -138,6 +142,7 @@ export function newSurvey(firstTower = "Torre A", now = new Date().toISOString()
     areas: [],
     carriers: [],
     pending: [],
+    optics: DEFAULT_OPTICS,
   }
 }
 
@@ -203,6 +208,10 @@ export function completeness(s: Survey, section: Section): { done: number; total
       }
       return { done, total }
     }
+    case "design": {
+      const ts = s.towers.filter((t) => t.floors.length)
+      return { done: ts.filter((t) => t.design && t.design.feeds.length).length, total: Math.max(1, ts.length) }
+    }
     case "routes":
       return { done: s.routes.filter((r) => r.meters !== null && r.from && r.to).length, total: Math.max(1, s.routes.length) }
     case "areas":
@@ -255,6 +264,7 @@ function readTower(x: Obj): Tower {
     // One entry per level, in order.
     floors: [...new Map(floors.map((f) => [f.level, f])).values()].sort((a, b) => a.level - b.level),
     notes: str(x.notes, 2000),
+    design: decodeDesign(x.design),
   }
 }
 
@@ -354,6 +364,7 @@ export function decodeSurvey(v: unknown): Survey | null {
       entry: str(x.entry, 300),
       notes: str(x.notes, 1000),
     })),
+    optics: decodeOptics(v.optics),
     pending: list(v.pending, (x) => ({ id: id(x.id), text: str(x.text, 500), who: one(x.who, ["edificio", "nosotros"] as const, "edificio"), done: bool(x.done) })),
   }
 }

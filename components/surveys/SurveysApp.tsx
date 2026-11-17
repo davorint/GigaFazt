@@ -7,6 +7,7 @@ import { deleteSurvey, importSurveys, saveSurvey, subscribeSurveys, surveysServe
 import { SelectField } from "@/components/mikrotik/SelectField"
 import { AreasSection, CarriersSection, CommercialSection, ContactsSection, IdentSection, PendingSection, RoomSection, RoutesSection, type SectionProps } from "./SurveySections"
 import { TowersSection } from "./SurveyTowers"
+import { DesignSection } from "./SurveyDesign"
 
 // The open survey lives in the URL (?l=<id>) so the phone's back button returns to the list.
 const subscribeUrl = (cb: () => void) => {
@@ -141,6 +142,7 @@ const VIEWS: Record<Section, (p: SectionProps) => ReactNode> = {
   commercial: CommercialSection,
   room: RoomSection,
   towers: TowersSection,
+  design: DesignSection,
   routes: RoutesSection,
   areas: AreasSection,
   carriers: CarriersSection,
