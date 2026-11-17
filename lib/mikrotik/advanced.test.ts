@@ -78,14 +78,14 @@ describe("remote access", () => {
     const r = remoteScript(ctx(), DEFAULT_REMOTE)
     expect(r.script).toContain("/ip cloud set back-to-home-vpn=enabled")
     expect(r.script).toContain('add name="oficina" allow-lan=yes')
-    expect(r.script).toContain("available-from=192.168.10.0/24,192.168.216.0/24")
+    expect(r.script).toContain("available-from=172.26.10.0/24,192.168.216.0/24")
     expect(r.undo).toContain("back-to-home-vpn=revoked-and-disabled")
   })
   it("hub: the tunnel and the hub's side with the OLT network behind it", () => {
     const r = remoteScript(ctx(), { ...DEFAULT_REMOTE, mode: "hub", hub: "vpn.example.com" })
     expect(r.script).toContain("endpoint-address=vpn.example.com endpoint-port=13231 allowed-address=10.255.0.0/24 persistent-keepalive=25s")
     expect(r.script).toContain("add address=10.255.0.2/24 interface=DSX-wg")
-    expect(r.hubSide).toContain("allowed-address=10.255.0.2/32,192.168.10.0/24")
+    expect(r.hubSide).toContain("allowed-address=10.255.0.2/32,172.26.10.0/24")
     expect(codes(remoteScript(ctx(), { ...DEFAULT_REMOTE, mode: "hub", hub: "" }))).toContain("hub")
   })
 })
@@ -169,18 +169,18 @@ describe("monitoring and backup router", () => {
   it("graphs for the links and the OLT port, hardware watchdog only, mass-drop alert", () => {
     const r = monitorScript(ctx(), DEFAULT_MONITOR)
     expect(r.script).toContain("/system watchdog set watchdog-timer=yes automatic-supout=yes watch-address=none")
-    expect(r.script).toContain('add interface="sfp-sfpplus2" allow-address=192.168.10.0/24')
+    expect(r.script).toContain('add interface="sfp-sfpplus2" allow-address=172.26.10.0/24')
     expect(r.script).toContain("(\\$d >= 20)")
   })
   it("backup router: VRRP gateway, pool halves, PPPoE delay, account sync", () => {
     const r = backupRouterScripts(ctx(), DEFAULT_BACKUP_ROUTER)
-    expect(r.main).toContain("add address=192.168.10.3/24")
-    expect(r.main).toContain("add address=192.168.10.1/32 interface=DSX-vrrp")
+    expect(r.main).toContain("add address=172.26.10.3/24")
+    expect(r.main).toContain("add address=172.26.10.1/32 interface=DSX-vrrp")
     expect(r.main).toContain("ranges=100.64.0.2-100.64.1.255")
     expect(r.backup).toContain("ranges=100.64.2.0-100.64.3.254")
     expect(r.backup).toContain("pado-delay=300")
     expect(r.main).toContain("export show-sensitive file=DSX-secretos")
-    expect(codes(backupRouterScripts(ctx({ mgmtNet: "192.168.10.0/30" }), DEFAULT_BACKUP_ROUTER))).toContain("mgmtSmall")
+    expect(codes(backupRouterScripts(ctx({ mgmtNet: "172.26.10.0/30" }), DEFAULT_BACKUP_ROUTER))).toContain("mgmtSmall")
   })
 })
 
@@ -208,7 +208,7 @@ describe("audit fixes (2026-11-16)", () => {
     expect(usageScript(ctx(), DEFAULT_USAGE).script).toContain("add name=DSX-uso-guardar interval=6h")
   })
   it("the backup accepts the copy from anywhere on the management network (the main may use the VRRP address)", () => {
-    expect(backupRouterScripts(ctx(), DEFAULT_BACKUP_ROUTER).backup).toContain("group=full address=192.168.10.0/24")
+    expect(backupRouterScripts(ctx(), DEFAULT_BACKUP_ROUTER).backup).toContain("group=full address=172.26.10.0/24")
   })
   it("the infected-client alert uses a flag, not :set without a value", () => {
     const s = shieldScript(ctx(), DEFAULT_SHIELD).script

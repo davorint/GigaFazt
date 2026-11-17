@@ -90,7 +90,7 @@ describe("spare router", () => {
     expect(r.script).toContain("export show-sensitive file=DSX-completo")
   })
   it("profile sync writes guarded set lines and the backup imports them", () => {
-    const s = profileSyncScripts("DSX-sync", "192.168.10.4")
+    const s = profileSyncScripts("DSX-sync", "172.26.10.4")
     expect(s.main).toContain("/file add name=DSX-perfiles.rsc contents=\\$s")
     expect(s.main).toContain("on-error={}")
     expect(s.backup).toContain("/import file-name=DSX-perfiles.rsc")

@@ -131,7 +131,9 @@ export const DEFAULT_SETUP: SetupState = {
   oltPort: "sfp-sfpplus2",
   internetVlan: 100,
   mgmtVlan: 10,
-  mgmtNet: "192.168.10.0/24",
+  // RFC 1918 space away from 192.168.x (home routers: it would clash when connecting from home by VPN) and from the
+  // common 172.x defaults (Docker 172.17, AWS VPC 172.31, iPhone hotspot 172.20.10); the third octet follows VLAN 10.
+  mgmtNet: "172.26.10.0/24",
   pool: "100.64.0.0/22",
   // Not among the default probe IPs (each of those is pinned to one link).
   dns: "9.9.9.10,149.112.112.10",
@@ -241,6 +243,8 @@ export type SetupIssueCode =
   | "badVlan"
   | "sameVlan"
   | "badMgmt"
+  | "mgmtHomeRange"
+  | "vlanReserved"
   | "badPool"
   | "poolOverlap"
   | "poolSmall"
@@ -297,8 +301,12 @@ export function checkSetup(s: SetupState, ctx: SetupContext): SetupIssue[] {
   else if (ctx.wanIfaces.some((w) => w.trim() === port)) out.push({ code: "portIsWan", level: "error", value: port })
   for (const v of [s.internetVlan, s.mgmtVlan]) if (!goodVlan(v)) out.push({ code: "badVlan", level: "error", value: String(v) })
   if (s.internetVlan === s.mgmtVlan) out.push({ code: "sameVlan", level: "error" })
+  // Huawei equipment reserves VLANs 4079–4093 by default and 4094–4095 always (HUAWEI-DEVICE-MIB hwSysRsvedVlan).
+  for (const v of [s.internetVlan, s.mgmtVlan]) if (goodVlan(v) && v >= 4079) out.push({ code: "vlanReserved", level: "warn", value: String(v) })
   const mgmt = parseCidr(s.mgmtNet)
   if (!mgmt || mgmt.prefix > 30) out.push({ code: "badMgmt", level: "error", value: s.mgmtNet })
+  // 192.168.0.0/16 is what home routers hand out: a technician on VPN from home would have the same network on both sides.
+  else if (mgmt.net >= ipToInt("192.168.0.0") && mgmt.net < ipToInt("192.169.0.0")) out.push({ code: "mgmtHomeRange", level: "warn", value: s.mgmtNet })
   const pool = parseCidr(s.pool)
   if (!pool || pool.prefix > 29) out.push({ code: "badPool", level: "error", value: s.pool })
   if (mgmt && pool && overlap(mgmt, pool)) out.push({ code: "poolOverlap", level: "error" })
@@ -550,7 +558,7 @@ export function setupParts(s: SetupState, ctx: SetupScriptContext): SetupParts |
   const hd: string[] = ["/queue type", `add name=DS-fq-codel kind=fq-codel`, "/queue interface"]
   for (const i of [...wans.filter((w) => !ctx.pppoeIfaces?.includes(w)), s.oltPort.trim()]) hd.push(`set [find where interface=${rosString(i)}] queue=DS-fq-codel`)
   hd.push(
-    "/ip firewall connection tracking set enabled=yes loose-tcp-tracking=yes tcp-established-timeout=2h4m tcp-syn-sent-timeout=30s tcp-syn-received-timeout=30s tcp-fin-wait-timeout=1m tcp-close-wait-timeout=1m tcp-last-ack-timeout=30s tcp-time-wait-timeout=1m tcp-close-timeout=10s udp-timeout=30s udp-stream-timeout=3m icmp-timeout=30s generic-timeout=10m",
+    "/ip firewall connection tracking set enabled=yes loose-tcp-tracking=yes tcp-established-timeout=2h4m tcp-syn-sent-timeout=30s tcp-syn-received-timeout=30s tcp-fin-wait-timeout=4m tcp-close-wait-timeout=4m tcp-last-ack-timeout=4m tcp-time-wait-timeout=4m tcp-close-timeout=4m udp-timeout=2m udp-stream-timeout=5m icmp-timeout=1m generic-timeout=10m",
     "/ip firewall raw",
     `add chain=prerouting in-interface-list=DS-WAN src-address=0.0.0.0/8 action=drop ${c("bogon")}`,
     `add chain=prerouting in-interface-list=DS-WAN src-address=127.0.0.0/8 action=drop ${c("bogon")}`,

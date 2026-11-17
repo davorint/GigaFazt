@@ -46,14 +46,14 @@ const WANS: Wan[] = [
 const SETUPS: SetupState[] = [
   {
     ...DEFAULT_SETUP,
-    collector: "192.168.10.50",
+    collector: "172.26.10.50",
     natMode: "fixed",
     ipv6Pd: "2001:db8:100::/40",
     ipv6Wan: "2001:db8:200::/40",
     alert: "telegram",
     telegramChat: "12345",
     backup: "sftp",
-    backupHost: "192.168.10.60",
+    backupHost: "172.26.10.60",
     backupUser: "respaldos",
     backupPath: "/srv/mk",
     snmp: true,
@@ -105,7 +105,7 @@ export function rosCorpus(): CorpusEntry[] {
     const br = backupRouterScripts(ctx, DEFAULT_BACKUP_ROUTER)
     for (const st of [...br.mainSteps, ...br.backupSteps]) add(`respaldo${k}:${st.id}`, st.script)
     add(`respaldo${k}:undo`, br.undoMain)
-    const sync = profileSyncScripts("sync", "192.168.10.4")
+    const sync = profileSyncScripts("sync", "172.26.10.4")
     add(`sync${k}:main`, sync.main)
     add(`sync${k}:backup`, sync.backup)
     const bond = bondScript(ctx, { ports: "sfp-sfpplus2, sfp-sfpplus3", oltPorts: "0/2/0, 0/3/0" })

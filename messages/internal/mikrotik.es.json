@@ -656,7 +656,7 @@
             "fq-codel en los puertos de los carriers y de la OLT.",
             "Cola por enlace al 95 % de lo medido con CAKE (Varios enlaces → Colas y avisos).",
             "Límites por cliente desde el perfil PPP (o RADIUS); no hace falta una cola por cliente.",
-            "Connection tracking para CGNAT: tcp-established de 2 h 4 min (lo mínimo según RFC 5382 para un NAT) y UDP no menos de 30 s. Revisa cada semana: arriba del 60 % del máximo, sube el límite o acorta.",
+            "Connection tracking para CGNAT con los mínimos de las RFC: TCP establecida 2 h 4 min y cierre 4 min (RFC 5382 y 7857), UDP 2 min y 5 min en las de dos sentidos (RFC 4787), ICMP 1 min (RFC 5508); el arranque de TCP se queda en 30 s, que la RFC 7857 permite por seguridad. Revisa cada semana: arriba del 60 % del máximo, sube el límite o acorta.",
             "Firewall: raw (bogones, banderas TCP inválidas, 100.64 desde internet), input y forward básicos.",
             "Abuso: sin SMTP directo y tope de {limit} conexiones por cliente.",
             "DNS: caché del router dimensionada para el despliegue, o los clientes directo a los resolutores.",
@@ -1173,7 +1173,7 @@
       "internetVlan": "VLAN de internet",
       "mgmtVlan": "VLAN de gestión",
       "mgmtNet": "Red de gestión",
-      "mgmtNetHint": "El MikroTik toma la .1 y la OLT la .2. Solo para administrar la OLT; los clientes no llegan a ella.",
+      "mgmtNetHint": "El MikroTik toma la .1 y la OLT la .2. Solo para administrar la OLT; los clientes no llegan a ella. Mejor fuera de 192.168.x (la red de los routers de casa), para que la VPN desde casa no choque.",
       "pool": "Red de los clientes (CGNAT)",
       "poolHint": "El MikroTik toma la primera; PPPoE reparte {hosts} direcciones para {clients} clientes. Debe estar dentro de «Redes de los clientes» del balanceo.",
       "poolHintBad": "Una red en formato CIDR, p. ej. 100.64.0.0/22.",
@@ -1216,7 +1216,9 @@
         "badChat": "{value}: el ID del chat de Telegram es un número (puede empezar con -).",
         "badMail": "Para correo: escribe el servidor SMTP y dos correos válidos (el que envía y el que recibe).",
         "badBackup": "Para SFTP: escribe el servidor y el usuario; la carpeta no puede llevar comillas, \\ ni $.",
-        "secretsPending": "El script lleva PEGA-AQUI-… donde va cada contraseña: cámbialas antes de pegarlo en el router."
+        "secretsPending": "El script lleva PEGA-AQUI-… donde va cada contraseña: cámbialas antes de pegarlo en el router.",
+        "mgmtHomeRange": "{value} está dentro de 192.168.0.0/16, lo que usan los routers de casa: quien entre por VPN desde su casa puede tener la misma red y no llegar al MikroTik ni a la OLT. Usa una red privada poco común en 10.0.0.0/8 o 172.16.0.0/12 (por ejemplo 172.26.10.0/24).",
+        "vlanReserved": "VLAN {value}: los equipos Huawei reservan de la 4079 a la 4093 por omisión y la 4094 siempre; usa una VLAN más baja."
       },
       "tabs": {
         "router": "MikroTik",

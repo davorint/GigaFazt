@@ -42,7 +42,7 @@ describe("deployment setup: MikroTik", () => {
   it("VLANs on the port toward the OLT, management address, CGNAT pool", () => {
     expect(lines).toContain('/system identity set name="Pedregal"')
     expect(lines).toContain('add name="vlan100-internet" vlan-id=100 interface="sfp-sfpplus2" mtu=1508 comment="DS: internet de los clientes"')
-    expect(lines).toContain('add address=192.168.10.1/24 interface="vlan10-gestion" comment="DS: gestion de la OLT"')
+    expect(lines).toContain('add address=172.26.10.1/24 interface="vlan10-gestion" comment="DS: gestion de la OLT"')
     expect(lines).toContain('add name=DS-clientes ranges=100.64.0.2-100.64.3.254 comment="DS: clientes PPPoE"')
   })
   it("one PPP profile per plan with the burst rule, and the PPPoE server", () => {
@@ -56,7 +56,7 @@ describe("deployment setup: MikroTik", () => {
     expect(p200).toContain("use-compression=no use-encryption=no use-upnp=no")
   })
   it("basic firewall, optional", () => {
-    expect(lines).toContain('add chain=forward action=drop src-address=100.64.0.0/22 dst-address=192.168.10.0/24 comment="DS: los clientes no llegan a la gestion"')
+    expect(lines).toContain('add chain=forward action=drop src-address=100.64.0.0/22 dst-address=172.26.10.0/24 comment="DS: los clientes no llegan a la gestion"')
     expect(lines).toContain('add list=DS-WAN interface="ether3" comment="DS: internet"')
     const noFw = mikrotikSetup({ ...DEFAULT_SETUP, firewall: false, blockSmtp: false, isolate: false }, { ...ctx(), name: "", plans })
     expect(noFw).not.toContain("los clientes no administran el router")
@@ -78,8 +78,8 @@ describe("deployment setup: Huawei OLT", () => {
   const olt = oltSetup(DEFAULT_SETUP, { plans }).split("\n")
   it("smart VLANs on the uplink and the management address", () => {
     expect(olt.slice(0, 6)).toEqual(["enable", "config", "vlan 100 smart", "port vlan 100 0/9 0", "vlan 10 smart", "port vlan 10 0/9 0"])
-    expect(olt).toContain(" ip address 192.168.10.2 255.255.255.0")
-    expect(olt).toContain("ip route-static 0.0.0.0 0.0.0.0 192.168.10.1")
+    expect(olt).toContain(" ip address 172.26.10.2 255.255.255.0")
+    expect(olt).toContain("ip route-static 0.0.0.0 0.0.0.0 172.26.10.1")
   })
   it("per plan a table and a DBA 10 % above it (multiples of 64 kbit/s), and a line profile to the internet VLAN", () => {
     // 200 Mbps × 1.1 = 220,000 kbit/s → 220,032.
@@ -109,14 +109,14 @@ describe("deployment setup: Huawei OLT", () => {
 
 describe("deployment setup: the checklist's phases", () => {
   const full = (over = {}) => ({ ...ctx(), name: "Norte", plans, monitors: ["1.1.1.1", "8.8.8.8", "9.9.9.9"], cgnatUpstreams: ["ether2"], pppoeIfaces: ["ether3"], ...over })
-  const parts = setupParts({ ...DEFAULT_SETUP, collector: "192.168.10.50" }, full())
+  const parts = setupParts({ ...DEFAULT_SETUP, collector: "172.26.10.50" }, full())
   it("phase 0: hardened base, services and MAC access only from management, remote logging", () => {
     const base = parts?.base.split("\n") ?? []
     expect(base).toContain("/ip settings set tcp-syncookies=yes rp-filter=loose")
-    expect(base).toContain("/ip service set winbox available-from=192.168.10.0/24")
-    expect(base).toContain('add name=DSremoto target=remote remote=192.168.10.50')
+    expect(base).toContain("/ip service set winbox available-from=172.26.10.0/24")
+    expect(base).toContain('add name=DSremoto target=remote remote=172.26.10.50')
     // Access is narrowed last, so a paste over management isn't cut halfway.
-    expect(base.indexOf("/tool mac-server mac-winbox set allowed-interface-list=DS-MGMT")).toBeGreaterThan(base.indexOf('add name=DSremoto target=remote remote=192.168.10.50'))
+    expect(base.indexOf("/tool mac-server mac-winbox set allowed-interface-list=DS-MGMT")).toBeGreaterThan(base.indexOf('add name=DSremoto target=remote remote=172.26.10.50'))
     // The rest of MikroTik's "Securing your router" closes the base.
     expect(base.slice(-6)).toEqual([
       "/ip neighbor discovery-settings set discover-interface-list=DS-MGMT",
@@ -133,7 +133,7 @@ describe("deployment setup: the checklist's phases", () => {
     expect(cg).not.toContain('in-interface="ether2" src-address=100.64.0.0/10')
     expect(cg).toContain('add dst-address=100.64.0.0/22 blackhole distance=250 comment="DS: pool sin salida"')
     expect(cg).toContain("add chain=forward src-address=100.64.0.0/22 dst-address=100.64.0.0/22 action=drop")
-    expect(cg).toContain("add dst-address=192.168.10.50 port=4739 version=ipfix")
+    expect(cg).toContain("add dst-address=172.26.10.50 port=4739 version=ipfix")
     // Never the forward drop of 100.64 toward the links: forward runs before src-nat.
     expect(cg).not.toMatch(/chain=forward[^\n]*out-interface-list=DS-WAN/)
   })
@@ -300,5 +300,31 @@ describe("traceability, OLT security and IPv6", () => {
   it("share link carries the new options and each link's public IPs", () => {
     const st = { ...initialState(), setup: { ...DEFAULT_SETUP, natMode: "fixed" as const, sessionLog: false, pitp: false, ipv6Pd: "2001:db8:100::/44", ipv6PdLength: 60, ipv6Wan: "2001:db8:200::/52" } }
     expect(decodeState(encodeState(st))?.setup).toEqual(st.setup)
+  })
+})
+
+describe("defaults aligned with published practice", () => {
+  const plans = setupPlans(DEFAULT_PLANS, DEFAULT_RULE)
+  const seconds = (v: string) => [...v.matchAll(/(\d+)([hms])/g)].reduce((a, [, n, u]) => a + Number(n) * (u === "h" ? 3600 : u === "m" ? 60 : 1), 0)
+  it("connection tracking meets the NAT RFC minimums", () => {
+    const hd = setupParts(DEFAULT_SETUP, { ...ctx(), name: "x", plans })?.hardening ?? ""
+    const t = Object.fromEntries([...hd.matchAll(/([a-z-]+-timeout)=(\S+)/g)].map(([, k, v]) => [k, seconds(v)]))
+    expect(t["tcp-established-timeout"]).toBeGreaterThanOrEqual(2 * 3600 + 4 * 60) // RFC 5382 REQ-5
+    for (const k of ["tcp-fin-wait-timeout", "tcp-close-wait-timeout", "tcp-last-ack-timeout", "tcp-time-wait-timeout", "tcp-close-timeout"]) expect(t[k], k).toBeGreaterThanOrEqual(240) // RFC 5382 / 7857
+    expect(t["udp-timeout"]).toBeGreaterThanOrEqual(120) // RFC 4787 REQ-5
+    expect(t["udp-stream-timeout"]).toBeGreaterThanOrEqual(300) // RFC 4787 REQ-5c (recommended)
+    expect(t["icmp-timeout"]).toBeGreaterThanOrEqual(60) // RFC 5508
+  })
+  it("management outside the home-router range, clients balanced from the CGNAT space", () => {
+    expect(DEFAULT_SETUP.mgmtNet.startsWith("192.168.")).toBe(false)
+    expect(checkSetup(DEFAULT_SETUP, ctx()).map((i) => i.code)).not.toContain("mgmtHomeRange")
+    expect(checkSetup({ ...DEFAULT_SETUP, mgmtNet: "192.168.10.0/24" }, ctx()).find((i) => i.code === "mgmtHomeRange")?.level).toBe("warn")
+    expect(initialState().balance.clients).toEqual(["100.64.0.0/10"])
+  })
+  it("VLANs Huawei reserves warn; 1 and 4095 are refused", () => {
+    expect(checkSetup({ ...DEFAULT_SETUP, mgmtVlan: 4080 }, ctx()).find((i) => i.code === "vlanReserved")?.value).toBe("4080")
+    expect(checkSetup({ ...DEFAULT_SETUP, mgmtVlan: 1 }, ctx()).map((i) => i.code)).toContain("badVlan")
+    expect(checkSetup({ ...DEFAULT_SETUP, internetVlan: 4095 }, ctx()).map((i) => i.code)).toContain("badVlan")
+    expect(checkSetup(DEFAULT_SETUP, ctx()).map((i) => i.code)).not.toContain("vlanReserved")
   })
 })

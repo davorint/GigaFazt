@@ -97,7 +97,8 @@ export const DEFAULT_BALANCE: BalanceState = {
   speed: "normal",
   nat: true,
   queues: DEFAULT_LINK_QUEUES,
-  clients: ["10.0.0.0/8", "100.64.0.0/10"],
+  // The CGNAT shared space (RFC 6598) the clients' pool comes from.
+  clients: ["100.64.0.0/10"],
 }
 
 export type CapacityState = {

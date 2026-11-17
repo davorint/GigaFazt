@@ -69,7 +69,7 @@ describe("router services: alerts, backups, SNMP", () => {
   })
   it("SNMP: read-only, from management only", () => {
     const ops = parts({ snmp: true }).ops
-    expect(ops).toContain(`set [find default=yes] name="${SECRET.snmp}" addresses=192.168.10.0/24 read-access=yes write-access=no`)
+    expect(ops).toContain(`set [find default=yes] name="${SECRET.snmp}" addresses=172.26.10.0/24 read-access=yes write-access=no`)
     expect(ops).toContain('/snmp set enabled=yes contact="GigaFazt" location="Norte"')
   })
   it("undo removes the DS- scripts and schedulers and gives discovery back before the lists go", () => {

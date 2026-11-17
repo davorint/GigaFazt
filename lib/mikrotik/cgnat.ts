@@ -13,7 +13,8 @@ export const PORT_COUNT = 65536 - PORT_FIRST
 /** Client addresses per jump chain: a new connection checks at most pool/64 jumps + 128 rules. */
 export const GROUP = 64
 /** Below this many ports per client, warn (a port is reused for different destinations, so it's the cap on connections to one server). */
-export const MIN_PORTS = 512
+/** Ports per client below which the fixed blocks warn: 1,024 is the usual starting point (MikroTik's ISP guide gives 1,000–4,000 by profile; RFC 6888 only requires a configurable limit). */
+export const MIN_PORTS = 1024
 export const MAX_PUBLIC_IPS = 256
 
 const ipToInt = (ip: string) => ip.split(".").reduce((a, o) => a * 256 + Number(o), 0)
