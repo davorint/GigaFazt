@@ -51,6 +51,7 @@ import {
   type PublicIpRow,
 } from "@/lib/mikrotik/advanced2"
 import { GROUPS, optionsOf, type BondPanelOptions, type DestinationsOptions, type Module, type PublicIpOptions } from "@/lib/mikrotik/bundle"
+import { advContext } from "@/lib/mikrotik/guide-scripts"
 import { setupPlans } from "@/lib/mikrotik/setup"
 import type { AdvancedState, LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
@@ -144,7 +145,7 @@ function Output({ t, mod, issues, steps, undo, label, extra, before }: { t: T; m
 export function AdvancedPanel({ state, onAdvanced }: { state: LabState; onAdvanced: (a: AdvancedState) => void }) {
   const t = useTranslations("mikrotik.advanced")
   const [mod, setMod] = useState<Module>("failover")
-  const ctx: AdvContext = { name: state.deployment, setup: state.setup, wans: state.wans, queue: state.queueKind, failover: state.balance.failover }
+  const ctx: AdvContext = advContext(state)
   const adv = state.advanced
   const planNames = useMemo(() => setupPlans(state.setup.plans, state.setup.rule).map((p) => p.name), [state.setup.plans, state.setup.rule])
   const included = adv.on.includes(mod)

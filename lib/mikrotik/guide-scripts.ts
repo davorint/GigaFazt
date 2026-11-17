@@ -110,7 +110,14 @@ export function guideErrors(state: LabState): boolean {
   return checkSetup(state.setup, g.ctx).some((i) => i.level === "error") || checkBalance({ ...state.balance, wans: state.wans }).some((i) => i.level === "error")
 }
 
-export const advContext = (state: LabState): AdvContext => ({ name: state.deployment, setup: state.setup, wans: state.wans, queue: state.queueKind, failover: state.balance.failover })
+export const advContext = (state: LabState): AdvContext => ({
+  name: state.deployment,
+  setup: state.setup,
+  wans: state.wans,
+  queue: state.queueKind,
+  failover: state.balance.failover,
+  linkQueues: { shape: state.balance.queues.shape, prio: state.balance.queues.prio },
+})
 
 export type BundleStep = { group: "guide" | Module; id: string; script: string; verify?: string }
 

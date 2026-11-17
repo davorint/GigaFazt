@@ -29,6 +29,17 @@ describe("the checker", () => {
     expect(checkScript("/ip cloud back-to-home-user show-config x").map((i) => i.kind)).toEqual(["menu"])
     expect(checkScript("/system backup load name=x").map((i) => i.kind)).toEqual(["command"])
   })
+  it("catches values outside the reference's choices", () => {
+    // RouterOS 7.25 takes auto|yes here (an older script wrote "no").
+    expect(checkScript("/ip cloud set ddns-enabled=no").map((i) => `${i.kind} ${i.item}`)).toEqual(["value ddns-enabled=no"])
+    expect(checkScript("/ip firewall filter add chain=input action=dorp").map((i) => i.item)).toEqual(["action=dorp"])
+    expect(checkScript("/ip firewall filter add chain=forward connection-state=established,relatd action=accept").map((i) => i.item)).toEqual(["connection-state=established,relatd"])
+    expect(checkScript("/ppp profile add name=x use-encryption=si").map((i) => i.item)).toEqual(["use-encryption=si"])
+    expect(checkScript("/ip firewall filter add chain=forward connection-state=!established,related action=drop")).toEqual([])
+    expect(checkScript("/interface bonding add name=b mode=802.3ad slaves=ether1,ether2")).toEqual([])
+    // Variables and expressions aren't judged.
+    expect(checkScript(":local a drop; /ip firewall filter add chain=input action=$a")).toEqual([])
+  })
   it("reads commands inside one-liners, substitutions and stored scripts", () => {
     expect(checkScript(':if ([:len [/ip pool find where nam="x"]] = 0) do={/ip pool add name=x rangez=1.1.1.1}').map((i) => i.item)).toEqual(["nam", "rangez"])
     expect(checkScript('/system script add name=x source="/ip route add dst-adress=0.0.0.0/0"').map((i) => i.item)).toEqual(["dst-adress"])

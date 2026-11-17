@@ -4,7 +4,8 @@
  * source=, on-event=, on-up=… strings (unescaped and read the same way).
  */
 
-export type RosCommand = { menu: string; verb: string; props: string[]; line: number; text: string }
+/** values: the literal values set on the command line (no variables, expressions or quoted text). */
+export type RosCommand = { menu: string; verb: string; props: string[]; values?: Record<string, string>; line: number; text: string }
 
 export const VERBS = new Set([
   "add", "set", "remove", "move", "print", "disable", "enable", "save", "run", "send", "get", "find", "monitor",
@@ -114,6 +115,7 @@ function readTokens(toks: Tok[], start: string, line: number, text: string, out:
       }
       const verb = j < toks.length && !toks[j].q && VERBS.has(toks[j].t) ? toks[j].t : ""
       const props: string[] = []
+      const values: Record<string, string> = {}
       let k = verb ? j + 1 : j
       let depth = 0
       for (; k < toks.length; k++) {
@@ -133,11 +135,13 @@ function readTokens(toks: Tok[], start: string, line: number, text: string, out:
         const m = /^!?([a-z0-9][a-z0-9-]*)=/.exec(x.t)
         if (m) {
           props.push(m[1])
+          const literal = x.t.slice(x.t.indexOf("=") + 1)
+          if (literal && !/[$(\[]/.test(literal) && (verb === "add" || verb === "set")) values[m[1]] = literal
           const v = toks[k + 1]
           if (SCRIPT_PROPS.has(m[1]) && v?.q) out.push(...parseScript(v.t).map((c) => ({ ...c, line, text })))
         } else if (verb === "get" && /^[a-z][a-z0-9-]*$/.test(x.t)) props.push(x.t)
       }
-      if (verb || menu !== ctx) out.push({ menu, verb, props, line, text })
+      if (verb || menu !== ctx) out.push({ menu, verb, props, values, line, text })
       // Relative commands after this one ([find …], do={add …}) belong to the menu just named.
       ctx = menu
       // Continue inside nested brackets of this command.

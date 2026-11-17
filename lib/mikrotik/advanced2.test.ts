@@ -136,3 +136,11 @@ describe("alerts, priority, public IPs", () => {
     expect(codes(publicIpScript(ctx(), [{ user: "x", ip: "192.168.1.9", wan: "WAN1" }]))).toContain("privateIp")
   })
 })
+
+describe("priority needs the link queues", () => {
+  it("refuses without shaping or the priority split, so the deployment file leaves it out", () => {
+    expect(codes(priorityScript(ctx({}, { linkQueues: { shape: true, prio: false } })))).toEqual(["needsQueues"])
+    expect(codes(priorityScript(ctx({}, { linkQueues: { shape: false, prio: true } })))).toEqual(["needsQueues"])
+    expect(priorityScript(ctx({}, { linkQueues: { shape: true, prio: true } })).steps.length).toBe(1)
+  })
+})

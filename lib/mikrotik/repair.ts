@@ -87,7 +87,9 @@ export function linesWriting(script: string, prefix: string, comments: string[])
     const line = `${u.menu} ${u.text.trim()}`
     // In a chain the order decides what matches: put it before the next line of this part that the router has.
     if (!ORDERED.has(u.menu) || !/^\s*add /.test(u.text) || /place-before=/.test(u.text)) return [line]
-    const next = units.findIndex((v, j) => j > i && v.menu === u.menu && keysOf[j].some((k) => k.startsWith("c:") && !want.has(k)))
+    // Order only counts inside a chain: the anchor is the next rule of the same chain.
+    const chain = /\bchain=(\S+)/.exec(u.text)?.[1]
+    const next = units.findIndex((v, j) => j > i && v.menu === u.menu && /\bchain=(\S+)/.exec(v.text)?.[1] === chain && keysOf[j].some((k) => k.startsWith("c:") && !want.has(k)))
     if (next < 0) return [line]
     const anchor = keysOf[next].find((k) => k.startsWith("c:") && !want.has(k))!.slice(2)
     return [`${line} place-before=[:pick [${u.menu} find where comment=${rosString(anchor)}] 0]`]

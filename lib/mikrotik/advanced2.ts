@@ -428,6 +428,8 @@ export const PRIORITY_DSCP = [46, 34, 32, 40]
  */
 export function priorityScript(ctx: AdvContext): AdvResult {
   if (ctx.wans.length < 1) return fail([{ code: "needsBalance", level: "error" }])
+  // The marks go into each link's priority queue: without shaping and the priority split there's nothing to feed.
+  if (ctx.linkQueues && !(ctx.linkQueues.shape && ctx.linkQueues.prio)) return fail([{ code: "needsQueues", level: "error" }])
   const c = comment("prioridad")
   const out: string[] = [GUARD.queues, ...removeAll("prioridad", ["/ip firewall mangle"])]
   for (const w of ctx.wans) {

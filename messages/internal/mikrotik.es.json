@@ -775,7 +775,7 @@
           "Reemplaza los PEGA-AQUI-… antes de importarlo."
         ],
         "undo": "deshacer todo (scripts de experto en orden inverso, luego balanceo y base)",
-        "syntax": "{n} comandos revisados contra la referencia de RouterOS {version} (menús, propiedades y comandos; los valores no)."
+        "syntax": "{n} comandos revisados contra la referencia de RouterOS {version} (menús, propiedades, comandos y valores con opciones fijas; direcciones, números y nombres no)."
       },
       "noCollectorFixed": "Sin colector: con bloques de puertos fijos no hace falta el registro NAT, pero sí el de sesiones PPPoE (en disco en el router; agrega el colector para tener copia fuera).",
       "advice": {
@@ -859,7 +859,7 @@
         "link": "Activar scripts de experto",
         "skipped": "No entran porque sus valores tienen errores: {list}. Corrígelos en Scripts de experto.",
         "howTo": "El deshacer va en orden inverso: primero los scripts de experto, luego el balanceo y al final la base.",
-        "syntaxOk": "{n} comandos revisados contra la referencia de RouterOS {version}: menús, propiedades y comandos existen. Los valores (opciones, formatos) no se revisan.",
+        "syntaxOk": "{n} comandos revisados contra la referencia de RouterOS {version}: existen sus menús, propiedades y comandos, y los valores con opciones fijas (como action=drop o use-encryption=no) son válidos. Direcciones, números y nombres no se revisan.",
         "syntaxBad": "Comandos que no aparecen en la referencia de RouterOS {version}: {list}. No lo pegues y avísame."
       }
     },
@@ -1930,7 +1930,8 @@
         "oltPort2": "Escribe el puerto de la OLT del respaldo como marco/slot/puerto.",
         "oltPortSame": "El respaldo necesita otro puerto de subida de la OLT, no el mismo que el principal.",
         "v6Halves": "IPv6: cada router reparte su mitad de los prefijos, como el pool IPv4. Para que el tráfico de vuelta llegue, cada mitad tiene que llegarle a su router (prefijos distintos de cada carrier o tu propio bloque por BGP).",
-        "v6NoSplit": "No se pudo partir {value} en dos: ajusta el pool IPv6 del respaldo a mano para que no se repita con el principal."
+        "v6NoSplit": "No se pudo partir {value} en dos: ajusta el pool IPv6 del respaldo a mano para que no se repita con el principal.",
+        "needsQueues": "Necesita las colas de cada enlace: en Varios enlaces → «Colas y avisos por enlace» enciende «Cola por enlace (bajada y subida)» y «Prioridad para lo interactivo», y vuelve a pegar el balanceo."
       },
       "groups": {
         "enlaces": "Enlaces y alta disponibilidad",
@@ -2049,7 +2050,7 @@
           },
           "usuarios": {
             "title": "Usuarios del VPN",
-            "before": "que /ip cloud print diga que Back To Home está corriendo (puede tardar un minuto)."
+            "before": "el paso anterior. Este paso espera hasta 2 minutos a que Back To Home esté corriendo y se detiene con un mensaje si no lo logra."
           },
           "qr": {
             "title": "Configuración para cada teléfono o laptop"

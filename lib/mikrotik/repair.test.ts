@@ -133,3 +133,17 @@ describe("each expert script reads back from its own file", () => {
     expect(rows.length).toBeGreaterThanOrEqual(8)
   })
 })
+
+describe("rule placement", () => {
+  it("anchors on the next rule of the same chain", () => {
+    const script = [
+      "/ip firewall filter",
+      'add chain=input action=accept comment="DS: a"',
+      'add chain=forward action=accept comment="DS: b"',
+      'add chain=input action=drop comment="DS: c"',
+    ].join("\n")
+    expect(linesWriting(script, "DS: ", ["DS: a"])).toEqual(['/ip firewall filter add chain=input action=accept comment="DS: a" place-before=[:pick [/ip firewall filter find where comment="DS: c"] 0]'])
+    // The last of its chain: added at the end.
+    expect(linesWriting(script, "DS: ", ["DS: c"])).toEqual(['/ip firewall filter add chain=input action=drop comment="DS: c"'])
+  })
+})

@@ -22,6 +22,8 @@ export type AdvContext = {
   queue?: QueueKind
   /** How the balancing watches the links (Varios enlaces). */
   failover?: "recursive" | "gateway"
+  /** The links' queues in Varios enlaces (shaping, and the priority split DSCP marks feed). */
+  linkQueues?: { shape: boolean; prio: boolean }
 }
 
 export type AdvIssue = { code: string; level: "error" | "warn" | "info"; value?: string }
@@ -258,7 +260,9 @@ export function remoteScript(ctx: AdvContext, o: RemoteOptions): AdvResult & { h
       step(
         "usuarios",
         [
-          ':if ([/ip cloud get vpn-status] != "running") do={:error "DSX: Back To Home aun no esta listo: espera un minuto y vuelve a pegar este paso"}',
+          // It takes about a minute after enabling: wait up to 2 minutes (a one-shot /import gets here right away).
+          '{:local i 0; :while (([/ip cloud get vpn-status] != "running") && ($i < 60)) do={:delay 2s; :set i ($i + 1)}}',
+          ':if ([/ip cloud get vpn-status] != "running") do={:error "DSX: Back To Home aun no esta listo: revisa que el router tenga internet y vuelve a pegar este paso"}',
           // Existing users keep their keys (their phones keep working).
           ...users.map((u) => addIfMissing("/ip cloud back-to-home-user", `name=${rosString(u)}`, [`name=${rosString(u)}`, "allow-lan=yes"])),
           `/ip service set winbox available-from=${from}`,
