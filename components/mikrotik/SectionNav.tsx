@@ -35,13 +35,36 @@ export function SectionNav({ label, items }: { label: string; items: { id: strin
     else if (l.right > r.right) row.scrollLeft += l.right - r.right
   }, [active])
 
+  // Phones: one row that scrolls sideways, faded at an edge while more links are hidden that way.
+  const [edges, setEdges] = useState({ left: false, right: false })
+  useEffect(() => {
+    const row = document.querySelector<HTMLElement>(`[data-nav-row="${label}"]`)
+    if (!row) return
+    const update = () => setEdges({ left: row.scrollLeft > 1, right: row.scrollLeft + row.clientWidth < row.scrollWidth - 1 })
+    update()
+    row.addEventListener("scroll", update, { passive: true })
+    const ro = new ResizeObserver(update)
+    ro.observe(row)
+    return () => {
+      row.removeEventListener("scroll", update)
+      ro.disconnect()
+    }
+  }, [label, items])
+  const fade = 28
+  const mask = edges.left || edges.right ? `linear-gradient(to right, ${edges.left ? `transparent, #000 ${fade}px` : "#000"}, ${edges.right ? `#000 calc(100% - ${fade}px), transparent` : "#000"})` : undefined
+
   return (
     // Static in screenshot captures (html[data-shot]) so it doesn't cover the section being shot.
     <nav
       aria-label={label}
       className="sticky top-0 z-30 -mx-4 border-b border-white/10 bg-background/85 px-4 backdrop-blur-md sm:-mx-6 sm:px-6 [html[data-shot]_&]:static"
     >
-      <ul className="flex gap-1 overflow-x-auto py-2 text-sm [scrollbar-width:none]">
+      {/* From tablets up the links wrap onto a second line instead of hiding past the edge (no scrollbar for a mouse). */}
+      <ul
+        data-nav-row={label}
+        style={{ maskImage: mask, WebkitMaskImage: mask }}
+        className="flex gap-1 overflow-x-auto py-2 text-sm [scrollbar-width:none] md:flex-wrap md:overflow-visible md:[mask-image:none]! md:[-webkit-mask-image:none]!"
+      >
         {items.map((i) => (
           <li key={i.id} className="shrink-0">
             <a
