@@ -26,6 +26,10 @@ const NEEDS: Partial<Record<Module, string[]>> = {
   escudo: ["base"],
   monitoreo: ["base"],
   alertas: ["base"],
+  ficha: ["base"],
+  sesiones: ["base"],
+  pool: ["base"],
+  conexiones: ["base"],
 }
 
 const TONE: Record<PartReport["state"], string> = {

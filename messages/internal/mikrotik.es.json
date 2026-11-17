@@ -678,7 +678,9 @@
             "Uso por cliente en el comentario de cada cuenta, aviso de caída masiva de sesiones y resumen diario (/mikrotik → Scripts de experto → Uso por cliente y Monitoreo).",
             "Edificios grandes: router de respaldo en caliente (/mikrotik → Scripts de experto → Router de respaldo).",
             "Alertas de cambios de configuración, versión nueva de RouterOS y entradas fallidas (/mikrotik → Scripts de experto → Alertas de operación).",
-            "Copia completa semanal con contraseñas a tu servidor y el procedimiento para cargarla en otro modelo (/mikrotik → Scripts de experto → Router de repuesto)."
+            "Copia completa semanal con contraseñas a tu servidor y el procedimiento para cargarla en otro modelo (/mikrotik → Scripts de experto → Router de repuesto).",
+            "Soporte: la ficha del cliente para revisar a uno en segundos, y quitar sesiones colgadas con el reporte de clientes que se reconectan mucho (/mikrotik → Scripts de experto → Ficha del cliente y Sesiones colgadas y reconexiones).",
+            "Avisos antes de que falle: pool de clientes casi lleno, tabla de conexiones casi llena y puertos u ópticas SFP con menos luz, otra velocidad o calientes (/mikrotik → Scripts de experto → Pool de clientes, Tabla de conexiones y Puertos y ópticas SFP)."
           ]
         }
       },
@@ -1696,6 +1698,26 @@
         "ippublica": {
           "name": "IP pública fija (empresas)",
           "lead": "Un cliente con su propia IP pública: su cuenta PPPoE siempre recibe esa dirección, no pasa por el CGNAT, sale siempre por el enlace dueño de esa IP y se le puede entrar desde internet (cámaras, servidores, VPN)."
+        },
+        "ficha": {
+          "name": "Ficha del cliente",
+          "lead": "Un comando para soporte: escribes el usuario PPPoE y el router dice su plan y velocidad, si la cuenta está activa, cuándo y por qué se desconectó la última vez y desde qué ONT, y si está en línea: desde hace cuánto, su IP, la velocidad que usa ahora, cuántas conexiones tiene abiertas y si su ONT contesta ping."
+        },
+        "sesiones": {
+          "name": "Sesiones colgadas y reconexiones",
+          "lead": "Quita las sesiones PPPoE que se quedan colgadas (sin IP o sin interfaz) y no dejan volver a entrar al cliente («already active»), y cada hora te dice qué clientes se reconectaron muchas veces: casi siempre es un ONT, un conector sucio o la corriente de su departamento."
+        },
+        "pool": {
+          "name": "Pool de clientes casi lleno",
+          "lead": "Te avisa cuando el pool de direcciones de los clientes (DS-clientes) pasa del nivel que elijas. Si se llena, los ONT que se reconectan no reciben IP y el cliente se queda sin servicio sin ningún error a la vista."
+        },
+        "conexiones": {
+          "name": "Tabla de conexiones casi llena",
+          "lead": "Te avisa cuando la tabla de conexiones del router llega a un nivel alto o crítico y te dice qué clientes tienen más conexiones abiertas (casi siempre un equipo infectado o descargas P2P). Con la tabla llena el router deja de abrir conexiones nuevas para todos."
+        },
+        "puertos": {
+          "name": "Puertos y ópticas SFP",
+          "lead": "Vigila los puertos hacia la OLT y hacia los carriers: te avisa si un puerto se cae o vuelve a otra velocidad (10G que regresa a 1G), si un SFP recibe menos luz que al empezar (fibra doblada, conector sucio o módulo gastado) y si un módulo se calienta."
         }
       },
       "morosos": {
@@ -1933,7 +1955,18 @@
         "oltPortSame": "El respaldo necesita otro puerto de subida de la OLT, no el mismo que el principal.",
         "v6Halves": "IPv6: cada router reparte su mitad de los prefijos, como el pool IPv4. Para que el tráfico de vuelta llegue, cada mitad tiene que llegarle a su router (prefijos distintos de cada carrier o tu propio bloque por BGP).",
         "v6NoSplit": "No se pudo partir {value} en dos: ajusta el pool IPv6 del respaldo a mano para que no se repita con el principal.",
-        "needsQueues": "Necesita las colas de cada enlace: en Varios enlaces → «Colas y avisos por enlace» enciende «Cola por enlace (bajada y subida)» y «Prioridad para lo interactivo», y vuelve a pegar el balanceo."
+        "needsQueues": "Necesita las colas de cada enlace: en Varios enlaces → «Colas y avisos por enlace» enciende «Cola por enlace (bajada y subida)» y «Prioridad para lo interactivo», y vuelve a pegar el balanceo.",
+        "flaps": "Las reconexiones van de 0 a 100 por hora.",
+        "logOnly": "El despliegue no tiene avisos (Telegram o correo): los mensajes quedan solo en el log del router.",
+        "poolPct": "El nivel del pool va de 50 a 99 %.",
+        "ctLevels": "Los niveles van de 50 a 99 % y el crítico tiene que ser mayor que el alto.",
+        "perClient": "El número de conexiones por cliente va de 100 a 100,000.",
+        "noPorts": "Escribe al menos un puerto.",
+        "manyPorts": "Como máximo 16 puertos.",
+        "badPort": "«{value}» no parece el nombre de un puerto.",
+        "dropDb": "La baja de luz va de 1 a 20 dB.",
+        "tempC": "La temperatura va de 40 a 100 °C.",
+        "portsNote": "La luz se compara con la primera lectura después de pegar o reiniciar: si la fibra ya está mal en ese momento, no avisa. Revisa con el «Comprueba» que la luz y la velocidad sean las esperadas. Algunos módulos SFP a RJ45 reportan 255 °C por error; esas lecturas se ignoran."
       },
       "groups": {
         "enlaces": "Enlaces y alta disponibilidad",
@@ -2236,7 +2269,101 @@
           "cuentas": {
             "title": "Asignar la IP a cada cuenta"
           }
+        },
+        "ficha": {
+          "script": {
+            "title": "Función de la ficha",
+            "before": "la Configuración del despliegue (pool DS-clientes)."
+          },
+          "inicio": {
+            "title": "Volver a crearla al arrancar"
+          }
+        },
+        "sesiones": {
+          "scripts": {
+            "title": "Scripts de sesiones",
+            "before": "la Configuración del despliegue; los avisos de la base si quieres recibirlos en el celular."
+          },
+          "programar": {
+            "title": "Programar la revisión"
+          }
+        },
+        "pool": {
+          "script": {
+            "title": "Script del pool",
+            "before": "la Configuración del despliegue y sus avisos (script DS-aviso)."
+          },
+          "programar": {
+            "title": "Revisar cada 5 minutos"
+          }
+        },
+        "conexiones": {
+          "lista": {
+            "title": "Lista de clientes con muchas conexiones",
+            "before": "la Configuración del despliegue y sus avisos (script DS-aviso)."
+          },
+          "script": {
+            "title": "Script de la tabla de conexiones"
+          },
+          "programar": {
+            "title": "Revisar cada minuto"
+          }
+        },
+        "puertos": {
+          "script": {
+            "title": "Script de puertos y ópticas",
+            "before": "los avisos de la base (script DS-aviso)."
+          },
+          "programar": {
+            "title": "Revisar cada 5 minutos"
+          }
         }
+      },
+      "ficha": {
+        "user": "Usuario para consultar",
+        "userHint": "Escríbelo aquí y copia el comando de abajo; en la terminal también puedes escribir el usuario directamente.",
+        "command": "Comando para la terminal",
+        "howTitle": "Cómo se usa",
+        "how": [
+          "Pega los pasos una vez; la función se vuelve a crear sola cada vez que el router arranca.",
+          "En la terminal (Winbox, SSH o la app) escribe el comando con el usuario PPPoE del cliente.",
+          "«equipo» y «ONT» son la MAC del ONT: si cambió, alguien movió o cambió el equipo.",
+          "Si el ONT no contesta ping no siempre es falla: algunos ONT en modo router no contestan ping desde fuera."
+        ],
+        "label": "Ficha del cliente"
+      },
+      "sesiones": {
+        "stale": "Quitar sesiones colgadas",
+        "staleHint": "Cada 2 minutos quita las sesiones con más de 2 minutos que no tienen IP o ya no tienen su interfaz: son las que dejan al cliente fuera con «already active».",
+        "flaps": "Reconexiones para avisar",
+        "flapsUnit": "por hora",
+        "flapsHint": "Cuenta cuántas veces cambió la sesión de cada cliente (revisa cada 2 minutos) y cada hora te dice quién llegó a este número. 0 = sin reporte.",
+        "label": "Sesiones"
+      },
+      "pool": {
+        "pct": "Avisar al llegar a",
+        "pctHint": "Porcentaje del pool DS-clientes en uso. Lee el tamaño del pool en el router, así que con el Router de respaldo cada uno cuenta su mitad. Te vuelve a avisar cuando baja 5 puntos.",
+        "label": "Pool de clientes"
+      },
+      "conexiones": {
+        "warn": "Nivel alto",
+        "crit": "Nivel crítico",
+        "levelHint": "Porcentaje de la tabla de conexiones (total-entries ÷ max-entries). Revisa cada minuto y avisa una vez por cambio de nivel.",
+        "perClient": "Clientes con más de",
+        "perClientUnit": "conexiones",
+        "perClientHint": "Los clientes que pasan de este número entran 15 minutos a la lista DSX-muchas-conexiones y salen con su cuenta en el aviso. La base corta a partir de 2,000.",
+        "label": "Tabla de conexiones"
+      },
+      "puertos": {
+        "ports": "Puertos a vigilar",
+        "portsHint": "Nombres de los puertos en el router, separados por comas. Por omisión: el puerto hacia la OLT y los puertos de los carriers (los PPPoE no, porque no son puertos). Los que no son Ethernet o SFP se saltan.",
+        "drop": "Avisar si la luz baja",
+        "dropUnit": "dB",
+        "dropHint": "Contra la primera lectura después de pegar o de reiniciar. 3 dB es la mitad de la luz.",
+        "temp": "Avisar si el módulo pasa de",
+        "tempUnit": "°C",
+        "tempHint": "La mayoría de los SFP comerciales están hechos para 0 a 70 °C.",
+        "label": "Puertos y ópticas"
       }
     },
     "installed": {

@@ -26,6 +26,7 @@ import {
   type AdvContext,
 } from "./advanced"
 import { DEFAULT_ALERTS, DEFAULT_FAILOVER, DEFAULT_FILTERS, alertsScript, bondScript, defaultProbes, failoverScript, filtersScript, fullExportScript, priorityScript, profileSyncScripts, publicIpScript } from "./advanced2"
+import { DEFAULT_CONNTRACK, DEFAULT_POOL, DEFAULT_PORTS, conntrackScript, poolScript, portsScript, sessionsScript, sheetScript } from "./advanced3"
 import { balanceScript, balanceUndo, type Wan } from "./balance"
 import { bulkScript, type BulkRow } from "./bulk"
 import { DEFAULT_RULE, planDefaults } from "./burst"
@@ -97,6 +98,12 @@ export function rosCorpus(): CorpusEntry[] {
       prioridad: priorityScript(ctx),
       ippublica: publicIpScript(ctx, [{ user: "empresa1", ip: "203.0.113.20", wan: "WAN2" }]),
       repuesto: fullExportScript(ctx),
+      ficha: sheetScript(ctx),
+      sesiones: sessionsScript(ctx, { stale: true, flaps: 4 }),
+      sesionesSinLimpiar: sessionsScript(ctx, { stale: false, flaps: 4 }),
+      pool: poolScript(ctx, DEFAULT_POOL),
+      conexiones: conntrackScript(ctx, DEFAULT_CONNTRACK),
+      puertos: portsScript(ctx, { ...DEFAULT_PORTS, ports: "sfp-sfpplus1, ether1" }),
     }
     for (const [n, r] of Object.entries(results)) {
       for (const st of r.steps) add(`${n}${k}:${st.id}`, st.script)

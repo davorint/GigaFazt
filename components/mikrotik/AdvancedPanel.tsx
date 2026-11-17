@@ -50,6 +50,18 @@ import {
   type FilterOptions,
   type PublicIpRow,
 } from "@/lib/mikrotik/advanced2"
+import {
+  conntrackScript,
+  poolScript,
+  portsScript,
+  sessionsScript,
+  sheetCommand,
+  sheetScript,
+  type ConntrackOptions,
+  type PoolOptions,
+  type PortsOptions,
+  type SessionsOptions,
+} from "@/lib/mikrotik/advanced3"
 import { GROUPS, optionsOf, type BondPanelOptions, type DestinationsOptions, type Module, type PublicIpOptions } from "@/lib/mikrotik/bundle"
 import { advContext } from "@/lib/mikrotik/guide-scripts"
 import { setupPlans } from "@/lib/mikrotik/setup"
@@ -210,6 +222,11 @@ export function AdvancedPanel({ state, onAdvanced }: { state: LabState; onAdvanc
         {mod === "repuesto" && <Spare t={t} ctx={ctx} />}
         {mod === "filtros" && <Filters t={t} ctx={ctx} />}
         {mod === "alertas" && <Alerts t={t} ctx={ctx} />}
+        {mod === "ficha" && <Sheet t={t} ctx={ctx} />}
+        {mod === "sesiones" && <Sessions t={t} ctx={ctx} />}
+        {mod === "pool" && <Pool t={t} ctx={ctx} />}
+        {mod === "conexiones" && <Conntrack t={t} ctx={ctx} />}
+        {mod === "puertos" && <Ports t={t} ctx={ctx} />}
         {mod === "prioridad" && <Priority t={t} ctx={ctx} />}
         {mod === "ippublica" && <PublicIps t={t} ctx={ctx} />}
         <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("note")}</p>
@@ -594,6 +611,90 @@ function Alerts({ t, ctx }: { t: T; ctx: AdvContext }) {
         <NumberField label={t("alertas.ppp")} unit={t("alertas.pppUnit")} value={o.pppFails} integer max={100000} onChange={(v) => v !== null && setO({ ...o, pppFails: v })} hint={t("alertas.pppHint")} />
       </div>
       <Output t={t} mod="alertas" issues={r.issues} steps={r.steps} undo={r.undo} label={t("alertas.label")} />
+    </>
+  )
+}
+
+function Sheet({ t, ctx }: { t: T; ctx: AdvContext }) {
+  const [user, setUser] = useState("")
+  const r = sheetScript(ctx)
+  return (
+    <>
+      <Output t={t} mod="ficha" issues={r.issues} steps={r.steps} undo={r.undo} label={t("ficha.label")} />
+      <div className="grid gap-3 rounded-xl border border-white/10 p-4">
+        <h4 className="text-sm font-medium text-foreground">{t("ficha.howTitle")}</h4>
+        <ul className="grid max-w-3xl gap-1.5 text-sm leading-relaxed text-zinc-300">
+          {(t.raw("ficha.how") as string[]).map((x, k) => (
+            <li key={k} className="flex gap-2">
+              <span aria-hidden className="text-zinc-500">
+                ·
+              </span>
+              {x}
+            </li>
+          ))}
+        </ul>
+        <div className={grid}>
+          <TextField label={t("ficha.user")} value={user} onChange={setUser} hint={t("ficha.userHint")} />
+        </div>
+        <CodeBlock code={sheetCommand(user)} label={t("ficha.command")} />
+      </div>
+    </>
+  )
+}
+
+function Sessions({ t, ctx }: { t: T; ctx: AdvContext }) {
+  const [o, setO] = useOpts<SessionsOptions>("sesiones")
+  const r = sessionsScript(ctx, o)
+  return (
+    <>
+      <Toggle label={t("sesiones.stale")} hint={t("sesiones.staleHint")} on={o.stale} set={(v) => setO({ ...o, stale: v })} />
+      <div className={grid}>
+        <NumberField label={t("sesiones.flaps")} unit={t("sesiones.flapsUnit")} value={o.flaps} integer max={100} onChange={(v) => v !== null && setO({ ...o, flaps: v })} hint={t("sesiones.flapsHint")} />
+      </div>
+      <Output t={t} mod="sesiones" issues={r.issues} steps={r.steps} undo={r.undo} label={t("sesiones.label")} />
+    </>
+  )
+}
+
+function Pool({ t, ctx }: { t: T; ctx: AdvContext }) {
+  const [o, setO] = useOpts<PoolOptions>("pool")
+  const r = poolScript(ctx, o)
+  return (
+    <>
+      <div className={grid}>
+        <NumberField label={t("pool.pct")} unit="%" value={o.pct} integer min={50} max={99} onChange={(v) => v !== null && setO({ ...o, pct: v })} hint={t("pool.pctHint")} />
+      </div>
+      <Output t={t} mod="pool" issues={r.issues} steps={r.steps} undo={r.undo} label={t("pool.label")} />
+    </>
+  )
+}
+
+function Conntrack({ t, ctx }: { t: T; ctx: AdvContext }) {
+  const [o, setO] = useOpts<ConntrackOptions>("conexiones")
+  const r = conntrackScript(ctx, o)
+  return (
+    <>
+      <div className={grid}>
+        <NumberField label={t("conexiones.warn")} unit="%" value={o.warn} integer min={50} max={99} onChange={(v) => v !== null && setO({ ...o, warn: v })} hint={t("conexiones.levelHint")} />
+        <NumberField label={t("conexiones.crit")} unit="%" value={o.crit} integer min={50} max={99} onChange={(v) => v !== null && setO({ ...o, crit: v })} />
+        <NumberField label={t("conexiones.perClient")} unit={t("conexiones.perClientUnit")} value={o.perClient} integer min={100} max={100000} onChange={(v) => v !== null && setO({ ...o, perClient: v })} hint={t("conexiones.perClientHint")} />
+      </div>
+      <Output t={t} mod="conexiones" issues={r.issues} steps={r.steps} undo={r.undo} label={t("conexiones.label")} />
+    </>
+  )
+}
+
+function Ports({ t, ctx }: { t: T; ctx: AdvContext }) {
+  const [o, setO] = useOpts<PortsOptions>("puertos")
+  const r = portsScript(ctx, o)
+  return (
+    <>
+      <div className={grid}>
+        <TextField label={t("puertos.ports")} value={o.ports} onChange={(v) => setO({ ...o, ports: v })} hint={t("puertos.portsHint")} />
+        <NumberField label={t("puertos.drop")} unit={t("puertos.dropUnit")} value={o.dropDb} integer min={1} max={20} onChange={(v) => v !== null && setO({ ...o, dropDb: v })} hint={t("puertos.dropHint")} />
+        <NumberField label={t("puertos.temp")} unit={t("puertos.tempUnit")} value={o.tempC} integer min={40} max={100} onChange={(v) => v !== null && setO({ ...o, tempC: v })} hint={t("puertos.tempHint")} />
+      </div>
+      <Output t={t} mod="puertos" issues={r.issues} steps={r.steps} undo={r.undo} label={t("puertos.label")} />
     </>
   )
 }

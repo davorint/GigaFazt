@@ -28,6 +28,7 @@ import {
   type Step,
 } from "./advanced"
 import { DEFAULT_ALERTS, DEFAULT_FAILOVER, DEFAULT_FILTERS, alertsScript, bondScript, defaultProbes, failoverScript, filtersScript, fullExportScript, priorityScript, publicIpScript, type PublicIpRow } from "./advanced2"
+import { DEFAULT_CONNTRACK, DEFAULT_POOL, DEFAULT_PORTS, DEFAULT_SESSIONS, conntrackScript, defaultPorts, poolScript, portsScript, sessionsScript, sheetScript } from "./advanced3"
 import type { AdvancedState } from "./state"
 
 /** Generators by what they're for (the picker's groups). */
@@ -35,7 +36,7 @@ export const GROUPS = {
   enlaces: ["failover", "destinos", "bond", "respaldo", "repuesto"],
   clientes: ["morosos", "velocidad", "uso", "ippublica", "prioridad"],
   seguridad: ["filtros", "escudo", "dns", "acceso"],
-  operacion: ["monitoreo", "alertas"],
+  operacion: ["monitoreo", "alertas", "ficha", "sesiones", "pool", "conexiones", "puertos"],
   crecer: ["bgp"],
 } as const
 export type Module = (typeof GROUPS)[keyof typeof GROUPS][number]
@@ -45,7 +46,7 @@ export const MODULES = Object.values(GROUPS).flat() as Module[]
  * Order in the deployment's download: remote access and protection first, then what clients see, what rides on the
  * balancing, operations, and last what changes the network around the router (backup router, OLT bond, BGP).
  */
-export const BUNDLE_ORDER: Module[] = ["acceso", "filtros", "escudo", "dns", "morosos", "uso", "velocidad", "ippublica", "destinos", "failover", "prioridad", "monitoreo", "alertas", "repuesto", "respaldo", "bond", "bgp"]
+export const BUNDLE_ORDER: Module[] = ["acceso", "filtros", "escudo", "dns", "morosos", "uso", "velocidad", "ippublica", "destinos", "failover", "prioridad", "monitoreo", "alertas", "ficha", "sesiones", "pool", "conexiones", "puertos", "repuesto", "respaldo", "bond", "bgp"]
 
 /**
  * Saved values over the defaults, field by field: a field is taken only when it has the default's kind (number, text,
@@ -86,6 +87,11 @@ export function defaultsFor(ctx: AdvContext): Record<Module, object> {
     acceso: DEFAULT_REMOTE,
     monitoreo: DEFAULT_MONITOR,
     alertas: DEFAULT_ALERTS,
+    ficha: {},
+    sesiones: DEFAULT_SESSIONS,
+    pool: DEFAULT_POOL,
+    conexiones: DEFAULT_CONNTRACK,
+    puertos: { ...DEFAULT_PORTS, ports: defaultPorts(ctx) },
     bgp: DEFAULT_BGP,
   }
 }
@@ -134,6 +140,16 @@ export function moduleSteps(mod: Module, ctx: AdvContext, adv: AdvancedState): M
         return alertsScript(ctx, optionsOf(mod, ctx, adv))
       case "prioridad":
         return priorityScript(ctx)
+      case "ficha":
+        return sheetScript(ctx)
+      case "sesiones":
+        return sessionsScript(ctx, optionsOf(mod, ctx, adv))
+      case "pool":
+        return poolScript(ctx, optionsOf(mod, ctx, adv))
+      case "conexiones":
+        return conntrackScript(ctx, optionsOf(mod, ctx, adv))
+      case "puertos":
+        return portsScript(ctx, optionsOf(mod, ctx, adv))
       case "ippublica":
         return publicIpScript(ctx, optionsOf<PublicIpOptions>(mod, ctx, adv).rows)
       case "repuesto":
