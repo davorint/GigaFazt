@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { NextIntlClientProvider } from "next-intl"
 import { setRequestLocale } from "next-intl/server"
 import { notFound } from "next/navigation"
+import { AdminLinks } from "@/components/interno/AdminLinks"
 import { SurveysApp } from "@/components/surveys/SurveysApp"
 import copy from "@/messages/internal/levantamientos.es.json"
 import materiales from "@/messages/internal/materiales.es.json"
@@ -36,18 +37,8 @@ export default async function LevantamientosPage({ params }: PageProps<"/[locale
         <p className="eyebrow">{t.kicker}</p>
         <h1 className="mt-3 text-4xl font-light tracking-tight text-foreground sm:text-5xl">{t.title}</h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-zinc-300">{t.lead}</p>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-400">
-          {t.storage}{" "}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (proxy.ts checks the session and rewrites it) */}
-          <a href="/interno" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
-            {t.back}
-          </a>
-          {" · "}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (proxy.ts checks the session and rewrites it) */}
-          <a href="/interno/materiales" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
-            {materiales.materiales.title}
-          </a>
-        </p>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-400">{t.storage}</p>
+        <AdminLinks current="levantamientos" />
       </section>
       <NextIntlClientProvider locale="es" messages={messages}>
         <SurveysApp />

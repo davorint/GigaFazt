@@ -2425,6 +2425,11 @@
       },
       "untrackedHint": "Escribe ajustes y elementos sin comentario: el export no dice si está. Si está activado en el despliegue, la reparación lo vuelve a pegar (es seguro).",
       "short": "Falta alguna de las líneas que comparten comentario: {list}."
+    },
+    "carrierPick": {
+      "label": "Carrier",
+      "none": "Sin carrier de la lista",
+      "hint": "De Administración → Proveedores."
     }
   }
 }

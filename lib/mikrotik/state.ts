@@ -214,6 +214,10 @@ export const DEFAULT_PATTERN: Pattern = {
   pageMB: 3,
 }
 
+/** A provider id (from /interno/admin/proveedores). */
+const CARRIER_ID = /^[\w-]{6,64}$/
+const carrierIdOk = (v: string | null | undefined): v is string => !!v && CARRIER_ID.test(v)
+
 export function presetState(preset: Preset, base?: LabState): LabState {
   const rule = base?.rule ?? DEFAULT_RULE
   return {
@@ -322,7 +326,7 @@ function setDeploymentParams(h: URLSearchParams, f: DeploymentFields) {
   if (f.deployment) h.set("n", f.deployment)
   if (f.status === "existing") h.set("st", "existing")
   const enc = encodeURIComponent
-  h.set("w", [f.balance.classifier, f.balance.failover, f.balance.nat ? "1" : "0", f.balance.clients.map(enc).join(","), ...f.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor), w.type, opt(w.measuredMbps), opt(w.upMbps), w.upstreamCgnat ? "1" : "0", enc(w.natIps), w.providerNat ? "1" : "0"].join(","))].join("|"))
+  h.set("w", [f.balance.classifier, f.balance.failover, f.balance.nat ? "1" : "0", f.balance.clients.map(enc).join(","), ...f.wans.map((w) => [enc(w.name), enc(w.iface), enc(w.gateway), num(w.mbps), enc(w.monitor), w.type, opt(w.measuredMbps), opt(w.upMbps), w.upstreamCgnat ? "1" : "0", enc(w.natIps), w.providerNat ? "1" : "0", enc(w.carrierId ?? "")].join(","))].join("|"))
   if (f.balance.speed !== "normal") h.set("lf", f.balance.speed)
   const st = f.setup
   h.set(
@@ -593,7 +597,7 @@ function decodeWans(h: URLSearchParams): { wans: Wan[]; balance: BalanceState } 
   }
   const wans: Wan[] = []
   for (const [k, row] of rows.entries()) {
-    const [name, iface, gateway, mbps, monitor, type, measured, up, cgnat, natIps, providerNat] = row.split(",")
+    const [name, iface, gateway, mbps, monitor, type, measured, up, cgnat, natIps, providerNat, carrier] = row.split(",")
     const w = { name: dec(name), iface: dec(iface), gateway: dec(gateway), mbps: finite(mbps, 1, 1e6), monitor: dec(monitor) }
     if (Object.values(w).some((x) => x === null)) return null
     wans.push({
@@ -609,6 +613,8 @@ function decodeWans(h: URLSearchParams): { wans: Wan[]; balance: BalanceState } 
       providerNat: cgnat === "1" || providerNat !== "0",
       monitor: (w.monitor as string).slice(0, 64),
       natIps: (dec(natIps) ?? "").slice(0, 40),
+      // 12th field (2026-11-17): the carrier from the provider list; older links have none.
+      ...(carrierIdOk(dec(carrier)) ? { carrierId: dec(carrier) as string } : {}),
     })
   }
   const nets = (clients ?? "").split(",").map(dec)

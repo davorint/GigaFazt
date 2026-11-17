@@ -247,7 +247,13 @@
         "none": "Sin dato"
       },
       "entry": "Por dónde entraría",
-      "notes": "Notas"
+      "notes": "Notas",
+      "pick": "Carrier de la lista de proveedores",
+      "noPick": "No está en la lista",
+      "pickHint": "Agrega carriers en Administración → Proveedores.",
+      "fromList": "De la lista: {zones}",
+      "offersLine": "{mbps} Mbps · {price}/mes",
+      "contactLine": "{name} · {phone}"
     },
     "pending": {
       "intro": "Lo que falta antes de instalar. Lo que le toca al edificio irá en el reporte para la administración.",

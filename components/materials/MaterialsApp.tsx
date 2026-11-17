@@ -8,6 +8,8 @@ import { AreaField, PickField } from "@/components/surveys/SurveyFields"
 import { CATEGORIES, ROLES, catalogFile, mxn, readCatalogFile, type Category, type Item, type Role } from "@/lib/materials/catalog"
 import { catalogServerSnapshot, catalogSnapshot, deleteItem, importItems, saveItem, subscribeCatalog } from "@/lib/materials/store"
 import { newId } from "@/lib/survey/id"
+import { isKind, providerName } from "@/lib/providers/model"
+import { providersServerSnapshot, providersSnapshot, subscribeProviders } from "@/lib/providers/store"
 
 const BTN = "h-11 rounded-full border border-white/15 px-5 text-sm text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const PRIMARY = "h-11 rounded-full bg-white px-5 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -39,7 +41,7 @@ export function MaterialsApp() {
   const items = store.items
   const shown = items.filter((x) => (!cat || x.category === cat) && (!q.trim() || fold(`${x.name} ${x.supplier} ${x.sku}`).includes(fold(q.trim()))))
   const add = () => {
-    const it: Item = { id: newId(), name: t("newItem"), category: cat || "otros", unit: "pza", price: null, role: "", supplier: "", sku: "", notes: "" }
+    const it: Item = { id: newId(), name: t("newItem"), category: cat || "otros", unit: "pza", price: null, role: "", supplierId: "", supplier: "", sku: "", notes: "" }
     saveItem(it)
     setOpenId(it.id)
     setQ("")
@@ -93,7 +95,12 @@ export function MaterialsApp() {
 }
 
 function ItemRow({ t, item: x, open, onToggle }: { t: ReturnType<typeof useTranslations>; item: Item; open: boolean; onToggle: () => void }) {
+  const all = useSyncExternalStore(subscribeProviders, providersSnapshot, providersServerSnapshot).list
+  const named = all.find((p) => p.id === x.supplierId)
+  const supplierName = named ? providerName(named) : x.supplier
   const up = (p: Partial<Item>) => saveItem({ ...x, ...p })
+  const providers = useSyncExternalStore(subscribeProviders, providersSnapshot, providersServerSnapshot).list.filter((p) => !isKind(p, "carrier") || p.kinds.length > 1)
+  const supplier = providers.find((p) => p.id === x.supplierId)
   return (
     <div className="rounded-xl border border-white/10">
       <button type="button" onClick={onToggle} aria-expanded={open} className="flex w-full items-center justify-between gap-3 rounded-xl p-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
@@ -102,6 +109,7 @@ function ItemRow({ t, item: x, open, onToggle }: { t: ReturnType<typeof useTrans
           <span className="font-mono text-xs text-zinc-400">
             {t(`categories.${x.category}`)} · {x.unit}
             {x.role ? ` · ${t(`roles.${x.role}`)}` : ""}
+            {supplierName ? ` · ${supplierName}` : ""}
           </span>
         </span>
         <span className={`shrink-0 font-mono text-sm ${x.price === null ? "text-amber-200" : "text-zinc-100"}`}>{x.price === null ? t("noPrice") : mxn(x.price)}</span>
@@ -114,7 +122,8 @@ function ItemRow({ t, item: x, open, onToggle }: { t: ReturnType<typeof useTrans
             <TextField label={t("unit")} value={x.unit} onChange={(v) => up({ unit: v.slice(0, 20) })} />
             <NumberField label={t("price")} unit="MXN" optional max={1e8} value={x.price} onChange={(v) => up({ price: v })} />
             <PickField label={t("role")} value={x.role} onChange={(v) => up({ role: v as Role | "" })} hint={t("roleHint")} options={[{ value: "", label: t("noRole") }, ...ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))]} />
-            <TextField label={t("supplier")} value={x.supplier} onChange={(v) => up({ supplier: v })} />
+            <PickField label={t("supplierPick")} value={x.supplierId} onChange={(v) => up({ supplierId: v })} hint={t("supplierHint")} options={[{ value: "", label: t("noSupplier") }, ...providers.map((p) => ({ value: p.id, label: providerName(p) || p.id.slice(0, 6) }))]} />
+            {!supplier && <TextField label={t("supplier")} value={x.supplier} onChange={(v) => up({ supplier: v })} />}
             <TextField label={t("sku")} value={x.sku} onChange={(v) => up({ sku: v })} />
           </div>
           <AreaField label={t("notes")} value={x.notes} onChange={(v) => up({ notes: v })} rows={2} />

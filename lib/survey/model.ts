@@ -63,7 +63,7 @@ export type Tower = {
 }
 export type Route = { id: string; from: string; to: string; kind: RouteKind; meters: number | null; obstacles: string }
 export type Area = { id: string; kind: AreaKind; name: string; wifi: Tri; m2: number | null; walls: string; power: Tri; route: string; notes: string }
-export type Carrier = { id: string; name: string; available: Tri; mbps: number | null; leadDays: number | null; ip: CarrierIp; entry: string; notes: string }
+export type Carrier = { id: string; /** From /interno/admin/proveedores, or "". */ providerId: string; name: string; available: Tri; mbps: number | null; leadDays: number | null; ip: CarrierIp; entry: string; notes: string }
 export type Pending = { id: string; text: string; who: "edificio" | "nosotros"; done: boolean }
 
 export type Survey = {
@@ -240,6 +240,7 @@ const one = <T extends string>(v: unknown, of: readonly T[], fallback: T): T => 
 const bool = (v: unknown) => v === true
 const id = (v: unknown) => (typeof v === "string" && /^[\w-]{6,64}$/.test(v) ? v : newId())
 const list = <T>(v: unknown, read: (x: Obj) => T): T[] => (Array.isArray(v) ? v.filter(isObj).slice(0, MAX_ITEMS).map(read) : [])
+const ID_RE = /^[\w-]{6,64}$/
 const date = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 30) : "")
 
 const TRI = ["si", "no", ""] as const
@@ -363,6 +364,7 @@ export function decodeSurvey(v: unknown): Survey | null {
     })),
     carriers: list(v.carriers, (x) => ({
       id: id(x.id),
+      providerId: typeof x.providerId === "string" && ID_RE.test(x.providerId) ? x.providerId : "",
       name: str(x.name, 100),
       available: one(x.available, TRI, ""),
       mbps: num(x.mbps, 0, 1e6),

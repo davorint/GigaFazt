@@ -1,5 +1,5 @@
 /**
- * The master materials list (/interno/materiales, owner 2026-11-17: "the main materials section under /interno… from
+ * The master materials list (/interno/admin/materiales, owner 2026-11-17: "the main materials section under /interno… from
  * there we will pick and choose the materials that we need for each project… like the master list"). Each item: name,
  * category, unit, price with IVA included (owner's choice), supplier, part number, notes, and optionally what it's for
  * in a design (`role`: a 1:16 splitter, a 10/90 tap, riser fiber per meter, a floor box, the ONT…), which is how a site
@@ -42,12 +42,15 @@ export type Item = {
   /** MXN with IVA included; null = no price yet. */
   price: number | null
   role: Role | ""
+  /** The provider from /interno/admin/proveedores, or "". */
+  supplierId: string
+  /** Free-text supplier when it isn't in the list. */
   supplier: string
   sku: string
   notes: string
 }
 
-const item = (name: string, category: Category, unit: string, role: Role | "" = ""): Item => ({ id: newId(), name, category, unit, price: null, role, supplier: "", sku: "", notes: "" })
+const item = (name: string, category: Category, unit: string, role: Role | "" = ""): Item => ({ id: newId(), name, category, unit, price: null, role, supplierId: "", supplier: "", sku: "", notes: "" })
 
 /** The first list, without prices. */
 export function starterCatalog(): Item[] {
@@ -86,6 +89,7 @@ export function decodeItem(v: unknown): Item | null {
     unit: str(v.unit, 20) || "pza",
     price: typeof v.price === "number" && Number.isFinite(v.price) && v.price >= 0 && v.price <= 1e8 ? v.price : null,
     role: (ROLES as readonly unknown[]).includes(v.role) ? (v.role as Role) : "",
+    supplierId: typeof v.supplierId === "string" && /^[\w-]{6,64}$/.test(v.supplierId) ? v.supplierId : "",
     supplier: str(v.supplier, 200),
     sku: str(v.sku, 100),
     notes: str(v.notes, 1000),

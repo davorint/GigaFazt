@@ -31,6 +31,7 @@ import { CodeBlock } from "./CodeBlock"
 import { IssueList } from "./IssueList"
 import { NumberField } from "./NumberField"
 import { SelectField } from "./SelectField"
+import { CarrierPick } from "./CarrierPick"
 import { SetupChecks } from "./SetupChecks"
 import { TextField } from "./TextField"
 
@@ -94,6 +95,7 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
               </div>
               <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <TextField label={t("name")} value={w.name} onChange={(v) => setWan(k, { name: v.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24) })} />
+                <CarrierPick value={w.carrierId ?? ""} onChange={(v) => setWan(k, { carrierId: v || undefined })} />
                 <SelectField label={t("type")} value={w.type} onChange={(v) => setWan(k, { type: v as WanType })} hint={t(`typeHint.${w.type}`)}>
                   {WAN_TYPES.map((type) => (
                     <option key={type} value={type}>

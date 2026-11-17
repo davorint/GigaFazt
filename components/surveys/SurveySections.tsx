@@ -1,10 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import { NumberField } from "@/components/mikrotik/NumberField"
 import { TextField } from "@/components/mikrotik/TextField"
 import { MAX_ITEMS, newId, type Area, type Carrier, type Contact, type Pending, type Provider, type Route, type Survey } from "@/lib/survey/model"
+import { mxn } from "@/lib/materials/catalog"
+import { isKind, providerName } from "@/lib/providers/model"
+import { providersServerSnapshot, providersSnapshot, subscribeProviders } from "@/lib/providers/store"
 import { AddButton, ApprovalField, AreaField, DateField, GRID, ItemCard, PickField, TriField } from "./SurveyFields"
 
 export type SectionProps = { s: Survey; set: (s: Survey) => void }
@@ -231,12 +234,24 @@ export function AreasSection({ s, set }: SectionProps) {
 export function CarriersSection({ s, set }: SectionProps) {
   const t = useTranslations("levantamientos")
   const up = (id: string, x: Partial<Carrier>) => set({ ...s, carriers: patch(s.carriers, id, x) })
+  const listed = useSyncExternalStore(subscribeProviders, providersSnapshot, providersServerSnapshot).list.filter((p) => isKind(p, "carrier"))
   const ips = ["", "publica", "nat"] as const
   return (
     <div className="grid gap-3">
       <p className="text-sm leading-relaxed text-zinc-300">{t("carriers.intro")}</p>
       {s.carriers.map((c, k) => (
         <ItemCard key={c.id} title={c.name || t("carriers.item", { n: k + 1 })} removeLabel={t("editor.remove")} onRemove={() => set({ ...s, carriers: without(s.carriers, c.id) })}>
+          <PickField
+            label={t("carriers.pick")}
+            hint={t("carriers.pickHint")}
+            value={c.providerId}
+            onChange={(v) => {
+              const p = listed.find((x) => x.id === v)
+              up(c.id, { providerId: v, ...(p ? { name: providerName(p), ip: p.carrier.ip === "publica" || p.carrier.ip === "nat" ? p.carrier.ip : c.ip } : {}) })
+            }}
+            options={[{ value: "", label: t("carriers.noPick") }, ...listed.map((p) => ({ value: p.id, label: providerName(p) || p.id.slice(0, 6) }))]}
+          />
+          <CarrierFromList p={listed.find((x) => x.id === c.providerId)} />
           <div className={GRID}>
             <TextField label={t("carriers.name")} value={c.name} onChange={(v) => up(c.id, { name: v })} />
             <TriField label={t("carriers.available")} value={c.available} onChange={(v) => up(c.id, { available: v })} />
@@ -250,7 +265,7 @@ export function CarriersSection({ s, set }: SectionProps) {
       ))}
       <AddButton
         disabled={s.carriers.length >= MAX_ITEMS}
-        onClick={() => set({ ...s, carriers: [...s.carriers, { id: newId(), name: "", available: "", mbps: null, leadDays: null, ip: "", entry: "", notes: "" }] })}
+        onClick={() => set({ ...s, carriers: [...s.carriers, { id: newId(), providerId: "", name: "", available: "", mbps: null, leadDays: null, ip: "", entry: "", notes: "" }] })}
       >
         {t("carriers.add")}
       </AddButton>
@@ -280,6 +295,26 @@ export function PendingSection({ s, set }: SectionProps) {
       <AddButton disabled={s.pending.length >= MAX_ITEMS} onClick={() => set({ ...s, pending: [...s.pending, { id: newId(), text: "", who: "edificio", done: false }] })}>
         {t("pending.add")}
       </AddButton>
+    </div>
+  )
+}
+
+/** What the provider list says about a carrier: coverage, offers and the first contact. */
+function CarrierFromList({ p }: { p?: ReturnType<typeof providersSnapshot>["list"][number] }) {
+  const t = useTranslations("levantamientos.carriers")
+  if (!p) return null
+  const contact = p.contacts[0]
+  return (
+    <div className="grid gap-1 rounded-lg border border-white/10 bg-white/[0.02] p-3 text-xs leading-relaxed text-zinc-300">
+      {p.carrier.zones && <p>{t("fromList", { zones: p.carrier.zones })}</p>}
+      {p.carrier.offers
+        .filter((o) => o.mbps)
+        .map((o) => (
+          <p key={o.id} className="font-mono">
+            {t("offersLine", { mbps: o.mbps ?? 0, price: o.monthly === null ? "—" : mxn(o.monthly) })}
+          </p>
+        ))}
+      {contact && <p>{t("contactLine", { name: contact.name, phone: contact.phone || contact.whatsapp || contact.email })}</p>}
     </div>
   )
 }

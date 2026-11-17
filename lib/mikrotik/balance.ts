@@ -81,6 +81,8 @@ export type Wan = {
   monitor: string
   /** Public IPs this link lends to fixed CGNAT ("201.1.1.8" or "201.1.1.8-201.1.1.15"); empty = its own address. */
   natIps: string
+  /** The carrier from /interno/admin/proveedores (optional). */
+  carrierId?: string
 }
 
 export type BalanceOptions = {

@@ -3,7 +3,7 @@
     "meta": {
       "title": "Materiales · Interno"
     },
-    "kicker": "Uso interno",
+    "kicker": "Administración",
     "title": "Materiales",
     "lead": "La lista maestra: cada material con su unidad y su precio con IVA incluido. De aquí se escoge lo que lleva cada proyecto en Levantamientos → Materiales.",
     "storage": "Se guarda solo en este navegador. Para pasarla a otro teléfono o computadora usa «Exportar lista» y luego «Importar lista» allá.",
@@ -27,7 +27,7 @@
     "role": "Para qué es en un diseño",
     "noRole": "No se calcula del diseño",
     "roleHint": "Si lo eliges, los levantamientos calculan cuántos lleva cada proyecto.",
-    "supplier": "Proveedor",
+    "supplier": "Proveedor (si no está en la lista)",
     "sku": "Número de parte",
     "notes": "Notas",
     "remove": "Quitar",
@@ -68,6 +68,9 @@
       "tap-30": "Tap desbalanceado 30/70",
       "tap-40": "Tap desbalanceado 40/60",
       "tap-50": "Tap desbalanceado 50/50"
-    }
+    },
+    "supplierPick": "Proveedor",
+    "noSupplier": "Sin proveedor de la lista",
+    "supplierHint": "Agrega proveedores en Administración → Proveedores."
   }
 }

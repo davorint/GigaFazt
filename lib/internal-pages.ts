@@ -1,6 +1,6 @@
 /**
  * Internal pages, all under /interno (owner, 2026-11-17): /interno lists the tools; /interno/mikrotik-optimo is the
- * ideal guide of a deployment, /interno/mikrotik the MikroTik expert scripts, /interno/calculadora the calculators
+ * ideal guide of a deployment, /interno/admin the providers and the master materials list, /interno/mikrotik the MikroTik expert scripts, /interno/calculadora the calculators
  * and simulators, /interno/olt the Huawei OLT knowledge base. Behind a password (lib/internal-auth.ts; the sign-in
  * page /interno/entrar is the only one open), never linked from the public site, not in the sitemap and noindex. The
  * old addresses (/mikrotik, /olt…) no longer exist. Served from the Spanish route; any capitalization
@@ -8,7 +8,9 @@
  */
 
 export const INTERNAL_ROOT = "interno"
-export const INTERNAL_PAGES = ["levantamientos", "materiales", "mikrotik-optimo", "mikrotik", "calculadora", "olt"] as const
+export const INTERNAL_PAGES = ["levantamientos", "admin", "mikrotik-optimo", "mikrotik", "calculadora", "olt"] as const
+/** The admin area's pages (/interno/admin/<page>). */
+export const ADMIN_PAGES = ["proveedores", "materiales"] as const
 /** The sign-in page: the only internal page served without the password. */
 export const LOGIN_PAGE = "entrar"
 export const LOGIN_PATH = `/${INTERNAL_ROOT}/${LOGIN_PAGE}`
@@ -36,7 +38,14 @@ export function matchInternal(pathname: string): InternalMatch | null {
   // The sub-page's name: its known spelling in lowercase; anything else is kept and ends in a 404.
   const sub = /^\/([^/.]+)(.*)$/.exec(rest)
   const page = sub ? KNOWN.get(sub[1].toLowerCase()) : undefined
-  const tail = sub ? (page ? `/${page}${sub[2]}` : rest) : rest
+  let after = sub?.[2] ?? ""
+  // Under /interno/admin the second name is canonicalized too (/INTERNO/Admin/Proveedores).
+  if (page === "admin") {
+    const sub2 = /^\/([^/.]+)(.*)$/.exec(after)
+    const known = sub2 && (ADMIN_PAGES as readonly string[]).find((p) => p === sub2[1].toLowerCase())
+    if (sub2 && known) after = `/${known}${sub2[2]}`
+  }
+  const tail = sub ? (page ? `/${page}${after}` : rest) : rest
   const canonical = `/${locale}/${INTERNAL_ROOT}${tail}`
   return { rewriteTo: canonical === pathname ? null : canonical, open: page === LOGIN_PAGE }
 }
