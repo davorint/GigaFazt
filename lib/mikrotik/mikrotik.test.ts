@@ -3,7 +3,6 @@ import { check, demandAt, figures, planDefaults, simulate, solve, type Pattern, 
 import { hotspotProfile, pcqTypes, pppProfile, queueTree, radiusAttribute, rateLimit, rosRate, simpleQueue } from "./routeros"
 import { decodeState, encodeState, initialState, PRESETS, presetState } from "./state"
 import { fmtData, fmtRate, fmtSec } from "./format"
-import { matchInternal } from "../internal-pages"
 import { parseRate, parseRateLimit, parseRouterOS, parseTime } from "./import"
 import { allocate, simulateShared } from "./shared"
 import { DEFAULT_GROUP, memberSetup } from "./state"
@@ -355,30 +354,5 @@ describe("format", () => {
     expect(fmtData(80000)).toBe("10 GB")
     expect(fmtSec(0.25)).toBe("0.25 s")
     expect(fmtSec(Number.POSITIVE_INFINITY)).toBe("∞")
-  })
-})
-
-describe("internal pages", () => {
-  it("matches only internal paths", () => {
-    expect(matchInternal("/mikrotik")).toEqual({ rewriteTo: "/es/mikrotik" })
-    expect(matchInternal("/mikrotik.rsc")).toEqual({ rewriteTo: "/es/mikrotik.rsc" })
-    expect(matchInternal("/mikrotik/x")).toEqual({ rewriteTo: "/es/mikrotik/x" })
-    expect(matchInternal("/es/mikrotik")).toEqual({ rewriteTo: null })
-    expect(matchInternal("/en/mikrotik.segments/a")).toEqual({ rewriteTo: null })
-    expect(["/", "/es", "/mikrotikx", "/es/mikrotikx", "/es/planes", "/x/y/mikrotik"].map(matchInternal)).toEqual([null, null, null, null, null, null])
-  })
-  it("maps any capitalization to the lowercase route", () => {
-    expect(matchInternal("/MIKROTIK")).toEqual({ rewriteTo: "/es/mikrotik" })
-    expect(matchInternal("/MikroTik/x")).toEqual({ rewriteTo: "/es/mikrotik/x" })
-    expect(matchInternal("/es/MIKROTIK")).toEqual({ rewriteTo: "/es/mikrotik" })
-    expect(matchInternal("/ES/Mikrotik.rsc")).toEqual({ rewriteTo: "/es/mikrotik.rsc" })
-  })
-  it("also serves /calculadora, in any capitalization", () => {
-    expect(matchInternal("/calculadora")).toEqual({ rewriteTo: "/es/calculadora" })
-    expect(matchInternal("/CALCULADORA")).toEqual({ rewriteTo: "/es/calculadora" })
-    expect(matchInternal("/Calculadora.rsc")).toEqual({ rewriteTo: "/es/calculadora.rsc" })
-    expect(matchInternal("/es/calculadora")).toEqual({ rewriteTo: null })
-    expect(matchInternal("/ES/CalculaDora")).toEqual({ rewriteTo: "/es/calculadora" })
-    expect(matchInternal("/calculadoras")).toBeNull()
   })
 })

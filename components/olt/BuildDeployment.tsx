@@ -38,7 +38,7 @@ export function BuildDeployment({ build, ports, onBuild }: { build: Build; ports
       <p className="text-sm text-zinc-400">
         {t("none")}{" "}
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-        <a href="/mikrotik#despliegues" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+        <a href="/interno/mikrotik#despliegues" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
           {t("noneLink")}
         </a>
       </p>
@@ -112,7 +112,7 @@ export function BuildDeployment({ build, ports, onBuild }: { build: Build; ports
           <>
             {" "}
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-            <a href="/calculadora#hora-pico" className="underline decoration-white/30 underline-offset-4 hover:decoration-white">
+            <a href="/interno/calculadora#hora-pico" className="underline decoration-white/30 underline-offset-4 hover:decoration-white">
               {t("open")}
             </a>
           </>

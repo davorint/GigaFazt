@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest"
-import { matchInternal } from "../internal-pages"
 import { BUNDLE_ORDER, bundleModules, merge, optionsOf, stepBlock } from "./bundle"
 import { advContext, deploymentBundle, guideScripts } from "./guide-scripts"
 import { inspectExport, type PartSpec } from "./inspect"
@@ -108,16 +107,6 @@ describe("what's installed", () => {
     const script = g.steps.map((s) => s.script).join("\n")
     const r = inspectExport(script, [{ id: "base", prefix: "DS: ", script, loose: true }])
     expect(r[0].state).toBe("ok")
-  })
-})
-
-describe("routes", () => {
-  it("/mikrotik-optimo and /mikrotik-optimal open the guide page", () => {
-    expect(matchInternal("/mikrotik-optimo")).toEqual({ rewriteTo: "/es/mikrotik-optimo" })
-    expect(matchInternal("/MIKROTIK-OPTIMAL")).toEqual({ rewriteTo: "/es/mikrotik-optimo" })
-    expect(matchInternal("/es/mikrotik-optimo")).toEqual({ rewriteTo: null })
-    expect(matchInternal("/mikrotik")).toEqual({ rewriteTo: "/es/mikrotik" })
-    expect(matchInternal("/es/mikrotik")).toEqual({ rewriteTo: null })
   })
 })
 

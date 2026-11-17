@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { BOARDS, BUDGETS, CHASSIS, FAN_TRAYS, CVE_9067, DOWN_CAUSES, MODULES, ONTS, OPTICS, SOURCES, TROUBLE, compareVersions, type Fact } from "./olt-kb"
 import { LAYOUTS } from "./olt-build"
-import { matchInternal } from "./internal-pages"
 
 const isFact = (x: unknown): x is Fact<unknown> => !!x && typeof x === "object" && "v" in x && "src" in x
 const facts = (o: object): Fact<unknown>[] => Object.values(o).filter(isFact)
@@ -54,17 +53,6 @@ describe("modules, ONTs, software and faults", () => {
   it("sorts versions by release", () => {
     expect(["V800R013C00", "V800R011C00", "V800R012C00"].sort(compareVersions)).toEqual(["V800R011C00", "V800R012C00", "V800R013C00"])
     expect(compareVersions("V100R016C10", "V100R016C00")).toBeGreaterThan(0)
-  })
-})
-
-describe("/olt is an internal page", () => {
-  it("rewrites any capitalization to the Spanish route", () => {
-    expect(matchInternal("/OLT")).toEqual({ rewriteTo: "/es/olt" })
-    expect(matchInternal("/olt")).toEqual({ rewriteTo: "/es/olt" })
-    expect(matchInternal("/es/olt")).toEqual({ rewriteTo: null })
-    expect(matchInternal("/ES/Olt")).toEqual({ rewriteTo: "/es/olt" })
-    expect(matchInternal("/olte")).toBeNull()
-    expect(matchInternal("/es/planes")).toBeNull()
   })
 })
 

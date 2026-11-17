@@ -264,7 +264,7 @@
         "suggest": "Armar para este despliegue",
         "save": "Guardar en el despliegue",
         "none": "No hay despliegues guardados en este navegador.",
-        "noneLink": "Crea uno en /mikrotik",
+        "noneLink": "Crea uno en /interno/mikrotik",
         "unnamed": "Sin nombre",
         "summary": "{clients} clientes: necesita {need} puertos {tech}. OLT del despliegue: {model}.",
         "noPon": "{clients} clientes, sin capa PON (escoge un tipo de PON en Hora pico).",
@@ -274,7 +274,7 @@
         "short": "No caben: con {boards} × {board} el {chassis} da {ports} puertos y se necesitan {need}. Escoge un chasis más grande o pon más clientes por puerto.",
         "saved": "Guardada en «{name}». Hora pico ahora revisa sus puertos contra los clientes.",
         "open": "Ábrelo en Hora pico",
-        "note": "Usa los despliegues de /mikrotik y /calculadora (los guarda este navegador). Guardar pone este chasis como la OLT del despliegue; los marcos MA5600T no tienen modelo propio allá y quedan como «Otra». Para GPON en un MA5800 sugiere la combo CSHF: sirve a los ONT GPON hoy y a los XGS-PON después.",
+        "note": "Usa los despliegues de /interno/mikrotik y /interno/calculadora (los guarda este navegador). Guardar pone este chasis como la OLT del despliegue; los marcos MA5600T no tienen modelo propio allá y quedan como «Otra». Para GPON en un MA5800 sugiere la combo CSHF: sirve a los ONT GPON hoy y a los XGS-PON después.",
         "models": {
           "ma5608t": "Huawei MA5608T",
           "ma5683t": "Huawei MA5683T",
@@ -459,7 +459,7 @@
     },
     "commands": {
       "title": "Comandos",
-      "lead": "Los comandos que usa esta base y /mikrotik, para revisar una OLT y dar de alta un ONT. La sintaxis puede cambiar entre versiones: confírmala en la tuya.",
+      "lead": "Los comandos que usa esta base y /interno/mikrotik, para revisar una OLT y dar de alta un ONT. La sintaxis puede cambiar entre versiones: confírmala en la tuya.",
       "groups": {
         "check": "Revisar la OLT",
         "ont": "Dar de alta y revisar un ONT",
@@ -471,7 +471,7 @@
         "board": "El detalle de una tarjeta: versión de software, BIOS y, en una tarjeta PON, el estado del módulo óptico de cada puerto.",
         "pitpConfig": "En qué modo está PITP (la etiqueta de ONT en PPPoE); útil si el PPPoE falla tras activarlo.",
         "autofind": "Los ONT conectados que la OLT ve pero aún no están dados de alta, con su número de serie.",
-        "ontAdd": "Da de alta un ONT en un puerto PON con su perfil de línea (plan) y de servicio. En /mikrotik → Configuración → Alta de un ONT sale ya armado con tus datos.",
+        "ontAdd": "Da de alta un ONT en un puerto PON con su perfil de línea (plan) y de servicio. En /interno/mikrotik → Configuración → Alta de un ONT sale ya armado con tus datos.",
         "servicePort": "Une el ONT a la VLAN de internet; el índice debe estar libre.",
         "servicePorts": "Los service-port existentes: para elegir un índice libre.",
         "pitpPort": "Activa PITP en el service-port de un ONT (también hace falta global y por VLAN).",

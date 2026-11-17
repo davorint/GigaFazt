@@ -1,5 +1,8 @@
 import type { Metadata } from "next"
+import { hasLocale } from "next-intl"
 import { getTranslations, setRequestLocale } from "next-intl/server"
+import { notFound } from "next/navigation"
+import { routing } from "@/i18n/routing"
 import { speedRange } from "@/lib/plans"
 import { perksSuffix } from "@/lib/meta-text"
 import { Nav } from "@/components/hud/Nav"
@@ -22,6 +25,8 @@ import { PageTransition } from "@/components/layout/PageTransition"
 
 export async function generateMetadata({ params }: PageProps<"/[locale]">): Promise<Metadata> {
   const { locale } = await params
+  // An unknown first segment (/olt2, /calculadora) is a 404, not a crash in the locale-aware text below.
+  if (!hasLocale(routing.locales, locale)) notFound()
   const t = await getTranslations({ locale, namespace: "meta" })
   const ts = await getTranslations({ locale, namespace: "seo" })
   return pageMeta(locale, "/", t("title"), t("description", { ...speedRange(), perks: perksSuffix(locale, t) }), ts("ogAlt"))
@@ -30,6 +35,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]">): Prom
 /** Home: the ordered list of sections only (SPEC file structure). */
 export default async function Home({ params }: PageProps<"/[locale]">) {
   const { locale } = await params
+  if (!hasLocale(routing.locales, locale)) notFound()
   setRequestLocale(locale)
   const t = await getTranslations("sections")
 

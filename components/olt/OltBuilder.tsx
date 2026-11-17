@@ -54,7 +54,7 @@ export function OltBuilder() {
   const external = powerBill(plan)
 
   const bill = [`1 × ${chassis?.name ?? build.chassis}${chassis?.backplane ? ` (${chassis.backplane.v})` : ""}`, ...s.bill.map((x) => `${x.count} × ${x.code}`), ...(external ? [external] : [])].join("\n")
-  const shareUrl = () => `${window.location.origin}/olt?${PARAM}=${encodeURIComponent(encodeBuild(build))}#armar`
+  const shareUrl = () => `${window.location.origin}/interno/olt?${PARAM}=${encodeURIComponent(encodeBuild(build))}#armar`
 
   const issueText = (i: BuildIssue) => {
     switch (i.code) {

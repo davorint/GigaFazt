@@ -1,0 +1,38 @@
+{
+  "interno": {
+    "meta": {
+      "title": "Interno · GigaFazt",
+      "titleLogin": "Entrar · Interno"
+    },
+    "kicker": "Uso interno",
+    "title": "Herramientas internas",
+    "lead": "Para el equipo de GigaFazt. Estas páginas no aparecen en el sitio público ni en buscadores.",
+    "tools": {
+      "mikrotik-optimo": {
+        "name": "Guía óptima MikroTik",
+        "desc": "La guía paso a paso de cada despliegue, el archivo listo para pegar en el router y la revisión de lo que ya tiene instalado."
+      },
+      "mikrotik": {
+        "name": "Scripts MikroTik",
+        "desc": "Parámetros, despliegues, varios enlaces, configuración, scripts de experto, exportar y varios clientes."
+      },
+      "calculadora": {
+        "name": "Calculadoras y simuladores",
+        "desc": "Ráfagas, comparar planes, cola compartida, hora pico y la calculadora de ráfaga."
+      },
+      "olt": {
+        "name": "Base de conocimiento OLT Huawei",
+        "desc": "Chasis, tarjetas, energía, ventiladores, ópticas, ONTs, compatibilidad y comandos de la MA5600T y la MA5800."
+      }
+    },
+    "open": "Abrir",
+    "logout": "Cerrar sesión",
+    "login": {
+      "title": "Entrar",
+      "lead": "Escribe la contraseña del equipo. La sesión dura 30 días en este dispositivo.",
+      "password": "Contraseña",
+      "submit": "Entrar",
+      "error": "Contraseña incorrecta."
+    }
+  }
+}

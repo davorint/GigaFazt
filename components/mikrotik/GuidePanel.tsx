@@ -403,7 +403,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
         <p className="text-sm text-zinc-300">
           {t("ontPointer")}{" "}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-          <a href="/mikrotik#configuracion" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+          <a href="/interno/mikrotik#configuracion" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
             {t("where.setup")}
           </a>
         </p>
@@ -492,7 +492,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
               ? t("bundle.with", { list: [...new Set(bundle.steps.filter((x) => x.group !== "guide").map((x) => ta(`modules.${x.group}.name`)))].join(", ") })
               : t("bundle.none")}{" "}
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-            <a href="/mikrotik#avanzados" className="text-zinc-200 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+            <a href="/interno/mikrotik#avanzados" className="text-zinc-200 underline decoration-white/30 underline-offset-4 hover:decoration-white">
               {t("bundle.link")}
             </a>
           </p>

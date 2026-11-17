@@ -291,12 +291,12 @@ export function OltKnowledgeBase() {
         <p className="mt-3 text-sm text-zinc-400">
           {t("intro.links")}{" "}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-          <a href="/mikrotik" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+          <a href="/interno/mikrotik" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
             {t("intro.mikrotik")}
           </a>
           {" · "}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-          <a href="/calculadora" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+          <a href="/interno/calculadora" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
             {t("intro.calc")}
           </a>
         </p>

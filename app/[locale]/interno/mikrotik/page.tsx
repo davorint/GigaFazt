@@ -7,8 +7,8 @@ import internal from "@/messages/internal/mikrotik.es.json"
 
 /**
  * Internal MikroTik scripts (queues, deployments, load balancing, setup), served
- * at /mikrotik; the calculators and simulators live at /calculadora.
- * Open (no password, owner 2026-11-15); proxy.ts rewrites /mikrotik (any
+ * at /interno/mikrotik; the calculators and simulators live at /interno/calculadora.
+ * Behind the /interno password (owner, 2026-11-17); proxy.ts rewrites /interno/mikrotik (any
  * capitalization) here. It sits inside [locale] on purpose: a static
  * folder at the app root is listed in every public page's router payload
  * (static siblings of [locale]), which would leak the name. Spanish only, not
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 }
 
-export default async function MikrotikPage({ params }: PageProps<"/[locale]/mikrotik">) {
+export default async function MikrotikPage({ params }: PageProps<"/[locale]/interno/mikrotik">) {
   const { locale } = await params
   if (locale !== "es") notFound()
   setRequestLocale(locale)

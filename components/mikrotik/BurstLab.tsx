@@ -93,7 +93,7 @@ const PAGE_SECTIONS: Record<LabPage, Jump[]> = {
   scripts: ["params", "deployments", "links", "setup", "advanced", "export", "bulk"],
   calculators: ["params", "sim", "compare", "shared", "deployments", "capacity", "solver", "how"],
 }
-const PAGE_PATH: Record<LabPage, string> = { guide: "/mikrotik-optimo", scripts: "/mikrotik", calculators: "/calculadora" }
+const PAGE_PATH: Record<LabPage, string> = { guide: "/interno/mikrotik-optimo", scripts: "/interno/mikrotik", calculators: "/interno/calculadora" }
 const PAGES: LabPage[] = ["guide", "scripts", "calculators"]
 const ANCHORS: Record<Jump, string> = {
   params: "parametros",
@@ -316,7 +316,7 @@ export function BurstLab({ page }: { page: LabPage }) {
             </span>
           ))}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-          <a href="/olt" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+          <a href="/interno/olt" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
             {t("intro.olt")}
           </a>
         </p>

@@ -1,40 +1,49 @@
 /**
- * Internal pages (/mikrotik-optimo for the ideal guide of a deployment, /mikrotik for the MikroTik expert scripts, /calculadora for the
- * calculators and simulators, /olt for the Huawei OLT knowledge base): open (no password, owner 2026-11-15) but never
- * linked from the public site, not in the sitemap and noindex. They are served
- * from the Spanish route, and any capitalization (/MikroTik, /ES/CALCULADORA)
- * maps to the lowercase route.
+ * Internal pages, all under /interno (owner, 2026-11-17): /interno lists the tools; /interno/mikrotik-optimo is the
+ * ideal guide of a deployment, /interno/mikrotik the MikroTik expert scripts, /interno/calculadora the calculators
+ * and simulators, /interno/olt the Huawei OLT knowledge base. Behind a password (lib/internal-auth.ts; the sign-in
+ * page /interno/entrar is the only one open), never linked from the public site, not in the sitemap and noindex. The
+ * old addresses (/mikrotik, /olt…) no longer exist. Served from the Spanish route; any capitalization
+ * (/INTERNO/MikroTik, /ES/interno/OLT) maps to the lowercase route.
  */
 
+export const INTERNAL_ROOT = "interno"
 export const INTERNAL_PAGES = ["mikrotik-optimo", "mikrotik", "calculadora", "olt"] as const
+/** The sign-in page: the only internal page served without the password. */
+export const LOGIN_PAGE = "entrar"
+export const LOGIN_PATH = `/${INTERNAL_ROOT}/${LOGIN_PAGE}`
 /** Other spellings that open an internal page. */
 const ALIASES: Record<string, (typeof INTERNAL_PAGES)[number]> = { "mikrotik-optimal": "mikrotik-optimo" }
+const KNOWN = new Map<string, string>([...INTERNAL_PAGES.map((p): [string, string] => [p, p]), [LOGIN_PAGE, LOGIN_PAGE], ...Object.entries(ALIASES)])
 
 export type InternalMatch = {
   /** Where to rewrite, or null when the path is already the canonical route. */
   rewriteTo: string | null
+  /** The sign-in page (served without the password). */
+  open: boolean
 }
 
 /**
- * Matches /mikrotik, /mikrotik/…, its RSC/segment variants (/mikrotik.rsc…)
- * and the locale-prefixed route it is served from (/es/mikrotik), in any case.
+ * Matches /interno and everything under it, its RSC/segment variants (/interno.rsc, /interno/olt.rsc…) and the
+ * locale-prefixed route it is served from (/es/interno/olt), in any case.
  */
 export function matchInternal(pathname: string): InternalMatch | null {
-  const names: [string, string][] = [...INTERNAL_PAGES.map((p): [string, string] => [p, p]), ...Object.entries(ALIASES)]
-  for (const [name, page] of names) {
-    const root = new RegExp(`^/${name}(?=$|[/.])(.*)$`, "i").exec(pathname)
-    if (root) return { rewriteTo: `/es/${page}${root[1]}` }
-    const local = new RegExp(`^/([a-z]{2})/${name}(?=$|[/.])(.*)$`, "i").exec(pathname)
-    if (local) {
-      const canonical = `/${local[1].toLowerCase()}/${page}${local[2]}`
-      return { rewriteTo: canonical === pathname ? null : canonical }
-    }
-  }
-  return null
+  const root = new RegExp(`^/${INTERNAL_ROOT}(?=$|[/.])(.*)$`, "i").exec(pathname)
+  const local = root ? null : new RegExp(`^/([a-z]{2})/${INTERNAL_ROOT}(?=$|[/.])(.*)$`, "i").exec(pathname)
+  if (!root && !local) return null
+  const locale = local ? local[1].toLowerCase() : "es"
+  const rest = (root ? root[1] : local![2]) ?? ""
+  // The sub-page's name: its known spelling in lowercase; anything else is kept and ends in a 404.
+  const sub = /^\/([^/.]+)(.*)$/.exec(rest)
+  const page = sub ? KNOWN.get(sub[1].toLowerCase()) : undefined
+  const tail = sub ? (page ? `/${page}${sub[2]}` : rest) : rest
+  const canonical = `/${locale}/${INTERNAL_ROOT}${tail}`
+  return { rewriteTo: canonical === pathname ? null : canonical, open: page === LOGIN_PAGE }
 }
 
-/** Headers for every internal response: never indexed, URL not sent onward. */
+/** Headers for every internal response: never indexed or cached, URL not sent onward. */
 export const INTERNAL_HEADERS: Record<string, string> = {
   "X-Robots-Tag": "noindex, nofollow, noarchive, nosnippet",
   "Referrer-Policy": "no-referrer",
+  "Cache-Control": "private, no-store",
 }

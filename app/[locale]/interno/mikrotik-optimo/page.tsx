@@ -6,15 +6,13 @@ import { BurstLab } from "@/components/mikrotik/BurstLab"
 import internal from "@/messages/internal/mikrotik.es.json"
 
 /**
- * Internal calculators and simulators (burst, plans, shared parent, busy-hour
- * capacity, solver), served at /calculadora; the MikroTik scripts live at
- * /mikrotik. Same rules as that page: proxy.ts rewrites /calculadora (any
- * capitalization) here, inside [locale] so the name never appears in the
- * public pages' router payload; Spanish only, not linked, not in the sitemap,
- * noindex; copy from messages/internal/.
+ * The ideal guide for a deployment (owner, 2026-11-16): the saved deployments, the step-by-step guide with its fields,
+ * the deployment's download (the guide plus the expert scripts turned on) and the "what's installed" check. The expert
+ * scripts and the full editors live at /interno/mikrotik. Same rules as that page: proxy.ts rewrites /interno/mikrotik-optimo (and
+ * /interno/mikrotik-optimal, any capitalization) here, inside [locale]; Spanish only, not linked, not in the sitemap, noindex.
  */
 export const metadata: Metadata = {
-  title: { absolute: internal.mikrotik.meta.titleCalc },
+  title: { absolute: internal.mikrotik.meta.titleGuide },
   description: null,
   alternates: null,
   openGraph: null,
@@ -23,13 +21,13 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 }
 
-export default async function CalculadoraPage({ params }: PageProps<"/[locale]/calculadora">) {
+export default async function MikrotikOptimoPage({ params }: PageProps<"/[locale]/interno/mikrotik-optimo">) {
   const { locale } = await params
   if (locale !== "es") notFound()
   setRequestLocale(locale)
   return (
     <NextIntlClientProvider locale="es" messages={internal}>
-      <BurstLab page="calculators" />
+      <BurstLab page="guide" />
     </NextIntlClientProvider>
   )
 }
