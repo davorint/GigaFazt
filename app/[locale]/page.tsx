@@ -47,7 +47,8 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
         <Section id="fiber" aria-label={t("fiber")}>
           <FiberSection />
         </Section>
-        <Section id="wifi" aria-label={t("wifi")}>
+        {/* The modem stage bleeds past the column on wide screens: clip it at the section, never past the window. */}
+        <Section id="wifi" className="overflow-x-clip" aria-label={t("wifi")}>
           <WifiSection />
         </Section>
         <Section id="map" aria-label={t("map")}>

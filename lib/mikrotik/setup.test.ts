@@ -145,7 +145,7 @@ describe("deployment setup: the checklist's phases", () => {
     expect(hd).toContain("tcp-established-timeout=2h")
     expect(hd).toContain("protocol=tcp tcp-flags=syn,fin action=drop")
     // Only new connections count, so a client over the cap keeps the ones it has.
-    expect(hd).toContain("connection-state=new connection-limit=1000,32")
+    expect(hd).toContain("connection-state=new connection-limit=2000,32")
   })
   it("warns when a DNS server is a probe IP and refuses a bad collector", () => {
     const codes = (over = {}) => checkSetup({ ...DEFAULT_SETUP, ...over }, full()).map((i) => i.code).filter((x) => x !== "secretsPending")

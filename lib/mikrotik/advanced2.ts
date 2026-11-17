@@ -288,7 +288,8 @@ export type FilterOptions = {
   /** DNS queries per second per client (0 = no limit). */
   dnsRate: number
 }
-export const DEFAULT_FILTERS: FilterOptions = { spoof: true, smb: true, ssdp: true, telnet: true, udpLimit: 500, dnsRate: 50 }
+// UDP cap per client sized for UDP kept 2–5 min (RFC 4787) and QUIC browsing, which opens many UDP flows.
+export const DEFAULT_FILTERS: FilterOptions = { spoof: true, smb: true, ssdp: true, telnet: true, udpLimit: 1000, dnsRate: 50 }
 
 export function filtersScript(ctx: AdvContext, o: FilterOptions): AdvResult {
   const issues: AdvIssue[] = []

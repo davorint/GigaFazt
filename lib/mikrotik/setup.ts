@@ -183,7 +183,9 @@ export const OLT_HEADROOM = 1.1
 /** First id of the profiles and tables this writes (Huawei's defaults sit below). */
 export const OLT_FIRST_ID = 10
 /** New connections one subscriber may have open before more are dropped (infected CPEs). */
-export const CONN_LIMIT = 1000
+// With the RFC timers (UDP 2–5 min, TCP closing 4 min) connections stay longer in the table, so a busy home holds more
+// at once than with short timers: 2,000 leaves room for gaming, calls and QUIC while still stopping an infected device.
+export const CONN_LIMIT = 2000
 
 // ── Addresses ──────────────────────────────────────────────────────────────
 

@@ -104,7 +104,7 @@ describe("filtering", () => {
     expect(r.script).toContain("add list=DSX-origen-valido6 address=fe80::/10")
     expect(r.script).toContain("protocol=tcp dst-port=135-139,445 action=drop")
     expect(r.script).toContain("protocol=udp dst-port=1900 action=drop")
-    expect(r.script).toContain("connection-limit=500,32")
+    expect(r.script).toContain("connection-limit=1000,32")
     expect(r.script).toContain("dst-limit=50,100,src-address/1m action=accept")
     expect(r.script).toContain("/ipv6 firewall filter")
     expect(filtersScript(ctx(), { ...DEFAULT_FILTERS }).script).not.toContain("/ipv6")

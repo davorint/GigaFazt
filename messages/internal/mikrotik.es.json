@@ -1272,7 +1272,7 @@
       "isolate": "Aislar a los clientes entre sí",
       "isolateHint": "Un cliente no llega a la IP 100.64 de otro (sus routers y páginas de administración quedan privados). Apágalo solo si vendes conexión entre sitios.",
       "blockSmtp": "Sin SMTP directo",
-      "blockSmtpHint": "Bloquea el puerto 25 saliente de los clientes (correo basura de equipos infectados); el correo normal usa 465/587. También pone un tope de 1,000 conexiones por cliente.",
+      "blockSmtpHint": "Bloquea el puerto 25 saliente de los clientes (correo basura de equipos infectados); el correo normal usa 465/587. También pone un tope de 2,000 conexiones abiertas por cliente (holgado para juegos, llamadas y QUIC con los tiempos de las RFC; frena a un equipo infectado).",
       "ontMode": "Modo del ONT",
       "ontModes": {
         "router": "Router (el ONT marca PPPoE): ONT Wi-Fi de la empresa",
@@ -1989,7 +1989,7 @@
         "telnetHint": "TCP 23 y 2323: lo que usan los bots tipo Mirai para propagarse entre cámaras y routers.",
         "udp": "Tope de conexiones UDP",
         "udpUnit": "por cliente",
-        "udpHint": "Además del tope general de conexiones. Torrents y floods UDP llenan la tabla del router. 0 = sin tope.",
+        "udpHint": "Además del tope general de conexiones. Torrents y floods UDP llenan la tabla del router. 1,000 deja lugar a QUIC (YouTube, Google) con UDP guardado de 2 a 5 min. 0 = sin tope.",
         "dns": "Tope de consultas DNS",
         "dnsUnit": "por s",
         "dnsHint": "Por cliente (con ráfaga del doble). Una casa normal hace unas pocas por segundo. 0 = sin tope.",
