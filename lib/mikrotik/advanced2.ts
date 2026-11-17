@@ -12,7 +12,7 @@ import type { Wan } from "./balance"
 import { tableOf } from "./balance"
 import { rosString } from "./routeros"
 import { parseCidr } from "./setup"
-import { SECRET, STMT, comment, fail, hasError, nets, removeAll, user, type AdvContext, type AdvIssue, type AdvResult } from "./advanced"
+import { GUARD, SECRET, STMT, comment, done, dropScripts, fail, hasError, nets, removeAll, step, user, type AdvContext, type AdvIssue, type AdvResult, type Step } from "./advanced"
 
 /** One-line RouterOS source from statements. */
 const src = (parts: string[]) => parts.join(STMT).replace(/\{; /g, "{").replace(/; \}/g, "}")
@@ -72,17 +72,25 @@ export function failoverScript(ctx: AdvContext, o: FailoverOptions): AdvResult {
   if (hasError(issues)) return fail(issues)
   const c = comment("failover")
   const hold = Math.max(1, Math.ceil((o.holdMin * 60) / FAILOVER_EVERY_S))
+  // Re-pasting replaces: the check stops first, routes it left off come back, its own pieces go.
+  const clean = [
+    GUARD.watch,
+    ...dropScripts("^DSX-failover$"),
+    '/ip route enable [find where comment~"^LB: " and disabled=yes]',
+    '/tool netwatch remove [find where name~"^DSX-fo-"]',
+    ...removeAll("failover", ["/ip route", "/ip firewall nat", "/queue simple"]),
+  ]
   const out: string[] = ["/ip route"]
   ctx.wans.forEach((w, k) =>
     out.push(`add dst-address=${second[k]}/32 gateway=[/ip route get [find where comment=${rosString(`LB: vigila ${w.name}`)}] gateway] scope=10 ${c(`segunda IP de ${w.name}`)}`)
   )
-  out.push("/tool netwatch")
+  const probes: string[] = ["/tool netwatch"]
   ctx.wans.forEach((w, k) => {
     for (const [tag, host] of [
       ["a", w.monitor.trim()],
       ["b", second[k]],
     ])
-      out.push(`add name=${rosString(`DSX-fo-${w.name}-${tag}`)} host=${host} type=icmp interval=${FAILOVER_EVERY_S}s packet-count=10 thr-loss-percent=${o.lossPct} thr-avg=${o.avgMs}ms`)
+      probes.push(`add name=${rosString(`DSX-fo-${w.name}-${tag}`)} host=${host} type=icmp interval=${FAILOVER_EVERY_S}s packet-count=10 thr-loss-percent=${o.lossPct} thr-avg=${o.avgMs}ms`)
   })
   // The check, per link. Routes of a link: "LB: <table> por|respaldo <link>" and "LB: main por <link>".
   const alerts = ctx.setup.alert !== "none"
@@ -104,9 +112,10 @@ export function failoverScript(ctx: AdvContext, o: FailoverOptions): AdvResult {
       `{:global DSXlte; :local on [/ip route get [find where comment="DSX failover: main por LTE"] active]; :if ($on && ($DSXlte != "on")) do={:set DSXlte "on"; :log warning "DSX failover: todo por LTE"${say('"todos los carriers caidos: el despliegue sale por LTE"')}}; :if ((!$on) && ($DSXlte = "on")) do={:set DSXlte "off"${say('"volvio un carrier: LTE en espera"')}}}`
     )
   }
+  const lteLines: string[] = []
   if (lte) {
     const l = rosString(lte)
-    out.push(
+    lteLines.push(
       "/interface lte apn",
       "set [find] add-default-route=no use-peer-dns=no",
       "/ip route",
@@ -119,12 +128,12 @@ export function failoverScript(ctx: AdvContext, o: FailoverOptions): AdvResult {
     )
     issues.push({ code: "lteNote", level: "info" })
   }
-  out.push(
+  const check = [
     "/system script",
     `add name=DSX-failover policy=read,write,test dont-require-permissions=yes source=${rosString(src(parts))} ${c("revisa la calidad de los enlaces")}`,
     "/system scheduler",
-    `add name=DSX-failover interval=${FAILOVER_EVERY_S}s on-event=DSX-failover ${c(`cada ${FAILOVER_EVERY_S} s`)}`
-  )
+    `add name=DSX-failover interval=${FAILOVER_EVERY_S}s on-event=DSX-failover ${c(`cada ${FAILOVER_EVERY_S} s`)}`,
+  ]
   issues.push({ code: "foHow", level: "info", value: String(o.holdMin) })
   const undo = [
     ':do {/system scheduler remove [find where name="DSX-failover"]} on-error={}',
@@ -134,7 +143,13 @@ export function failoverScript(ctx: AdvContext, o: FailoverOptions): AdvResult {
     '/tool netwatch remove [find where name~"^DSX-fo-"]',
     ...removeAll("failover", ["/ip route", "/ip firewall nat", "/queue simple"]),
   ]
-  return { script: out.join("\n"), undo: undo.join("\n"), issues }
+  const steps: Step[] = [
+    step("segundas", [...clean, ...out], '/ip route print where comment~"^DSX failover"'),
+    step("pruebas", probes, "/tool netwatch print where name~\"^DSX-fo-\""),
+    ...(lte ? [step("lte", lteLines, '/ip route print where comment~"LTE"')] : []),
+    step("revision", check, '/system scheduler print where name="DSX-failover"'),
+  ]
+  return done(steps, undo, issues)
 }
 
 // ── OLT uplink bond (LACP) ──────────────────────────────────────────────────
@@ -148,7 +163,7 @@ const FSP = /^\d+\/\d+\/\d+$/
  * building down. The VLANs that sat on the router's OLT port move to the bond in the same line. On the OLT, the two
  * uplink ports (on two control boards when the chassis has them) join one static-LACP group.
  */
-export function bondScript(ctx: AdvContext, o: BondOptions): { router: string; olt: string; undo: string; issues: AdvIssue[] } {
+export function bondScript(ctx: AdvContext, o: BondOptions): { router: string; olt: string; undo: string; issues: AdvIssue[]; steps: Step[] } {
   const issues: AdvIssue[] = []
   const ports = o.ports.split(/[\s,;]+/).filter(Boolean)
   const olt = o.oltPorts.split(/[\s,;]+/).filter(Boolean)
@@ -156,12 +171,13 @@ export function bondScript(ctx: AdvContext, o: BondOptions): { router: string; o
   if (ports.length !== 2 || ports[0] === ports[1]) issues.push({ code: "twoPorts", level: "error" })
   else if (!ports.includes(first)) issues.push({ code: "bondHasOltPort", level: "error", value: first })
   if (olt.length !== 2 || olt.some((p) => !FSP.test(p)) || olt[0] === olt[1]) issues.push({ code: "twoOltPorts", level: "error" })
-  if (hasError(issues)) return { router: "", olt: "", undo: "", issues }
+  if (hasError(issues)) return { router: "", olt: "", undo: "", issues, steps: [] }
   const c = comment("bond")
   const router = [
     // One line: the OLT's management and the clients' VLANs come back on the bond in the same step.
     // A port with VLANs on it may not join a bond: they wait on a temporary bridge, the bond is made, they move to it.
-    `{ :local v [/interface vlan find where interface=${rosString(first)}]; /interface bridge add name=DSX-espera ${c("temporal")}; /interface vlan set $v interface=DSX-espera; :do {/interface bonding add name=DSX-bond-olt slaves=${ports.map((p) => rosString(p)).join(",")} mode=802.3ad lacp-rate=1sec transmit-hash-policy=layer-2-and-3 ${c("dos cables a la OLT")}; /interface vlan set $v interface=DSX-bond-olt} on-error={/interface vlan set $v interface=${rosString(first)}; :log error "DSX: no se pudo crear el bond, las VLAN regresaron al puerto"}; /interface bridge remove [find where name="DSX-espera"] }`,
+    // Only once: on a second paste the bond is already there.
+    `:if ([:len [/interface bonding find where name="DSX-bond-olt"]] = 0) do={ :local v [/interface vlan find where interface=${rosString(first)}]; /interface bridge add name=DSX-espera ${c("temporal")}; /interface vlan set $v interface=DSX-espera; :do {/interface bonding add name=DSX-bond-olt slaves=${ports.map((p) => rosString(p)).join(",")} mode=802.3ad lacp-rate=1sec transmit-hash-policy=layer-2-and-3 ${c("dos cables a la OLT")}; /interface vlan set $v interface=DSX-bond-olt} on-error={/interface vlan set $v interface=${rosString(first)}; :log error "DSX: no se pudo crear el bond, las VLAN regresaron al puerto"}; /interface bridge remove [find where name="DSX-espera"] }`,
     ':do {/queue interface set [find where interface="DSX-bond-olt"] queue=DS-fq-codel} on-error={}',
   ].join("\n")
   const [a, b] = olt.map((p) => {
@@ -174,7 +190,7 @@ export function bondScript(ctx: AdvContext, o: BondOptions): { router: string; o
   issues.push({ code: "bondWindow", level: "info" }, { code: "bondSetup", level: "info" })
   // The same dance backwards: the port is still in the bond until the bond goes.
   const undo = `{ :local v [/interface vlan find where interface="DSX-bond-olt"]; /interface bridge add name=DSX-espera; /interface vlan set $v interface=DSX-espera; /interface bonding remove [find where name="DSX-bond-olt"]; /interface vlan set $v interface=${rosString(first)}; /interface bridge remove [find where name="DSX-espera"] }`
-  return { router, olt: oltText, undo, issues }
+  return { router, olt: oltText, undo, issues, steps: [step("router", [router], "/interface bonding monitor DSX-bond-olt once")] }
 }
 
 // ── Spare router: restore on another model ──────────────────────────────────
@@ -208,16 +224,14 @@ export function fullExportScript(ctx: AdvContext): AdvResult {
     `/tool fetch upload=yes mode=sftp address=${s.backupHost.trim()} user=${s.backupUser.trim()} password="${SECRET("sftp")}" src-path=DSX-completo.rsc dst-path=("${path}" . $n . "-completo-" . $d . ".rsc")`,
     '/file remove [find where name="DSX-completo.rsc"]',
   ])
-  return {
-    script: [
-      "/system script",
-      `add name=DSX-completo policy=ftp,read,write,policy,test,sensitive dont-require-permissions=yes source=${rosString(body)} ${c("export completo para otro equipo")}`,
+  const lines = [
+    ...dropScripts("^DSX-completo$"),
+    "/system script",
+    `add name=DSX-completo policy=ftp,read,write,policy,test,sensitive dont-require-permissions=yes source=${rosString(body)} ${c("export completo para otro equipo")}`,
       "/system scheduler",
-      `add name=DSX-completo start-time=04:00:00 interval=7d on-event=DSX-completo ${c("cada semana")}`,
-    ].join("\n"),
-    undo: [':do {/system scheduler remove [find where name="DSX-completo"]} on-error={}', ':do {/system script remove [find where name="DSX-completo"]} on-error={}'].join("\n"),
-    issues: [{ code: "passwordsFile", level: "warn" }],
-  }
+    `add name=DSX-completo start-time=04:00:00 interval=7d on-event=DSX-completo ${c("cada semana")}`,
+  ]
+  return done([step("copia", lines, '/system scheduler print where name="DSX-completo"')], dropScripts("^DSX-completo$"), [{ code: "passwordsFile", level: "warn" }])
 }
 
 // ── Profile sync to the backup router ───────────────────────────────────────
@@ -241,12 +255,14 @@ export function profileSyncScripts(syncUser: string, backupIp: string): { main: 
   const apply = ':if ([:len [/file find where name="DSX-perfiles.rsc"]] > 0) do={/import file-name=DSX-perfiles.rsc; /file remove [find where name="DSX-perfiles.rsc"]; :log info "DSX: velocidades copiadas del principal"}'
   return {
     main: [
+      ...dropScripts("^DSX-sync-perfiles$"),
       "/system script",
       `add name=DSX-sync-perfiles policy=ftp,read,write,test,sensitive dont-require-permissions=yes source=${rosString(write)} ${c("copia las velocidades de los planes")}`,
       "/system scheduler",
       `add name=DSX-sync-perfiles interval=1h start-time=00:12:00 on-event=DSX-sync-perfiles ${c("cada hora")}`,
     ].join("\n"),
     backup: [
+      ...dropScripts("^DSX-sync-perfiles-importar$"),
       "/system script",
       `add name=DSX-sync-perfiles-importar policy=read,write,test dont-require-permissions=yes source=${rosString(apply)} ${c("aplica las velocidades copiadas")}`,
       "/system scheduler",
@@ -283,6 +299,8 @@ export function filtersScript(ctx: AdvContext, o: FilterOptions): AdvResult {
   const s = ctx.setup
   const v6 = s.ipv6Pd.trim()
   const out: string[] = []
+  const ports_: string[] = []
+  const limits: string[] = []
   if (o.spoof) {
     out.push("/ip firewall address-list", `add list=DSX-origen-valido address=${n.poolText} ${c("pool de clientes")}`)
     out.push("/ip firewall raw", `add chain=prerouting in-interface-list=DS-LAN src-address-list=!DSX-origen-valido action=drop ${c("origen falso (BCP 38)")}`)
@@ -301,26 +319,38 @@ export function filtersScript(ctx: AdvContext, o: FilterOptions): AdvResult {
   if (o.ssdp) ports.push({ proto: "udp", ports: "1900", why: "SSDP/UPnP a internet" })
   if (o.telnet) ports.push({ proto: "tcp", ports: "23,2323", why: "telnet a internet (bots)" })
   if (ports.length || o.udpLimit) {
-    out.push("/ip firewall filter")
-    for (const p of ports) out.push(`add chain=forward src-address=${n.poolText} out-interface-list=DS-WAN protocol=${p.proto} dst-port=${p.ports} action=drop ${c(p.why)}`)
+    ports_.push("/ip firewall filter")
+    for (const p of ports) ports_.push(`add chain=forward src-address=${n.poolText} out-interface-list=DS-WAN protocol=${p.proto} dst-port=${p.ports} action=drop ${c(p.why)}`)
     if (o.udpLimit)
-      out.push(`add chain=forward src-address=${n.poolText} protocol=udp connection-state=new connection-limit=${o.udpLimit},32 action=drop ${c("tope de conexiones UDP por cliente")}`)
+      limits.push("/ip firewall filter", `add chain=forward src-address=${n.poolText} protocol=udp connection-state=new connection-limit=${o.udpLimit},32 action=drop ${c("tope de conexiones UDP por cliente")}`)
     if (v6 && ports.length) {
-      out.push("/ipv6 firewall filter")
-      for (const p of ports) out.push(`add chain=forward in-interface-list=DS-LAN out-interface-list=DS-WAN protocol=${p.proto} dst-port=${p.ports} action=drop ${c(p.why)}`)
+      ports_.push("/ipv6 firewall filter")
+      for (const p of ports) ports_.push(`add chain=forward in-interface-list=DS-LAN out-interface-list=DS-WAN protocol=${p.proto} dst-port=${p.ports} action=drop ${c(p.why)}`)
     }
   }
   if (o.dnsRate)
     // Raw, before the DNS redirect and the filter: a client within the rate goes on, the rest of its queries are dropped.
-    out.push(
+    limits.push(
       "/ip firewall raw",
       `add chain=prerouting src-address=${n.poolText} protocol=udp dst-port=53 dst-limit=${o.dnsRate},${o.dnsRate * 2},src-address/1m action=accept ${c("DNS a ritmo normal")}`,
       `add chain=prerouting src-address=${n.poolText} protocol=udp dst-port=53 action=drop ${c("DNS por encima del tope")}`
     )
-  if (!out.length) return fail([{ code: "nothing", level: "error" }])
+  if (!out.length && !ports_.length && !limits.length) return fail([{ code: "nothing", level: "error" }])
   issues.push({ code: "rpFilter", level: "info" })
-  const undo = [...removeAll("filtros", ["/ip firewall raw", "/ip firewall filter", "/ip firewall address-list", "/ipv6 firewall raw", "/ipv6 firewall filter", "/ipv6 firewall address-list"])]
-  return { script: out.join("\n"), undo: undo.join("\n"), issues }
+  const undo = removeAll("filtros", ["/ip firewall raw", "/ip firewall filter", "/ip firewall address-list", ...(v6 ? ["/ipv6 firewall raw", "/ipv6 firewall filter", "/ipv6 firewall address-list"] : [])])
+  // Re-pasting replaces: everything it made goes first (in the first step that runs).
+  const head = [GUARD.base, ...undo]
+  const parts: [string, string[], string][] = [
+    ["origen", out, '/ip firewall raw print where comment~"^DSX filtros"'],
+    ["puertos", ports_, '/ip firewall filter print where comment~"^DSX filtros"'],
+    ["topes", limits, '/ip firewall raw print where comment~"DNS"'],
+  ]
+  const used = parts.filter(([, lines]) => lines.length)
+  return done(
+    used.map(([id, lines, verify], k) => step(id, k === 0 ? [...head, ...lines] : lines, verify)),
+    undo,
+    issues
+  )
 }
 
 // ── Operational alerts ──────────────────────────────────────────────────────
@@ -378,11 +408,12 @@ export function alertsScript(ctx: AdvContext, o: AlertsOptions): AdvResult {
     sched.push(`add name=DSX-fallos-ppp interval=1h on-event=DSX-fallos-ppp ${c("cada hora")}`)
     issues.push({ code: "logText", level: "info" })
   }
-  return {
-    script: ["/system script", ...scripts, "/system scheduler", ...sched].join("\n"),
-    undo: [':do {/system scheduler remove [find where name~"^DSX-(cambios|version|fallos-ppp)$"]} on-error={}', ':do {/system script remove [find where name~"^DSX-(cambios|version|fallos-ppp)$"]} on-error={}'].join("\n"),
-    issues,
-  }
+  const drop = dropScripts("^DSX-(cambios|version|fallos-ppp)$")
+  return done(
+    [step("scripts", [GUARD.alerts, ...drop, "/system script", ...scripts], '/system script print where name~"^DSX-(cambios|version|fallos)"'), step("programar", ["/system scheduler", ...sched], '/system scheduler print where name~"^DSX-(cambios|version|fallos)"')],
+    drop,
+    issues
+  )
 }
 
 // ── Priority for calls and games (DSCP) ─────────────────────────────────────
@@ -398,7 +429,7 @@ export const PRIORITY_DSCP = [46, 34, 32, 40]
 export function priorityScript(ctx: AdvContext): AdvResult {
   if (ctx.wans.length < 1) return fail([{ code: "needsBalance", level: "error" }])
   const c = comment("prioridad")
-  const out: string[] = []
+  const out: string[] = [GUARD.queues, ...removeAll("prioridad", ["/ip firewall mangle"])]
   for (const w of ctx.wans) {
     for (const [dir, side] of [
       ["bajada", `in-interface=${rosString(w.iface.trim())}`],
@@ -412,7 +443,7 @@ export function priorityScript(ctx: AdvContext): AdvResult {
     }
   }
   const issues: AdvIssue[] = [{ code: "queueType", level: ctx.queue && ctx.queue !== "default" ? "info" : "warn" }]
-  return { script: out.join("\n"), undo: removeAll("prioridad", ["/ip firewall mangle"]).join("\n"), issues }
+  return done([step("marcas", out, '/ip firewall mangle print where comment~"^DSX prioridad"')], removeAll("prioridad", ["/ip firewall mangle"]), issues)
 }
 
 // ── Fixed public IPs for business clients ───────────────────────────────────
@@ -446,14 +477,14 @@ export function publicIpScript(ctx: AdvContext, rows: PublicIpRow[]): AdvResult 
   }
   if (!n || hasError(issues)) return fail(issues)
   const c = comment("ip-publica")
-  const out: string[] = []
+  const accounts: string[] = []
+  const out: string[] = [GUARD.balance, ...removeAll("ip-publica", ["/ip firewall filter", "/ip firewall mangle", "/ip firewall nat", "/ip firewall address-list"])]
   for (const r of used) {
     const ip = r.ip.trim()
     const w = wans.get(r.wan) as Wan
     const who = `${r.user.trim()} ${ip}`
+    accounts.push(`/ppp secret set [find where name=${user(r.user)}] remote-address=${ip}`, `/ppp active remove [find where name=${user(r.user)}]`)
     out.push(
-      `/ppp secret set [find where name=${user(r.user)}] remote-address=${ip}`,
-      `/ppp active remove [find where name=${user(r.user)}]`,
       `/ip firewall address-list add list=DSX-origen-valido address=${ip} ${c(who)}`,
       `{ :local f [/ip firewall nat find where chain=srcnat]; :if ([:len $f] > 0) do={/ip firewall nat add chain=srcnat src-address=${ip} action=accept ${c(`${who} sin CGNAT`)} place-before=[:pick $f 0]} else={/ip firewall nat add chain=srcnat src-address=${ip} action=accept ${c(`${who} sin CGNAT`)}} }`,
       `{ :local p [/ip firewall mangle find where comment~"^LB: reparto"]; :if ([:len $p] > 0) do={/ip firewall mangle add chain=prerouting action=mark-connection src-address=${ip} connection-mark=no-mark new-connection-mark=${rosString(w.name)} passthrough=yes ${c(`${who} por ${w.name}`)} place-before=[:pick $p 0]; /ip firewall mangle add chain=prerouting action=mark-routing src-address=${ip} new-routing-mark=${rosString(tableOf(w))} passthrough=no ${c(`${who} por ${w.name}`)} place-before=[:pick $p 0]} else={:error "DSX: primero pega el balanceo de Varios enlaces"} }`,
@@ -462,6 +493,6 @@ export function publicIpScript(ctx: AdvContext, rows: PublicIpRow[]): AdvResult 
   }
   issues.push({ code: "routedBlock", level: "info" }, { code: "openToInternet", level: "warn" })
   const undo = [...used.map((r) => `/ppp secret set [find where name=${user(r.user)}] remote-address=""`), ...removeAll("ip-publica", ["/ip firewall filter", "/ip firewall mangle", "/ip firewall nat", "/ip firewall address-list"])]
-  return { script: out.join("\n"), undo: undo.join("\n"), issues }
+  return done([step("rutas", out, '/ip firewall mangle print where comment~"^DSX ip-publica"'), step("cuentas", accounts, "/ppp active print")], undo, issues)
 }
 

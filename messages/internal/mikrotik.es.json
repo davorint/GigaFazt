@@ -2,18 +2,21 @@
   "mikrotik": {
     "meta": {
       "title": "Scripts MikroTik · Interno",
-      "titleCalc": "Calculadoras y simuladores · Interno"
+      "titleCalc": "Calculadoras y simuladores · Interno",
+      "titleGuide": "Guía óptima MikroTik · Interno"
     },
     "intro": {
       "eyebrow": "Herramienta interna",
       "private": "Uso interno · sin enlaces · no indexada",
       "title": {
         "scripts": "Scripts MikroTik",
-        "calculators": "Calculadoras y simuladores"
+        "calculators": "Calculadoras y simuladores",
+        "guide": "Guía óptima del despliegue"
       },
       "lead": {
-        "scripts": "Los comandos para tus routers: colas con ráfaga para uno o muchos clientes, la configuración de un despliegue nuevo (VLANs, PPPoE y la OLT Huawei) y el balanceo entre tus carriers. Elige los valores en Parámetros y el despliegue en Despliegues.",
-        "calculators": "Calcula y prueba antes de configurar: cuánto dura la ráfaga, qué ve el cliente en una prueba de velocidad, cómo se comparan planes y reglas, cómo se reparte una cola padre y qué pasa en la hora pico de cada despliegue."
+        "scripts": "La caja de herramientas: colas con ráfaga para uno o muchos clientes, la configuración completa de un despliegue, el balanceo entre tus carriers y los scripts de experto (failover por calidad, morosos, filtros, router de respaldo…) para cuando los necesites. La guía paso a paso vive en la Guía óptima.",
+        "calculators": "Calcula y prueba antes de configurar: cuánto dura la ráfaga, qué ve el cliente en una prueba de velocidad, cómo se comparan planes y reglas, cómo se reparte una cola padre y qué pasa en la hora pico de cada despliegue.",
+        "guide": "El camino ideal para cada edificio: eliges el despliegue, sigues las fases en orden con sus comandos y descargas un solo archivo con la guía y los scripts de experto que hayas activado. Al final, pega el export del router y revisa qué tiene instalado."
       },
       "share": "Copiar enlace con esta configuración",
       "shared": "Enlace copiado",
@@ -28,18 +31,20 @@
         "capacity": "Hora pico",
         "links": "Varios enlaces",
         "setup": "Configuración",
-        "advanced": "Generadores avanzados",
+        "advanced": "Scripts de experto",
         "solver": "Calculadora",
         "export": "Exportar",
         "bulk": "Varios clientes",
-        "how": "Cómo funciona"
+        "how": "Cómo funciona",
+        "installed": "Qué tiene el router"
       },
       "navLabel": "Secciones de la herramienta",
-      "other": {
-        "scripts": "Calculadoras y simuladores →",
-        "calculators": "Scripts para el MikroTik →"
-      },
-      "olt": "Base de conocimiento OLT Huawei"
+      "olt": "Base de conocimiento OLT Huawei",
+      "to": {
+        "guide": "Guía óptima →",
+        "scripts": "Scripts de experto →",
+        "calculators": "Calculadoras y simuladores →"
+      }
     },
     "params": {
       "title": "Parámetros de la cola",
@@ -467,8 +472,8 @@
     "deployments": {
       "title": "Despliegues",
       "lead": "Guarda cada despliegue (una OLT y su router, con sus carriers): los que ya operan, con lo que mides en ellos, y los que planeas. Ábrelos para calcularlos en Hora pico y armar su balanceo en Varios enlaces.",
-      "openNow": "Abierto: «{name}». Lo que cambies en Hora pico y Varios enlaces se guarda solo.",
-      "unsaved": "Lo que ves en Hora pico y Varios enlaces no está guardado como despliegue.",
+      "openNow": "Abierto: «{name}». Lo que cambies en estas páginas (también los scripts de experto) se guarda solo.",
+      "unsaved": "Lo que ves en pantalla no está guardado como despliegue.",
       "name": "Nombre del despliegue",
       "nameHint": "Se guarda con el despliegue, en este navegador; el router de los scripts toma este nombre.",
       "save": "Guardar como despliegue",
@@ -577,7 +582,7 @@
       "phases": {
         "p0": {
           "title": "Fase 0 · Base y seguridad",
-          "goal": "Un router asegurado y documentado, con RouterOS long-term, antes de que pase tráfico de clientes.",
+          "goal": "Un router asegurado y documentado, con la última versión estable de RouterOS, antes de que pase tráfico de clientes.",
           "items": [
             "Instala la última versión estable de RouterOS (7.25.1 el 16 de noviembre de 2026) y después actualiza el firmware de la RouterBOARD (System → RouterBOARD → Upgrade y reinicia). No uses 7.20.0 a 7.20.5 en un servidor PPPoE (falla con varios nombres de servicio; se arregló en 7.20.6).",
             "Respalda la configuración de fábrica (comandos abajo).",
@@ -587,8 +592,8 @@
             "Pega la base conectado por la VLAN de gestión (al final limita Winbox, SSH y el acceso por MAC a esa red).",
             "Antes de comprar: confirma que cada contrato permita revender (los residenciales casi nunca) y elige el colector IPFIX y cuánto tiempo guardarlo según la ley.",
             "Protecciones de MikroTik (en el script base): descubrimiento de vecinos solo en gestión, sin btest server, proxy, SOCKS, UPnP ni DDNS de la nube.",
-            "Acceso remoto antes de irte del sitio: Back To Home funciona sin IP pública (Generadores avanzados → Acceso remoto).",
-            "Energía: router y OLT con respaldo (UPS, o −48 V con baterías; ver /olt → Energía) y el watchdog de hardware del router (Generadores avanzados → Monitoreo)."
+            "Acceso remoto antes de irte del sitio: Back To Home funciona sin IP pública (/mikrotik → Scripts de experto → Acceso remoto).",
+            "Energía: router y OLT con respaldo (UPS, o −48 V con baterías; ver /olt → Energía) y el watchdog de hardware del router (/mikrotik → Scripts de experto → Monitoreo)."
           ]
         },
         "p1": {
@@ -601,8 +606,8 @@
             "Netwatch por enlace: aviso en el log y limpieza de sus conexiones al caer y al volver (Varios enlaces → Colas y avisos).",
             "No des las IPs vigiladas a los clientes como DNS: cada una sale por un solo enlace.",
             "Prueba: desconecta un enlace. Su ruta se apaga en unos 20–30 s, aparece la línea en el log y las sesiones PPPoE siguen; solo cambia su IP pública.",
-            "Servicios que deben salir siempre por un carrier (la TV de tu proveedor, un banco): Generadores avanzados → Salida fija por destino.",
-            "Failover por calidad: dos IPs vigiladas por enlace, umbrales de pérdida y latencia y espera antes de regresar; LTE de último recurso si el edificio lo amerita (Generadores avanzados → Failover por calidad)."
+            "Servicios que deben salir siempre por un carrier (la TV de tu proveedor, un banco): /mikrotik → Scripts de experto → Salida fija por destino.",
+            "Failover por calidad: dos IPs vigiladas por enlace, umbrales de pérdida y latencia y espera antes de regresar; LTE de último recurso si el edificio lo amerita (/mikrotik → Scripts de experto → Failover por calidad)."
           ]
         },
         "p2": {
@@ -640,8 +645,8 @@
             "Seguridad en la OLT: anti-macspoofing (máximo 1 MAC por service-port), anti-ipspoofing, anti-macduplicate, anti-dos, anti-ipattack y control de tormentas del lado de los ONT.",
             "La gestión de la OLT, en su VLAN y solo desde la red de gestión.",
             "Instalación del ONT: WAN de ruta PPPoE en la VLAN de internet con la cuenta del cliente, contraseña de administrador de la empresa (no la de fábrica) y Wi-Fi propio del cliente (lista en «Alta de un ONT»).",
-            "Morosos: perfiles DSX-reducido y DSX-suspendido con página de aviso, y los comandos para suspender y reactivar (Generadores avanzados → Morosos).",
-            "Dos cables entre la OLT y el router en LACP, de preferencia en dos tarjetas de control (Generadores avanzados → Dos cables a la OLT)."
+            "Morosos: perfiles DSX-reducido y DSX-suspendido con página de aviso, y los comandos para suspender y reactivar (/mikrotik → Scripts de experto → Morosos).",
+            "Dos cables entre la OLT y el router en LACP, de preferencia en dos tarjetas de control (/mikrotik → Scripts de experto → Dos cables a la OLT)."
           ]
         },
         "p5": {
@@ -656,9 +661,9 @@
             "Abuso: sin SMTP directo y tope de {limit} conexiones por cliente.",
             "DNS: caché del router dimensionada para el despliegue, o los clientes directo a los resolutores.",
             "Avisos al celular (Telegram o correo), respaldo diario fuera del router y SNMP para graficar enlaces, CPU y sesiones.",
-            "Clientes infectados: marca y avisa a quien abre conexiones a ritmo de bot o escanea puertos (Generadores avanzados → Clientes infectados y DDoS).",
-            "DNS: listas de bloqueo, todo el DNS de los clientes por el router y planes familia (Generadores avanzados → Filtro DNS).",
-            "Filtros del lado de los clientes: anti-spoofing (BCP 38), Windows/NetBIOS, SSDP y telnet hacia internet, topes de UDP y de DNS (Generadores avanzados → Filtros TCP/UDP)."
+            "Clientes infectados: marca y avisa a quien abre conexiones a ritmo de bot o escanea puertos (/mikrotik → Scripts de experto → Clientes infectados y DDoS).",
+            "DNS: listas de bloqueo, todo el DNS de los clientes por el router y planes familia (/mikrotik → Scripts de experto → Filtro DNS).",
+            "Filtros del lado de los clientes: anti-spoofing (BCP 38), Windows/NetBIOS, SSDP y telnet hacia internet, topes de UDP y de DNS (/mikrotik → Scripts de experto → Filtros TCP/UDP)."
           ]
         },
         "p6": {
@@ -670,10 +675,10 @@
             "Monitoreo por SNMP (Zabbix, LibreNMS o The Dude): CPU, connection tracking, tráfico por enlace y sesiones PPPoE, con alertas de Netwatch y de connection tracking arriba del 60 %.",
             "Paquete legal: este procedimiento, la política de retención de IPFIX, dónde quedan los logs de PPPoE y cómo contestar un requerimiento (IP pública + puerto + hora → 100.64 → usuario PPPoE).",
             "Restaura un respaldo en un router de prueba al menos una vez: un respaldo que nunca se probó no cuenta.",
-            "Uso por cliente en el comentario de cada cuenta, aviso de caída masiva de sesiones y resumen diario (Generadores avanzados → Uso por cliente y Monitoreo).",
-            "Edificios grandes: router de respaldo en caliente (Generadores avanzados → Router de respaldo).",
-            "Alertas de cambios de configuración, versión nueva de RouterOS y entradas fallidas (Generadores avanzados → Alertas de operación).",
-            "Copia completa semanal con contraseñas a tu servidor y el procedimiento para cargarla en otro modelo (Generadores avanzados → Router de repuesto)."
+            "Uso por cliente en el comentario de cada cuenta, aviso de caída masiva de sesiones y resumen diario (/mikrotik → Scripts de experto → Uso por cliente y Monitoreo).",
+            "Edificios grandes: router de respaldo en caliente (/mikrotik → Scripts de experto → Router de respaldo).",
+            "Alertas de cambios de configuración, versión nueva de RouterOS y entradas fallidas (/mikrotik → Scripts de experto → Alertas de operación).",
+            "Copia completa semanal con contraseñas a tu servidor y el procedimiento para cargarla en otro modelo (/mikrotik → Scripts de experto → Router de repuesto)."
           ]
         }
       },
@@ -758,12 +763,18 @@
         "save": "Guardar como despliegue",
         "new": "Nuevo despliegue",
         "newName": "Despliegue nuevo {n}",
-        "downloadRouter": "Descargar script del MikroTik (.rsc)",
+        "downloadRouter": "Descargar archivo del despliegue (.rsc)",
         "downloadOlt": "Descargar comandos de la OLT (.txt)",
-        "downloadHint": "El .rsc junta las fases en orden (base, balanceo, PPPoE, CGNAT, colas y firewall). Pégalo por fases o súbelo y corre /import file=…: se detiene en el primer error."
+        "downloadHint": "Un solo archivo con la guía y los scripts de experto activados, cada paso con su número, su revisión y su comprobación.",
+        "downloadUndo": "Descargar deshacer (.rsc)"
       },
       "file": {
-        "order": "Orden: base, rutas y PCC, PPPoE, CGNAT, colas y firewall. Revisa cada fase antes de aplicarla."
+        "header": [
+          "Guía óptima + scripts de experto activados, en orden. Cada paso empieza con revisiones que se detienen con un mensaje si falta algo o si ya está instalado.",
+          "Súbelo al router y corre /import file-name=<este-archivo> verbose=yes: se detiene en el primer error. O pégalo paso por paso, comprobando cada uno.",
+          "Reemplaza los PEGA-AQUI-… antes de importarlo."
+        ],
+        "undo": "deshacer todo (scripts de experto en orden inverso, luego balanceo y base)"
       },
       "noCollectorFixed": "Sin colector: con bloques de puertos fijos no hace falta el registro NAT, pero sí el de sesiones PPPoE (en disco en el router; agrega el colector para tener copia fuera).",
       "advice": {
@@ -812,6 +823,41 @@
           "trace": "Para saber quién fue: el carrier traduce su IP pública y puerto a la IP y el puerto de tu enlace (su registro); con eso, tu registro NAT o tus bloques de puertos fijos dan el cliente. Sin el registro del carrier no se puede.",
           "best": "Lo óptimo: una IP pública fija por enlace (servicio empresarial o dedicado del carrier). Si el carrier entrega con un equipo suyo que hace NAT (su router u ONT), pídele que lo ponga en modo puente para que tu MikroTik reciba la IP pública. Cambia «Salida del carrier» en la fase 0 cuando la tengas."
         }
+      },
+      "stepOf": "Paso {n} de {total} del archivo",
+      "steps": {
+        "base": {
+          "title": "Base del despliegue",
+          "before": "respaldo de fábrica hecho y el router sin la base (si ya está, se detiene)."
+        },
+        "balance": {
+          "title": "Balanceo, rutas y failover",
+          "before": "la base instalada y cada enlace por DHCP ya con IP (si no, se detiene)."
+        },
+        "pppoe": {
+          "title": "PPPoE y perfiles de los planes",
+          "before": "la base instalada."
+        },
+        "cgnat": {
+          "title": "CGNAT y registro",
+          "before": "el PPPoE instalado."
+        },
+        "hardening": {
+          "title": "Colas y firewall",
+          "before": "el CGNAT instalado."
+        },
+        "ops": {
+          "title": "Avisos, respaldos y SNMP",
+          "before": "las contraseñas listas para reemplazar PEGA-AQUI-…"
+        }
+      },
+      "bundle": {
+        "title": "Archivo del despliegue: {n} pasos",
+        "with": "Guía completa y estos scripts de experto: {list}.",
+        "none": "Solo la guía: no hay scripts de experto activados.",
+        "link": "Activar scripts de experto",
+        "skipped": "No entran porque sus valores tienen errores: {list}. Corrígelos en Scripts de experto.",
+        "howTo": "El deshacer va en orden inverso: primero los scripts de experto, luego el balanceo y al final la base."
       }
     },
     "capacity": {
@@ -1572,8 +1618,8 @@
       "profilesHint": "Plan: el nombre del perfil o su velocidad de bajada. Perfiles de este despliegue: {list}."
     },
     "advanced": {
-      "title": "Generadores avanzados",
-      "lead": "Scripts para operar el despliegue a mano: failover por calidad, respaldo y alta disponibilidad, filtros, morosos, uso por cliente, alertas, monitoreo y más. Usan los datos del despliegue abierto (pool, planes, enlaces, gestión, avisos) y cada uno trae cómo quitarlo.",
+      "title": "Scripts de experto",
+      "lead": "Scripts para operar el despliegue a mano: failover por calidad, respaldo y alta disponibilidad, filtros, morosos, uso por cliente, alertas, monitoreo y más. Para cuando los necesites, encima de la Guía óptima: usan los datos del despliegue abierto (pool, planes, enlaces, gestión, avisos), van paso por paso, sus valores se guardan con el despliegue y cada uno trae cómo quitarlo.",
       "pick": "Generador",
       "undo": "Cómo quitarlo",
       "undoLabel": "Quitar · {label}",
@@ -1966,15 +2012,263 @@
         "label": "IP pública fija"
       },
       "order": {
-        "title": "Orden de pegado (léelo antes del primer generador)",
+        "title": "Orden de pegado (léelo antes del primer script)",
         "steps": [
-          "Configuración del despliegue: base, PPPoE, CGNAT y endurecimiento (con avisos y respaldo si los vas a usar).",
-          "Varios enlaces: el balanceo con sus colas y avisos. Failover por calidad, Salida fija por destino, Prioridad DSCP e IP pública fija dependen de él y fallan si no está.",
-          "Los generadores, de uno en uno, probando cada uno. Morosos antes de Uso por cliente si vas a usar el tope de uso justo.",
-          "Si vuelves a pegar la base de Configuración, vuelve a pegar Morosos, Acceso remoto y Monitoreo: la base apaga el proxy y el servicio web y deja Winbox y SSH solo para la red de gestión.",
-          "Para quitar todo, primero el «Cómo quitarlo» de cada generador y al final el de Configuración: sus listas de interfaces no se pueden borrar mientras haya reglas que las usen."
+          "Primero la Guía óptima: base, balanceo, PPPoE, CGNAT, endurecimiento y avisos. Cada paso empieza con una revisión que se detiene con un mensaje si falta algo o si ya está instalado.",
+          "Failover por calidad, Salida fija por destino, Prioridad DSCP e IP pública fija necesitan el balanceo: si no está, se detienen con un mensaje.",
+          "Los scripts de experto, de uno en uno y paso a paso, probando cada paso con su «Comprueba». Morosos antes de Uso por cliente si vas a usar el tope de uso justo.",
+          "Volver a pegar un script lo reemplaza: primero quita sus propias líneas y luego las escribe. Si vuelves a pegar la base, vuelve a pegar Morosos, Acceso remoto y Monitoreo: la base apaga el proxy y el servicio web y deja Winbox y SSH solo para la red de gestión.",
+          "En la terminal, un mensaje que empieza con DS:, LB: o DSX: detiene solo esa línea: no sigas pegando. Con /import file=… el archivo entero se detiene ahí.",
+          "Para quitar todo, primero el deshacer de cada script y al final el de la base (o el deshacer combinado de la Guía óptima, que ya va en ese orden)."
         ]
+      },
+      "stepWord": "Paso",
+      "before": "Antes:",
+      "verify": "Comprueba:",
+      "include": "Incluir en la descarga de {name}",
+      "thisDeployment": "este despliegue",
+      "includeHint": "Los valores de cada script se guardan con el despliegue. Los que actives entran, en orden y después de la guía, en el archivo que descargas desde la Guía óptima, junto con un deshacer de todo en orden inverso.",
+      "includeLink": "Ir a la Guía óptima",
+      "steps": {
+        "morosos": {
+          "perfiles": {
+            "title": "Perfiles reducido y suspendido",
+            "before": "la base del despliegue instalada (pool DS-clientes)."
+          },
+          "reglas": {
+            "title": "Reglas de aviso y corte",
+            "before": "los perfiles del paso anterior."
+          }
+        },
+        "acceso": {
+          "activar": {
+            "title": "Activar Back To Home",
+            "before": "que el router tenga internet."
+          },
+          "usuarios": {
+            "title": "Usuarios del VPN",
+            "before": "que /ip cloud print diga que Back To Home está corriendo (puede tardar un minuto)."
+          },
+          "qr": {
+            "title": "Configuración para cada teléfono o laptop"
+          },
+          "tunel": {
+            "title": "Túnel WireGuard al concentrador",
+            "before": "el concentrador con su IP pública y el puerto UDP abierto."
+          },
+          "servicios": {
+            "title": "Winbox y SSH desde el túnel"
+          }
+        },
+        "dns": {
+          "listas": {
+            "title": "Listas de bloqueo"
+          },
+          "familia": {
+            "title": "Perfiles -familia",
+            "before": "la base del despliegue instalada."
+          },
+          "dnat": {
+            "title": "DNS forzado al router",
+            "before": "la base del despliegue instalada."
+          }
+        },
+        "uso": {
+          "scripts": {
+            "title": "Scripts de medición"
+          },
+          "programar": {
+            "title": "Programar mediciones y reporte",
+            "before": "los scripts del paso anterior."
+          }
+        },
+        "escudo": {
+          "reglas": {
+            "title": "Reglas de detección"
+          },
+          "avisos": {
+            "title": "Aviso de clientes infectados",
+            "before": "los avisos de la base (script DS-aviso) si quieres recibirlos."
+          }
+        },
+        "velocidad": {
+          "scripts": {
+            "title": "Scripts de cambio de velocidad"
+          },
+          "programar": {
+            "title": "Horarios y revisión al arrancar",
+            "before": "los scripts del paso anterior."
+          }
+        },
+        "monitoreo": {
+          "graficas": {
+            "title": "Gráficas"
+          },
+          "watchdog": {
+            "title": "Watchdog"
+          },
+          "avisos": {
+            "title": "Avisos y resumen diario",
+            "before": "los avisos de la base (script DS-aviso)."
+          }
+        },
+        "respaldo": {
+          "gestion": {
+            "title": "Gestión del principal con VRRP",
+            "before": "el script de la OLT de arriba aplicado; hazlo en ventana de mantenimiento."
+          },
+          "pool": {
+            "title": "Mitad del pool para el principal"
+          },
+          "copia": {
+            "title": "Copia de cuentas al respaldo",
+            "before": "el router de respaldo con su paso de usuario."
+          },
+          "velocidades": {
+            "title": "Copia de velocidades de los planes"
+          }
+        },
+        "respaldoB": {
+          "base": {
+            "title": "Base del despliegue en el respaldo",
+            "before": "pegar antes la guía completa en el router de respaldo."
+          },
+          "gestion": {
+            "title": "Gestión del respaldo con VRRP"
+          },
+          "pool": {
+            "title": "Mitad del pool para el respaldo"
+          },
+          "usuario": {
+            "title": "Usuario de copia"
+          },
+          "importar": {
+            "title": "Importar las cuentas del principal"
+          },
+          "velocidades": {
+            "title": "Importar las velocidades de los planes"
+          }
+        },
+        "destinos": {
+          "marcas": {
+            "title": "Salida fija por destino",
+            "before": "el balanceo instalado."
+          }
+        },
+        "bgp": {
+          "instancia": {
+            "title": "Instancia BGP y bloques propios",
+            "before": "tu ASN y tus bloques aprobados por LACNIC."
+          },
+          "filtros": {
+            "title": "Filtros de entrada y salida"
+          },
+          "sesiones": {
+            "title": "Sesiones con los carriers",
+            "before": "que cada carrier haya configurado su lado."
+          }
+        },
+        "failover": {
+          "segundas": {
+            "title": "Rutas de las segundas pruebas",
+            "before": "el balanceo con failover recursivo instalado."
+          },
+          "pruebas": {
+            "title": "Pruebas de calidad por enlace"
+          },
+          "lte": {
+            "title": "LTE de último recurso",
+            "before": "el módem LTE conectado con su interfaz."
+          },
+          "revision": {
+            "title": "Revisión cada 10 s"
+          }
+        },
+        "bond": {
+          "router": {
+            "title": "Bond hacia la OLT",
+            "before": "los comandos de la OLT de arriba aplicados y el segundo cable conectado; ventana de mantenimiento."
+          }
+        },
+        "repuesto": {
+          "copia": {
+            "title": "Export completo semanal",
+            "before": "los respaldos por SFTP de la base configurados."
+          }
+        },
+        "filtros": {
+          "origen": {
+            "title": "Antispoofing (BCP 38)",
+            "before": "la base del despliegue instalada."
+          },
+          "puertos": {
+            "title": "Puertos bloqueados hacia internet"
+          },
+          "topes": {
+            "title": "Topes de UDP y DNS por cliente"
+          }
+        },
+        "alertas": {
+          "scripts": {
+            "title": "Scripts de alertas",
+            "before": "los avisos de la base (script DS-aviso)."
+          },
+          "programar": {
+            "title": "Programar alertas"
+          }
+        },
+        "prioridad": {
+          "marcas": {
+            "title": "Marcas DSCP a la cola prioritaria",
+            "before": "las colas por enlace del balanceo."
+          }
+        },
+        "ippublica": {
+          "rutas": {
+            "title": "Rutas y NAT de las IPs fijas",
+            "before": "el balanceo instalado y el bloque público ruteado por el carrier."
+          },
+          "cuentas": {
+            "title": "Asignar la IP a cada cuenta"
+          }
+        }
       }
+    },
+    "installed": {
+      "title": "¿Qué tiene este router?",
+      "lead": "Pega el export del router y ve, parte por parte, qué está instalado, qué falta, qué quedó repetido y qué viene de una configuración anterior.",
+      "how": [
+        "En la terminal del router corre el comando de abajo y copia todo lo que muestra.",
+        "Pégalo aquí. Se lee en este navegador y no se guarda ni se envía.",
+        "Compara con el despliegue abierto: elige el mismo despliegue arriba para que la comparación tenga sentido."
+      ],
+      "command": "Comando para el router",
+      "paste": "Export del router (/export terse)",
+      "pasteHint": "Se reconoce cada parte por los comentarios que escriben los scripts (DS:, LB:, DSX …:).",
+      "caption": "Partes instaladas en el router",
+      "cols": {
+        "part": "Parte",
+        "state": "Estado",
+        "detail": "Detalle"
+      },
+      "parts": {
+        "base": "Base del despliegue (Configuración)",
+        "balance": "Balanceo (Varios enlaces)"
+      },
+      "states": {
+        "absent": "No está",
+        "ok": "Completa",
+        "incomplete": "Incompleta",
+        "duplicated": "Repetida",
+        "outdated": "Con líneas viejas"
+      },
+      "count": "{found} líneas con su comentario; con la configuración actual serían {expected}.",
+      "missing": "Faltan: {list}{more, plural, =0 {} other { y # más}}",
+      "duplicated": "Aparecen más veces de lo esperado (pegada dos veces): {list}. Pega su deshacer y vuelve a pegarla.",
+      "extra": "Líneas que la configuración actual ya no escribe: {list}. Vuelve a pegarla: ahora cada script quita sus líneas antes de escribirlas.",
+      "needs": "Le falta lo que necesita: {list}.",
+      "absentHint": "No se encontró ninguna línea suya.",
+      "note": "La base y el balanceo escriben ciclos con muchas líneas del mismo comentario, así que en ellos solo se revisa qué falta. Las contraseñas del export no salen de esta página."
     }
   }
 }

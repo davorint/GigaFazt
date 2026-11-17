@@ -1,20 +1,11 @@
 "use client"
 
-import { useId, useMemo, useState, type ReactNode } from "react"
+import { createContext, useContext, useId, useMemo, useState, type ReactNode } from "react"
 import { useTranslations } from "next-intl"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import {
   BTH_NET,
-  DEFAULT_BACKUP_ROUTER,
-  DEFAULT_BGP,
-  DEFAULT_BOOST,
-  DEFAULT_DNS_FILTER,
-  DEFAULT_MONITOR,
-  DEFAULT_MOROSOS,
-  DEFAULT_REMOTE,
-  DEFAULT_SHIELD,
-  DEFAULT_USAGE,
   backupRouterScripts,
   bgpScript,
   boostScript,
@@ -31,16 +22,21 @@ import {
   usageScript,
   type AdvContext,
   type AdvIssue,
+  type BackupRouterOptions,
+  type BgpOptions,
+  type BoostOptions,
   type ClientAction,
-  type RouteRule,
+  type DnsFilterOptions,
+  type MonitorOptions,
+  type MorososOptions,
+  type RemoteOptions,
+  type ShieldOptions,
+  type Step,
+  type UsageOptions,
 } from "@/lib/mikrotik/advanced"
 import {
-  DEFAULT_ALERTS,
-  DEFAULT_FAILOVER,
-  DEFAULT_FILTERS,
   alertsScript,
   bondScript,
-  defaultProbes,
   exportInterfaces,
   failoverScript,
   filtersScript,
@@ -49,28 +45,34 @@ import {
   profileSyncScripts,
   publicIpScript,
   remapExport,
+  type AlertsOptions,
+  type FailoverOptions,
+  type FilterOptions,
   type PublicIpRow,
 } from "@/lib/mikrotik/advanced2"
+import { GROUPS, optionsOf, type BondPanelOptions, type DestinationsOptions, type Module, type PublicIpOptions } from "@/lib/mikrotik/bundle"
 import { setupPlans } from "@/lib/mikrotik/setup"
-import type { LabState } from "@/lib/mikrotik/state"
+import type { AdvancedState, LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
 import { CodeBlock } from "./CodeBlock"
 import { IssueList } from "./IssueList"
 import { NumberField } from "./NumberField"
 import { SelectField } from "./SelectField"
+import { StepList } from "./StepList"
 import { TextField } from "./TextField"
 
-/** Generators by what they're for (the picker's groups). */
-export const GROUPS = {
-  enlaces: ["failover", "destinos", "bond", "respaldo", "repuesto"],
-  clientes: ["morosos", "velocidad", "uso", "ippublica", "prioridad"],
-  seguridad: ["filtros", "escudo", "dns", "acceso"],
-  operacion: ["monitoreo", "alertas"],
-  crecer: ["bgp"],
-} as const
-type Module = (typeof GROUPS)[keyof typeof GROUPS][number]
-
 type T = ReturnType<typeof useTranslations>
+
+/** The deployment's saved generator settings, for every generator below. */
+type Opts = { ctx: AdvContext; adv: AdvancedState; onAdvanced: (a: AdvancedState) => void }
+const OptsContext = createContext<Opts | null>(null)
+
+/** A generator's settings (saved with the deployment) and their setter. */
+function useOpts<O extends object>(mod: Module): [O, (o: O) => void] {
+  const c = useContext(OptsContext) as Opts
+  const o = optionsOf<O>(mod, c.ctx, c.adv)
+  return [o, (next: O) => c.onAdvanced({ ...c.adv, o: { ...c.adv.o, [mod]: next as Record<string, unknown> } })]
+}
 
 function Toggle({ label, hint, on, set }: { label: string; hint?: string; on: boolean; set: (v: boolean) => void }) {
   return (
@@ -103,12 +105,28 @@ function Area({ label, hint, value, set, rows = 4, placeholder }: { label: strin
 
 const grid = "grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3"
 
-/** Issues, the script and its undo. */
-function Output({ t, issues, script, undo, label, extra }: { t: T; issues: AdvIssue[]; script: string; undo: string; label: string; extra?: ReactNode }) {
+/** Step titles and checks from the messages: advanced.steps.<module>.<id>.{title, before}. */
+export function shownSteps(t: T, mod: string, steps: Step[]) {
+  return steps.map((s) => ({
+    title: t(`steps.${mod}.${s.id}.title`),
+    before: t.has(`steps.${mod}.${s.id}.before`) ? t(`steps.${mod}.${s.id}.before`) : undefined,
+    script: s.script,
+    verify: s.verify,
+  }))
+}
+
+/** Issues, the script as steps and its undo. */
+function Output({ t, mod, issues, steps, undo, label, extra, before }: { t: T; mod: string; issues: AdvIssue[]; steps: Step[]; undo: string; label: string; extra?: ReactNode; before?: ReactNode }) {
   return (
     <div className="grid min-w-0 gap-4">
       <IssueList items={issues.map((i, k) => ({ key: `${i.code}-${k}`, level: i.level, text: t(`issues.${i.code}`, { value: i.value ?? "" }) }))} />
-      {script && <CodeBlock code={script} label={label} />}
+      {before}
+      {steps.length > 0 && (
+        <div className="grid gap-3">
+          <p className="text-sm font-medium text-foreground">{label}</p>
+          <StepList steps={shownSteps(t, mod, steps)} labels={{ step: t("stepWord"), before: t("before"), verify: t("verify") }} />
+        </div>
+      )}
       {extra}
       {undo && (
         <details className="rounded-xl border border-white/10">
@@ -122,69 +140,85 @@ function Output({ t, issues, script, undo, label, extra }: { t: T; issues: AdvIs
   )
 }
 
-/** Advanced scripts for the open deployment, each with its own undo (owner, 2026-11-16: run everything by hand). */
-export function AdvancedPanel({ state }: { state: LabState }) {
+/** Expert scripts for the open deployment: settings saved with it, each as steps with its undo (owner, 2026-11-16). */
+export function AdvancedPanel({ state, onAdvanced }: { state: LabState; onAdvanced: (a: AdvancedState) => void }) {
   const t = useTranslations("mikrotik.advanced")
   const [mod, setMod] = useState<Module>("failover")
   const ctx: AdvContext = { name: state.deployment, setup: state.setup, wans: state.wans, queue: state.queueKind, failover: state.balance.failover }
+  const adv = state.advanced
   const planNames = useMemo(() => setupPlans(state.setup.plans, state.setup.rule).map((p) => p.name), [state.setup.plans, state.setup.rule])
+  const included = adv.on.includes(mod)
+  const include = (on: boolean) => onAdvanced({ ...adv, on: on ? [...adv.on.filter((m) => m !== mod), mod] : adv.on.filter((m) => m !== mod) })
 
   return (
-    <div className="surface grid min-w-0 gap-6 rounded-2xl p-5 sm:p-7 [&>*]:min-w-0">
-      <div className="grid gap-2 sm:max-w-md">
-        <SelectField label={t("pick")} value={mod} onChange={(v) => setMod(v as Module)}>
-          {Object.entries(GROUPS).map(([g, mods]) => (
-            <optgroup key={g} label={t(`groups.${g}`)}>
-              {mods.map((m) => (
-                <option key={m} value={m}>
-                  {t(`modules.${m}.name`)}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </SelectField>
+    <OptsContext.Provider value={{ ctx, adv, onAdvanced }}>
+      <div className="surface grid min-w-0 gap-6 rounded-2xl p-5 sm:p-7 [&>*]:min-w-0">
+        <div className="grid gap-2 sm:max-w-md">
+          <SelectField label={t("pick")} value={mod} onChange={(v) => setMod(v as Module)}>
+            {Object.entries(GROUPS).map(([g, mods]) => (
+              <optgroup key={g} label={t(`groups.${g}`)}>
+                {mods.map((m) => (
+                  <option key={m} value={m}>
+                    {t(`modules.${m}.name`)}
+                    {adv.on.includes(m) ? ` ✓` : ""}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </SelectField>
+        </div>
+        <details className="rounded-xl border border-white/10">
+          <summary className="cursor-pointer rounded-xl p-3 text-sm text-zinc-200 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">{t("order.title")}</summary>
+          <ol className="grid gap-1.5 px-3 pb-3 text-sm leading-relaxed text-zinc-300">
+            {(t.raw("order.steps") as string[]).map((x, k) => (
+              <li key={k} className="flex gap-2">
+                <span aria-hidden className="font-mono text-xs text-zinc-400">
+                  {String(k + 1).padStart(2, "0")}
+                </span>
+                {x}
+              </li>
+            ))}
+          </ol>
+        </details>
+        <div className="grid gap-1.5">
+          <h3 className="text-base font-medium text-foreground">{t(`modules.${mod}.name`)}</h3>
+          <p className="max-w-3xl text-sm leading-relaxed text-zinc-300">{t(`modules.${mod}.lead`)}</p>
+        </div>
+        <div className="grid gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-4">
+          <Toggle label={t("include", { name: state.deployment.trim() || t("thisDeployment") })} on={included} set={include} />
+          <p className="max-w-3xl text-xs leading-snug text-zinc-400">
+            {t("includeHint")}{" "}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
+            <a href="/mikrotik-optimo#guia" className="text-zinc-200 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+              {t("includeLink")}
+            </a>
+          </p>
+        </div>
+        {mod === "morosos" && <Morosos t={t} ctx={ctx} plans={planNames} />}
+        {mod === "acceso" && <Remote t={t} ctx={ctx} />}
+        {mod === "dns" && <DnsFilter t={t} ctx={ctx} plans={planNames} />}
+        {mod === "uso" && <Usage t={t} ctx={ctx} />}
+        {mod === "escudo" && <Shield t={t} ctx={ctx} />}
+        {mod === "velocidad" && <Speeds t={t} ctx={ctx} plans={planNames} />}
+        {mod === "monitoreo" && <Monitor t={t} ctx={ctx} />}
+        {mod === "respaldo" && <BackupRouter t={t} ctx={ctx} />}
+        {mod === "destinos" && <Destinations t={t} ctx={ctx} />}
+        {mod === "bgp" && <Bgp t={t} />}
+        {mod === "failover" && <Failover t={t} ctx={ctx} />}
+        {mod === "bond" && <Bond t={t} ctx={ctx} />}
+        {mod === "repuesto" && <Spare t={t} ctx={ctx} />}
+        {mod === "filtros" && <Filters t={t} ctx={ctx} />}
+        {mod === "alertas" && <Alerts t={t} ctx={ctx} />}
+        {mod === "prioridad" && <Priority t={t} ctx={ctx} />}
+        {mod === "ippublica" && <PublicIps t={t} ctx={ctx} />}
+        <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("note")}</p>
       </div>
-      <details className="rounded-xl border border-white/10">
-        <summary className="cursor-pointer rounded-xl p-3 text-sm text-zinc-200 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">{t("order.title")}</summary>
-        <ol className="grid gap-1.5 px-3 pb-3 text-sm leading-relaxed text-zinc-300">
-          {(t.raw("order.steps") as string[]).map((x, k) => (
-            <li key={k} className="flex gap-2">
-              <span aria-hidden className="font-mono text-xs text-zinc-400">
-                {String(k + 1).padStart(2, "0")}
-              </span>
-              {x}
-            </li>
-          ))}
-        </ol>
-      </details>
-      <div className="grid gap-1.5">
-        <h3 className="text-base font-medium text-foreground">{t(`modules.${mod}.name`)}</h3>
-        <p className="max-w-3xl text-sm leading-relaxed text-zinc-300">{t(`modules.${mod}.lead`)}</p>
-      </div>
-      {mod === "morosos" && <Morosos t={t} ctx={ctx} plans={planNames} />}
-      {mod === "acceso" && <Remote t={t} ctx={ctx} />}
-      {mod === "dns" && <DnsFilter t={t} ctx={ctx} plans={planNames} />}
-      {mod === "uso" && <Usage t={t} ctx={ctx} />}
-      {mod === "escudo" && <Shield t={t} ctx={ctx} />}
-      {mod === "velocidad" && <Speeds t={t} ctx={ctx} plans={planNames} />}
-      {mod === "monitoreo" && <Monitor t={t} ctx={ctx} />}
-      {mod === "respaldo" && <BackupRouter t={t} ctx={ctx} />}
-      {mod === "destinos" && <Destinations t={t} ctx={ctx} />}
-      {mod === "bgp" && <Bgp t={t} />}
-      {mod === "failover" && <Failover t={t} ctx={ctx} />}
-      {mod === "bond" && <Bond t={t} ctx={ctx} />}
-      {mod === "repuesto" && <Spare t={t} ctx={ctx} />}
-      {mod === "filtros" && <Filters t={t} ctx={ctx} />}
-      {mod === "alertas" && <Alerts t={t} ctx={ctx} />}
-      {mod === "prioridad" && <Priority t={t} ctx={ctx} />}
-      {mod === "ippublica" && <PublicIps t={t} ctx={ctx} />}
-      <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("note")}</p>
-    </div>
+    </OptsContext.Provider>
   )
 }
 
 function Morosos({ t, ctx, plans }: { t: T; ctx: AdvContext; plans: string[] }) {
-  const [o, setO] = useState(DEFAULT_MOROSOS)
+  const [o, setO] = useOpts<MorososOptions>("morosos")
   const [action, setAction] = useState<ClientAction>("suspend")
   const [clients, setClients] = useState("")
   const r = morososScript(ctx, o)
@@ -199,7 +233,7 @@ function Morosos({ t, ctx, plans }: { t: T; ctx: AdvContext; plans: string[] }) 
           <NumberField label={t("morosos.up")} unit="Mbps" value={o.reducedUp} max={1000} onChange={(v) => v !== null && setO({ ...o, reducedUp: v })} />
         </div>
       </div>
-      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("morosos.label")} />
+      <Output t={t} mod="morosos" issues={r.issues} steps={r.steps} undo={r.undo} label={t("morosos.label")} />
       <div className="grid gap-3 rounded-xl border border-white/10 p-4">
         <h4 className="text-sm font-medium text-foreground">{t("morosos.clients")}</h4>
         <Choice label={t("morosos.action")} value={action} onChange={setAction} options={(["reduce", "suspend", "restore"] as const).map((k) => ({ value: k, label: t(`morosos.actions.${k}`) }))} />
@@ -212,7 +246,7 @@ function Morosos({ t, ctx, plans }: { t: T; ctx: AdvContext; plans: string[] }) 
 }
 
 function Remote({ t, ctx }: { t: T; ctx: AdvContext }) {
-  const [o, setO] = useState(DEFAULT_REMOTE)
+  const [o, setO] = useOpts<RemoteOptions>("acceso")
   const r = remoteScript(ctx, o)
   return (
     <>
@@ -230,13 +264,13 @@ function Remote({ t, ctx }: { t: T; ctx: AdvContext }) {
           <NumberField label={t("acceso.host")} unit="#" value={o.host} integer min={2} max={65000} onChange={(v) => v !== null && setO({ ...o, host: v })} hint={t("acceso.hostHint")} />
         </div>
       )}
-      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("acceso.label")} extra={r.hubSide ? <CodeBlock code={r.hubSide} label={t("acceso.hubSide")} /> : undefined} />
+      <Output t={t} mod="acceso" issues={r.issues} steps={r.steps} undo={r.undo} label={t("acceso.label")} extra={r.hubSide ? <CodeBlock code={r.hubSide} label={t("acceso.hubSide")} /> : undefined} />
     </>
   )
 }
 
 function DnsFilter({ t, ctx, plans }: { t: T; ctx: AdvContext; plans: string[] }) {
-  const [o, setO] = useState(DEFAULT_DNS_FILTER)
+  const [o, setO] = useOpts<DnsFilterOptions>("dns")
   const r = dnsFilterScript(ctx, o)
   return (
     <>
@@ -245,13 +279,13 @@ function DnsFilter({ t, ctx, plans }: { t: T; ctx: AdvContext; plans: string[] }
           <Toggle key={k} label={t(`dns.${k}`)} hint={t(`dns.${k}Hint`, { plans: plans.map(familyName).join(", ") })} on={o[k]} set={(v) => setO({ ...o, [k]: v })} />
         ))}
       </div>
-      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("dns.label")} />
+      <Output t={t} mod="dns" issues={r.issues} steps={r.steps} undo={r.undo} label={t("dns.label")} />
     </>
   )
 }
 
 function Usage({ t, ctx }: { t: T; ctx: AdvContext }) {
-  const [o, setO] = useState(DEFAULT_USAGE)
+  const [o, setO] = useOpts<UsageOptions>("uso")
   const r = usageScript(ctx, o)
   return (
     <>
@@ -260,13 +294,13 @@ function Usage({ t, ctx }: { t: T; ctx: AdvContext }) {
         <NumberField label={t("uso.top")} unit="#" value={o.top} integer max={20} onChange={(v) => v !== null && setO({ ...o, top: v })} hint={t("uso.topHint")} />
         <TextField label={t("uso.time")} value={o.reportTime} onChange={(v) => setO({ ...o, reportTime: v.trim() })} />
       </div>
-      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("uso.label")} />
+      <Output t={t} mod="uso" issues={r.issues} steps={r.steps} undo={r.undo} label={t("uso.label")} />
     </>
   )
 }
 
 function Shield({ t, ctx }: { t: T; ctx: AdvContext }) {
-  const [o, setO] = useState(DEFAULT_SHIELD)
+  const [o, setO] = useOpts<ShieldOptions>("escudo")
   const r = shieldScript(ctx, o)
   return (
     <>
@@ -278,13 +312,13 @@ function Shield({ t, ctx }: { t: T; ctx: AdvContext }) {
           <Toggle key={k} label={t(`escudo.${k}`)} hint={t(`escudo.${k}Hint`)} on={o[k]} set={(v) => setO({ ...o, [k]: v })} />
         ))}
       </div>
-      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("escudo.label")} />
+      <Output t={t} mod="escudo" issues={r.issues} steps={r.steps} undo={r.undo} label={t("escudo.label")} />
     </>
   )
 }
 
 function Speeds({ t, ctx, plans }: { t: T; ctx: AdvContext; plans: string[] }) {
-  const [o, setO] = useState(DEFAULT_BOOST)
+  const [o, setO] = useOpts<BoostOptions>("velocidad")
   const r = boostScript(ctx, o)
   const rows = boostedPlans(ctx.setup.plans, ctx.setup.rule, o)
   const [u, setU] = useState({ user: "", to: plans.at(-1) ?? "", back: plans[0] ?? "", date: "", time: "00:00:00" })
@@ -305,7 +339,7 @@ function Speeds({ t, ctx, plans }: { t: T; ctx: AdvContext; plans: string[] }) {
           ))}
         </ul>
       )}
-      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("velocidad.label")} />
+      <Output t={t} mod="velocidad" issues={r.issues} steps={r.steps} undo={r.undo} label={t("velocidad.label")} />
       <div className="grid gap-3 rounded-xl border border-white/10 p-4">
         <h4 className="text-sm font-medium text-foreground">{t("velocidad.upgrade")}</h4>
         <div className={grid}>
@@ -335,7 +369,7 @@ function Speeds({ t, ctx, plans }: { t: T; ctx: AdvContext; plans: string[] }) {
 }
 
 function Monitor({ t, ctx }: { t: T; ctx: AdvContext }) {
-  const [o, setO] = useState(DEFAULT_MONITOR)
+  const [o, setO] = useOpts<MonitorOptions>("monitoreo")
   const r = monitorScript(ctx, o)
   return (
     <>
@@ -348,18 +382,17 @@ function Monitor({ t, ctx }: { t: T; ctx: AdvContext }) {
         <NumberField label={t("monitoreo.dropPct")} unit="%" value={o.dropPct} integer max={100} onChange={(v) => v !== null && setO({ ...o, dropPct: v })} />
         <TextField label={t("monitoreo.summary")} value={o.summaryTime} onChange={(v) => setO({ ...o, summaryTime: v.trim() })} hint={t("monitoreo.summaryHint")} />
       </div>
-      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("monitoreo.label")} />
+      <Output t={t} mod="monitoreo" issues={r.issues} steps={r.steps} undo={r.undo} label={t("monitoreo.label")} />
     </>
   )
 }
 
 function BackupRouter({ t, ctx }: { t: T; ctx: AdvContext }) {
-  const [o, setO] = useState(DEFAULT_BACKUP_ROUTER)
-  const [profiles, setProfiles] = useState(true)
+  const [o, setO] = useOpts<BackupRouterOptions>("respaldo")
   const r = backupRouterScripts(ctx, o)
-  const sync = r.backupIp && profiles ? profileSyncScripts(o.syncUser, r.backupIp) : null
-  const main = sync ? `${r.main}\n${sync.main}` : r.main
-  const backup = sync ? `${r.backup}\n${sync.backup}` : r.backup
+  const sync = r.backupIp ? profileSyncScripts(o.syncUser, r.backupIp) : null
+  const mainSteps = sync ? [...r.mainSteps, { id: "velocidades", script: sync.main }] : r.mainSteps
+  const backupSteps = sync ? [...r.backupSteps, { id: "velocidades", script: sync.backup }] : r.backupSteps
   return (
     <>
       <div className={grid}>
@@ -368,19 +401,20 @@ function BackupRouter({ t, ctx }: { t: T; ctx: AdvContext }) {
         <TextField label={t("respaldo.user")} value={o.syncUser} onChange={(v) => setO({ ...o, syncUser: v.trim() })} />
         <TextField label={t("respaldo.oltPort2")} value={o.oltPort2} onChange={(v) => setO({ ...o, oltPort2: v.trim() })} hint={t("respaldo.oltPort2Hint")} />
       </div>
-      <Toggle label={t("respaldo.profiles")} hint={t("respaldo.profilesHint")} on={profiles} set={setProfiles} />
       <Output
         t={t}
+        mod="respaldo"
         issues={r.issues}
-        script={main}
+        steps={mainSteps}
         undo={r.undoMain}
         label={t("respaldo.main")}
+        before={r.olt ? <CodeBlock code={r.olt} label={t("respaldo.olt")} /> : undefined}
         extra={
-          backup ? (
-            <>
-              <CodeBlock code={backup} label={t("respaldo.backup")} />
-              <CodeBlock code={r.olt} label={t("respaldo.olt")} />
-            </>
+          backupSteps.length ? (
+            <div className="grid gap-3">
+              <p className="text-sm font-medium text-foreground">{t("respaldo.backup")}</p>
+              <StepList steps={shownSteps(t, "respaldoB", backupSteps)} labels={{ step: t("stepWord"), before: t("before"), verify: t("verify") }} />
+            </div>
           ) : undefined
         }
       />
@@ -389,9 +423,11 @@ function BackupRouter({ t, ctx }: { t: T; ctx: AdvContext }) {
 }
 
 function Destinations({ t, ctx }: { t: T; ctx: AdvContext }) {
-  const [rules, setRules] = useState<RouteRule[]>([{ wan: ctx.wans[0]?.name ?? "", dest: "" }])
+  const [o, setO] = useOpts<DestinationsOptions>("destinos")
+  const rules = o.rules
   const r = routeScript(ctx, rules)
-  const set = (k: number, patch: Partial<RouteRule>) => setRules(rules.map((x, j) => (j === k ? { ...x, ...patch } : x)))
+  const wan = ctx.wans[0]?.name ?? ""
+  const set = (k: number, patch: Partial<DestinationsOptions["rules"][number]>) => setO({ rules: rules.map((x, j) => (j === k ? { ...x, ...patch } : x)) })
   return (
     <>
       {rules.map((rule, k) => (
@@ -407,22 +443,22 @@ function Destinations({ t, ctx }: { t: T; ctx: AdvContext }) {
         </div>
       ))}
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="rounded-full border border-white/15 px-4 py-1.5 text-sm text-zinc-200 hover:bg-white/5" onClick={() => setRules([...rules, { wan: ctx.wans[0]?.name ?? "", dest: "" }])} disabled={rules.length >= 8}>
+        <button type="button" className="rounded-full border border-white/15 px-4 py-1.5 text-sm text-zinc-200 hover:bg-white/5" onClick={() => setO({ rules: [...rules, { wan, dest: "" }] })} disabled={rules.length >= 8}>
           {t("destinos.add")}
         </button>
         {rules.length > 1 && (
-          <button type="button" className="rounded-full border border-white/15 px-4 py-1.5 text-sm text-zinc-200 hover:bg-white/5" onClick={() => setRules(rules.slice(0, -1))}>
+          <button type="button" className="rounded-full border border-white/15 px-4 py-1.5 text-sm text-zinc-200 hover:bg-white/5" onClick={() => setO({ rules: rules.slice(0, -1) })}>
             {t("destinos.remove")}
           </button>
         )}
       </div>
-      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("destinos.label")} />
+      <Output t={t} mod="destinos" issues={r.issues} steps={r.steps} undo={r.undo} label={t("destinos.label")} />
     </>
   )
 }
 
 function Bgp({ t }: { t: T }) {
-  const [o, setO] = useState(DEFAULT_BGP)
+  const [o, setO] = useOpts<BgpOptions>("bgp")
   const r = bgpScript(o)
   return (
     <>
@@ -442,22 +478,19 @@ function Bgp({ t }: { t: T }) {
         <TextField label={t("bgp.prefixes")} value={o.prefixes} onChange={(v) => setO({ ...o, prefixes: v })} hint={t("bgp.prefixesHint")} />
       </div>
       <Area label={t("bgp.peers")} hint={t("bgp.peersHint")} value={o.peers} set={(v) => setO({ ...o, peers: v })} placeholder={"carrier1,198.51.100.1,65010,0\ncarrier2,203.0.113.5,65020,2"} />
-      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("bgp.label")} />
+      <Output t={t} mod="bgp" issues={r.issues} steps={r.steps} undo={r.undo} label={t("bgp.label")} />
     </>
   )
 }
 
 function Failover({ t, ctx }: { t: T; ctx: AdvContext }) {
-  const initial = useMemo(() => defaultProbes(ctx.wans, ctx.wans.map((w) => w.monitor.trim())), [ctx.wans])
-  const [o, setO] = useState({ ...DEFAULT_FAILOVER, probes: initial })
-  // Links added later get a default second probe.
-  const probes = { ...initial, ...o.probes }
-  const r = failoverScript(ctx, { ...o, probes })
+  const [o, setO] = useOpts<FailoverOptions>("failover")
+  const r = failoverScript(ctx, o)
   return (
     <>
       <div className={grid}>
         {ctx.wans.map((w) => (
-          <TextField key={w.name} label={t("failover.probe", { wan: w.name })} value={probes[w.name] ?? ""} onChange={(v) => setO({ ...o, probes: { ...probes, [w.name]: v.trim() } })} hint={t("failover.probeHint", { monitor: w.monitor })} />
+          <TextField key={w.name} label={t("failover.probe", { wan: w.name })} value={o.probes[w.name] ?? ""} onChange={(v) => setO({ ...o, probes: { ...o.probes, [w.name]: v.trim() } })} hint={t("failover.probeHint", { monitor: w.monitor })} />
         ))}
       </div>
       <div className={grid}>
@@ -469,13 +502,13 @@ function Failover({ t, ctx }: { t: T; ctx: AdvContext }) {
         <TextField label={t("failover.lte")} value={o.lte} onChange={(v) => setO({ ...o, lte: v.trim() })} hint={t("failover.lteHint")} />
         {o.lte && <NumberField label={t("failover.lteMbps")} unit="Mbps" value={o.lteMbps} max={1000} onChange={(v) => v !== null && setO({ ...o, lteMbps: v })} />}
       </div>
-      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("failover.label")} />
+      <Output t={t} mod="failover" issues={r.issues} steps={r.steps} undo={r.undo} label={t("failover.label")} />
     </>
   )
 }
 
 function Bond({ t, ctx }: { t: T; ctx: AdvContext }) {
-  const [o, setO] = useState({ ports: `${ctx.setup.oltPort.trim()}, `, oltPorts: "0/2/0, 0/3/0" })
+  const [o, setO] = useOpts<BondPanelOptions>("bond")
   const r = bondScript(ctx, o)
   return (
     <>
@@ -483,12 +516,13 @@ function Bond({ t, ctx }: { t: T; ctx: AdvContext }) {
         <TextField label={t("bond.ports")} value={o.ports} onChange={(v) => setO({ ...o, ports: v })} hint={t("bond.portsHint", { port: ctx.setup.oltPort })} />
         <TextField label={t("bond.oltPorts")} value={o.oltPorts} onChange={(v) => setO({ ...o, oltPorts: v })} hint={t("bond.oltPortsHint")} />
       </div>
-      <Output t={t} issues={r.issues} script={r.router} undo={r.undo} label={t("bond.router")} extra={r.olt ? <CodeBlock code={r.olt} label={t("bond.olt")} /> : undefined} />
+      <Output t={t} mod="bond" issues={r.issues} steps={r.steps} undo={r.undo} label={t("bond.router")} before={r.olt ? <CodeBlock code={r.olt} label={t("bond.olt")} /> : undefined} />
     </>
   )
 }
 
 function Spare({ t, ctx }: { t: T; ctx: AdvContext }) {
+  // The pasted export carries passwords: kept only on this page, never saved.
   const [text, setText] = useState("")
   const [map, setMap] = useState<Record<string, string>>({})
   const found = useMemo(() => exportInterfaces(text), [text])
@@ -520,14 +554,14 @@ function Spare({ t, ctx }: { t: T; ctx: AdvContext }) {
       {out && <CodeBlock code={out} label={t("repuesto.result")} />}
       <div className="grid gap-3 rounded-xl border border-white/10 p-4">
         <h4 className="text-sm font-medium text-foreground">{t("repuesto.full")}</h4>
-        <Output t={t} issues={full.issues} script={full.script} undo={full.undo} label={t("repuesto.full")} />
+        <Output t={t} mod="repuesto" issues={full.issues} steps={full.steps} undo={full.undo} label={t("repuesto.full")} />
       </div>
     </>
   )
 }
 
 function Filters({ t, ctx }: { t: T; ctx: AdvContext }) {
-  const [o, setO] = useState(DEFAULT_FILTERS)
+  const [o, setO] = useOpts<FilterOptions>("filtros")
   const r = filtersScript(ctx, o)
   return (
     <>
@@ -540,13 +574,13 @@ function Filters({ t, ctx }: { t: T; ctx: AdvContext }) {
         <NumberField label={t("filtros.udp")} unit={t("filtros.udpUnit")} value={o.udpLimit} integer max={10000} onChange={(v) => v !== null && setO({ ...o, udpLimit: v })} hint={t("filtros.udpHint")} />
         <NumberField label={t("filtros.dns")} unit={t("filtros.dnsUnit")} value={o.dnsRate} integer max={1000} onChange={(v) => v !== null && setO({ ...o, dnsRate: v })} hint={t("filtros.dnsHint")} />
       </div>
-      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("filtros.label")} />
+      <Output t={t} mod="filtros" issues={r.issues} steps={r.steps} undo={r.undo} label={t("filtros.label")} />
     </>
   )
 }
 
 function Alerts({ t, ctx }: { t: T; ctx: AdvContext }) {
-  const [o, setO] = useState(DEFAULT_ALERTS)
+  const [o, setO] = useOpts<AlertsOptions>("alertas")
   const r = alertsScript(ctx, o)
   return (
     <>
@@ -558,21 +592,22 @@ function Alerts({ t, ctx }: { t: T; ctx: AdvContext }) {
       <div className={grid}>
         <NumberField label={t("alertas.ppp")} unit={t("alertas.pppUnit")} value={o.pppFails} integer max={100000} onChange={(v) => v !== null && setO({ ...o, pppFails: v })} hint={t("alertas.pppHint")} />
       </div>
-      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("alertas.label")} />
+      <Output t={t} mod="alertas" issues={r.issues} steps={r.steps} undo={r.undo} label={t("alertas.label")} />
     </>
   )
 }
 
 function Priority({ t, ctx }: { t: T; ctx: AdvContext }) {
   const r = priorityScript(ctx)
-  return <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("prioridad.label")} />
+  return <Output t={t} mod="prioridad" issues={r.issues} steps={r.steps} undo={r.undo} label={t("prioridad.label")} />
 }
 
 function PublicIps({ t, ctx }: { t: T; ctx: AdvContext }) {
+  const [o, setO] = useOpts<PublicIpOptions>("ippublica")
+  const rows = o.rows
   const wan = ctx.wans[0]?.name ?? ""
-  const [rows, setRows] = useState<PublicIpRow[]>([{ user: "", ip: "", wan }])
   const r = publicIpScript(ctx, rows)
-  const set = (k: number, patch: Partial<PublicIpRow>) => setRows(rows.map((x, j) => (j === k ? { ...x, ...patch } : x)))
+  const set = (k: number, patch: Partial<PublicIpRow>) => setO({ rows: rows.map((x, j) => (j === k ? { ...x, ...patch } : x)) })
   return (
     <>
       {rows.map((row, k) => (
@@ -589,16 +624,16 @@ function PublicIps({ t, ctx }: { t: T; ctx: AdvContext }) {
         </div>
       ))}
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="rounded-full border border-white/15 px-4 py-1.5 text-sm text-zinc-200 hover:bg-white/5" onClick={() => setRows([...rows, { user: "", ip: "", wan }])} disabled={rows.length >= 20}>
+        <button type="button" className="rounded-full border border-white/15 px-4 py-1.5 text-sm text-zinc-200 hover:bg-white/5" onClick={() => setO({ rows: [...rows, { user: "", ip: "", wan }] })} disabled={rows.length >= 20}>
           {t("ippublica.add")}
         </button>
         {rows.length > 1 && (
-          <button type="button" className="rounded-full border border-white/15 px-4 py-1.5 text-sm text-zinc-200 hover:bg-white/5" onClick={() => setRows(rows.slice(0, -1))}>
+          <button type="button" className="rounded-full border border-white/15 px-4 py-1.5 text-sm text-zinc-200 hover:bg-white/5" onClick={() => setO({ rows: rows.slice(0, -1) })}>
             {t("ippublica.remove")}
           </button>
         )}
       </div>
-      <Output t={t} issues={r.issues} script={r.script} undo={r.undo} label={t("ippublica.label")} />
+      <Output t={t} mod="ippublica" issues={r.issues} steps={r.steps} undo={r.undo} label={t("ippublica.label")} />
     </>
   )
 }

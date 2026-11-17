@@ -31,6 +31,7 @@ import {
   MAX_NAME,
   PRESETS,
   presetState,
+  type AdvancedState,
   type BalanceState,
   type DeploymentFields,
   type DeploymentStatus,
@@ -62,6 +63,7 @@ const SetupPanel = dynamic(() => import("./SetupPanel").then((m) => m.SetupPanel
 const BalancePanel = dynamic(() => import("./BalancePanel").then((m) => m.BalancePanel), { ssr: false, loading: frame("min-h-[120rem] sm:min-h-[90rem]") })
 const ExportPanel = dynamic(() => import("./ExportPanel").then((m) => m.ExportPanel), { ssr: false, loading: frame("min-h-[60rem] sm:min-h-[48rem]") })
 const AdvancedPanel = dynamic(() => import("./AdvancedPanel").then((m) => m.AdvancedPanel), { ssr: false, loading: frame("min-h-[90rem] sm:min-h-[70rem]") })
+const InstalledPanel = dynamic(() => import("./InstalledPanel").then((m) => m.InstalledPanel), { ssr: false, loading: frame("min-h-[30rem] sm:min-h-[24rem]") })
 const BulkPanel = dynamic(() => import("./BulkPanel").then((m) => m.BulkPanel), { ssr: false, loading: frame("min-h-[100rem] sm:min-h-[70rem]") })
 
 /** Renders `children` once the section is within 800 px of the screen. */
@@ -79,15 +81,20 @@ const subscribeHash = (cb: () => void) => {
 }
 const readHash = () => window.location.hash
 
-type Jump = "params" | "sim" | "compare" | "shared" | "deployments" | "guide" | "capacity" | "links" | "setup" | "advanced" | "solver" | "export" | "bulk" | "how"
+type Jump = "params" | "sim" | "compare" | "shared" | "deployments" | "guide" | "installed" | "capacity" | "links" | "setup" | "advanced" | "solver" | "export" | "bulk" | "how"
 
-/** The two internal pages: /mikrotik makes the scripts, /calculadora holds the calculators and simulators (owner, 2026-11-15). */
-export type LabPage = "scripts" | "calculators"
+/**
+ * The internal pages: /mikrotik-optimo is the ideal guide for a deployment (owner, 2026-11-16), /mikrotik the expert
+ * scripts and full editors, /calculadora the calculators and simulators (owner, 2026-11-15).
+ */
+export type LabPage = "guide" | "scripts" | "calculators"
 const PAGE_SECTIONS: Record<LabPage, Jump[]> = {
-  scripts: ["params", "deployments", "guide", "links", "setup", "advanced", "export", "bulk"],
+  guide: ["deployments", "guide", "installed"],
+  scripts: ["params", "deployments", "links", "setup", "advanced", "export", "bulk"],
   calculators: ["params", "sim", "compare", "shared", "deployments", "capacity", "solver", "how"],
 }
-const OTHER_PAGE: Record<LabPage, string> = { scripts: "/calculadora", calculators: "/mikrotik" }
+const PAGE_PATH: Record<LabPage, string> = { guide: "/mikrotik-optimo", scripts: "/mikrotik", calculators: "/calculadora" }
+const PAGES: LabPage[] = ["guide", "scripts", "calculators"]
 const ANCHORS: Record<Jump, string> = {
   params: "parametros",
   sim: "simulacion",
@@ -95,6 +102,7 @@ const ANCHORS: Record<Jump, string> = {
   shared: "compartida",
   deployments: "despliegues",
   guide: "guia",
+  installed: "verificar",
   capacity: "hora-pico",
   links: "enlaces",
   setup: "configuracion",
@@ -155,8 +163,8 @@ export function BurstLab({ page }: { page: LabPage }) {
 
   // The open deployment saves itself on every change.
   const deploymentData = useMemo(
-    () => encodeDeployment({ deployment: state.deployment, status: state.status, capacity: state.capacity, wans: state.wans, balance: state.balance, setup: state.setup }),
-    [state.deployment, state.status, state.capacity, state.wans, state.balance, state.setup]
+    () => encodeDeployment({ deployment: state.deployment, status: state.status, capacity: state.capacity, wans: state.wans, balance: state.balance, setup: state.setup, advanced: state.advanced }),
+    [state.deployment, state.status, state.capacity, state.wans, state.balance, state.setup, state.advanced]
   )
   useEffect(() => {
     if (!boundId) return
@@ -239,6 +247,7 @@ export function BurstLab({ page }: { page: LabPage }) {
   const setWans = (wans: Wan[]) => set({ wans })
   const setBalance = (balance: BalanceState) => set({ balance })
   const setSetup = (setup: SetupState) => set({ setup })
+  const setAdvanced = (advanced: AdvancedState) => set({ advanced })
   // A new rule reloads the current plan with it; custom values stay as they are.
   const setRule = (rule: PlanRule) =>
     setState((s) => {
@@ -288,11 +297,15 @@ export function BurstLab({ page }: { page: LabPage }) {
         <h1 className="mt-4 text-4xl font-light tracking-tight text-foreground sm:text-6xl">{t(`intro.title.${page}`)}</h1>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300 sm:text-lg">{t(`intro.lead.${page}`)}</p>
         <p className="mt-3 text-sm text-zinc-400">
-          {/* The other internal page: a full load (each page keeps its own state; proxy.ts rewrites it). */}
-          <a href={OTHER_PAGE[page]} className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
-            {t(`intro.other.${page}`)}
-          </a>
-          {" · "}
+          {/* The other internal pages: a full load (each page keeps its own state; proxy.ts rewrites it). */}
+          {PAGES.filter((p) => p !== page).map((p) => (
+            <span key={p}>
+              <a href={PAGE_PATH[p]} className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+                {t(`intro.to.${p}`)}
+              </a>
+              {" · "}
+            </span>
+          ))}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
           <a href="/olt" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
             {t("intro.olt")}
@@ -309,6 +322,7 @@ export function BurstLab({ page }: { page: LabPage }) {
 
       <SectionNav label={t("intro.navLabel")} items={navItems} />
 
+      {on("params") && (
       <Section id="parametros" name="mk-params" title={t("params.title")} lead={t("params.lead")}>
         <div className="mb-6">
           <ImportPanel onApply={applyImport} />
@@ -326,6 +340,7 @@ export function BurstLab({ page }: { page: LabPage }) {
           {page === "calculators" && <FiguresPanel state={state} onView={(view) => set({ view })} onBackground={setBackground} />}
         </div>
       </Section>
+      )}
 
       {on("sim") && (
         <Section id="simulacion" name="mk-sim" title={t("sim.title")} lead={t("sim.lead")}>
@@ -374,6 +389,14 @@ export function BurstLab({ page }: { page: LabPage }) {
         </Section>
       )}
 
+      {on("installed") && (
+        <Section id="verificar" name="mk-installed" title={t("installed.title")} lead={t("installed.lead")}>
+          <Lazy fallback="min-h-[30rem] sm:min-h-[24rem]">
+            <InstalledPanel state={state} />
+          </Lazy>
+        </Section>
+      )}
+
       {on("capacity") && (
         <Section id="hora-pico" name="mk-capacity" title={t("capacity.title")} lead={t("capacity.lead")}>
           <Lazy fallback="min-h-[160rem] sm:min-h-[130rem]">
@@ -406,7 +429,7 @@ export function BurstLab({ page }: { page: LabPage }) {
       {on("advanced") && (
         <Section id="avanzados" name="mk-advanced" title={t("advanced.title")} lead={t("advanced.lead")}>
           <Lazy fallback="min-h-[90rem] sm:min-h-[70rem]">
-            <AdvancedPanel state={state} />
+            <AdvancedPanel state={state} onAdvanced={setAdvanced} />
           </Lazy>
         </Section>
       )}

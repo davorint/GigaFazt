@@ -10,7 +10,7 @@
  */
 import type { Wan } from "./balance"
 import { tableOf } from "./balance"
-import { rateLimit, rosRate, rosString, upsert, type QueueKind } from "./routeros"
+import { addIfMissing, rateLimit, rosRate, rosString, upsert, type QueueKind } from "./routeros"
 import { cidrText, intToIp, parseCidr, profileProps, setupPlans, size, vlanName, type Cidr, type SetupPlan, type SetupState } from "./setup"
 import type { PlanRule } from "./burst"
 
@@ -25,7 +25,37 @@ export type AdvContext = {
 }
 
 export type AdvIssue = { code: string; level: "error" | "warn" | "info"; value?: string }
-export type AdvResult = { script: string; undo: string; issues: AdvIssue[] }
+/**
+ * One step of a script: pasted on its own, in order. Its title and what to check before the next one live in the
+ * messages (advanced.steps.<module>.<id>); `verify` is a command whose output shows the step worked.
+ */
+export type Step = { id: string; script: string; verify?: string }
+export type AdvResult = { script: string; undo: string; issues: AdvIssue[]; steps: Step[] }
+
+/** A step from lines (empty lines dropped). */
+export const step = (id: string, lines: string[], verify?: string): Step => ({ id, script: lines.filter(Boolean).join("\n"), verify })
+/** The result: the steps in order and, for files and tests, the whole script. */
+export function done(steps: Step[], undo: string[], issues: AdvIssue[]): AdvResult {
+  const list = steps.filter((x) => x.script.trim())
+  return { steps: list, script: list.map((x) => x.script).join("\n"), undo: undo.join("\n"), issues }
+}
+
+/**
+ * Checks at the top of a step: when what it needs isn't on the router, the paste or import stops there with a message
+ * instead of half-applying.
+ */
+export const GUARD = {
+  base: ':if ([:len [/ip pool find where name="DS-clientes"]] = 0) do={:error "DSX: falta la Configuracion del despliegue (pool DS-clientes): pegala antes"}',
+  balance: ':if ([:len [/ip firewall mangle find where comment~"^LB: reparto"]] = 0) do={:error "DSX: falta el balanceo de Varios enlaces: pegalo antes"}',
+  watch: ':if ([:len [/ip route find where comment~"^LB: vigila "]] = 0) do={:error "DSX: falta el failover recursivo de Varios enlaces (rutas LB: vigila): pegalo antes"}',
+  queues: ':if ([:len [/ip firewall mangle find where comment~"^LB: (bajada|subida) "]] = 0) do={:error "DSX: faltan las colas por enlace de Varios enlaces: activalas y pega el balanceo"}',
+  alerts: ':if ([:len [/system script find where name="DS-aviso"]] = 0) do={:error "DSX: faltan los avisos de Configuracion (script DS-aviso): pegalos antes"}',
+}
+/** Removes scripts and schedulers whose names match (re-pasting replaces them). */
+export const dropScripts = (pattern: string) => [
+  `:do {/system scheduler remove [find where name~${rosString(pattern)}]} on-error={}`,
+  `:do {/system script remove [find where name~${rosString(pattern)}]} on-error={}`,
+]
 
 export const SECRET = (what: string) => `PEGA-AQUI-${what}`
 export const comment = (mod: string) => (text: string) => `comment=${rosString(`DSX ${mod}: ${text}`)}`
@@ -33,7 +63,7 @@ export const comment = (mod: string) => (text: string) => `comment=${rosString(`
 export const removeAll = (mod: string, menus: string[]) => menus.map((m) => `${m} remove [find where comment~${rosString(`^DSX ${mod}: `)}]`)
 /** Statements of a one-line RouterOS script: "; " between them, none right after "{" or before "}". */
 export const STMT = "; "
-export const fail = (issues: AdvIssue[]): AdvResult => ({ script: "", undo: "", issues })
+export const fail = (issues: AdvIssue[]): AdvResult => ({ script: "", undo: "", issues, steps: [] })
 export const hasError = (issues: AdvIssue[]) => issues.some((i) => i.level === "error")
 
 export type Net = { pool: Cidr; poolText: string; local: string; mgmt: Cidr; mgmtText: string }
@@ -100,7 +130,8 @@ export function morososScript(ctx: AdvContext, o: MorososOptions): AdvResult {
   if (!n || hasError(issues)) return fail(issues)
   const c = comment("morosos")
   const s = ctx.setup
-  const out: string[] = [
+  const profiles: string[] = [
+    GUARD.base,
     "/ppp profile",
     upsert("/ppp profile", "DSX-reducido", [...profileProps(s, `${rosRate(o.reducedUp)}/${rosRate(o.reducedDown)}`, ctx.queue), "address-list=DSX-reducidos", c("velocidad reducida")], [
       "name=DSX-reducido",
@@ -114,6 +145,10 @@ export function morososScript(ctx: AdvContext, o: MorososOptions): AdvResult {
       "address-list=DSX-morosos",
       c("solo el aviso de pago"),
     ]),
+  ]
+  const rules: string[] = [
+    // Re-pasting replaces: its own rules go first.
+    ...removeAll("morosos", ["/ip firewall raw", "/ip firewall nat", "/ip firewall filter", "/ip firewall address-list", "/ip proxy access"]),
     "/ip firewall address-list",
     ...[host as string, ...allow].map((h) => `add list=DSX-aviso address=${h} ${c("se puede abrir suspendido")}`),
     // Raw runs before NAT and the filter: what a suspended client may reach, in order.
@@ -147,7 +182,7 @@ export function morososScript(ctx: AdvContext, o: MorososOptions): AdvResult {
     // A profile in use can't be removed: reactivate everyone first.
     ':do {/ppp profile remove [find where name~"^DSX-(reducido|suspendido)$"]} on-error={:log warning "DSX: reactiva a los clientes antes de borrar los perfiles"}',
   ]
-  return { script: out.join("\n"), undo: undo.join("\n"), issues }
+  return done([step("perfiles", profiles, '/ppp profile print where name~"^DSX-"'), step("reglas", rules, '/ip firewall raw print where comment~"^DSX morosos"')], undo, issues)
 }
 
 export type ClientAction = "reduce" | "suspend" | "restore"
@@ -215,19 +250,25 @@ export function remoteScript(ctx: AdvContext, o: RemoteOptions): AdvResult & { h
     if (!users.length) issues.push({ code: "noUsers", level: "error" })
     if (!n || hasError(issues)) return { ...fail(issues), hubSide: "" }
     const from = `${n.mgmtText},${BTH_NET}`
-    const out = [
-      // Works without a public IP: MikroTik's relay connects the phone and the router.
-      "/ip cloud set back-to-home-vpn=enabled",
-      ":delay 15s",
-      "/ip cloud back-to-home-user",
-      ...users.map((u) => `add name=${rosString(u)} allow-lan=yes`),
-      `/ip service set winbox available-from=${from}`,
-      `/ip service set ssh available-from=${from}`,
-      ...users.map((u) => `/ip cloud back-to-home-user show-client-config [find where name=${rosString(u)}]`),
-    ]
     issues.push({ code: "bthApp", level: "info" }, { code: "repasteBase", level: "warn" })
     const undo = ["/ip cloud set back-to-home-vpn=revoked-and-disabled", `/ip service set winbox available-from=${n.mgmtText}`, `/ip service set ssh available-from=${n.mgmtText}`]
-    return { script: out.join("\n"), undo: undo.join("\n"), issues, hubSide: "" }
+    const steps = [
+      // Works without a public IP: MikroTik's relay connects the phone and the router. Enabling twice changes nothing.
+      step("activar", ["/ip cloud set back-to-home-vpn=enabled"], "/ip cloud print"),
+      step(
+        "usuarios",
+        [
+          ':if ([/ip cloud get vpn-status] != "running") do={:error "DSX: Back To Home aun no esta listo: espera un minuto y vuelve a pegar este paso"}',
+          // Existing users keep their keys (their phones keep working).
+          ...users.map((u) => addIfMissing("/ip cloud back-to-home-user", `name=${rosString(u)}`, [`name=${rosString(u)}`, "allow-lan=yes"])),
+          `/ip service set winbox available-from=${from}`,
+          `/ip service set ssh available-from=${from}`,
+        ],
+        "/ip cloud back-to-home-user print"
+      ),
+      step("qr", users.map((u) => `/ip cloud back-to-home-user show-client-config [find where name=${rosString(u)}]`)),
+    ]
+    return { ...done(steps, undo, issues), hubSide: "" }
   }
   const tunnel = parseCidr(o.tunnel)
   if (!o.hub.trim() || !HOST.test(o.hub.trim())) issues.push({ code: "hub", level: "error" })
@@ -238,17 +279,17 @@ export function remoteScript(ctx: AdvContext, o: RemoteOptions): AdvResult & { h
   const ip = intToIp(tunnel.net + o.host)
   const tun = cidrText(tunnel)
   const name = ctx.name.trim() || "despliegue"
-  const out = [
-    "/interface wireguard",
-    `add name=DSX-wg listen-port=${o.hubPort} ${c("tunel a la oficina")}`,
+  const tunnelLines = [
+    // The interface (and its keys) stays when re-pasting; the peer and the address are replaced.
+    addIfMissing("/interface wireguard", "name=DSX-wg", ["name=DSX-wg", `listen-port=${o.hubPort}`, c("tunel a la oficina")]),
+    `/interface wireguard set [find where name=DSX-wg] listen-port=${o.hubPort}`,
+    ...removeAll("acceso", ["/interface wireguard peers", "/ip address"]),
     "/interface wireguard peers",
     `add interface=DSX-wg name=hub public-key=${rosString(SECRET("clave-publica-del-hub"))} endpoint-address=${o.hub.trim()} endpoint-port=${o.hubPort} allowed-address=${tun} persistent-keepalive=25s ${c("el hub")}`,
     "/ip address",
     `add address=${ip}/${tunnel.prefix} interface=DSX-wg ${c("tunel a la oficina")}`,
-    `/ip service set winbox available-from=${n.mgmtText},${tun}`,
-    `/ip service set ssh available-from=${n.mgmtText},${tun}`,
-    ":put [/interface wireguard get [find where name=DSX-wg] public-key]",
   ]
+  const serviceLines = [`/ip service set winbox available-from=${n.mgmtText},${tun}`, `/ip service set ssh available-from=${n.mgmtText},${tun}`, ":put [/interface wireguard get [find where name=DSX-wg] public-key]"]
   // On the hub: this router as a peer, and its management network (the OLT) through it.
   const hubSide = [
     "/interface wireguard peers",
@@ -258,7 +299,7 @@ export function remoteScript(ctx: AdvContext, o: RemoteOptions): AdvResult & { h
   ].join("\n")
   issues.push({ code: "mgmtUnique", level: "info" }, { code: "repasteBase", level: "warn" })
   const undo = [`/ip service set winbox available-from=${n.mgmtText}`, `/ip service set ssh available-from=${n.mgmtText}`, ...removeAll("acceso", ["/ip address", "/interface wireguard peers", "/interface wireguard"])]
-  return { script: out.join("\n"), undo: undo.join("\n"), issues, hubSide }
+  return { ...done([step("tunel", tunnelLines, "/interface wireguard peers print"), step("servicios", serviceLines)], undo, issues), hubSide }
 }
 
 // ── 3 DNS filtering ─────────────────────────────────────────────────────────
@@ -284,10 +325,9 @@ export function dnsFilterScript(ctx: AdvContext, o: DnsFilterOptions): AdvResult
   if (!o.ads && !o.adult && !o.force && !o.family) issues.push({ code: "nothing", level: "error" })
   if (!n || hasError(issues)) return fail(issues)
   const c = comment("dns")
-  const out: string[] = []
   const urls = [...(o.ads ? [ADLISTS.ads] : []), ...(o.adult ? [ADLISTS.adult] : [])]
-  if (urls.length) out.push("/ip dns adlist", ...urls.map((u) => `add url=${u} ssl-verify=yes`))
-  out.push("/ip firewall nat")
+  const lists = urls.map((u) => addIfMissing("/ip dns adlist", `url=${rosString(u)}`, [`url=${u}`, "ssl-verify=yes"]))
+  const out: string[] = [GUARD.base, ...removeAll("dns", ["/ip firewall nat", "/ipv6 firewall nat"]), "/ip firewall nat"]
   // Families first: their DNS goes to the family resolver whatever the device asks.
   if (o.family)
     for (const proto of ["udp", "tcp"])
@@ -297,13 +337,14 @@ export function dnsFilterScript(ctx: AdvContext, o: DnsFilterOptions): AdvResult
       out.push(`add chain=dstnat src-address=${n.poolText} dst-address=!${n.local} protocol=${proto} dst-port=53 action=redirect to-ports=53 ${c("todo el DNS al router")}`)
   if (o.force && ctx.setup.ipv6Pd.trim())
     out.push("/ipv6 firewall nat", ...["udp", "tcp"].map((proto) => `add chain=dstnat in-interface-list=DS-LAN protocol=${proto} dst-port=53 action=redirect to-ports=53 ${c("todo el DNS IPv6 al router")}`))
+  const family: string[] = []
   if (o.family) {
     const s = ctx.setup
-    out.push("/ppp profile")
+    family.push("/ppp profile")
     for (const p of plansOf(ctx)) {
       const name = familyName(p.name)
       const props = [...v4Only(profileProps(s, rateLimit(p.pair), ctx.queue)), "address-list=DSX-familia", c(`plan ${p.name} con filtro`)]
-      out.push(upsert("/ppp profile", name, props, [`name=${rosString(name)}`, ...props]))
+      family.push(upsert("/ppp profile", name, props, [`name=${rosString(name)}`, ...props]))
     }
   }
   if (urls.length) issues.push({ code: "cache", level: "info" })
@@ -314,7 +355,12 @@ export function dnsFilterScript(ctx: AdvContext, o: DnsFilterOptions): AdvResult
     ...urls.map((u) => `/ip dns adlist remove [find where url=${rosString(u)}]`),
     ...(o.family ? [':do {/ppp profile remove [find where name~"-familia$"]} on-error={:log warning "DSX: regresa a los clientes a su plan antes de borrar los perfiles -familia"}'] : []),
   ]
-  return { script: out.join("\n"), undo: undo.join("\n"), issues }
+  const steps = [
+    step("listas", lists, "/ip dns adlist print"),
+    ...(o.family ? [step("familia", family, '/ppp profile print where name~"-familia$"')] : []),
+    step("dnat", out.length > 3 ? out : [], '/ip firewall nat print where comment~"^DSX dns"'),
+  ]
+  return done(steps, undo, issues)
 }
 
 // ── 4 Per-client usage ──────────────────────────────────────────────────────
@@ -391,15 +437,20 @@ export function usageScript(ctx: AdvContext, o: UsageOptions): AdvResult {
     ':if ($max >= 0) do={:set msg ($msg . " " . $top . "=" . $max); :set ($best->$top) -2}}',
     ':if ([:len $best] > 0) do={:global DSmsg $msg; /system script run DS-aviso}',
   ].join(STMT).replace(/\{; /g, "{").replace(/; \}/g, "}")
-  const out = [
+  const report_on = o.top > 0 && alerts
+  const scripts = [
+    ...(report_on ? [GUARD.alerts] : []),
+    ...dropScripts("^DSX-uso"),
     "/system script",
     `add name=DSX-uso policy=read,write,test dont-require-permissions=yes source=${rosString(count)} ${c("cuenta el trafico por sesion")}`,
     `add name=DSX-uso-guardar policy=read,write,test dont-require-permissions=yes source=${rosString(save)} ${c("totales del mes en el comentario")}`,
-    ...(o.top > 0 && alerts ? [`add name=DSX-uso-reporte policy=read,write,test dont-require-permissions=yes source=${rosString(report)} ${c("los que mas usan")}`] : []),
+    ...(report_on ? [`add name=DSX-uso-reporte policy=read,write,test dont-require-permissions=yes source=${rosString(report)} ${c("los que mas usan")}`] : []),
+  ]
+  const schedule = [
     "/system scheduler",
     `add name=DSX-uso interval=${USAGE_EVERY_MIN}m on-event=DSX-uso ${c("cada 10 min")}`,
     `add name=DSX-uso-guardar interval=${USAGE_SAVE_H}h start-time=00:05:00 on-event=DSX-uso-guardar ${c(`cada ${USAGE_SAVE_H} h`)}`,
-    ...(o.top > 0 && alerts ? [`add name=DSX-uso-reporte interval=1d start-time=${o.reportTime} on-event=DSX-uso-reporte ${c("reporte diario")}`] : []),
+    ...(report_on ? [`add name=DSX-uso-reporte interval=1d start-time=${o.reportTime} on-event=DSX-uso-reporte ${c("reporte diario")}`] : []),
   ]
   if (cap > 0) issues.push({ code: "capNeedsMorosos", level: "info" })
   const undo = [
@@ -408,7 +459,7 @@ export function usageScript(ctx: AdvContext, o: UsageOptions): AdvResult {
     // Comments keep the totals: strip them only on purpose.
     ':foreach id in=[/ppp secret find where comment~" \\\\[uso "] do={:local c [/ppp secret get $id comment]; /ppp secret set $id comment=[:pick $c 0 [:find $c " [uso "]]}',
   ]
-  return { script: out.join("\n"), undo: undo.join("\n"), issues }
+  return done([step("scripts", scripts, '/system script print where name~"^DSX-uso"'), step("programar", schedule, '/system scheduler print where name~"^DSX-uso"')], undo, issues)
 }
 
 // ── 5 Infected clients and DDoS ─────────────────────────────────────────────
@@ -433,6 +484,11 @@ export function shieldScript(ctx: AdvContext, o: ShieldOptions): AdvResult {
   const c = comment("escudo")
   const alerts = ctx.setup.alert !== "none"
   const out: string[] = [
+    // Re-pasting replaces: jumps first, then their chains.
+    '/ip firewall filter remove [find where comment~"^DSX escudo: " and chain!="DSX-salida"]',
+    '/ip firewall filter remove [find where chain="DSX-salida"]',
+    '/ip firewall raw remove [find where comment~"^DSX escudo: " and chain!="DSX-ddos"]',
+    '/ip firewall raw remove [find where chain="DSX-ddos"]',
     // A client that opens new connections far faster than a person does: malware, a bot or a scanner.
     "/ip firewall filter",
     `add chain=forward action=jump jump-target=DSX-salida connection-state=new src-address=${n.poolText} ${c("conexiones nuevas de los clientes")}`,
@@ -451,6 +507,7 @@ export function shieldScript(ctx: AdvContext, o: ShieldOptions): AdvResult {
       `add chain=DSX-ddos action=add-src-to-address-list address-list=DSX-ddos-atacantes address-list-timeout=10m ${c("atacante")}`,
       `add chain=prerouting action=drop src-address-list=DSX-ddos-atacantes dst-address-list=DSX-ddos-objetivos ${c("ataque cortado")}`
     )
+  const notify: string[] = []
   if (alerts) {
     const watch = [
       ":global DSXvistos; :if ([:typeof $DSXvistos] != \"array\") do={:set DSXvistos [:toarray \"\"]}; :local msg \"\"",
@@ -459,7 +516,9 @@ export function shieldScript(ctx: AdvContext, o: ShieldOptions): AdvResult {
       ':if ([:len $msg] > 0) do={:global DSmsg ("cliente(s) con trafico de bot:" . $msg); /system script run DS-aviso}',
       ':foreach a,v in=$DSXvistos do={:if ([:len [/ip firewall address-list find where list="DSX-infectados" and address=$a]] = 0) do={:set ($DSXvistos->$a) 0}}',
     ].join(STMT).replace(/\{; /g, "{").replace(/; \}/g, "}")
-    out.push(
+    notify.push(
+      GUARD.alerts,
+      ...dropScripts("^DSX-escudo$"),
       "/system script",
       `add name=DSX-escudo policy=read,write,test dont-require-permissions=yes source=${rosString(watch)} ${c("avisa de clientes marcados")}`,
       "/system scheduler",
@@ -477,7 +536,7 @@ export function shieldScript(ctx: AdvContext, o: ShieldOptions): AdvResult {
     '/ip firewall raw remove [find where chain="DSX-ddos"]',
     '/ip firewall address-list remove [find where list~"^DSX-(infectados|ddos-)"]',
   ]
-  return { script: out.join("\n"), undo: undo.join("\n"), issues }
+  return done([step("reglas", out, '/ip firewall filter print where comment~"^DSX escudo"'), step("avisos", notify, '/system scheduler print where name="DSX-escudo"')], undo, issues)
 }
 
 // ── 6 Scheduled speeds ──────────────────────────────────────────────────────
@@ -518,15 +577,20 @@ export function boostScript(ctx: AdvContext, o: BoostOptions): AdvResult {
   // HH:MM:SS compares as text; the window may cross midnight.
   const inside = o.start < o.end ? `(($t >= "${o.start}") && ($t < "${o.end}"))` : `(($t >= "${o.start}") || ($t < "${o.end}"))`
   const check = `:local t [:pick [/system clock get time] 0 8]; :if ${inside} do={/system script run DSX-noche-inicio} else={/system script run DSX-noche-fin}`
-  const out = [
+  const scripts = [
+    ...dropScripts("^DSX-noche"),
     "/system script",
     `add name=DSX-noche-inicio policy=read,write,test dont-require-permissions=yes source=${rosString(apply("boost"))} ${c("sube las velocidades")}`,
     `add name=DSX-noche-fin policy=read,write,test dont-require-permissions=yes source=${rosString(apply("normal"))} ${c("regresa las velocidades")}`,
     `add name=DSX-noche-revisar policy=read,write,test dont-require-permissions=yes source=${rosString(check)} ${c("al arrancar")}`,
+  ]
+  const schedule = [
     "/system scheduler",
     `add name=DSX-noche-inicio start-time=${o.start} interval=1d on-event=DSX-noche-inicio ${c("inicio")}`,
     `add name=DSX-noche-fin start-time=${o.end} interval=1d on-event=DSX-noche-fin ${c("fin")}`,
     `add name=DSX-noche-revisar start-time=startup on-event=${rosString(":delay 30s; /system script run DSX-noche-revisar")} ${c("al arrancar")}`,
+    // Profiles in the state that matches the current hour, right away.
+    "/system script run DSX-noche-revisar",
   ]
   if (o.reconnect) issues.push({ code: "reconnect", level: "info" })
   const undo = [
@@ -534,7 +598,7 @@ export function boostScript(ctx: AdvContext, o: BoostOptions): AdvResult {
     ":do {/system script run DSX-noche-fin} on-error={}",
     ':do {/system script remove [find where name~"^DSX-noche"]} on-error={}',
   ]
-  return { script: out.join("\n"), undo: undo.join("\n"), issues }
+  return done([step("scripts", scripts, '/system script print where name~"^DSX-noche"'), step("programar", schedule, '/system scheduler print where name~"^DSX-noche"')], undo, issues)
 }
 
 export type UpgradeInput = { user: string; to: string; back: string; date: string; time: string }
@@ -609,23 +673,29 @@ export function bgpScript(o: BgpOptions): AdvResult {
   for (const b of bad) issues.push({ code: "badPeer", level: "error", value: b })
   if (hasError(issues)) return fail(issues)
   const c = comment("bgp")
-  const out: string[] = ["/routing bgp instance", `add name=DSX-bgp as=${o.asn} router-id=${o.routerId.trim()}`]
+  // Re-pasting replaces everything it made (the sessions come back up in seconds).
+  const out: string[] = [
+    ...removeAll("bgp", ["/routing bgp connection", "/routing filter rule", "/ip route", "/ipv6 route", "/ip firewall address-list", "/ipv6 firewall address-list"]),
+    '/routing bgp instance remove [find where name="DSX-bgp"]',
+    "/routing bgp instance",
+    `add name=DSX-bgp as=${o.asn} router-id=${o.routerId.trim()}`,
+  ]
   if (v4.length) out.push("/ip firewall address-list", ...v4.map((p) => `add list=DSX-bgp-propios address=${p} ${c("bloque propio")}`), "/ip route", ...v4.map((p) => `add dst-address=${p} blackhole ${c("bloque propio")}`))
   if (v6.length) out.push("/ipv6 firewall address-list", ...v6.map((p) => `add list=DSX-bgp-propios6 address=${p} ${c("bloque propio")}`), "/ipv6 route", ...v6.map((p) => `add dst-address=${p} blackhole ${c("bloque propio")}`))
-  out.push("/routing filter rule")
+  const filters: string[] = ["/routing filter rule"]
   for (const p of peers) {
     const six = p.address.includes(":")
     const own = six ? "DSX-bgp-propios6" : "DSX-bgp-propios"
     const def = six ? "::/0" : "0.0.0.0/0"
-    out.push(
+    filters.push(
       `add chain=${rosString(`DSX-entrada-${p.name}`)} rule=${rosString(`if (dst in ${def} && dst-len in 0-0) { accept }`)} ${c(`solo la ruta por defecto de ${p.name}`)}`,
       `add chain=${rosString(`DSX-salida-${p.name}`)} rule=${rosString(`if (dst in ${own} && dst-len < ${six ? 128 : 32}) { ${p.prepend ? `set bgp-path-prepend ${p.prepend}; ` : ""}accept }`)} ${c(`solo nuestros bloques a ${p.name}`)}`
     )
   }
-  out.push("/routing bgp connection")
+  const sessions: string[] = ["/routing bgp connection"]
   for (const p of peers) {
     const six = p.address.includes(":")
-    out.push(
+    sessions.push(
       `add name=${rosString(`DSX-${p.name}`)} instance=DSX-bgp remote.address=${p.address} remote.as=${p.as} local.role=ebgp afi=${six ? "ipv6" : "ip"} output.network=${six ? "DSX-bgp-propios6" : "DSX-bgp-propios"} output.filter-chain=${rosString(`DSX-salida-${p.name}`)} input.filter=${rosString(`DSX-entrada-${p.name}`)} ${c(p.name)}`
     )
     if (six && !v6.length) issues.push({ code: "v6PeerNoPrefix", level: "warn", value: p.name })
@@ -635,7 +705,7 @@ export function bgpScript(o: BgpOptions): AdvResult {
     ...removeAll("bgp", ["/routing bgp connection", "/routing filter rule", "/ip route", "/ipv6 route", "/ip firewall address-list", "/ipv6 firewall address-list"]),
     '/routing bgp instance remove [find where name="DSX-bgp"]',
   ]
-  return { script: out.join("\n"), undo: undo.join("\n"), issues }
+  return done([step("instancia", out, "/routing bgp instance print"), step("filtros", filters, '/routing filter rule print where chain~"^DSX-"'), step("sesiones", sessions, "/routing bgp session print")], undo, issues)
 }
 
 // ── 8 Monitoring without a server ───────────────────────────────────────────
@@ -652,10 +722,14 @@ export function monitorScript(ctx: AdvContext, o: MonitorOptions): AdvResult {
   if (!alerts && (o.dropAlert > 0 || o.summaryTime)) issues.push({ code: "noAlerts", level: "warn" })
   if (!n || hasError(issues)) return fail(issues)
   const c = comment("monitoreo")
-  const out: string[] = []
+  const graphs: string[] = []
+  const watchdog: string[] = []
+  const notify: string[] = []
   const ifaces = [...ctx.wans.map((w) => w.iface.trim()).filter(Boolean), ctx.setup.oltPort.trim()].filter(Boolean)
   if (o.graphs)
-    out.push(
+    graphs.push(
+      `/tool graphing interface remove [find where allow-address=${n.mgmtText}]`,
+      `/tool graphing resource remove [find where allow-address=${n.mgmtText}]`,
       "/tool graphing set store-every=5min",
       "/tool graphing interface",
       ...ifaces.map((i) => `add interface=${rosString(i)} allow-address=${n.mgmtText} store-on-disk=yes`),
@@ -665,16 +739,17 @@ export function monitorScript(ctx: AdvContext, o: MonitorOptions): AdvResult {
       `/ip service set www disabled=no available-from=${n.mgmtText}`
     )
   // Hardware watchdog only: with a ping target it would reboot the router whenever the internet goes down.
-  if (o.watchdog) out.push("/system watchdog set watchdog-timer=yes automatic-supout=yes watch-address=none")
+  if (o.watchdog) watchdog.push("/system watchdog set watchdog-timer=yes automatic-supout=yes watch-address=none")
   if (alerts && o.dropAlert > 0) {
     const drop = `:global DSXses; :local n [/ppp active print count-only]; :if ([:typeof $DSXses] = "num") do={:local d ($DSXses - $n); :if (($d >= ${o.dropAlert}) && (($d * 100) >= ($DSXses * ${o.dropPct}))) do={:global DSmsg ("se cayeron " . $d . " sesiones PPPoE en un minuto, quedan " . $n . ": revisa la OLT o un puerto PON"); /system script run DS-aviso}}; :set DSXses $n`
-    out.push("/system script", `add name=DSX-caida policy=read,write,test dont-require-permissions=yes source=${rosString(drop)} ${c("caida masiva")}`, "/system scheduler", `add name=DSX-caida interval=1m on-event=DSX-caida ${c("cada minuto")}`)
+    notify.push("/system script", `add name=DSX-caida policy=read,write,test dont-require-permissions=yes source=${rosString(drop)} ${c("caida masiva")}`, "/system scheduler", `add name=DSX-caida interval=1m on-event=DSX-caida ${c("cada minuto")}`)
   }
   if (alerts && o.summaryTime) {
     const sum = `:global DSmsg ("resumen: " . [/ppp active print count-only] . " sesiones PPPoE, CPU " . [/system resource get cpu-load] . " %, memoria libre " . ([/system resource get free-memory] / 1048576) . " MB, encendido " . [/system resource get uptime]); /system script run DS-aviso`
-    out.push("/system script", `add name=DSX-resumen policy=read,write,test dont-require-permissions=yes source=${rosString(sum)} ${c("resumen diario")}`, "/system scheduler", `add name=DSX-resumen start-time=${o.summaryTime} interval=1d on-event=DSX-resumen ${c("resumen diario")}`)
+    notify.push("/system script", `add name=DSX-resumen policy=read,write,test dont-require-permissions=yes source=${rosString(sum)} ${c("resumen diario")}`, "/system scheduler", `add name=DSX-resumen start-time=${o.summaryTime} interval=1d on-event=DSX-resumen ${c("resumen diario")}`)
   }
-  if (!out.length) issues.push({ code: "nothing", level: "error" })
+  if (notify.length) notify.unshift(GUARD.alerts, ...dropScripts("^DSX-(caida|resumen)$"))
+  if (!graphs.length && !watchdog.length && !notify.length) issues.push({ code: "nothing", level: "error" })
   if (hasError(issues)) return fail(issues)
   if (o.graphs) issues.push({ code: "graphsUrl", level: "info", value: intToIp(n.mgmt.net + 1) }, { code: "repasteBase", level: "warn" })
   const undo = [
@@ -682,7 +757,7 @@ export function monitorScript(ctx: AdvContext, o: MonitorOptions): AdvResult {
     ':do {/system script remove [find where name~"^DSX-(caida|resumen)$"]} on-error={}',
     ...(o.graphs ? [`/tool graphing interface remove [find where allow-address=${n.mgmtText}]`, `/tool graphing resource remove [find where allow-address=${n.mgmtText}]`, "/ip service set www disabled=yes"] : []),
   ]
-  return { script: out.join("\n"), undo: undo.join("\n"), issues }
+  return done([step("graficas", graphs, "/tool graphing interface print"), step("watchdog", watchdog, "/system watchdog print"), step("avisos", notify, '/system scheduler print where name~"^DSX-(caida|resumen)"')], undo, issues)
 }
 
 // ── 9 Backup router ─────────────────────────────────────────────────────────
@@ -738,7 +813,19 @@ export function v6Halves(prefix: string): [string, string] | null {
  * them. The management gateway the OLT uses (.1) becomes a VRRP address; the routers keep .3 (main) and .4 (backup).
  * The accounts are copied every hour from the main router to the backup by SFTP over the management network.
  */
-export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { main: string; backup: string; undoMain: string; backupIp: string; olt: string; issues: AdvIssue[] } {
+export type BackupRouterResult = {
+  /** Steps on the main router and on the backup router (pasted after the same Configuración). */
+  mainSteps: Step[]
+  backupSteps: Step[]
+  main: string
+  backup: string
+  undoMain: string
+  backupIp: string
+  olt: string
+  issues: AdvIssue[]
+}
+
+export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): BackupRouterResult {
   const issues: AdvIssue[] = []
   const n = nets(ctx, issues)
   if (!(Number.isInteger(o.vrid) && o.vrid >= 1 && o.vrid <= 255)) issues.push({ code: "vrid", level: "error" })
@@ -748,7 +835,7 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { 
   if (n && size(n.pool) < 16) issues.push({ code: "poolSmall", level: "error" })
   if (!/^\d+\/\d+\/\d+$/.test(o.oltPort2.trim())) issues.push({ code: "oltPort2", level: "error" })
   else if (o.oltPort2.trim() === ctx.setup.oltUplink.trim()) issues.push({ code: "oltPortSame", level: "error" })
-  if (!n || hasError(issues)) return { main: "", backup: "", undoMain: "", backupIp: "", olt: "", issues }
+  if (!n || hasError(issues)) return { mainSteps: [], backupSteps: [], main: "", backup: "", undoMain: "", backupIp: "", olt: "", issues }
   const s = ctx.setup
   const c = comment("respaldo")
   const mg = vlanName(s.mgmtVlan, "gestion")
@@ -767,30 +854,29 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { 
   // The OLT must send the clients' and the management VLANs to the backup router's uplink too.
   const [f2, sl2, p2] = o.oltPort2.trim().split("/")
   const olt = ["config", `port vlan ${s.internetVlan} ${f2}/${sl2} ${p2}`, `port vlan ${s.mgmtVlan} ${f2}/${sl2} ${p2}`, "save"].join("\n")
-  const main = [
-    move(mainIp, 200, "gestion del principal"),
-    `/ip pool set [find where name="DS-clientes"] ranges=${intToIp(first)}-${intToIp(mid)}`,
+  // Only once: on a second paste the VRRP address is already there.
+  const moveOnce = (ip: string, prio: number, what: string) => `:if ([:len [/interface vrrp find where name="DSX-vrrp"]] = 0) do=${move(ip, prio, what)}`
+  const mainSync = [
+    ...dropScripts("^DSX-sync$"),
     "/system script",
     `add name=DSX-sync policy=ftp,read,write,test,sensitive dont-require-permissions=yes source=${rosString(
       `/ppp secret export show-sensitive file=DSX-secretos; :delay 5s; /tool fetch upload=yes mode=sftp address=${backupIp} user=${o.syncUser} password="${SECRET("clave-de-sincronizacion")}" src-path=DSX-secretos.rsc dst-path=DSX-secretos.rsc`
     )} ${c("copia las cuentas al respaldo")}`,
     "/system scheduler",
     `add name=DSX-sync interval=1h start-time=00:10:00 on-event=DSX-sync ${c("cada hora")}`,
-  ].join("\n")
-  const backup = [
-    `/system identity set name=${rosString(`${ctx.name.trim() || "despliegue"}-respaldo`)}`,
-    move(backupIp, 100, "gestion del respaldo"),
-    `/ip pool set [find where name="DS-clientes"] ranges=${intToIp(mid + 1)}-${intToIp(last)}`,
-    `/interface pppoe-server server set [find where service-name=${rosString(s.service.trim())}] pado-delay=${o.padoDelay}`,
-    "/user",
-    `add name=${o.syncUser} group=full address=${n.mgmtText} password="${SECRET("clave-de-sincronizacion")}" ${c("solo para copiar las cuentas")}`,
+  ]
+  const backupUser = [
+    addIfMissing("/user", `name=${o.syncUser}`, [`name=${o.syncUser}`, "group=full", `address=${n.mgmtText}`, `password="${SECRET("clave-de-sincronizacion")}"`, c("solo para copiar las cuentas")]),
+  ]
+  const backupImport = [
+    ...dropScripts("^DSX-sync-importar$"),
     "/system script",
     `add name=DSX-sync-importar policy=ftp,read,write,test,sensitive dont-require-permissions=yes source=${rosString(
       ':if ([:len [/file find where name="DSX-secretos.rsc"]] > 0) do={/ppp secret remove [find]; /import file-name=DSX-secretos.rsc; /file remove [find where name="DSX-secretos.rsc"]; :log info "DSX: cuentas copiadas del principal"}'
     )} ${c("aplica las cuentas copiadas")}`,
     "/system scheduler",
     `add name=DSX-sync-importar interval=1h start-time=00:20:00 on-event=DSX-sync-importar ${c("cada hora")}`,
-  ].join("\n")
+  ]
   const undoMain = [
     ':do {/system scheduler remove [find where name~"^DSX-sync"]} on-error={}',
     ':do {/system script remove [find where name~"^DSX-sync"]} on-error={}',
@@ -815,6 +901,23 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { 
     backupV6 += `\n/ipv6 pool set [find where name="${pool}"] prefix=${h[1]}`
   }
   if (mainV6) issues.push({ code: "v6Halves", level: "info" })
+  const mainSteps = [
+    step("gestion", [GUARD.base, moveOnce(mainIp, 200, "gestion del principal")], "/interface vrrp print"),
+    step("pool", [`/ip pool set [find where name="DS-clientes"] ranges=${intToIp(first)}-${intToIp(mid)}`, mainV6.trim()], "/ip pool print"),
+    step("copia", mainSync, '/system scheduler print where name~"^DSX-sync"'),
+  ]
+  const backupSteps = [
+    step("base", [GUARD.base, `/system identity set name=${rosString(`${ctx.name.trim() || "despliegue"}-respaldo`)}`]),
+    step("gestion", [moveOnce(backupIp, 100, "gestion del respaldo")], "/interface vrrp print"),
+    step(
+      "pool",
+      [`/ip pool set [find where name="DS-clientes"] ranges=${intToIp(mid + 1)}-${intToIp(last)}`, `/interface pppoe-server server set [find where service-name=${rosString(s.service.trim())}] pado-delay=${o.padoDelay}`, backupV6.trim()],
+      "/interface pppoe-server server print"
+    ),
+    step("usuario", backupUser, `/user print where name=${o.syncUser}`),
+    step("importar", backupImport, '/system scheduler print where name~"^DSX-sync"'),
+  ]
+  const joined = (list: Step[]) => list.filter((x) => x.script.trim()).map((x) => x.script).join("\n")
   const undoV6 = [
     ["DS-pd", s.ipv6Pd.trim()],
     ["DS-wan6", s.ipv6Wan.trim()],
@@ -822,7 +925,7 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): { 
     .filter(([, prefix]) => prefix && v6Halves(prefix))
     .map(([pool, prefix]) => `\n/ipv6 pool set [find where name="${pool}"] prefix=${prefix}`)
     .join("")
-  return { main: main + mainV6, backup: backup + backupV6, undoMain: undoMain + undoV6, backupIp, olt, issues }
+  return { mainSteps, backupSteps, main: joined(mainSteps), backup: joined(backupSteps), undoMain: undoMain + undoV6, backupIp, olt, issues }
 }
 
 // ── 10 Fixed exit per destination ───────────────────────────────────────────
@@ -847,7 +950,7 @@ export function routeScript(ctx: AdvContext, rules: RouteRule[]): AdvResult {
   }
   if (hasError(issues)) return fail(issues)
   const c = comment("destinos")
-  const out: string[] = ["/ip firewall address-list"]
+  const out: string[] = [GUARD.balance, ...removeAll("destinos", ["/ip firewall mangle", "/ip firewall address-list"]), "/ip firewall address-list"]
   for (const r of used) for (const d of list(r.dest)) out.push(`add list=${rosString(`DSX-por-${r.wan}`)} address=${d} ${c(`sale por ${r.wan}`)}`)
   for (const wan of [...new Set(used.map((r) => r.wan))]) {
     const w = wans.get(wan) as Wan
@@ -857,5 +960,5 @@ export function routeScript(ctx: AdvContext, rules: RouteRule[]): AdvResult {
     )
   }
   issues.push({ code: "domains", level: "info" })
-  return { script: out.join("\n"), undo: removeAll("destinos", ["/ip firewall mangle", "/ip firewall address-list"]).join("\n"), issues }
+  return done([step("marcas", out, '/ip firewall mangle print where comment~"^DSX destinos"')], removeAll("destinos", ["/ip firewall mangle", "/ip firewall address-list"]), issues)
 }

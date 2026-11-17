@@ -60,12 +60,24 @@ export type LabState = {
   balance: BalanceState
   /** VLANs, PPPoE and OLT settings for setting the deployment up. */
   setup: SetupState
+  /** The expert scripts' settings and which ones go in the deployment's download. */
+  advanced: AdvancedState
 }
+
+/**
+ * Settings of the expert scripts (Scripts de experto on /mikrotik), per generator, as the page edits them; `on` = the generators
+ * included in the deployment's download. Read back leniently: unknown generators or fields are dropped by the page,
+ * which merges them over its defaults.
+ */
+export type AdvancedState = { on: string[]; o: Record<string, Record<string, unknown>> }
+export const DEFAULT_ADVANCED: AdvancedState = { on: [], o: {} }
+/** Longest settings text kept (a few rows of public IPs and destinations fit easily). */
+const MAX_ADVANCED = 30_000
 
 export type DeploymentStatus = "existing" | "planned"
 
 /** What belongs to one deployment (saved in the browser, carried by the share link). */
-export type DeploymentFields = Pick<LabState, "deployment" | "status" | "capacity" | "wans" | "balance" | "setup">
+export type DeploymentFields = Pick<LabState, "deployment" | "status" | "capacity" | "wans" | "balance" | "setup" | "advanced">
 
 export type BalanceState = {
   classifier: Classifier
@@ -223,6 +235,7 @@ export function presetState(preset: Preset, base?: LabState): LabState {
     wans: base?.wans ?? defaultWans(3),
     balance: base?.balance ?? DEFAULT_BALANCE,
     setup: base?.setup ?? DEFAULT_SETUP,
+    advanced: base?.advanced ?? DEFAULT_ADVANCED,
   }
 }
 
@@ -303,6 +316,8 @@ function setDeploymentParams(h: URLSearchParams, f: DeploymentFields) {
     h.set("ob", c.oltBuild.code)
     h.set("obp", OLT_TECHS.map((k) => num(c.oltBuild?.ports[k] ?? 0)).join(","))
   }
+  const ax = encodeAdvanced(f.advanced ?? DEFAULT_ADVANCED)
+  if (ax) h.set("ax", ax)
   if (f.deployment) h.set("n", f.deployment)
   if (f.status === "existing") h.set("st", "existing")
   const enc = encodeURIComponent
@@ -354,8 +369,24 @@ function setDeploymentParams(h: URLSearchParams, f: DeploymentFields) {
 }
 
 export function deploymentFields(s: LabState): DeploymentFields {
-  return { deployment: s.deployment, status: s.status, capacity: s.capacity, wans: s.wans, balance: s.balance, setup: s.setup }
+  return { deployment: s.deployment, status: s.status, capacity: s.capacity, wans: s.wans, balance: s.balance, setup: s.setup, advanced: s.advanced }
 }
+
+/** `ax=`: the expert scripts' settings as JSON; anything malformed reads as none. */
+export function decodeAdvanced(v: string | null): AdvancedState {
+  if (!v || v.length > MAX_ADVANCED) return DEFAULT_ADVANCED
+  try {
+    const raw = JSON.parse(v) as { on?: unknown; o?: unknown }
+    const on = Array.isArray(raw.on) ? raw.on.filter((x): x is string => typeof x === "string").slice(0, 40) : []
+    const o: AdvancedState["o"] = {}
+    if (raw.o && typeof raw.o === "object" && !Array.isArray(raw.o))
+      for (const [k, val] of Object.entries(raw.o as Record<string, unknown>)) if (val && typeof val === "object" && !Array.isArray(val)) o[k] = val as Record<string, unknown>
+    return { on, o }
+  } catch {
+    return DEFAULT_ADVANCED
+  }
+}
+const encodeAdvanced = (a: AdvancedState) => (a.on.length || Object.keys(a.o).length ? JSON.stringify(a) : "")
 
 /** Setup settings (`ds=`); absent or malformed = the defaults (checks run on what's shown). */
 function decodeSetup(v: string | null): SetupState {
@@ -450,7 +481,7 @@ export function decodeDeployment(text: string): DeploymentFields | null {
   const h = new URLSearchParams(text)
   const lines = decodeWans(h)
   if (!decodeCapacity(h.get("h")) || !lines) return null
-  return { capacity: decodeCapacityAll(h, DEFAULT_CAPACITY), deployment: nameOf(h), status: statusOf(h), ...lines, setup: decodeSetup(h.get("ds")) }
+  return { capacity: decodeCapacityAll(h, DEFAULT_CAPACITY), deployment: nameOf(h), status: statusOf(h), ...lines, setup: decodeSetup(h.get("ds")), advanced: decodeAdvanced(h.get("ax")) }
 }
 
 const nameOf = (h: URLSearchParams) => (h.get("n") ?? "").slice(0, MAX_NAME)
@@ -705,6 +736,7 @@ export function decodeState(hash: string): LabState | null {
     status: statusOf(h),
     ...(decodeWans(h) ?? { wans: base.wans, balance: base.balance }),
     setup: decodeSetup(h.get("ds")),
+    advanced: decodeAdvanced(h.get("ax")),
     backgroundMbps: finite(h.get("b") ?? undefined, 0, 1e4) ?? 0,
     queueKind: QUEUE_KINDS.includes(h.get("q") as QueueKind) ? (h.get("q") as QueueKind) : "default",
   }

@@ -8,7 +8,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import {
-  balanceScript,
   checkBalance,
   CLASSIFIERS,
   detectionSeconds,
@@ -23,10 +22,13 @@ import {
 import type { DeploymentStore } from "@/lib/mikrotik/deployment-store"
 import { clientsOf } from "@/lib/mikrotik/deployments"
 import { fmtNum } from "@/lib/mikrotik/format"
-import { checkSetup, CONN_LIMIT, oltSetup, setupParts, setupPlans, type SetupState } from "@/lib/mikrotik/setup"
+import { stepBlock } from "@/lib/mikrotik/bundle"
+import { deploymentBundle, guideScripts, type GuideStepId } from "@/lib/mikrotik/guide-scripts"
+import { checkSetup, CONN_LIMIT, type SetupState } from "@/lib/mikrotik/setup"
 import { decodeDeployment, deploymentFields, MAX_NAME, MAX_WANS, nextMonitor, type BalanceState, type LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
 import { CodeBlock } from "./CodeBlock"
+import { StepList } from "./StepList"
 import { IssueList } from "./IssueList"
 import { NumberField } from "./NumberField"
 import { PlansEditor } from "./PlansEditor"
@@ -97,6 +99,7 @@ function download(name: string, text: string) {
  */
 export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, onSetup, onName }: Props) {
   const t = useTranslations("mikrotik.guide")
+  const ta = useTranslations("mikrotik.advanced")
   const tl = useTranslations("mikrotik.links")
   const tc = useTranslations("mikrotik.config")
   const key = boundId ?? "sin-guardar"
@@ -122,20 +125,9 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
   }
 
   const clients = clientsOf({ status: state.status, capacity: state.capacity })
-  const plans = useMemo(() => setupPlans(s.plans, s.rule), [s.plans, s.rule])
-  const ctx = {
-    clients,
-    wanIfaces: wans.map((w) => w.iface),
-    balanced: b.clients,
-    monitors: b.failover === "recursive" ? wans.map((w) => w.monitor.trim()) : [],
-    cgnatUpstreams: wans.filter((w) => w.upstreamCgnat).map((w) => w.iface.trim()),
-    pppoeIfaces: wans.filter((w) => w.type === "pppoe").map((w) => w.iface.trim()),
-    links: wans,
-    queue: state.queueKind,
-  }
-  const parts = setupParts(s, { ...ctx, name: state.deployment, plans })
-  const balance = balanceScript({ ...b, wans })
-  const olt = oltSetup(s, { plans })
+  const g = useMemo(() => guideScripts(state), [state])
+  const { ctx, parts, balance, olt } = g
+  const bundle = useMemo(() => deploymentBundle(state), [state])
   const { buckets, total } = pccBuckets(wans)
   const perIp = wans.length > 0 ? Math.ceil(clients / wans.length) : clients
   const issues = [
@@ -145,26 +137,28 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
   const ready = parts !== null && balance !== ""
   const name = state.deployment.trim() || t("unnamed")
 
-  // The whole router script in the checklist's order, and the OLT's, as files.
+  // The deployment's file: the guide's steps, then the expert scripts turned on, each step with its header and checks.
+  const stepTitle = (group: string, id: string) => (group === "guide" ? t(`steps.${id}.title`) : `${ta(`modules.${group}.name`)} · ${ta(`steps.${group}.${id}.title`)}`)
+  const stepBefore = (group: string, id: string) => (group === "guide" ? t(`steps.${id}.before`) : ta.has(`steps.${group}.${id}.before`) ? ta(`steps.${group}.${id}.before`) : undefined)
   const routerFile = () =>
-    parts && balance
-      ? [
-          `# GigaFazt · ${name} · ${new Date().toISOString().slice(0, 10)}`,
-          `# ${t("file.order")}`,
-          `# ${t("phases.p0.title")}`,
-          parts.base,
-          `# ${t("phases.p1.title")} / ${t("phases.p2.title")}`,
-          balance,
-          `# ${t("phases.p4.title")}`,
-          parts.pppoe,
-          `# ${t("phases.p3.title")}`,
-          parts.cgnat,
-          `# ${t("phases.p5.title")}`,
-          parts.hardening,
-          ...(parts.ops ? [`# ${t("scripts.ops")}`, parts.ops] : []),
-          "",
-        ].join("\n")
-      : ""
+    [
+      `# GigaFazt · ${name} · ${new Date().toISOString().slice(0, 10)}`,
+      ...(t.raw("file.header") as string[]).map((x) => `# ${x}`),
+      "",
+      ...bundle.steps.map((x, k) => stepBlock(k + 1, stepTitle(x.group, x.id), x.script, stepBefore(x.group, x.id), x.verify)),
+    ].join("\n")
+  const undoFile = () => [`# GigaFazt · ${name} · ${t("file.undo")}`, bundle.undo, ""].join("\n")
+  const guideStep = (id: GuideStepId) => {
+    const x = g.steps.find((y) => y.id === id)
+    if (!x) return null
+    const n = g.steps.indexOf(x)
+    return (
+      <div className="grid gap-2">
+        <p className="font-mono text-xs text-zinc-400">{t("stepOf", { n: n + 1, total: g.steps.length })}</p>
+        <StepList steps={[{ title: t(`steps.${id}.title`), before: t(`steps.${id}.before`), script: x.script, verify: x.verify }]} labels={{ step: ta("stepWord"), before: ta("before"), verify: ta("verify") }} />
+      </div>
+    )
+  }
 
   const missing = <p className="text-sm text-amber-200">{t("fixAbove")}</p>
   const field = (node: ReactNode) => <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">{node}</div>
@@ -377,10 +371,10 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
     p0: (
       <>
         <CodeBlock label={t("scripts.backup")} code={"/export file=fabrica\n/system backup save name=fabrica"} />
-        {parts ? <CodeBlock label={t("scripts.base")} code={parts.base} /> : missing}
+        {parts ? guideStep("base") : missing}
       </>
     ),
-    p1: balance ? <CodeBlock label={t("scripts.balance")} code={balance} /> : missing,
+    p1: balance && parts ? guideStep("balance") : missing,
     p2: <p className="max-w-3xl text-sm leading-relaxed text-zinc-400">{t("sameScript")}</p>,
     p3: (
       <>
@@ -388,28 +382,29 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
           <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-amber-300" />
           <span>{t("forwardBug")}</span>
         </p>
-        {parts ? <CodeBlock label={t("scripts.cgnat")} code={parts.cgnat} /> : missing}
+        {parts && balance ? guideStep("cgnat") : missing}
         {!s.collector.trim() && <p className="text-sm text-amber-200">{t(s.natMode === "fixed" ? "noCollectorFixed" : "noCollector")}</p>}
       </>
     ),
     p4: (
       <>
-        {parts ? <CodeBlock label={t("scripts.pppoe")} code={parts.pppoe} /> : missing}
+        {parts && balance ? guideStep("pppoe") : missing}
         <CodeBlock label={t("scripts.radius")} code={"/radius add service=ppp address=<IP-RADIUS> secret=<SECRETO>\n/ppp aaa set use-radius=yes accounting=yes interim-update=5m"} />
         <p className="max-w-3xl text-sm leading-relaxed text-amber-200">{t("oltWarning")}</p>
         {olt ? <CodeBlock label={t("scripts.olt")} code={olt} /> : missing}
         <p className="text-sm text-zinc-300">
           {t("ontPointer")}{" "}
-          <a href="#configuracion" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
+          <a href="/mikrotik#configuracion" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
             {t("where.setup")}
           </a>
         </p>
       </>
     ),
-    p5: parts ? (
+    p5: parts && balance ? (
       <>
-        <CodeBlock label={t("scripts.hardening")} code={parts.hardening} />
-        {parts.ops && <CodeBlock label={t("scripts.ops")} code={parts.ops} />}
+        {guideStep("hardening")}
+        {guideStep("ops")}
       </>
     ) : (
       missing
@@ -482,10 +477,28 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
           </div>
         </div>
         <IssueList items={issues} />
+        <div className="grid gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-4">
+          <p className="text-sm font-medium text-foreground">{t("bundle.title", { n: bundle.steps.length })}</p>
+          <p className="max-w-3xl text-xs leading-snug text-zinc-400">
+            {bundle.steps.some((x) => x.group !== "guide")
+              ? t("bundle.with", { list: [...new Set(bundle.steps.filter((x) => x.group !== "guide").map((x) => ta(`modules.${x.group}.name`)))].join(", ") })
+              : t("bundle.none")}{" "}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
+            <a href="/mikrotik#avanzados" className="text-zinc-200 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+              {t("bundle.link")}
+            </a>
+          </p>
+          {bundle.skipped.length > 0 && <p className="text-xs text-amber-200">{t("bundle.skipped", { list: bundle.skipped.map((m) => ta(`modules.${m}.name`)).join(", ") })}</p>}
+          <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("bundle.howTo")}</p>
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <Button type="button" variant="outline" disabled={!ready} onClick={() => download(`${slug(state.deployment)}-mikrotik.rsc`, routerFile())}>
             <Download aria-hidden />
             {t("deploy.downloadRouter")}
+          </Button>
+          <Button type="button" variant="outline" disabled={!ready} onClick={() => download(`${slug(state.deployment)}-deshacer.rsc`, undoFile())}>
+            <Download aria-hidden />
+            {t("deploy.downloadUndo")}
           </Button>
           <Button type="button" variant="outline" disabled={!olt} onClick={() => download(`${slug(state.deployment)}-olt-huawei.txt`, `${olt}\n`)}>
             <Download aria-hidden />

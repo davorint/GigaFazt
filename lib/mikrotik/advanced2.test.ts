@@ -123,7 +123,8 @@ describe("alerts, priority, public IPs", () => {
     const r = priorityScript(ctx())
     expect(r.script).toContain('comment=\"LB: bajada WAN1\"')
     expect(r.script).toContain('dscp=46 new-packet-mark="LB-WAN1-bajada-prioridad"')
-    expect(r.script.split("\n")).toHaveLength(wans.length * 2 * 4)
+    // The prerequisite check and the cleanup, then 4 DSCP values × 2 directions per link.
+    expect(r.script.split("\n")).toHaveLength(2 + wans.length * 2 * 4)
   })
   it("a client keeps a public IP, skips CGNAT, leaves by its link and is reachable", () => {
     const r = publicIpScript(ctx(), [{ user: "empresa1", ip: "203.0.113.10", wan: "WAN2" }])
