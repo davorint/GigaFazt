@@ -864,7 +864,8 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): Ba
     ...dropScripts("^DSX-sync$"),
     "/system script",
     `add name=DSX-sync policy=ftp,read,write,test,sensitive dont-require-permissions=yes source=${rosString(
-      `/ppp secret export show-sensitive file=DSX-secretos; :delay 5s; /tool fetch upload=yes mode=sftp address=${backupIp} user=${o.syncUser} password="${SECRET("clave-de-sincronizacion")}" src-path=DSX-secretos.rsc dst-path=DSX-secretos.rsc`
+      // The file holds every client's password: it's removed even when the upload fails.
+      `/ppp secret export show-sensitive file=DSX-secretos; :delay 5s; :do {/tool fetch upload=yes mode=sftp address=${backupIp} user=${o.syncUser} password="${SECRET("clave-de-sincronizacion")}" src-path=DSX-secretos.rsc dst-path=DSX-secretos.rsc} on-error={:log warning "DSX: no se pudieron copiar las cuentas al respaldo"}; /file remove [find where name="DSX-secretos.rsc"]`
     )} ${c("copia las cuentas al respaldo")}`,
     "/system scheduler",
     `add name=DSX-sync interval=1h start-time=00:10:00 on-event=DSX-sync ${c("cada hora")}`,
@@ -876,7 +877,21 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): Ba
     ...dropScripts("^DSX-sync-importar$"),
     "/system script",
     `add name=DSX-sync-importar policy=ftp,read,write,test,sensitive dont-require-permissions=yes source=${rosString(
-      ':if ([:len [/file find where name="DSX-secretos.rsc"]] > 0) do={/ppp secret remove [find]; /import file-name=DSX-secretos.rsc; /file remove [find where name="DSX-secretos.rsc"]; :log info "DSX: cuentas copiadas del principal"}'
+      // Only a complete file (same size 5 s apart) that passes a dry run replaces the accounts; a failure halfway is logged.
+      [
+        ':local f [/file find where name="DSX-secretos.rsc"]',
+        ':if ([:len $f] > 0) do={',
+        ':local a [/file get $f size]; :delay 5s; :local b [/file get $f size]',
+        ':local ok true',
+        ':if (($a = 0) || ($a != $b)) do={:set ok false; :log warning "DSX: el archivo de cuentas no esta completo: se aplica en la siguiente hora"}',
+        ':if ($ok) do={:do {/import file-name=DSX-secretos.rsc dry-run=yes} on-error={:set ok false; :log error "DSX: el archivo de cuentas tiene errores: no se aplico"}}',
+        ':if ($ok) do={/ppp secret remove [find]; :do {/import file-name=DSX-secretos.rsc; :log info "DSX: cuentas copiadas del principal"} on-error={:log error "DSX: la copia de cuentas se detuvo a medias: revisa /ppp secret en el respaldo"}}',
+        '/file remove [find where name="DSX-secretos.rsc"]',
+        "}",
+      ]
+        .join("; ")
+        .replace(/\{; /g, "{")
+        .replace(/; \}/g, "}")
     )} ${c("aplica las cuentas copiadas")}`,
     "/system scheduler",
     `add name=DSX-sync-importar interval=1h start-time=00:20:00 on-event=DSX-sync-importar ${c("cada hora")}`,
@@ -884,6 +899,7 @@ export function backupRouterScripts(ctx: AdvContext, o: BackupRouterOptions): Ba
   const undoMain = [
     ':do {/system scheduler remove [find where name~"^DSX-sync"]} on-error={}',
     ':do {/system script remove [find where name~"^DSX-sync"]} on-error={}',
+    '/file remove [find where name~"^DSX-(secretos|perfiles)"]',
     `/ip pool set [find where name="DS-clientes"] ranges=${intToIp(first)}-${intToIp(last)}`,
     `{ /ip address remove [find where comment~"^DSX respaldo: "]; /interface vrrp remove [find where name="DSX-vrrp"]; /ip address add address=${vip}/${p} interface=${rosString(mg)} comment="DS: gestion de la OLT" }`,
   ].join("\n")

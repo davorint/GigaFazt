@@ -221,7 +221,8 @@ export function fullExportScript(ctx: AdvContext): AdvResult {
     ":local d [:pick [/system clock get date] 0 10]",
     "/export show-sensitive file=DSX-completo",
     ":delay 10s",
-    `/tool fetch upload=yes mode=sftp address=${s.backupHost.trim()} user=${s.backupUser.trim()} password="${SECRET("sftp")}" src-path=DSX-completo.rsc dst-path=("${path}" . $n . "-completo-" . $d . ".rsc")`,
+    // The file holds every password: it's removed even when the upload fails (and the failure is logged).
+    `:do {/tool fetch upload=yes mode=sftp address=${s.backupHost.trim()} user=${s.backupUser.trim()} password="${SECRET("sftp")}" src-path=DSX-completo.rsc dst-path=("${path}" . $n . "-completo-" . $d . ".rsc")} on-error={:log warning "DSX: no se pudo subir el export completo"}`,
     '/file remove [find where name="DSX-completo.rsc"]',
   ])
   const lines = [
@@ -231,7 +232,7 @@ export function fullExportScript(ctx: AdvContext): AdvResult {
       "/system scheduler",
     `add name=DSX-completo start-time=04:00:00 interval=7d on-event=DSX-completo ${c("cada semana")}`,
   ]
-  return done([step("copia", lines, '/system scheduler print where name="DSX-completo"')], dropScripts("^DSX-completo$"), [{ code: "passwordsFile", level: "warn" }])
+  return done([step("copia", lines, '/system scheduler print where name="DSX-completo"')], [...dropScripts("^DSX-completo$"), '/file remove [find where name="DSX-completo.rsc"]'], [{ code: "passwordsFile", level: "warn" }])
 }
 
 // ── Profile sync to the backup router ───────────────────────────────────────
@@ -411,7 +412,8 @@ export function alertsScript(ctx: AdvContext, o: AlertsOptions): AdvResult {
   const drop = dropScripts("^DSX-(cambios|version|fallos-ppp)$")
   return done(
     [step("scripts", [GUARD.alerts, ...drop, "/system script", ...scripts], '/system script print where name~"^DSX-(cambios|version|fallos)"'), step("programar", ["/system scheduler", ...sched], '/system scheduler print where name~"^DSX-(cambios|version|fallos)"')],
-    drop,
+    // The undo also removes the exports kept to compare the configuration.
+    [...drop, '/file remove [find where name~"^DSX-cfg-"]'],
     issues
   )
 }

@@ -705,6 +705,13 @@ export function setupUndo(s: SetupState): string {
     '/ip pool remove [find where comment~"^DS: "]',
     '/ip address remove [find where comment~"^DS: "]',
     '/interface vlan remove [find where comment~"^DS: "]',
+    // The links' and the OLT port's queue back to each interface's default, then the queue type can go.
+    ':foreach i in=[/queue interface find where queue="DS-fq-codel"] do={/queue interface set $i queue=[/queue interface get $i default-queue]}',
+    ':do {/queue type remove [find where name="DS-fq-codel"]} on-error={}',
+    // The collector this setup added; flows stop when no other target is left.
+    ...(s.collector.trim()
+      ? [`/ip traffic-flow target remove [find where dst-address=${s.collector.trim()} port=4739]`, ":if ([:len [/ip traffic-flow target find]] = 0) do={/ip traffic-flow set enabled=no}"]
+      : []),
   ].join("\n")
 }
 

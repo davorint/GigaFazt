@@ -251,3 +251,15 @@ describe("audit fixes (2026-11-16)", () => {
   })
 })
 
+
+describe("files with passwords never stay on a router", () => {
+  it("backup router: the main removes its export even when the upload fails; the backup checks the file before replacing accounts", () => {
+    const r = backupRouterScripts(ctx(), DEFAULT_BACKUP_ROUTER)
+    expect(r.main).toMatch(/:do \{\/tool fetch upload=yes [^}]*\} on-error=\{:log warning [^}]*\}; \/file remove \[find where name=\\"DSX-secretos.rsc\\"\]/)
+    expect(r.backup).toContain("dry-run=yes")
+    // The accounts are removed only after the size check and the dry run.
+    expect(r.backup.indexOf("dry-run=yes")).toBeLessThan(r.backup.indexOf("/ppp secret remove [find]"))
+    expect(r.backup).toContain("(\\$a != \\$b)")
+    expect(r.undoMain).toContain('/file remove [find where name~"^DSX-(secretos|perfiles)"]')
+  })
+})
