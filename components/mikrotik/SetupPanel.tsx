@@ -5,15 +5,17 @@ import { useTranslations } from "next-intl"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { clientsOf } from "@/lib/mikrotik/deployments"
-import { checkSetup, mikrotikSetup, OLT_HEADROOM, oltSetup, ontInstall, ontTemplate, parseCidr, poolHosts, setupPlans, setupUndo, type SetupState } from "@/lib/mikrotik/setup"
+import { checkSetup, OLT_HEADROOM, setupParts, oltSetup, ontInstall, ontTemplate, parseCidr, poolHosts, setupPlans, setupUndo, type SetupState } from "@/lib/mikrotik/setup"
 import type { LabState } from "@/lib/mikrotik/state"
 import type { Wan } from "@/lib/mikrotik/balance"
 import { fmtNum } from "@/lib/mikrotik/format"
+import { setupSteps } from "@/lib/mikrotik/guide-scripts"
 import { CodeBlock } from "./CodeBlock"
 import { IssueList } from "./IssueList"
 import { NumberField } from "./NumberField"
 import { PlansEditor } from "./PlansEditor"
 import { SelectField } from "./SelectField"
+import { StepList } from "./StepList"
 import { TextField } from "./TextField"
 import { AccessFields, NatFields } from "./TracePanel"
 import { OpsFields } from "./OpsFields"
@@ -23,6 +25,8 @@ type Props = { state: LabState; onSetup: (s: SetupState) => void; onWans: (w: Wa
 /** VLANs, PPPoE and the OLT for a new deployment: MikroTik and Huawei commands that match. */
 export function SetupPanel({ state, onSetup, onWans }: Props) {
   const t = useTranslations("mikrotik.config")
+  const tg = useTranslations("mikrotik.guide")
+  const ta = useTranslations("mikrotik.advanced")
   const s = state.setup
   const set = (patch: Partial<SetupState>) => onSetup({ ...s, ...patch })
 
@@ -39,7 +43,8 @@ export function SetupPanel({ state, onSetup, onWans }: Props) {
   }
   const plans = useMemo(() => setupPlans(s.plans, s.rule), [s.plans, s.rule])
   const issues = checkSetup(s, ctx)
-  const router = mikrotikSetup(s, { ...ctx, name: state.deployment, plans })
+  // The same steps, with the same guards, as the guide on /mikrotik-optimo.
+  const steps = setupSteps(state, setupParts(s, { ...ctx, name: state.deployment, plans }))
   const olt = oltSetup(s, { plans })
 
   // One ONT, to copy for each client (not saved).
@@ -118,9 +123,12 @@ export function SetupPanel({ state, onSetup, onWans }: Props) {
           <TabsTrigger value="ont">{t("tabs.ont")}</TabsTrigger>
         </TabsList>
         <TabsContent value="router" className="grid min-w-0 gap-4">
-          {router ? (
+          {steps.length ? (
             <>
-              <CodeBlock label={t("routerScript")} code={router} />
+              <StepList
+                steps={steps.map((x) => ({ title: tg(`steps.${x.id}.title`), before: tg(`steps.${x.id}.before`), script: x.script, verify: x.verify }))}
+                labels={{ step: ta("stepWord"), before: ta("before"), verify: ta("verify") }}
+              />
               <ul className="grid max-w-3xl gap-2 text-sm leading-relaxed text-zinc-400">
                 {(t.raw("routerNotes") as string[]).map((n, k) => (
                   <li key={k} className="flex gap-2">

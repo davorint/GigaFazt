@@ -110,6 +110,7 @@ export function InstalledPanel({ state }: { state: LabState }) {
                   <td className="grid gap-1 px-3 py-2.5 text-xs leading-snug text-zinc-300">
                     {r.state !== "absent" && r.state !== "untracked" && <span>{t("count", { found: r.found, expected: r.expected })}</span>}
                     {r.missing.length > 0 && <span>{t("missing", { list: r.missing.slice(0, 4).join(" · "), more: Math.max(0, r.missing.length - 4) })}</span>}
+                    {r.short.length > 0 && <span>{t("short", { list: r.short.slice(0, 4).join(" · ") })}</span>}
                     {r.duplicated.length > 0 && <span>{t("duplicated", { list: r.duplicated.slice(0, 4).join(" · ") })}</span>}
                     {r.extra.length > 0 && <span>{t("extra", { list: r.extra.slice(0, 4).join(" · ") })}</span>}
                     {r.needs.length > 0 && <span className="text-red-300">{t("needs", { list: r.needs.map(name).join(", ") })}</span>}
@@ -150,11 +151,12 @@ export function InstalledPanel({ state }: { state: LabState }) {
                     <span className="font-mono text-xs text-zinc-400">{String(k + 1).padStart(2, "0")}</span>
                     <span className="text-zinc-100">{name(a.part)}</span>
                     <span>{t(`repair.kinds.${a.kind}`, { added: a.added ?? 0, removed: a.removed ?? 0 })}</span>
+                    {a.manual && <span className="basis-full text-xs text-amber-200">{t("repair.manual", { list: a.manual.slice(0, 5).join(" · ") })}</span>}
                   </li>
                 ))}
               </ol>
               <p className="max-w-3xl text-xs leading-snug text-amber-200">{t("repair.warn")}</p>
-              <CodeBlock code={repair.script} label={t("repair.label")} />
+              {repair.script && <CodeBlock code={repair.script} label={t("repair.label")} />}
             </>
           )}
           {repair.skipped.filter((m) => m !== "guide").length > 0 && <p className="text-xs text-amber-200">{t("repair.skipped", { list: repair.skipped.map(name).join(", ") })}</p>}

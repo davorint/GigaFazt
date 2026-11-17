@@ -44,13 +44,30 @@ export function guideGuards(id: GuideStepId, state: Pick<LabState, "wans">): str
             return `{:local d [/ip dhcp-client find where interface=${i}]; :if ([:len $d] = 0) do={:error "LB: ${name} no tiene cliente DHCP: agregalo antes"}; :if ([/ip dhcp-client get $d status] != "bound") do={:error "LB: ${name} aun no recibe IP por DHCP: revisa el cable o el carrier"}}`
           }),
       ]
+    // Each later step stops when it's already there (pasting it twice would duplicate its lines), judged by what it
+    // always creates.
     case "pppoe":
+      return [DS_GUARD, already('[:len [/ip pool find where name="DS-clientes"]]', "el PPPoE")]
     case "cgnat":
+      return [DS_GUARD, already('[:len [/ip route find where comment="DS: pool sin salida"]]', "el CGNAT")]
     case "hardening":
+      return [DS_GUARD, already('[:len [/ip firewall raw find where comment="DS: bogon"]]', "Colas y firewall")]
     case "ops":
-      return [DS_GUARD]
+      return [DS_GUARD, already('[:len [/system scheduler find where name~"^DS-"]]', "Avisos y respaldos")]
   }
 }
+
+const already = (count: string, what: string) => `:if (${count} > 0) do={:error "DS: ${what} ya esta en este router: usa el deshacer de la base antes de pegarlo otra vez"}`
+
+/** The deployment's own steps (base, PPPoE, CGNAT, hardening, operations) with their guards; empty when the setup has errors. */
+export function setupSteps(state: Pick<LabState, "wans">, parts: SetupParts | null): (Step & { id: GuideStepId })[] {
+  if (!parts) return []
+  const body: [GuideStepId, string][] = [["base", parts.base], ["pppoe", parts.pppoe], ["cgnat", parts.cgnat], ["hardening", parts.hardening], ["ops", parts.ops]]
+  return body.filter(([, x]) => x.trim()).map(([id, x]) => ({ id, script: [...guideGuards(id, state), x].join("\n"), verify: GUIDE_VERIFY[id] }))
+}
+
+/** The balancing with its guards (Varios enlaces shows it too). */
+export const guardedBalance = (state: Pick<LabState, "wans">, script: string) => (script ? [...guideGuards("balance", state), script].join("\n") : "")
 
 export type GuideScripts = {
   ctx: SetupContext
@@ -82,8 +99,8 @@ export function guideScripts(state: LabState): GuideScripts {
   const balance = balanceScript({ ...b, wans })
   const olt = oltSetup(s, { plans })
   const ready = parts !== null && balance !== ""
-  const body: [GuideStepId, string][] = ready ? [["base", parts.base], ["balance", balance], ["pppoe", parts.pppoe], ["cgnat", parts.cgnat], ["hardening", parts.hardening], ["ops", parts.ops]] : []
-  const steps = body.filter(([, x]) => x.trim()).map(([id, x]) => ({ id, script: [...guideGuards(id, state), x].join("\n"), verify: GUIDE_VERIFY[id] }))
+  const own = ready ? setupSteps(state, parts) : []
+  const steps = ready ? [own[0], { id: "balance" as const, script: guardedBalance(state, balance), verify: GUIDE_VERIFY.balance }, ...own.slice(1)] : []
   return { ctx, plans, parts, balance, olt, steps, undo: [balanceUndo(b.speed), setupUndo(s)].join("\n") }
 }
 

@@ -26,6 +26,7 @@ import {
 import { fmtRate } from "@/lib/mikrotik/format"
 import { MAX_WANS, nextMonitor, type BalanceState, type LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
+import { guardedBalance } from "@/lib/mikrotik/guide-scripts"
 import { CodeBlock } from "./CodeBlock"
 import { IssueList } from "./IssueList"
 import { NumberField } from "./NumberField"
@@ -61,7 +62,8 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
 
   const opts = { ...balance, wans }
   const issues = checkBalance(opts)
-  const script = balanceScript(opts)
+  // With the guide's guards: stops when the base is missing, the balancing is already there or a DHCP link has no lease.
+  const script = guardedBalance({ wans }, balanceScript(opts))
   // Weights and totals follow the measured speed when it's there.
   const weights = pccWeights(wans.map(linkSpeed))
   const slots = weights.reduce((a, b) => a + b, 0)

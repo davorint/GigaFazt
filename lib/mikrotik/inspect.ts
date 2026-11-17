@@ -19,6 +19,8 @@ export type PartReport = {
   /** The menu of every comment of this part found on the router. */
   foundMenus: Record<string, string>
   duplicated: string[]
+  /** Comments the router has on fewer lines than the script writes (one of several lines with the same comment is gone). */
+  short: string[]
   needs: string[]
 }
 
@@ -101,9 +103,10 @@ export function inspectExport(text: string, parts: PartSpec[]): PartReport[] {
     const extra = extraKeys.map(label)
     const extraMenus = Object.fromEntries(extraKeys.filter((k) => k.startsWith("c:")).map((k) => [label(k), where.get(k) ?? "/"]))
     const duplicated = p.loose ? [] : [...want.entries()].filter(([k, v]) => (have.get(k) ?? 0) > v).map(([k]) => label(k))
-    const state: PartState = p.script.trim() && want.size === 0 ? "untracked" : !found ? "absent" : missing.length ? "incomplete" : duplicated.length ? "duplicated" : extra.length ? "outdated" : "ok"
+    const short = [...want.entries()].filter(([k, v]) => have.has(k) && (have.get(k) ?? 0) < v).map(([k]) => label(k))
+    const state: PartState = p.script.trim() && want.size === 0 ? "untracked" : !found ? "absent" : missing.length || short.length ? "incomplete" : duplicated.length ? "duplicated" : extra.length ? "outdated" : "ok"
     const foundMenus = Object.fromEntries(mine.filter(([k]) => k.startsWith("c:")).map(([k]) => [label(k), where.get(k) ?? "/"]))
-    return { id: p.id, state, found, expected, missing, extra, extraMenus, foundMenus, duplicated, needs: [] }
+    return { id: p.id, state, found, expected, missing, extra, extraMenus, foundMenus, duplicated, short, needs: [] }
   })
   // What each installed part needs and isn't there.
   const byId = new Map(reports.map((r) => [r.id, r]))

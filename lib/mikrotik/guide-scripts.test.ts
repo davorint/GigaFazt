@@ -120,3 +120,17 @@ describe("routes", () => {
     expect(matchInternal("/es/mikrotik")).toEqual({ rewriteTo: null })
   })
 })
+
+describe("each guide step refuses a second paste", () => {
+  it("by something the step always creates", () => {
+    const g = guideScripts(initialState())
+    const guard = (id: string) => g.steps.find((s) => s.id === id)!.script.split("\n").slice(0, 2).join("\n")
+    expect(guard("pppoe")).toContain('[:len [/ip pool find where name="DS-clientes"]] > 0) do={:error "DS: el PPPoE ya esta')
+    expect(guard("cgnat")).toContain('comment="DS: pool sin salida"]] > 0) do={:error "DS: el CGNAT ya esta')
+    expect(guard("hardening")).toContain('comment="DS: bogon"]] > 0) do={:error')
+    // What each guard looks for is written by its own step.
+    expect(g.steps.find((s) => s.id === "pppoe")!.script).toContain("add name=DS-clientes")
+    expect(g.steps.find((s) => s.id === "cgnat")!.script).toMatch(/add [^\n]*comment="DS: pool sin salida"/)
+    expect(g.steps.find((s) => s.id === "hardening")!.script).toMatch(/add [^\n]*comment="DS: bogon"/)
+  })
+})

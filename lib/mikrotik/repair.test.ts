@@ -37,7 +37,7 @@ describe("repair", () => {
   it("a missing base line is pasted alone, with its menu", () => {
     const s = deployment()
     const lines = installed(s).split("\n")
-    const k = lines.findIndex((l) => l.includes('comment="DS: pool sin salida"'))
+    const k = lines.findIndex((l) => l.includes('comment="DS: pool sin salida"') && !l.includes("find where"))
     expect(k).toBeGreaterThan(-1)
     lines.splice(k, 1)
     const p = plan(s, lines.join("\n"))
@@ -46,11 +46,42 @@ describe("repair", () => {
     expect(p.script).toMatch(/^\/ip route add .*comment="DS: pool sin salida"$/)
     expect(checkScript(p.script)).toEqual([])
   })
+  it("a missing firewall rule goes back to its place in the chain, not to the end", () => {
+    const s = deployment()
+    const lines = installed(s).split("\n")
+    // The first filter rule of the base whose comment no other line shares.
+    const comment = (l: string) => /comment="(DS: [^"]+)"/.exec(l)?.[1]
+    const count = (c: string) => lines.filter((l) => comment(l) === c).length
+    let menu = ""
+    const k = lines.findIndex((l) => {
+      if (/^\/[a-z0-9 -]+$/.test(l)) menu = l
+      const c = comment(l)
+      return menu === "/ip firewall filter" && /^add /.test(l) && !!c && count(c) === 1
+    })
+    expect(k).toBeGreaterThan(-1)
+    const gone = comment(lines[k])!
+    lines.splice(k, 1)
+    const p = plan(s, lines.join("\n"))
+    expect(p.script.startsWith(`/ip firewall filter add `)).toBe(true)
+    expect(p.script).toContain(`comment="${gone}" place-before=[:pick [/ip firewall filter find where comment="DS: `)
+    expect(checkScript(p.script)).toEqual([])
+  })
+  it("one of several lines sharing a comment missing: reported for a manual check, nothing guessed", () => {
+    const s = deployment()
+    const lines = installed(s).split("\n")
+    const k = lines.findIndex((l) => /^add .*comment="DS: respuestas"/.test(l))
+    expect(k).toBeGreaterThan(-1)
+    lines.splice(k, 1)
+    const p = plan(s, lines.join("\n"))
+    expect(p.actions).toEqual([expect.objectContaining({ part: "base", kind: "lines", added: 0, removed: 0, manual: ["DS: respuestas"] })])
+    expect(p.script).toBe("")
+  })
   it("old lines are removed by comment in their menu", () => {
     const s = deployment()
     const p = plan(s, `${installed(s)}\n/ip firewall filter add chain=forward action=drop comment="DS: regla vieja"`)
     expect(p.actions[0]).toMatchObject({ part: "base", kind: "lines", added: 0, removed: 1 })
-    expect(p.script).toBe('/ip firewall filter remove [find where comment="DS: regla vieja"]')
+    expect(p.script).toBe(':do {/ip firewall filter remove [find where comment="DS: regla vieja"]} on-error={:put "No se pudo quitar DS: regla vieja (/ip firewall filter): revisalo a mano"}')
+    expect(checkScript(p.script)).toEqual([])
   })
   it("a duplicated or incomplete expert script is pasted again; one switched on and missing is installed", () => {
     const s = deployment()

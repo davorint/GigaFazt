@@ -1223,9 +1223,8 @@
         "olt": "OLT Huawei",
         "ont": "Alta de un ONT"
       },
-      "routerScript": "Configuración del MikroTik (RouterOS v7)",
       "routerNotes": [
-        "Orden en un router nuevo: base (fase 0 de la Guía), balanceo de «Varios enlaces», PPPoE, CGNAT y endurecimiento. Este script junta todo menos el balanceo.",
+        "Orden en un router nuevo: el paso 1 (base), luego el balanceo de «Varios enlaces» y después los demás pasos. Son los mismos pasos de la Guía óptima: cada uno se detiene con un mensaje si falta lo anterior o si ya está en el router.",
         "Pégalo conectado por la VLAN de gestión: al final de la base, Winbox, SSH y el acceso por MAC quedan solo para esa red.",
         "Cada plan es un perfil PPP con tu regla de ráfaga y las direcciones del despliegue; si el perfil ya existe, se actualiza.",
         "change-tcp-mss=yes ya ajusta el MSS: no hace falta una regla de mangle para eso.",
@@ -1925,7 +1924,7 @@
         "ipTwice": "{value} está repetida.",
         "routedBlock": "El carrier debe enrutar esa IP o bloque hacia tu router (servicio empresarial) o ser un bloque tuyo anunciado por BGP; si no, el tráfico de vuelta no llega.",
         "openToInternet": "Esa IP queda abierta a internet: el cliente es responsable de su firewall (cámaras y routers con clave de fábrica son los primeros en caer).",
-        "repasteBase": "Si vuelves a pegar la base de Configuración, pega esto otra vez: la base lo deshace (proxy, servicio web o acceso a Winbox/SSH).",
+        "repasteBase": "Si reinstalas la base de Configuración (su deshacer y pegarla de nuevo), pega esto otra vez: la base lo deshace (proxy, servicio web o acceso a Winbox/SSH).",
         "suspendedNoV6": "Con IPv6 activo, el perfil suspendido no da IPv6: la lista de morosos solo guarda la dirección IPv4 y por IPv6 el cliente seguiría navegando.",
         "familyNoV6": "Los perfiles familia no dan IPv6: por IPv6 el filtro no podría reconocer al cliente. El resto de los planes siguen con IPv6.",
         "oltPort2": "Escribe el puerto de la OLT del respaldo como marco/slot/puerto.",
@@ -2020,7 +2019,7 @@
           "Primero la Guía óptima: base, balanceo, PPPoE, CGNAT, endurecimiento y avisos. Cada paso empieza con una revisión que se detiene con un mensaje si falta algo o si ya está instalado.",
           "Failover por calidad, Salida fija por destino, Prioridad DSCP e IP pública fija necesitan el balanceo: si no está, se detienen con un mensaje.",
           "Los scripts de experto, de uno en uno y paso a paso, probando cada paso con su «Comprueba». Morosos antes de Uso por cliente si vas a usar el tope de uso justo.",
-          "Volver a pegar un script lo reemplaza: primero quita sus propias líneas y luego las escribe. Si vuelves a pegar la base, vuelve a pegar Morosos, Acceso remoto y Monitoreo: la base apaga el proxy y el servicio web y deja Winbox y SSH solo para la red de gestión.",
+          "Volver a pegar un script de experto lo reemplaza: primero quita sus propias líneas y luego las escribe. Los pasos de la guía no se pegan dos veces: se detienen si ya están; para corregirlos usa «Reparar» en la Guía óptima. Si reinstalas la base (su deshacer y pegarla de nuevo), vuelve a pegar Morosos, Acceso remoto y Monitoreo: la base apaga el proxy y el servicio web y deja Winbox y SSH solo para la red de gestión.",
           "En la terminal, un mensaje que empieza con DS:, LB: o DSX: detiene solo esa línea: no sigas pegando. Con /import file=… el archivo entero se detiene ahí.",
           "Para quitar todo, primero el deshacer de cada script y al final el de la base (o el deshacer combinado de la Guía óptima, que ya va en ese orden)."
         ]
@@ -2291,9 +2290,11 @@
         },
         "warn": "Revísalo antes de pegarlo y hazlo en una ventana de mantenimiento si toca la base o el balanceo. Después vuelve a pegar el export aquí: debe decir Completa en todo.",
         "label": "Comandos para reparar",
-        "skipped": "No se incluyen porque sus valores tienen errores: {list}. Corrígelos en Scripts de experto."
+        "skipped": "No se incluyen porque sus valores tienen errores: {list}. Corrígelos en Scripts de experto.",
+        "manual": "Revisa a mano (varias líneas comparten el comentario y no se sabe cuál falta): {list}. Compara con el paso de la guía."
       },
-      "untrackedHint": "Escribe ajustes y elementos sin comentario: el export no dice si está. Si está activado en el despliegue, la reparación lo vuelve a pegar (es seguro)."
+      "untrackedHint": "Escribe ajustes y elementos sin comentario: el export no dice si está. Si está activado en el despliegue, la reparación lo vuelve a pegar (es seguro).",
+      "short": "Falta alguna de las líneas que comparten comentario: {list}."
     }
   }
 }

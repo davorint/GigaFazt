@@ -19,6 +19,8 @@ export type RepairAction = {
   /** How many lines are added and removed (targeted repair). */
   added?: number
   removed?: number
+  /** Comments with a line missing among several that share it: which one can't be told, so they're checked by hand. */
+  manual?: string[]
 }
 
 export type RepairPlan = { actions: RepairAction[]; script: string; skipped: string[] }
@@ -77,14 +79,30 @@ function braceDelta(line: string): number {
 /** The units of a script that write any of the given comments, ready to paste anywhere (relative lines get their menu). */
 export function linesWriting(script: string, prefix: string, comments: string[]): string[] {
   const want = new Set(comments.map((c) => `c:${c}`))
-  return scriptUnits(script)
-    .filter((u) => [...markers(u.text, prefix).keys()].some((k) => want.has(k)))
-    .map((u) => (/^\s*(add|set) /.test(u.text) && u.menu ? `${u.menu} ${u.text.trim()}` : u.text))
+  const units = scriptUnits(script)
+  const keysOf = units.map((u) => [...markers(u.text, prefix).keys()])
+  return units.flatMap((u, i) => {
+    if (!keysOf[i].some((k) => want.has(k))) return []
+    if (!(/^\s*(add|set) /.test(u.text) && u.menu)) return [u.text]
+    const line = `${u.menu} ${u.text.trim()}`
+    // In a chain the order decides what matches: put it before the next line of this part that the router has.
+    if (!ORDERED.has(u.menu) || !/^\s*add /.test(u.text) || /place-before=/.test(u.text)) return [line]
+    const next = units.findIndex((v, j) => j > i && v.menu === u.menu && keysOf[j].some((k) => k.startsWith("c:") && !want.has(k)))
+    if (next < 0) return [line]
+    const anchor = keysOf[next].find((k) => k.startsWith("c:") && !want.has(k))!.slice(2)
+    return [`${line} place-before=[:pick [${u.menu} find where comment=${rosString(anchor)}] 0]`]
+  })
 }
 
-/** Removes the router's lines that carry these comments, in the menus the export shows them in. */
+/** Menus whose lines run in order (a rule added at the end may never match). */
+const ORDERED = new Set(["/ip firewall filter", "/ip firewall nat", "/ip firewall mangle", "/ip firewall raw", "/ipv6 firewall filter", "/ipv6 firewall nat", "/ipv6 firewall mangle", "/ipv6 firewall raw"])
+
+/** Removes the router's lines that carry these comments, in the menus the export shows them in; says so when one can't go (a plan profile still in use). */
 export function removeLines(menus: Record<string, string>): string[] {
-  return Object.entries(menus).map(([comment, menu]) => `${menu} remove [find where comment=${rosString(comment)}]`)
+  return Object.entries(menus).map(([comment, menu]) => {
+    const c = rosString(comment)
+    return `:do {${menu} remove [find where comment=${c}]} on-error={:put ${rosString(`No se pudo quitar ${comment} (${menu}): revisalo a mano`)}}`
+  })
 }
 
 export function repairPlan(state: LabState, reports: PartReport[], opts: { removeOff: boolean }): RepairPlan {
@@ -97,8 +115,8 @@ export function repairPlan(state: LabState, reports: PartReport[], opts: { remov
   const targeted = (part: string, script: string, r: PartReport): RepairAction | null => {
     const add = r.missing.length ? linesWriting(script, prefixOf(part), r.missing) : []
     const del = removeLines(r.extraMenus)
-    if (!add.length && !del.length) return null
-    return { part, kind: "lines", script: [...del, ...add].join("\n"), added: add.length, removed: del.length }
+    if (!add.length && !del.length && !r.short.length) return null
+    return { part, kind: "lines", script: [...del, ...add].join("\n"), added: add.length, removed: del.length, ...(r.short.length ? { manual: r.short } : {}) }
   }
 
   const base = by.get("base")
