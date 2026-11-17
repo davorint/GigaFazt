@@ -16,9 +16,11 @@ export type DeploymentStore = {
   list: SavedDeployment[]
   /** The deployment open last time, opened again on the next visit. */
   lastOpen: string | null
+  /** Goes up each time another tab changes the list (that tab's edits to the open deployment are taken here). */
+  external: number
 }
 
-const SERVER: DeploymentStore = { loaded: false, persisted: true, list: [], lastOpen: null }
+const SERVER: DeploymentStore = { loaded: false, persisted: true, list: [], lastOpen: null, external: 0 }
 let current: DeploymentStore | null = null
 const listeners = new Set<() => void>()
 
@@ -27,20 +29,20 @@ function load(): DeploymentStore {
     const raw = window.localStorage.getItem(KEY)
     const v = raw ? (JSON.parse(raw) as { list?: unknown; lastOpen?: unknown }) : null
     const list = Array.isArray(v?.list) ? v.list.filter(isSaved).slice(0, MAX_SAVED) : []
-    return { loaded: true, persisted: true, list, lastOpen: typeof v?.lastOpen === "string" ? v.lastOpen : null }
+    return { loaded: true, persisted: true, list, lastOpen: typeof v?.lastOpen === "string" ? v.lastOpen : null, external: current?.external ?? 0 }
   } catch {
-    return { loaded: true, persisted: false, list: [], lastOpen: null }
+    return { loaded: true, persisted: false, list: [], lastOpen: null, external: current?.external ?? 0 }
   }
 }
 
-function write(next: Omit<DeploymentStore, "loaded" | "persisted">) {
+function write(next: Omit<DeploymentStore, "loaded" | "persisted" | "external">) {
   let persisted = true
   try {
     window.localStorage.setItem(KEY, JSON.stringify({ v: 1, list: next.list, lastOpen: next.lastOpen }))
   } catch {
     persisted = false
   }
-  current = { ...next, loaded: true, persisted }
+  current = { ...next, loaded: true, persisted, external: current?.external ?? 0 }
   listeners.forEach((l) => l())
 }
 
@@ -48,7 +50,8 @@ export function subscribeDeployments(cb: () => void) {
   listeners.add(cb)
   const onStorage = (e: StorageEvent) => {
     if (e.key !== KEY) return
-    current = load()
+    const external = (current?.external ?? 0) + 1
+    current = { ...load(), external }
     cb()
   }
   window.addEventListener("storage", onStorage)

@@ -166,6 +166,15 @@ export function BurstLab({ page }: { page: LabPage }) {
     () => encodeDeployment({ deployment: state.deployment, status: state.status, capacity: state.capacity, wans: state.wans, balance: state.balance, setup: state.setup, advanced: state.advanced }),
     [state.deployment, state.status, state.capacity, state.wans, state.balance, state.setup, state.advanced]
   )
+  // Another tab (the guide page and the scripts page open side by side) changed the open deployment: take its version,
+  // so this tab neither shows old values nor saves them over the newer ones.
+  const [seenExternal, setSeenExternal] = useState(saved.external)
+  if (saved.external !== seenExternal) {
+    setSeenExternal(saved.external)
+    const stored = boundId ? saved.list.find((d) => d.id === boundId)?.data : undefined
+    const fields = stored && stored !== deploymentData ? decodeDeployment(stored) : null
+    if (fields) setState((s) => ({ ...s, ...fields }))
+  }
   useEffect(() => {
     if (!boundId) return
     putDeployment(boundId, deploymentData)

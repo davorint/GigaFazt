@@ -93,7 +93,7 @@ function Area({ label, hint, value, set, rows = 4, placeholder }: { label: strin
       <label htmlFor={id} className="font-mono text-xs text-zinc-300">
         {label}
       </label>
-      <Textarea id={id} value={value} onChange={(e) => set(e.target.value)} rows={rows} spellCheck={false} autoComplete="off" placeholder={placeholder} aria-describedby={hint ? `${id}-hint` : undefined} className="font-mono text-xs" />
+      <Textarea id={id} value={value} onChange={(e) => set(e.target.value)} rows={rows} spellCheck={false} autoComplete="off" placeholder={placeholder} aria-describedby={hint ? `${id}-hint` : undefined} className="max-h-96 overflow-y-auto font-mono text-xs" />
       {hint && (
         <p id={`${id}-hint`} className="text-xs leading-snug text-zinc-400">
           {hint}

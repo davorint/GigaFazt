@@ -2,10 +2,12 @@
 
 import { useId, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
+import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { MODULES, moduleSteps, type Module } from "@/lib/mikrotik/bundle"
 import { advContext, guideScripts } from "@/lib/mikrotik/guide-scripts"
 import { inspectExport, type PartReport, type PartSpec } from "@/lib/mikrotik/inspect"
+import { prefixOf, repairPlan } from "@/lib/mikrotik/repair"
 import type { LabState } from "@/lib/mikrotik/state"
 import { CodeBlock } from "./CodeBlock"
 
@@ -32,6 +34,7 @@ const TONE: Record<PartReport["state"], string> = {
   incomplete: "text-amber-200",
   duplicated: "text-red-300",
   outdated: "text-amber-200",
+  untracked: "text-zinc-300",
 }
 
 /**
@@ -52,13 +55,15 @@ export function InstalledPanel({ state }: { state: LabState }) {
       { id: "balance", prefix: "LB: ", script: join(["balance"]), needs: ["base"], loose: true },
       ...MODULES.map((mod): PartSpec => {
         const m = moduleSteps(mod, ctx, state.advanced)
-        return { id: mod, prefix: `DSX ${mod === "ippublica" ? "ip-publica" : mod}: `, script: m.ok ? m.steps.map((s) => s.script).join("\n") : "", needs: NEEDS[mod] }
+        return { id: mod, prefix: prefixOf(mod), script: m.ok ? m.steps.map((s) => s.script).join("\n") : "", needs: NEEDS[mod] }
       }),
     ]
   }, [state])
   const reports = useMemo(() => (text.trim() ? inspectExport(text, specs) : []), [text, specs])
+  const [removeOff, setRemoveOff] = useState(false)
+  const repair = useMemo(() => (reports.length ? repairPlan(state, reports, { removeOff }) : null), [state, reports, removeOff])
   const name = (part: string) => (part === "base" || part === "balance" ? t(`parts.${part}`) : ta(`modules.${part}.name`))
-  const shown = reports.filter((r) => r.state !== "absent" || r.id === "base" || r.id === "balance" || state.advanced.on.includes(r.id))
+  const shown = reports.filter((r) => (r.state !== "absent" && r.state !== "untracked") || r.id === "base" || r.id === "balance" || state.advanced.on.includes(r.id))
 
   return (
     <div className="surface grid min-w-0 gap-5 rounded-2xl p-5 sm:p-7">
@@ -77,7 +82,7 @@ export function InstalledPanel({ state }: { state: LabState }) {
         <label htmlFor={id} className="font-mono text-xs text-zinc-300">
           {t("paste")}
         </label>
-        <Textarea id={id} value={text} onChange={(e) => setText(e.target.value)} rows={8} spellCheck={false} autoComplete="off" aria-describedby={`${id}-hint`} className="font-mono text-xs" />
+        <Textarea id={id} value={text} onChange={(e) => setText(e.target.value)} rows={8} spellCheck={false} autoComplete="off" aria-describedby={`${id}-hint`} className="max-h-96 overflow-y-auto font-mono text-xs" />
         <p id={`${id}-hint`} className="text-xs leading-snug text-zinc-400">
           {t("pasteHint")}
         </p>
@@ -103,17 +108,56 @@ export function InstalledPanel({ state }: { state: LabState }) {
                   </th>
                   <td className={`px-3 py-2.5 whitespace-nowrap ${TONE[r.state]}`}>{t(`states.${r.state}`)}</td>
                   <td className="grid gap-1 px-3 py-2.5 text-xs leading-snug text-zinc-300">
-                    {r.state !== "absent" && <span>{t("count", { found: r.found, expected: r.expected })}</span>}
+                    {r.state !== "absent" && r.state !== "untracked" && <span>{t("count", { found: r.found, expected: r.expected })}</span>}
                     {r.missing.length > 0 && <span>{t("missing", { list: r.missing.slice(0, 4).join(" · "), more: Math.max(0, r.missing.length - 4) })}</span>}
                     {r.duplicated.length > 0 && <span>{t("duplicated", { list: r.duplicated.slice(0, 4).join(" · ") })}</span>}
                     {r.extra.length > 0 && <span>{t("extra", { list: r.extra.slice(0, 4).join(" · ") })}</span>}
                     {r.needs.length > 0 && <span className="text-red-300">{t("needs", { list: r.needs.map(name).join(", ") })}</span>}
                     {r.state === "absent" && <span>{t("absentHint")}</span>}
+                    {r.state === "untracked" && <span>{t("untrackedHint")}</span>}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {repair && (
+        <div className="grid min-w-0 gap-4 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
+          <h3 className="text-base font-medium text-foreground">{t("repair.title")}</h3>
+          <p className="max-w-3xl text-sm leading-relaxed text-zinc-300">{t("repair.lead")}</p>
+          <div className="grid gap-1">
+            <label className="flex w-fit cursor-pointer items-center gap-3 text-sm text-zinc-200">
+              <Switch checked={removeOff} onCheckedChange={setRemoveOff} />
+              {t("repair.removeOff")}
+            </label>
+            <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("repair.removeOffHint")}</p>
+          </div>
+          {repair.actions.length === 0 ? (
+            <p className="text-sm text-emerald-300">{t("repair.nothing")}</p>
+          ) : repair.actions[0].kind === "fresh" ? (
+            <p className="text-sm text-amber-200">
+              {t("repair.fresh")}{" "}
+              <a href="#guia" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+                {t("repair.freshLink")}
+              </a>
+            </p>
+          ) : (
+            <>
+              <ol className="grid gap-1.5 text-sm text-zinc-300">
+                {repair.actions.map((a, k) => (
+                  <li key={k} className="flex flex-wrap gap-x-2">
+                    <span className="font-mono text-xs text-zinc-400">{String(k + 1).padStart(2, "0")}</span>
+                    <span className="text-zinc-100">{name(a.part)}</span>
+                    <span>{t(`repair.kinds.${a.kind}`, { added: a.added ?? 0, removed: a.removed ?? 0 })}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="max-w-3xl text-xs leading-snug text-amber-200">{t("repair.warn")}</p>
+              <CodeBlock code={repair.script} label={t("repair.label")} />
+            </>
+          )}
+          {repair.skipped.filter((m) => m !== "guide").length > 0 && <p className="text-xs text-amber-200">{t("repair.skipped", { list: repair.skipped.map(name).join(", ") })}</p>}
         </div>
       )}
       <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("note")}</p>

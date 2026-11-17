@@ -774,7 +774,8 @@
           "Súbelo al router y corre /import file-name=<este-archivo> verbose=yes: se detiene en el primer error. O pégalo paso por paso, comprobando cada uno.",
           "Reemplaza los PEGA-AQUI-… antes de importarlo."
         ],
-        "undo": "deshacer todo (scripts de experto en orden inverso, luego balanceo y base)"
+        "undo": "deshacer todo (scripts de experto en orden inverso, luego balanceo y base)",
+        "syntax": "{n} comandos revisados contra la referencia de RouterOS {version} (menús, propiedades y comandos; los valores no)."
       },
       "noCollectorFixed": "Sin colector: con bloques de puertos fijos no hace falta el registro NAT, pero sí el de sesiones PPPoE (en disco en el router; agrega el colector para tener copia fuera).",
       "advice": {
@@ -857,7 +858,9 @@
         "none": "Solo la guía: no hay scripts de experto activados.",
         "link": "Activar scripts de experto",
         "skipped": "No entran porque sus valores tienen errores: {list}. Corrígelos en Scripts de experto.",
-        "howTo": "El deshacer va en orden inverso: primero los scripts de experto, luego el balanceo y al final la base."
+        "howTo": "El deshacer va en orden inverso: primero los scripts de experto, luego el balanceo y al final la base.",
+        "syntaxOk": "{n} comandos revisados contra la referencia de RouterOS {version}: menús, propiedades y comandos existen. Los valores (opciones, formatos) no se revisan.",
+        "syntaxBad": "Comandos que no aparecen en la referencia de RouterOS {version}: {list}. No lo pegues y avísame."
       }
     },
     "capacity": {
@@ -2260,7 +2263,8 @@
         "ok": "Completa",
         "incomplete": "Incompleta",
         "duplicated": "Repetida",
-        "outdated": "Con líneas viejas"
+        "outdated": "Con líneas viejas",
+        "untracked": "No se puede comprobar"
       },
       "count": "{found} líneas con su comentario; con la configuración actual serían {expected}.",
       "missing": "Faltan: {list}{more, plural, =0 {} other { y # más}}",
@@ -2268,7 +2272,28 @@
       "extra": "Líneas que la configuración actual ya no escribe: {list}. Vuelve a pegarla: ahora cada script quita sus líneas antes de escribirlas.",
       "needs": "Le falta lo que necesita: {list}.",
       "absentHint": "No se encontró ninguna línea suya.",
-      "note": "La base y el balanceo escriben ciclos con muchas líneas del mismo comentario, así que en ellos solo se revisa qué falta. Las contraseñas del export no salen de esta página."
+      "note": "La base y el balanceo escriben ciclos con muchas líneas del mismo comentario, así que en ellos solo se revisa qué falta. Las contraseñas del export no salen de esta página.",
+      "repair": {
+        "title": "Reparar",
+        "lead": "Los comandos que dejan el router como dice el despliegue abierto, sin reinstalar lo que ya funciona. En la base y el balanceo solo se pegan las líneas que faltan y se quitan las de configuraciones anteriores: reinstalarlos cortaría a los clientes y el acceso de gestión. Los scripts de experto se vuelven a pegar completos (cada uno quita sus propias líneas antes).",
+        "removeOff": "Quitar los scripts de experto que el router tiene y el despliegue no tiene activados",
+        "removeOffHint": "Apagado, se dejan como están. Encendido, se usa el deshacer de cada uno.",
+        "nothing": "No hay nada que reparar: el router tiene todo lo que dice el despliegue.",
+        "fresh": "El router no tiene la base del despliegue: no es una reparación. Usa el archivo del despliegue desde el paso 1.",
+        "freshLink": "Ir a la guía",
+        "kinds": {
+          "install": "no está: se instala completo",
+          "lines": "reparación puntual: {added} líneas que faltan, {removed} líneas viejas que se quitan",
+          "repaste": "se vuelve a pegar (quita sus líneas y las escribe de nuevo)",
+          "remove": "se quita con su deshacer",
+          "fresh": "falta la base",
+          "untracked": "no se puede comprobar en el export: se vuelve a pegar (es seguro)"
+        },
+        "warn": "Revísalo antes de pegarlo y hazlo en una ventana de mantenimiento si toca la base o el balanceo. Después vuelve a pegar el export aquí: debe decir Completa en todo.",
+        "label": "Comandos para reparar",
+        "skipped": "No se incluyen porque sus valores tienen errores: {list}. Corrígelos en Scripts de experto."
+      },
+      "untrackedHint": "Escribe ajustes y elementos sin comentario: el export no dice si está. Si está activado en el despliegue, la reparación lo vuelve a pegar (es seguro)."
     }
   }
 }

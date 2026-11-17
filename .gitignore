@@ -46,3 +46,6 @@ next-env.d.ts
 # MapLibre worker, copied from node_modules by scripts/copy-maplibre-worker.mjs
 /public/maplibre-gl-worker-*.mjs
 /public/capacity-worker.js
+
+# RouterOS reference pages (scripts/ros-reference.ts)
+/.ros-cache

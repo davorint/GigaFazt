@@ -24,6 +24,8 @@ import { clientsOf } from "@/lib/mikrotik/deployments"
 import { fmtNum } from "@/lib/mikrotik/format"
 import { stepBlock } from "@/lib/mikrotik/bundle"
 import { deploymentBundle, guideScripts, type GuideStepId } from "@/lib/mikrotik/guide-scripts"
+import { parseScript } from "@/lib/mikrotik/ros-parse"
+import { checkScript, ROS_VERSION } from "@/lib/mikrotik/ros-syntax"
 import { checkSetup, CONN_LIMIT, type SetupState } from "@/lib/mikrotik/setup"
 import { decodeDeployment, deploymentFields, MAX_NAME, MAX_WANS, nextMonitor, type BalanceState, type LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
@@ -128,6 +130,11 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
   const g = useMemo(() => guideScripts(state), [state])
   const { ctx, parts, balance, olt } = g
   const bundle = useMemo(() => deploymentBundle(state), [state])
+  // Every command of the file checked against the RouterOS reference (menus, properties, commands).
+  const syntax = useMemo(() => {
+    const text = bundle.steps.map((x) => x.script).join("\n")
+    return { commands: parseScript(text).length, issues: checkScript(text) }
+  }, [bundle])
   const { buckets, total } = pccBuckets(wans)
   const perIp = wans.length > 0 ? Math.ceil(clients / wans.length) : clients
   const issues = [
@@ -144,6 +151,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
     [
       `# GigaFazt · ${name} · ${new Date().toISOString().slice(0, 10)}`,
       ...(t.raw("file.header") as string[]).map((x) => `# ${x}`),
+      `# ${t("file.syntax", { n: syntax.commands, version: ROS_VERSION })}`,
       "",
       ...bundle.steps.map((x, k) => stepBlock(k + 1, stepTitle(x.group, x.id), x.script, stepBefore(x.group, x.id), x.verify)),
     ].join("\n")
@@ -490,6 +498,12 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
           </p>
           {bundle.skipped.length > 0 && <p className="text-xs text-amber-200">{t("bundle.skipped", { list: bundle.skipped.map((m) => ta(`modules.${m}.name`)).join(", ") })}</p>}
           <p className="max-w-3xl text-xs leading-snug text-zinc-400">{t("bundle.howTo")}</p>
+          {bundle.steps.length > 0 &&
+            (syntax.issues.length === 0 ? (
+              <p className="text-xs text-emerald-300">{t("bundle.syntaxOk", { n: syntax.commands, version: ROS_VERSION })}</p>
+            ) : (
+              <p className="text-xs text-red-300">{t("bundle.syntaxBad", { version: ROS_VERSION, list: syntax.issues.slice(0, 5).map((i) => `${i.menu} ${i.verb} ${i.item}`.trim()).join(" · ") })}</p>
+            ))}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Button type="button" variant="outline" disabled={!ready} onClick={() => download(`${slug(state.deployment)}-mikrotik.rsc`, routerFile())}>

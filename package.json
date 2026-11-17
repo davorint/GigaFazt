@@ -12,7 +12,8 @@
     "test": "vitest run",
     "prebuild": "node scripts/copy-maplibre-worker.mjs && node scripts/build-capacity-worker.mjs",
     "predev": "node scripts/copy-maplibre-worker.mjs && node scripts/build-capacity-worker.mjs",
-    "calibrate:walls": "vite-node scripts/calibrate-walls.ts"
+    "calibrate:walls": "vite-node scripts/calibrate-walls.ts",
+    "ros:reference": "vite-node scripts/ros-reference.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
