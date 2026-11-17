@@ -53,7 +53,8 @@
       "areas": "Áreas comunes",
       "carriers": "Carriers",
       "pending": "Pendientes",
-      "design": "Diseño de fibra"
+      "design": "Diseño de fibra",
+      "materials": "Materiales"
     },
     "ident": {
       "name": "Nombre del inmueble",
@@ -372,6 +373,38 @@
         "ground": "PB",
         "basement": "S{n}"
       }
+    },
+    "nav": {
+      "label": "Secciones del levantamiento",
+      "list": "Todos"
+    },
+    "materials": {
+      "intro": "Lo que lleva este proyecto, con los precios de la lista maestra (con IVA incluido). Las cantidades salen del diseño de fibra; puedes cambiarlas.",
+      "catalogLink": "Abrir la lista maestra de materiales",
+      "noDesign": "Sin diseño de fibra todavía: las cantidades del diseño aparecen cuando una torre tiene uno.",
+      "buildTitle": "Del diseño",
+      "extrasTitle": "Otros materiales",
+      "extrasHint": "Equipo, mano de obra, Wi-Fi o cualquier cosa de la lista maestra.",
+      "clientTitle": "Por cada cliente nuevo",
+      "clientHint": "Se instala cuando el departamento contrata: acometida promedio de la torre, ONT, conectores e instalación.",
+      "item": "Material",
+      "noItem": "Elige un material",
+      "missingItem": "No hay material para esto en la lista maestra: agrégalo en Materiales.",
+      "qty": "Cantidad",
+      "computed": "calculado: {n}",
+      "each": "{price} c/u",
+      "noPrice": "sin precio",
+      "lineTotal": "{total}",
+      "addExtra": "Agregar material",
+      "remove": "Quitar",
+      "totalsTitle": "Totales (IVA incluido)",
+      "buildTotal": "Despliegue",
+      "perClient": "Por cliente nuevo",
+      "clients": "{n, plural, one {# cliente esperado} other {# clientes esperados}}",
+      "clientsTotal": "Clientes esperados",
+      "total": "Total del proyecto",
+      "missing": "{n, plural, one {# línea sin material o sin precio cuenta} other {# líneas sin material o sin precio cuentan}} como $0.",
+      "noClients": "Escribe los clientes esperados en Comercial para sumar lo de los clientes."
     }
   }
 }

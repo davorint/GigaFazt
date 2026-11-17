@@ -17,6 +17,7 @@
 
 import { DEFAULT_OPTICS, decodeDesign, decodeOptics, type Design, type Optics } from "./design"
 import { newId } from "./id"
+import { EMPTY_MATERIALS, decodeMaterials, type SurveyMaterials } from "./materials"
 
 export const SURVEY_VERSION = 1
 
@@ -107,9 +108,11 @@ export type Survey = {
   pending: Pending[]
   /** Optical values for the design: module class, power, losses (shared by every tower). */
   optics: Optics
+  /** Materials picked from the master list for this project (phase 3). */
+  materials: SurveyMaterials
 }
 
-export const SECTIONS = ["ident", "contacts", "commercial", "room", "towers", "design", "routes", "areas", "carriers", "pending"] as const
+export const SECTIONS = ["ident", "contacts", "commercial", "room", "towers", "design", "routes", "areas", "carriers", "pending", "materials"] as const
 export type Section = (typeof SECTIONS)[number]
 
 /** Most floors a tower can have above or below ground in the form. */
@@ -143,6 +146,7 @@ export function newSurvey(firstTower = "Torre A", now = new Date().toISOString()
     carriers: [],
     pending: [],
     optics: DEFAULT_OPTICS,
+    materials: EMPTY_MATERIALS,
   }
 }
 
@@ -220,6 +224,9 @@ export function completeness(s: Survey, section: Section): { done: number; total
       return { done: s.carriers.filter((c) => c.available !== "" && c.mbps !== null && c.leadDays !== null).length, total: Math.max(1, s.carriers.length) }
     case "pending":
       return { done: s.pending.filter((p) => p.done).length, total: s.pending.length }
+    case "materials":
+      // Filled in the materials page against the master list (needs prices); here: whether the design exists to price.
+      return { done: s.towers.some((t) => t.design) ? 1 : 0, total: 1 }
   }
 }
 
@@ -365,6 +372,7 @@ export function decodeSurvey(v: unknown): Survey | null {
       notes: str(x.notes, 1000),
     })),
     optics: decodeOptics(v.optics),
+    materials: decodeMaterials(v.materials),
     pending: list(v.pending, (x) => ({ id: id(x.id), text: str(x.text, 500), who: one(x.who, ["edificio", "nosotros"] as const, "edificio"), done: bool(x.done) })),
   }
 }
@@ -373,8 +381,18 @@ export function decodeSurvey(v: unknown): Survey | null {
 
 export const SURVEY_FILE = "gigafazt-levantamientos"
 
-export function surveyFile(surveys: Survey[]): string {
-  return JSON.stringify({ type: SURVEY_FILE, v: SURVEY_VERSION, exportedAt: new Date().toISOString(), surveys }, null, 2)
+export function surveyFile(surveys: Survey[], items: unknown[] = []): string {
+  return JSON.stringify({ type: SURVEY_FILE, v: SURVEY_VERSION, exportedAt: new Date().toISOString(), surveys, items }, null, 2)
+}
+
+/** The master-list items a survey file carries (raw; the materials store decodes them). */
+export function surveyFileItems(text: string): unknown[] {
+  try {
+    const v = JSON.parse(text) as unknown
+    return isObj(v) && v.type === SURVEY_FILE && Array.isArray(v.items) ? v.items : []
+  } catch {
+    return []
+  }
 }
 
 /** The surveys in an exported file; null when the text isn't one of our files. */

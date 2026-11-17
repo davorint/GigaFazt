@@ -12,6 +12,10 @@
         "name": "Levantamientos",
         "desc": "Todo lo del edificio antes de un despliegue: contactos y permisos, lo comercial, cuarto de telecom, torres por piso, rutas, Wi-Fi de áreas comunes y carriers."
       },
+      "materiales": {
+        "name": "Materiales",
+        "desc": "La lista maestra de materiales con precios (IVA incluido). De aquí se escoge lo que lleva cada proyecto."
+      },
       "mikrotik-optimo": {
         "name": "Guía óptima MikroTik",
         "desc": "La guía paso a paso de cada despliegue, el archivo listo para pegar en el router y la revisión de lo que ya tiene instalado."

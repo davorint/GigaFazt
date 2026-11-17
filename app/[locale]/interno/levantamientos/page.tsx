@@ -4,6 +4,7 @@ import { setRequestLocale } from "next-intl/server"
 import { notFound } from "next/navigation"
 import { SurveysApp } from "@/components/surveys/SurveysApp"
 import copy from "@/messages/internal/levantamientos.es.json"
+import materiales from "@/messages/internal/materiales.es.json"
 import mikrotik from "@/messages/internal/mikrotik.es.json"
 
 /**
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
 }
 
 /** The number field shared with the MikroTik tools reads its "invalid" message from there. */
-const messages = { ...copy, mikrotik: { params: { invalid: mikrotik.mikrotik.params.invalid } } }
+const messages = { ...copy, ...materiales, mikrotik: { params: { invalid: mikrotik.mikrotik.params.invalid } } }
 
 export default async function LevantamientosPage({ params }: PageProps<"/[locale]/interno/levantamientos">) {
   const { locale } = await params
@@ -40,6 +41,11 @@ export default async function LevantamientosPage({ params }: PageProps<"/[locale
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (proxy.ts checks the session and rewrites it) */}
           <a href="/interno" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
             {t.back}
+          </a>
+          {" · "}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (proxy.ts checks the session and rewrites it) */}
+          <a href="/interno/materiales" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+            {materiales.materiales.title}
           </a>
         </p>
       </section>

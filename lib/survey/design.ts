@@ -209,7 +209,7 @@ const fiberDb = (m: number, o: Optics) => (m / 1000) * o.fiberDbKm
 const jointDb = (o: Optics) => 2 * (o.joint === "splice" ? o.spliceDb : o.connectorDb)
 
 /** Meters along the duct from the base to a floor (with the riser slack). */
-function riserM(t: Tower, d: Design, level: number, o: Optics) {
+export function riserM(t: Tower, d: Design, level: number, o: Optics) {
   return Math.abs(level - d.baseLevel) * (t.floorHeightM ?? o.floorHeightM) * (1 + o.slackPct / 100)
 }
 /** Meters of the longest drop from a floor box serving `serves` floors from `level`. */
