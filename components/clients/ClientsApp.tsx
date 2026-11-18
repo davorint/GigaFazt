@@ -26,6 +26,9 @@ import {
   type Contact,
   type Service,
 } from "@/lib/clients/model"
+import { useDropUntouched } from "@/components/interno/useDropUntouched"
+import { useOpenParam } from "@/components/interno/useOpenParam"
+import { markFresh } from "@/lib/fresh"
 import { clientsServerSnapshot, clientsSnapshot, deleteClient, saveClient, subscribeClients } from "@/lib/clients/store"
 import { siteLabel, towerLabel } from "@/lib/sites/model"
 import { sitesServerSnapshot, sitesSnapshot, subscribeSites } from "@/lib/sites/store"
@@ -61,12 +64,15 @@ function download(name: string, text: string, type: string) {
   URL.revokeObjectURL(url)
 }
 
+const clientList = () => clientsSnapshot().list
+
 /** Clients, website requests and the import, as three tabs of /interno/admin/clientes. */
 export function ClientsApp() {
   const t = useTranslations("clientes")
   const [tab, setTab] = useState<Tab>("clients")
-  // /interno/admin/clientes?c=<id> opens that client (links from Despliegues).
-  const [openId, setOpenId] = useState<string | null>(() => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("c")))
+  // The open client is in the URL (?c=<id>, also the links from Despliegues), so the back button closes it.
+  const [openId, setOpenId] = useOpenParam("c")
+  useDropUntouched(openId, clientList, deleteClient)
   const show = (id: string) => {
     setTab("clients")
     setOpenId(id)
@@ -124,6 +130,7 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
     const at = sites.find((x) => x.id === site)
     const c = newClient({ kind: kind || "residencial", building: building || (at ? siteLabel(at) : ""), siteId: at?.id ?? "" })
     saveClient(c)
+    markFresh(c)
     setOpenId(c.id)
     setQ("")
     setStatus("")

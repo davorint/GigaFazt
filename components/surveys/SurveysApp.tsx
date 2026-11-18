@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from "react"
 import { useTranslations } from "next-intl"
 import { SECTIONS, completeness, newSurvey, readSurveyFile, surveyFile, surveyFileItems, type Section, type Survey } from "@/lib/survey/model"
+import { useDropUntouched } from "@/components/interno/useDropUntouched"
+import { markFresh } from "@/lib/fresh"
+import { readState } from "@/lib/sync/state"
 import { deleteSurvey, importSurveys, saveSurvey, subscribeSurveys, surveysServerSnapshot, surveysSnapshot } from "@/lib/survey/store"
 import { decodeItem, type Item } from "@/lib/materials/catalog"
 import { catalogServerSnapshot, catalogSnapshot, importItems, subscribeCatalog } from "@/lib/materials/store"
@@ -88,11 +91,14 @@ function progress(s: Survey) {
   }, { done: 0, total: 0 })
 }
 
+const surveyList = () => surveysSnapshot().list
+
 export function SurveysApp() {
   const t = useTranslations("levantamientos")
   const store = useSyncExternalStore(subscribeSurveys, surveysSnapshot, surveysServerSnapshot)
   const catalog = useSyncExternalStore(subscribeCatalog, catalogSnapshot, catalogServerSnapshot)
   const search = useSyncExternalStore(subscribeUrl, readSearch, () => "")
+  useDropUntouched(new URLSearchParams(search).get("l"), surveyList, deleteSurvey)
   if (!store.loaded) return null
   const q = new URLSearchParams(search)
   const open = q.get("l")
@@ -127,8 +133,11 @@ function List({ list, catalog }: { list: Survey[]; catalog: Item[] }) {
   const file = useRef<HTMLInputElement>(null)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const create = () => {
-    const s = newSurvey(t("towers.defaultName", { l: "A" }))
+    const base = newSurvey(t("towers.defaultName", { l: "A" }))
+    // Starts with the phone's name from the sync bar as who did it (editable).
+    const s = { ...base, ident: { ...base.ident, surveyors: readState().name } }
     saveSurvey(s)
+    markFresh(s)
     go(hrefOf(s.id))
   }
   const onFile = async (f: File | undefined) => {

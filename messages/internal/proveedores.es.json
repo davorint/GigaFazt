@@ -6,7 +6,7 @@
     "kicker": "Administración",
     "title": "Proveedores",
     "lead": "Todos con los que trabajamos: materiales y equipo, carriers, servicios y contratistas. Los usan la lista de materiales, los levantamientos y los despliegues MikroTik.",
-    "storage": "Se guarda solo en este navegador hasta conectar la base de datos. Para pasarlo a otro teléfono usa «Exportar» y luego «Importar» allá.",
+    "storage": "Se comparte con los demás teléfonos por la base de datos. «Exportar» sirve como respaldo en archivo.",
     "noStorage": "Este navegador no deja guardar: lo que cambies se pierde al cerrar la página. Exporta antes de salir.",
     "add": "Agregar proveedor",
     "export": "Exportar",

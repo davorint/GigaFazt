@@ -37,6 +37,8 @@ import {
   type Tower,
 } from "@/lib/sites/model"
 import { portClients, siteStats, type SiteStats } from "@/lib/sites/stats"
+import { useDropUntouched } from "@/components/interno/useDropUntouched"
+import { markFresh } from "@/lib/fresh"
 import { deleteSite, saveSite, sitesServerSnapshot, sitesSnapshot, subscribeSites } from "@/lib/sites/store"
 
 type T = ReturnType<typeof useTranslations>
@@ -76,12 +78,15 @@ function NavLink({ href, className, current, children }: { href: string; classNa
   )
 }
 
+const siteList = () => sitesSnapshot().list
+
 /** The deployment locations: list, and each location's sections as pages. */
 export function SitesApp() {
   const t = useTranslations("despliegues")
   const store = useSyncExternalStore(subscribeSites, sitesSnapshot, sitesServerSnapshot)
   const clients = useSyncExternalStore(subscribeClients, clientsSnapshot, clientsServerSnapshot).list
   const search = useSyncExternalStore(subscribeUrl, readSearch, () => "")
+  useDropUntouched(new URLSearchParams(search).get("d"), siteList, deleteSite)
   if (!store.loaded) return null
   const params = new URLSearchParams(search)
   const open = store.list.find((s) => s.id === params.get("d"))
@@ -108,6 +113,7 @@ function SiteList({ t, list, clients }: { t: T; list: Site[]; clients: Client[] 
   const add = () => {
     const s = newSite()
     saveSite(s)
+    markFresh(s)
     go(`?d=${s.id}`)
   }
   return (

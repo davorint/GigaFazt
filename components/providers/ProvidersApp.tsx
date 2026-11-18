@@ -8,6 +8,9 @@ import { AddButton, AreaField, GRID, ItemCard, PickField } from "@/components/su
 import { mxn } from "@/lib/materials/catalog"
 import { catalogServerSnapshot, catalogSnapshot, subscribeCatalog } from "@/lib/materials/store"
 import { PROVIDER_KINDS, RFC, isKind, newProvider, providerName, providersFile, readProvidersFile, type Provider, type ProviderKind, type Score } from "@/lib/providers/model"
+import { useDropUntouched } from "@/components/interno/useDropUntouched"
+import { useOpenParam } from "@/components/interno/useOpenParam"
+import { markFresh } from "@/lib/fresh"
 import { deleteProvider, importProviders, providersServerSnapshot, providersSnapshot, saveProvider, subscribeProviders } from "@/lib/providers/store"
 import { newId } from "@/lib/survey/id"
 
@@ -30,12 +33,16 @@ function download(name: string, text: string) {
 }
 
 /** Every provider: search, filter by kind, edit each one in place, export and import. */
+const providerList = () => providersSnapshot().list
+
 export function ProvidersApp() {
   const t = useTranslations("proveedores")
   const store = useSyncExternalStore(subscribeProviders, providersSnapshot, providersServerSnapshot)
   const [q, setQ] = useState("")
   const [kind, setKind] = useState<ProviderKind | "">("")
-  const [openId, setOpenId] = useState<string | null>(null)
+  // The open provider is in the URL (?p=<id>), so the back button closes it.
+  const [openId, setOpenId] = useOpenParam("p")
+  useDropUntouched(openId, providerList, deleteProvider)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const file = useRef<HTMLInputElement>(null)
   if (!store.loaded) return null
@@ -44,6 +51,7 @@ export function ProvidersApp() {
   const add = () => {
     const p = newProvider(kind || "material")
     saveProvider(p)
+    markFresh(p)
     setOpenId(p.id)
     setQ("")
   }

@@ -228,7 +228,7 @@ export function decodeSite(v: unknown): Site | null {
   }
 }
 
-export const siteLabel = (s: Site) => s.name.trim() || s.address.trim() || "—"
+export const siteLabel = (s: Site) => s.name.trim() || s.address.trim() || "Sin nombre"
 export const towerLabel = (t: Tower, i: number) => t.name.trim() || `Torre ${i + 1}`
 export const roomLabel = (r: Room, i: number) => r.name.trim() || `Cuarto ${i + 1}`
 

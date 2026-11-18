@@ -31,6 +31,8 @@ import {
   type Tool,
   type ToolCategory,
 } from "@/lib/tools/model"
+import { useDropUntouched } from "@/components/interno/useDropUntouched"
+import { markFresh } from "@/lib/fresh"
 import { deleteTool, saveTool, subscribeTools, toolsServerSnapshot, toolsSnapshot } from "@/lib/tools/store"
 
 type T = ReturnType<typeof useTranslations>
@@ -82,12 +84,15 @@ function NavLink({ href, className, children }: { href: string; className: strin
 const holderKey = (x: Tool) => (x.holderKind === "despliegue" ? `s:${x.siteId}` : x.holderKind === "bodega" ? "k:bodega" : x.holder.trim() ? `p:${fold(x.holder.trim())}` : `k:${x.holderKind}`)
 const matchesHolder = (x: Tool, who: string) => !who || holderKey(x) === who || (who.startsWith("k:") && x.holderKind === who.slice(2))
 
+const toolList = () => toolsSnapshot().list
+
 /** The tools: list with filters, and one page per tool. */
 export function ToolsApp() {
   const t = useTranslations("herramientas")
   const store = useSyncExternalStore(subscribeTools, toolsSnapshot, toolsServerSnapshot)
   const sites = useSyncExternalStore(subscribeSites, sitesSnapshot, sitesServerSnapshot).list
   const search = useSyncExternalStore(subscribeUrl, readSearch, () => "")
+  useDropUntouched(new URLSearchParams(search).get("h"), toolList, deleteTool)
   if (!store.loaded) return null
   const params = new URLSearchParams(search)
   const open = store.list.find((x) => x.id === params.get("h"))
@@ -191,6 +196,7 @@ function ToolList({ t, list, sites, params, today, persisted }: { t: T; list: To
     const holder = who.startsWith("p:") ? (list.find((x) => holderKey(x) === who)?.holder ?? "") : ""
     const x = newTool({ category: cat || "otros", holderKind, holder, siteId: at?.id ?? "" })
     saveTool(x)
+    markFresh(x)
     go(withTool(x.id))
   }
   return (
