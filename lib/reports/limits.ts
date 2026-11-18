@@ -36,9 +36,22 @@ export async function withinLimits(pool: Pool, hash: string): Promise<boolean> {
   await pool.query(`delete from report_hits where at < now() - interval '1 day'`)
   const r = (
     await pool.query(
-      `select count(*) filter (where ip_hash = $1)::int as mine, count(*)::int as everyone from report_hits where at > now() - interval '1 hour'`,
+      `select count(*) filter (where ip_hash = $1)::int as mine, count(*) filter (where ip_hash !~ ':')::int as everyone from report_hits where at > now() - interval '1 hour'`,
       [hash]
     )
   ).rows[0] as { mine: number; everyone: number }
   return r.mine < PER_IP && r.everyone < GLOBAL
+}
+
+/**
+ * Other public lookups on /clientes (report status, balance) share the table with a prefix ("q:", "b:", "bp:"), so
+ * they never count against the report limits above. True when fewer than `max` hits of `key` in the last hour.
+ */
+export async function underLimit(pool: Pool, key: string, max: number): Promise<boolean> {
+  const n = ((await pool.query(`select count(*)::int as n from report_hits where ip_hash = $1 and at > now() - interval '1 hour'`, [key])).rows[0] as { n: number }).n
+  return n < max
+}
+
+export async function hit(pool: Pool, key: string) {
+  await pool.query(`insert into report_hits (ip_hash) values ($1)`, [key])
 }

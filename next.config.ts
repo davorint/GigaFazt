@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  // The report form moved into the client area (owner, 2026-11-18).
+  async redirects() {
+    return [{ source: "/:locale(es|en)/reportar", destination: "/:locale/clientes#reportar", permanent: true }]
+  },
   partialPrefetching: true,
   turbopack: {
     rules: {

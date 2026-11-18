@@ -11,17 +11,20 @@ export function Section({
   className,
   children,
   "aria-label": ariaLabel,
+  "aria-labelledby": labelledBy,
 }: {
   id: string
   className?: string
   children: React.ReactNode
   "aria-label"?: string
+  "aria-labelledby"?: string
 }) {
   return (
     <section
       id={id}
       data-section={id}
       aria-label={ariaLabel}
+      aria-labelledby={labelledBy}
       className={cn(
         "relative isolate scroll-mt-20 border-b border-border",
         className

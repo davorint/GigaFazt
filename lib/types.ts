@@ -129,4 +129,14 @@ export interface Company {
     /** Office hours, Monday to Friday (24 h clock). */
     officeHours: Maybe<OfficeHours>
   }
+  /** How clients pay their monthly service (shown on /clientes). */
+  payment: {
+    bank: Maybe<string>
+    /** 18-digit CLABE for SPEI transfers. */
+    clabe: Maybe<string>
+    account: Maybe<string>
+    holder: Maybe<string>
+    /** What to write as the transfer's reference/concept. */
+    reference: Maybe<string>
+  }
 }

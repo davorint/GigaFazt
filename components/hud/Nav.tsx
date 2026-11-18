@@ -34,7 +34,10 @@ const LINKS = [
 ] as const
 
 /** Separate pages (not home sections), so the home page stays light. */
-const PAGES = [{ key: "empresas", path: "/empresas" }] as const
+const PAGES = [
+  { key: "empresas", path: "/empresas" },
+  { key: "clientes", path: "/clientes" },
+] as const
 
 const SECTION_IDS = ["hero", "plans", "fiber", "wifi", "map", "faq"]
 

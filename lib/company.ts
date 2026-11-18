@@ -68,4 +68,12 @@ export const company: Company = {
     moving: placeholder("MOVING_POLICY"),
     officeHours: { open: 8, close: 18 }, // owner, 2026-11-07: Monday to Friday, 8:00 to 18:00
   },
+  // Payment details on /clientes (owner, 2026-11-18: "leave it with XXXXXX for now until i provide one").
+  payment: {
+    bank: placeholder("PAY_BANK"),
+    clabe: placeholder("PAY_CLABE"),
+    account: placeholder("PAY_ACCOUNT"),
+    holder: placeholder("PAY_HOLDER"),
+    reference: placeholder("PAY_REFERENCE"),
+  },
 }

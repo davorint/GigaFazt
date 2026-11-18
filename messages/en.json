@@ -24,7 +24,8 @@
     "empresas": "Businesses",
     "quote": "Get a quote",
     "bizInternet": "Internet",
-    "bizNetworks": "Networks"
+    "bizNetworks": "Networks",
+    "clientes": "Customers"
   },
   "status": {
     "operational": "Operational",
@@ -248,7 +249,7 @@
     "phone": "Phone",
     "email": "Email",
     "legal": "Legal",
-    "report": "Report a problem"
+    "report": "Customers: support and payments"
   },
   "fiber": {
     "lead": "Download and upload at the same speed, over the same strand of glass. See it in action.",
@@ -1233,6 +1234,130 @@
       "category": "Choose what's happening.",
       "description": "The description is too long.",
       "consent": "We need your permission to handle the report."
+    }
+  },
+  "customer": {
+    "metaTitle": "Customers: report a problem, check your report and your balance",
+    "metaDescription": "Are you a {name} customer? Report a problem, check how your report is going, see your balance and how to pay, or message us.",
+    "eyebrow": "Customers",
+    "title": "Your service, here",
+    "lead": "Report a problem, check how your report is going, see your balance and how to pay, or message us. No accounts or passwords: just your phone.",
+    "jump": "Sections on this page",
+    "sections": {
+      "ayuda": "Before reporting",
+      "reportar": "Report a problem",
+      "mis-reportes": "My reports",
+      "saldo": "My balance and how to pay",
+      "contacto": "Contact"
+    },
+    "help": {
+      "title": "Before reporting, try this",
+      "lead": "Most problems are fixed in a couple of minutes.",
+      "items": [
+        {
+          "title": "I have no internet",
+          "steps": [
+            "Unplug the modem from power, wait 10 seconds and plug it back in. Give it 3 minutes to start.",
+            "Check that the thin fiber cable reaching the modem is plugged in and not bent, crushed or broken.",
+            "Look at the modem lights: if LOS is red or blinking, no light is arriving through the fiber: report it and tell us what you see.",
+            "If PON keeps blinking for a long time, the modem can't finish connecting: report it."
+          ]
+        },
+        {
+          "title": "The internet is slow",
+          "steps": [
+            "Run a speed test on a computer connected to the modem by cable: Wi-Fi always gives less.",
+            "Check for downloads, cloud backups or videos on other devices at home.",
+            "Restart the modem and the device you are testing with.",
+            "If it is still slow, report it with the test result and the time."
+          ]
+        },
+        {
+          "title": "Wi-Fi doesn't reach or won't connect",
+          "steps": [
+            "Place the modem high and in the open, away from thick walls, mirrors and microwaves.",
+            "Use the 5 GHz network near the modem (faster) and 2.4 GHz far from it (reaches further).",
+            "Forget the network on your device and connect again with the password.",
+            "If the password doesn't work or you want to change it, message us."
+          ]
+        },
+        {
+          "title": "It drops or comes and goes",
+          "steps": [
+            "Write down when it drops and for how long.",
+            "Check that the modem's power and fiber cables don't move and aren't loose.",
+            "If the modem restarts by itself, try another power outlet.",
+            "Report it with those times: they help us find the cause."
+          ]
+        }
+      ]
+    },
+    "report": {
+      "title": "Report a problem",
+      "lead": "If the above didn't fix it, tell us what's happening. We'll give you a code to follow your report and contact you by WhatsApp or phone."
+    },
+    "status": {
+      "title": "My reports",
+      "lead": "Type your phone or your report code (R-XXXXXX) to see how it's going. We only show the code, the problem, the dates and its stage.",
+      "label": "Phone or report code",
+      "hint": "For example: 55 1234 5678 or R-1A2B3C.",
+      "submit": "See my reports",
+      "invalid": "Type a 10-digit phone or a code like R-1A2B3C.",
+      "busy": "Too many lookups in a row. Try again later or message us on WhatsApp.",
+      "error": "We couldn't look it up right now. Try again in a moment.",
+      "none": "No reports from the last 90 days with that.",
+      "opened": "reported on {date}",
+      "visit": "Visit scheduled: {date}",
+      "solved": "Solved on {date}",
+      "statuses": {
+        "nuevo": "Received",
+        "en-proceso": "In progress",
+        "visita": "Visit scheduled",
+        "resuelto": "Solved",
+        "descartado": "Closed"
+      }
+    },
+    "balance": {
+      "title": "My balance and how to pay",
+      "lead": "To see your balance type your phone and your internet user (PPPoE), so nobody else can see it.",
+      "phone": "Registered phone",
+      "pppoe": "Internet user (PPPoE)",
+      "pppoeHint": "It's on your installation sheet. If you don't have it, ask us on WhatsApp.",
+      "submit": "See my balance",
+      "invalid": "Type your 10-digit phone and your internet user.",
+      "nomatch": "Those details don't match any customer. Check the user or message us on WhatsApp.",
+      "busy": "Too many attempts in a row. Try again in an hour or message us on WhatsApp.",
+      "error": "We couldn't look it up right now. Try again in a moment.",
+      "result": {
+        "atrasado": "Hi {name}, you have an overdue balance.",
+        "por-vencer": "Hi {name}, your next payment is coming due.",
+        "al-corriente": "Hi {name}, you're up to date. Thank you!",
+        "sin-cobro": "Hi {name}, you have no services with a monthly charge."
+      },
+      "monthly": "Monthly: {amount}",
+      "owed": "Amount due today: {amount}",
+      "lateMonths": "Overdue months: {months}",
+      "covered": "Paid until: {month}",
+      "nextDue": "Next payment date: {date}"
+    },
+    "pay": {
+      "title": "How to pay",
+      "bank": "Bank",
+      "clabe": "CLABE",
+      "account": "Account number",
+      "holder": "Account holder",
+      "reference": "Payment reference",
+      "receipt": "After paying, send us your receipt on WhatsApp so we can record it.",
+      "sendReceipt": "Send my receipt on WhatsApp",
+      "waText": "Hi, here is the payment receipt for my internet service."
+    },
+    "contact": {
+      "title": "Contact",
+      "phone": "Phone",
+      "email": "Email",
+      "hours": "Office hours",
+      "waText": "Hi, I'm a GigaFazt customer and I need help.",
+      "monitoring": "Our team watches the network 24 hours a day; we answer during office hours."
     }
   }
 }

@@ -24,7 +24,8 @@
     "empresas": "Empresas",
     "quote": "Cotizar",
     "bizInternet": "Internet",
-    "bizNetworks": "Redes"
+    "bizNetworks": "Redes",
+    "clientes": "Clientes"
   },
   "status": {
     "operational": "Operativo",
@@ -248,7 +249,7 @@
     "phone": "Teléfono",
     "email": "Correo",
     "legal": "Legal",
-    "report": "Reportar una falla"
+    "report": "Clientes: fallas y pagos"
   },
   "fiber": {
     "lead": "Bajada y subida a la misma velocidad, por el mismo hilo de vidrio. Míralo en acción.",
@@ -1233,6 +1234,130 @@
       "category": "Elige qué pasa.",
       "description": "La descripción es muy larga.",
       "consent": "Necesitamos tu autorización para atender el reporte."
+    }
+  },
+  "customer": {
+    "metaTitle": "Clientes: reporta una falla, revisa tu reporte y tu saldo",
+    "metaDescription": "¿Eres cliente de {name}? Reporta una falla, revisa cómo va tu reporte, consulta tu saldo y cómo pagar, o escríbenos.",
+    "eyebrow": "Clientes",
+    "title": "Tu servicio, aquí",
+    "lead": "Reporta una falla, revisa cómo va tu reporte, consulta tu saldo y cómo pagar, o escríbenos. Sin cuentas ni contraseñas: solo tu teléfono.",
+    "jump": "Secciones de esta página",
+    "sections": {
+      "ayuda": "Antes de reportar",
+      "reportar": "Reportar una falla",
+      "mis-reportes": "Mis reportes",
+      "saldo": "Mi saldo y cómo pagar",
+      "contacto": "Contacto"
+    },
+    "help": {
+      "title": "Antes de reportar, prueba esto",
+      "lead": "La mayoría de las fallas se arreglan en un par de minutos.",
+      "items": [
+        {
+          "title": "No tengo internet",
+          "steps": [
+            "Desconecta el módem de la corriente, espera 10 segundos y vuelve a conectarlo. Dale 3 minutos para que encienda.",
+            "Revisa que el cable delgado de fibra que llega al módem esté bien conectado y que no esté doblado, aplastado ni roto.",
+            "Mira los focos del módem: si el foco LOS está en rojo o parpadeando, no está llegando la luz por la fibra: repórtalo y dinos qué ves.",
+            "Si el foco PON parpadea mucho tiempo, el módem no termina de conectarse: repórtalo."
+          ]
+        },
+        {
+          "title": "El internet está lento",
+          "steps": [
+            "Haz una prueba de velocidad con una computadora conectada al módem por cable: el Wi-Fi siempre da menos.",
+            "Revisa si hay descargas, respaldos en la nube o videos en otros equipos de tu casa.",
+            "Reinicia el módem y el equipo con el que pruebas.",
+            "Si sigue lento, repórtalo con el resultado de la prueba y la hora."
+          ]
+        },
+        {
+          "title": "El Wi-Fi no alcanza o no conecta",
+          "steps": [
+            "Pon el módem en un lugar alto y despejado, lejos de muros gruesos, espejos y microondas.",
+            "Usa la red de 5 GHz cerca del módem (más rápida) y la de 2.4 GHz lejos (llega más lejos).",
+            "Olvida la red en tu equipo y vuelve a conectarte con la contraseña.",
+            "Si la contraseña no funciona o quieres cambiarla, escríbenos."
+          ]
+        },
+        {
+          "title": "Se corta o va y viene",
+          "steps": [
+            "Anota a qué horas se corta y por cuánto tiempo.",
+            "Revisa que el cable de corriente y el de fibra del módem no se muevan ni estén flojos.",
+            "Si el módem se reinicia solo, prueba en otro contacto eléctrico.",
+            "Repórtalo con esas horas: nos ayudan a encontrar la causa."
+          ]
+        }
+      ]
+    },
+    "report": {
+      "title": "Reportar una falla",
+      "lead": "Si lo de arriba no lo resolvió, cuéntanos qué pasa. Te damos un código para seguir tu reporte y te contactamos por WhatsApp o teléfono."
+    },
+    "status": {
+      "title": "Mis reportes",
+      "lead": "Escribe tu teléfono o el código de tu reporte (R-XXXXXX) para ver cómo va. Solo mostramos el código, la falla, las fechas y en qué etapa está.",
+      "label": "Teléfono o código de reporte",
+      "hint": "Por ejemplo: 55 1234 5678 o R-1A2B3C.",
+      "submit": "Ver mis reportes",
+      "invalid": "Escribe un teléfono de 10 dígitos o un código como R-1A2B3C.",
+      "busy": "Hiciste muchas consultas seguidas. Intenta en un rato o escríbenos por WhatsApp.",
+      "error": "No pudimos consultar en este momento. Intenta de nuevo en un momento.",
+      "none": "No encontramos reportes de los últimos 90 días con ese dato.",
+      "opened": "reportado el {date}",
+      "visit": "Visita programada: {date}",
+      "solved": "Resuelto el {date}",
+      "statuses": {
+        "nuevo": "Recibido",
+        "en-proceso": "En proceso",
+        "visita": "Visita programada",
+        "resuelto": "Resuelto",
+        "descartado": "Cerrado"
+      }
+    },
+    "balance": {
+      "title": "Mi saldo y cómo pagar",
+      "lead": "Para ver tu saldo escribe tu teléfono y tu usuario de internet (PPPoE): así nadie más puede verlo.",
+      "phone": "Teléfono registrado",
+      "pppoe": "Usuario de internet (PPPoE)",
+      "pppoeHint": "Viene en tu hoja de instalación. Si no lo tienes, pídelo por WhatsApp.",
+      "submit": "Ver mi saldo",
+      "invalid": "Escribe tu teléfono de 10 dígitos y tu usuario de internet.",
+      "nomatch": "Esos datos no coinciden con ningún cliente. Revisa el usuario o escríbenos por WhatsApp.",
+      "busy": "Hiciste muchos intentos seguidos. Intenta en una hora o escríbenos por WhatsApp.",
+      "error": "No pudimos consultar en este momento. Intenta de nuevo en un momento.",
+      "result": {
+        "atrasado": "Hola {name}, tienes un saldo vencido.",
+        "por-vencer": "Hola {name}, tu próximo pago está por vencer.",
+        "al-corriente": "Hola {name}, estás al corriente. ¡Gracias!",
+        "sin-cobro": "Hola {name}, no tienes servicios con cobro mensual."
+      },
+      "monthly": "Mensualidad: {amount}",
+      "owed": "Saldo a pagar hoy: {amount}",
+      "lateMonths": "Meses vencidos: {months}",
+      "covered": "Pagado hasta: {month}",
+      "nextDue": "Próxima fecha de pago: {date}"
+    },
+    "pay": {
+      "title": "Cómo pagar",
+      "bank": "Banco",
+      "clabe": "CLABE",
+      "account": "Número de cuenta",
+      "holder": "A nombre de",
+      "reference": "Concepto o referencia",
+      "receipt": "Después de pagar, mándanos tu comprobante por WhatsApp para registrarlo.",
+      "sendReceipt": "Mandar mi comprobante por WhatsApp",
+      "waText": "Hola, les mando el comprobante de pago de mi servicio de internet."
+    },
+    "contact": {
+      "title": "Contacto",
+      "phone": "Teléfono",
+      "email": "Correo",
+      "hours": "Horario de atención",
+      "waText": "Hola, soy cliente de GigaFazt y necesito ayuda.",
+      "monitoring": "Nuestro equipo vigila la red las 24 horas; te atendemos en el horario de oficina."
     }
   }
 }

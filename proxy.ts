@@ -52,6 +52,9 @@ export const config = {
   // (/interno.rsc…) and the locale-prefixed route.
   matcher: [
     "/((?!api|_next|_vercel|.*\..*).*)",
+    // Public pages people type without the language (gigafazt.com/clientes): next-intl sends them to /es or /en.
+    "/clientes",
+    "/reportar",
     "/:page([Ii][Nn][Tt][Ee][Rr][Nn][Oo])(.*)",
     "/:locale/:page([Ii][Nn][Tt][Ee][Rr][Nn][Oo])(.*)",
   ],
