@@ -40,6 +40,7 @@
       },
       "navLabel": "Secciones de la herramienta",
       "olt": "Base de conocimiento OLT Huawei",
+      "home": "← Herramientas internas",
       "to": {
         "guide": "Guía óptima →",
         "scripts": "Scripts de experto →",

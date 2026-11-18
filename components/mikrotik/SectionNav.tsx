@@ -14,7 +14,11 @@ export function SectionNav({ label, items }: { label: string; items: { id: strin
     // The section crossing the middle of the screen is the current one.
     const io = new IntersectionObserver(
       (entries) => {
-        for (const e of entries) if (e.isIntersecting) setActive(e.target.id)
+        for (const e of entries) {
+          if (e.isIntersecting) setActive(e.target.id)
+          // Scrolled back above the first section (the page's intro): no section is current.
+          else if (sections[0] && sections[0].getBoundingClientRect().top > window.innerHeight / 2) setActive(null)
+        }
       },
       { rootMargin: "-45% 0px -50% 0px" }
     )

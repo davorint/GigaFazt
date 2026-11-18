@@ -13,7 +13,8 @@ export function Src({ id }: { id: string }) {
     <a
       href={`#fuente-${s.id}`}
       title={s.title}
-      className={`ml-1.5 inline-block rounded border px-1 py-px align-middle font-mono text-[10px] leading-none tracking-wide no-underline ${style}`}
+      // The tag stays small; an invisible margin around it makes it at least 24 px tall to tap.
+      className={`relative ml-1.5 inline-block rounded border px-1 py-px align-middle font-mono text-[10px] leading-none tracking-wide no-underline after:absolute after:-inset-x-1 after:-inset-y-[6px] after:content-[''] ${style}`}
     >
       {t(`intro.${s.kind}`)}
     </a>

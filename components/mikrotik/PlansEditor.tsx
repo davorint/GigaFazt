@@ -18,7 +18,7 @@ type Props = {
   label?: string
 }
 
-const INPUT = "h-9 min-w-0 bg-white/[0.03] font-mono text-sm"
+const INPUT = "h-9 min-w-0 bg-white/[0.03] font-mono text-base md:text-sm"
 
 /** The deployment's plans (200 Mbps, 500 Mbps, 1 Gbps and any custom one) and the burst rule that turns them into queues. */
 export function PlansEditor({ plans, rule, onPlans, onRule, label }: Props) {

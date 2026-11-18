@@ -56,7 +56,7 @@ export function ImportPanel({ onApply }: { onApply: (v: { down: QueueParams; up:
             rows={4}
             aria-describedby={`${id}-out`}
             aria-invalid={(!r.ok && r.error !== "empty") || undefined}
-            className="max-h-96 min-h-28 overflow-y-auto bg-white/[0.03] font-mono text-sm md:text-xs"
+            className="max-h-96 min-h-28 overflow-y-auto bg-white/[0.03] font-mono text-base md:text-xs"
           />
         </div>
 

@@ -307,6 +307,11 @@ export function BurstLab({ page }: { page: LabPage }) {
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300 sm:text-lg">{t(`intro.lead.${page}`)}</p>
         <p className="mt-3 text-sm text-zinc-400">
           {/* The other internal pages: a full load (each page keeps its own state; proxy.ts rewrites it). */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
+          <a href="/interno" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+            {t("intro.home")}
+          </a>
+          {" · "}
           {PAGES.filter((p) => p !== page).map((p) => (
             <span key={p}>
               <a href={PAGE_PATH[p]} className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">

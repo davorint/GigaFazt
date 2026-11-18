@@ -243,7 +243,7 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
             autoComplete="off"
             rows={3}
             aria-describedby={`${id}-hint`}
-            className="min-h-24 bg-white/[0.03] font-mono text-sm md:text-xs"
+            className="min-h-24 bg-white/[0.03] font-mono text-base md:text-xs"
           />
           <p id={`${id}-hint`} className="text-xs leading-snug text-zinc-400">
             {t("clientsHint")}

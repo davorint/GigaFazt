@@ -66,7 +66,7 @@ export function AuditPanel({ state }: { state: LabState }) {
           autoComplete="off"
           rows={6}
           aria-describedby={`${id}-hint`}
-          className="max-h-96 min-h-36 overflow-y-auto bg-white/[0.03] font-mono text-sm md:text-xs"
+          className="max-h-96 min-h-36 overflow-y-auto bg-white/[0.03] font-mono text-base md:text-xs"
         />
         <p id={`${id}-hint`} className="text-xs leading-snug text-zinc-400">
           {t("bulk.privacy")}

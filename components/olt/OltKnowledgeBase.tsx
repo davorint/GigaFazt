@@ -289,6 +289,11 @@ export function OltKnowledgeBase() {
           })}
         </p>
         <p className="mt-3 text-sm text-zinc-400">
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
+          <a href="/interno" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+            {t("intro.home")}
+          </a>
+          {" · "}
           {t("intro.links")}{" "}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
           <a href="/interno/mikrotik" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
@@ -434,7 +439,7 @@ export function OltKnowledgeBase() {
                 {t(`sources.kind.${s.kind}`)}
                 {s.date ? ` · ${s.date}` : ""}
               </span>
-              <a href={s.url} rel="noreferrer noopener" target="_blank" className="text-sm break-words text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+              <a href={s.url} rel="noreferrer noopener" target="_blank" className="block py-1 text-sm break-words text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
                 {s.title}
               </a>
             </li>

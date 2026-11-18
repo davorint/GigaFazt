@@ -68,7 +68,7 @@ export function NatFields({ setup: s, wans, onSetup, onWans, where }: Props) {
                       </td>
                       <td className={cell}>
                         <Input
-                          className="h-9 w-56 min-w-0 bg-white/[0.03] font-mono text-sm"
+                          className="h-9 w-56 min-w-0 bg-white/[0.03] font-mono text-base md:text-sm"
                           value={w.natIps}
                           placeholder={t("own")}
                           aria-label={t("ipsOf", { name: w.name })}

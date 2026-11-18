@@ -180,7 +180,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
     </div>
   )
   const cell = "px-2 py-2"
-  const input = "h-9 min-w-0 bg-white/[0.03] font-mono text-sm"
+  const input = "h-9 min-w-0 bg-white/[0.03] font-mono text-base md:text-sm"
 
   const providers = (
     <div className="grid gap-3">
@@ -206,7 +206,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
                   </td>
                   <td className={cell}>
                     <select
-                      className="h-9 rounded-md border border-input bg-zinc-950 px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                      className="h-9 rounded-md border border-input bg-zinc-950 px-2 text-base text-foreground md:text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                       value={w.type}
                       aria-label={label(t("upstreams.cols.type"))}
                       onChange={(e) => setWan(k, { type: e.target.value as WanType })}
@@ -260,7 +260,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
                   <td className={`${cell} py-4 font-mono text-xs`}>{buckets[k]}</td>
                   <td className={`${cell} py-3.5`}>
                     <select
-                      className="h-9 rounded-md border border-input bg-zinc-950 px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                      className="h-9 rounded-md border border-input bg-zinc-950 px-2 text-base text-foreground md:text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                       value={w.upstreamCgnat ? "cgnat" : w.providerNat ? "nat" : "public"}
                       aria-label={label(t("upstreams.cols.cgnat"))}
                       onChange={(e) => setWan(k, { providerNat: e.target.value !== "public", upstreamCgnat: e.target.value === "cgnat" })}

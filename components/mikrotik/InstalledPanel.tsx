@@ -86,7 +86,7 @@ export function InstalledPanel({ state }: { state: LabState }) {
         <label htmlFor={id} className="font-mono text-xs text-zinc-300">
           {t("paste")}
         </label>
-        <Textarea id={id} value={text} onChange={(e) => setText(e.target.value)} rows={8} spellCheck={false} autoComplete="off" aria-describedby={`${id}-hint`} className="max-h-96 overflow-y-auto font-mono text-xs" />
+        <Textarea id={id} value={text} onChange={(e) => setText(e.target.value)} rows={8} spellCheck={false} autoComplete="off" aria-describedby={`${id}-hint`} className="max-h-96 overflow-y-auto font-mono text-base md:text-xs" />
         <p id={`${id}-hint`} className="text-xs leading-snug text-zinc-400">
           {t("pasteHint")}
         </p>

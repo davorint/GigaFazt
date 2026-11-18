@@ -354,7 +354,7 @@ export function MultiChart(props: Props) {
       </p>
 
       <details className="group text-sm" onToggle={(e) => setTableOpen(e.currentTarget.open)}>
-        <summary className="cursor-pointer text-zinc-400 hover:text-foreground">{props.tableLabel}</summary>
+        <summary className="cursor-pointer py-2 text-zinc-400 hover:text-foreground">{props.tableLabel}</summary>
         {tableOpen && (
           <div className="mt-3 max-h-96 overflow-auto rounded-lg border border-white/10" tabIndex={0} role="region" aria-label={props.tableLabel}>
             <table className="w-full text-left font-mono text-xs tabular-nums">
