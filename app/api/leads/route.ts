@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server"
 import { leadSchema } from "@/lib/lead"
 import { saveLead } from "@/lib/leads/server"
+import { hasDatabase } from "@/lib/db/client"
 
 const MAX_BODY_BYTES = 8 * 1024
 
@@ -64,10 +65,13 @@ export async function POST(request: Request) {
       signal: AbortSignal.timeout(8000),
     }).catch(() => null)
     if (!res?.ok) {
-      return NextResponse.json({ error: "upstream" }, { status: 502 })
+      // With the database the request is kept anyway: an error would only make the visitor send it twice.
+      if (hasDatabase()) console.error("[lead] CRM webhook failed; kept in the database")
+      else return NextResponse.json({ error: "upstream" }, { status: 502 })
     }
-  } else {
-    // No CRM configured yet; log for visibility until a webhook is set.
+  } else if (!hasDatabase()) {
+    // Neither a CRM nor the database: the log is the only place the request is seen. With the database, personal
+    // data stays out of the server logs.
     console.log("[lead]", payload)
   }
 

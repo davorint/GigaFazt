@@ -92,6 +92,7 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
     saveClient(c)
     setOpenId(c.id)
     setQ("")
+    setStatus("")
   }
   const headers = Object.fromEntries(IMPORT_FIELDS.map((f) => [f, t(`fields.${f}`)])) as Record<ImportField, string>
   return (
@@ -114,7 +115,7 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
       <p className="font-mono text-xs text-zinc-400">{t("list.count", { shown: shown.length, n: list.length, active: list.filter((c) => c.status === "activo").length })}</p>
       {!shown.length && <p className="text-sm text-zinc-400">{t("list.empty")}</p>}
       <ul className="grid gap-2">
-        {shown.slice(0, 300).map((c) => (
+        {shown.map((c) => (
           <li key={c.id}>
             <Row t={t} c={c} open={openId === c.id} onToggle={() => setOpenId(openId === c.id ? null : c.id)} />
           </li>
