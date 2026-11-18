@@ -5,6 +5,7 @@ const LINKS = [
   ["/interno/admin", "admin"],
   ["/interno/admin/despliegues", "despliegues"],
   ["/interno/admin/clientes", "clientes"],
+  ["/interno/admin/reportes_clientes", "reportes_clientes"],
   ["/interno/admin/herramientas", "herramientas"],
   ["/interno/admin/proveedores", "proveedores"],
   ["/interno/admin/materiales", "materiales"],

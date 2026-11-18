@@ -247,7 +247,8 @@
     "contact": "Contacto",
     "phone": "Teléfono",
     "email": "Correo",
-    "legal": "Legal"
+    "legal": "Legal",
+    "report": "Reportar una falla"
   },
   "fiber": {
     "lead": "Bajada y subida a la misma velocidad, por el mismo hilo de vidrio. Míralo en acción.",
@@ -1181,5 +1182,54 @@
   },
   "coverage": {
     "area": "la zona metropolitana de la Ciudad de México y en Cuernavaca, Tepoztlán y Amatlán (Morelos)"
+  },
+  "report": {
+    "metaTitle": "Reportar una falla",
+    "metaDescription": "¿Falla tu internet de fibra de {name}? Cuéntanos qué pasa y te contactamos para resolverlo.",
+    "eyebrow": "Soporte",
+    "title": "Reporta una falla",
+    "lead": "Cuéntanos qué pasa con tu servicio. Te contactamos por WhatsApp o teléfono para resolverlo.",
+    "tipsTitle": "Antes de reportar, prueba esto",
+    "tips": [
+      "Reinicia el módem: desconéctalo de la corriente 10 segundos y vuelve a conectarlo.",
+      "Revisa que el cable de fibra que llega al módem no esté desconectado, doblado ni aplastado.",
+      "Si solo falla el Wi-Fi, prueba cerca del módem o con un cable de red."
+    ],
+    "name": "Nombre del titular",
+    "phone": "WhatsApp o teléfono",
+    "address": "Edificio y departamento",
+    "addressHint": "Por ejemplo: Torre B, departamento 1204.",
+    "category": "¿Qué pasa?",
+    "categories": {
+      "sin-servicio": "No tengo internet",
+      "lento": "El internet está lento",
+      "intermitente": "Se corta o va y viene",
+      "wifi": "El Wi-Fi no alcanza o no conecta",
+      "tv": "La TV no funciona",
+      "equipo": "El módem u otro equipo",
+      "otro": "Otra cosa"
+    },
+    "description": "Cuéntanos más (opcional)",
+    "descriptionHint": "Desde cuándo pasa, en qué equipos y qué luces ves en el módem.",
+    "honeypot": "No llenes este campo",
+    "simplified": "Aviso de privacidad simplificado: <entity></entity> (“{name}”), con domicilio en <address></address>, usará tu nombre, teléfono y domicilio para atender tu reporte y darte soporte técnico. No compartimos tus datos con terceros salvo cuando la ley lo exige.",
+    "readFull": "Lee el aviso de privacidad completo.",
+    "consent": "Acepto que usen mis datos para atender este reporte.",
+    "submit": "Enviar reporte",
+    "sending": "Enviando…",
+    "sent": "Recibimos tu reporte {code}.",
+    "sentHint": "Te contactamos pronto por WhatsApp o teléfono. Si nos escribes, menciona ese código.",
+    "error": "No pudimos enviar tu reporte. Intenta de nuevo en un momento.",
+    "errorWhatsapp": "O escríbenos por WhatsApp.",
+    "orWhatsapp": "¿Prefieres WhatsApp? Escríbenos.",
+    "waText": "Hola, quiero reportar una falla en mi servicio.",
+    "errors": {
+      "name": "Escribe tu nombre.",
+      "phone": "Escribe un teléfono de 10 dígitos.",
+      "address": "Escribe tu edificio y departamento.",
+      "category": "Elige qué pasa.",
+      "description": "La descripción es muy larga.",
+      "consent": "Necesitamos tu autorización para atender el reporte."
+    }
   }
 }

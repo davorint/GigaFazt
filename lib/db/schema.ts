@@ -13,7 +13,7 @@
  * Leads come from the public form: personal data, behind the /interno password, with a status the team changes.
  */
 import { sql } from "drizzle-orm"
-import { bigint, bigserial, boolean, date, index, integer, jsonb, numeric, pgSequence, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { bigint, bigserial, boolean, date, doublePrecision, index, integer, jsonb, numeric, pgSequence, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 
 /** One counter for every change in every shared table: what a phone asks for when it syncs. */
 export const syncRev = pgSequence("sync_rev", { startWith: 1 })
@@ -166,6 +166,62 @@ export const tools = pgTable(
   (t) => [index("tools_rev_idx").on(t.rev), index("tools_holder_idx").on(t.holder)]
 )
 export const toolVersions = versions("tool_versions", "tool_id")
+
+// ── Installation stock (/interno/admin/materiales) ─────────────────────────
+
+export const stockMoves = pgTable(
+  "stock_moves",
+  {
+    id: text("id").primaryKey(),
+    itemId: text("item_id").notNull().default(""),
+    /** compra / traspaso / instalacion / reemplazo / devolucion / baja / ajuste (lib/stock/model.ts). */
+    kind: text("kind").notNull().default(""),
+    qty: doublePrecision("qty").notNull().default(0),
+    date: text("date").notNull().default(""),
+    clientId: text("client_id").notNull().default(""),
+    /** The whole movement. */
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("stock_moves_rev_idx").on(t.rev), index("stock_moves_item_idx").on(t.itemId)]
+)
+export const stockMoveVersions = versions("stock_move_versions", "move_id")
+
+/** ONTs and other equipment tracked one by one. */
+export const units = pgTable(
+  "units",
+  {
+    id: text("id").primaryKey(),
+    itemId: text("item_id").notNull().default(""),
+    serial: text("serial").notNull().default(""),
+    /** almacen / cliente / danado / perdido / proveedor. */
+    state: text("state").notNull().default("almacen"),
+    clientId: text("client_id").notNull().default(""),
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("units_rev_idx").on(t.rev), index("units_serial_idx").on(t.serial), index("units_client_idx").on(t.clientId)]
+)
+export const unitVersions = versions("unit_versions", "unit_id")
+
+// ── Client problem reports (/interno/admin/reportes_clientes) ──────────────
+
+export const reports = pgTable(
+  "reports",
+  {
+    id: text("id").primaryKey(),
+    /** nuevo / en-proceso / visita / resuelto / descartado (lib/reports/model.ts). */
+    status: text("status").notNull().default("nuevo"),
+    category: text("category").notNull().default(""),
+    clientId: text("client_id").notNull().default(""),
+    /** interno (staff) or web (the public form). */
+    source: text("source").notNull().default("interno"),
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("reports_rev_idx").on(t.rev), index("reports_client_idx").on(t.clientId), index("reports_status_idx").on(t.status)]
+)
+export const reportVersions = versions("report_versions", "report_id")
 
 // ── Saved MikroTik deployments ──────────────────────────────────────────────
 

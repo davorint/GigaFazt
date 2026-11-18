@@ -18,6 +18,10 @@ import { decodeSite, type Site } from "../sites/model"
 import { applyRemoteSites, sitesSnapshot } from "../sites/store"
 import { decodeTool, untouchedStarter as untouchedTool, type Tool } from "../tools/model"
 import { applyRemoteTools, toolsSnapshot } from "../tools/store"
+import { decodeMove, decodeUnit, type Move, type Unit } from "../stock/model"
+import { movesStore, unitsStore } from "../stock/store"
+import { decodeReport, type Report } from "../reports/model"
+import { reportsStore } from "../reports/store"
 import { applyRemoteSurveys, surveysSnapshot } from "../survey/store"
 import { MAX_CHANGES, REV_OVERLAP, SYNC_KINDS, type Change, type SyncKind, type SyncResponse } from "./protocol"
 import { onSyncChange, pendingCount, readState, updateState } from "./state"
@@ -61,6 +65,21 @@ const ADAPTERS: Record<SyncKind, Adapter> = {
     ids: () => toolsSnapshot().list.filter((x) => !untouchedTool(x)).map((x) => x.id),
     apply: (u, d) => applyRemoteTools(u.map(decodeTool).filter((x): x is Tool => x !== null), d),
   },
+  stock: {
+    get: (id) => movesStore.list().find((x) => x.id === id),
+    ids: () => movesStore.list().map((x) => x.id),
+    apply: (u, d) => movesStore.applyRemote(u.map(decodeMove).filter((x): x is Move => x !== null), d),
+  },
+  units: {
+    get: (id) => unitsStore.list().find((x) => x.id === id),
+    ids: () => unitsStore.list().map((x) => x.id),
+    apply: (u, d) => unitsStore.applyRemote(u.map(decodeUnit).filter((x): x is Unit => x !== null), d),
+  },
+  reports: {
+    get: (id) => reportsStore.list().find((x) => x.id === id),
+    ids: () => reportsStore.list().map((x) => x.id),
+    apply: (u, d) => reportsStore.applyRemote(u.map(decodeReport).filter((x): x is Report => x !== null), d),
+  },
 }
 
 // ── Status for the screen ───────────────────────────────────────────────────
@@ -101,7 +120,7 @@ export const syncServerSnapshot = () => SERVER_STATUS
 // ── One sync ────────────────────────────────────────────────────────────────
 
 /** A starter item nobody touched: the same fixed id and values in every browser, so there is nothing to upload. */
-const untouchedStarter = (it: Item) => it.id.startsWith("starter-") && it.price === null && !it.supplierId && !it.sku && !it.notes
+const untouchedStarter = (it: Item) => it.id.startsWith("starter-") && !it.offers.length && it.minStock === null && !it.notes
 
 async function syncKind(kind: SyncKind, name: string): Promise<void> {
   const a = ADAPTERS[kind]
@@ -252,4 +271,4 @@ export function startSync(): () => void {
 }
 
 /** The local ids of every kind (for "Subir lo de este navegador"). */
-export const localIds = (): Record<SyncKind, string[]> => ({ surveys: ADAPTERS.surveys.ids(), materials: ADAPTERS.materials.ids(), providers: ADAPTERS.providers.ids(), clients: ADAPTERS.clients.ids(), sites: ADAPTERS.sites.ids(), tools: ADAPTERS.tools.ids() })
+export const localIds = (): Record<SyncKind, string[]> => ({ surveys: ADAPTERS.surveys.ids(), materials: ADAPTERS.materials.ids(), providers: ADAPTERS.providers.ids(), clients: ADAPTERS.clients.ids(), sites: ADAPTERS.sites.ids(), tools: ADAPTERS.tools.ids(), stock: ADAPTERS.stock.ids(), units: ADAPTERS.units.ids(), reports: ADAPTERS.reports.ids() })

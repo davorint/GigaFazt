@@ -22,6 +22,8 @@ import { decodeSurvey } from "../survey/model"
 import { clientStatus, decodeClient, pppoeUsers } from "../clients/model"
 import { decodeSite } from "../sites/model"
 import { decodeTool, toolLabel } from "../tools/model"
+import { decodeMove, decodeUnit } from "../stock/model"
+import { decodeReport } from "../reports/model"
 import { getPool } from "../db/client"
 import { MAX_RECORDS, type Change, type Outcome, type Remote, type SyncKind, type SyncResponse } from "./protocol"
 
@@ -105,6 +107,39 @@ const SPECS: Record<SyncKind, KindSpec> = {
       const d = { ...x, id }
       const holder = d.holderKind === "despliegue" ? d.siteId : d.holderKind === "bodega" ? "" : d.holder
       return { data: d, cols: { name: toolLabel(d).slice(0, 300), category: d.category, serial: d.serial, quantity: d.quantity, condition: d.condition, holder_kind: d.holderKind, holder: holder.slice(0, 100) } }
+    },
+  },
+  stock: {
+    table: "stock_moves",
+    versions: "stock_move_versions",
+    fk: "move_id",
+    read: (id, data) => {
+      const m = decodeMove(data)
+      if (!m) return null
+      const d = { ...m, id }
+      return { data: d, cols: { item_id: d.itemId, kind: d.kind, qty: d.qty, date: d.date, client_id: d.clientId } }
+    },
+  },
+  units: {
+    table: "units",
+    versions: "unit_versions",
+    fk: "unit_id",
+    read: (id, data) => {
+      const u = decodeUnit(data)
+      if (!u) return null
+      const d = { ...u, id }
+      return { data: d, cols: { item_id: d.itemId, serial: d.serial, state: d.state, client_id: d.clientId } }
+    },
+  },
+  reports: {
+    table: "reports",
+    versions: "report_versions",
+    fk: "report_id",
+    read: (id, data) => {
+      const r = decodeReport(data)
+      if (!r) return null
+      const d = { ...r, id }
+      return { data: d, cols: { status: d.status, category: d.category, client_id: d.clientId, source: d.source } }
     },
   },
 }

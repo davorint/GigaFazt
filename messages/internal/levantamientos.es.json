@@ -410,7 +410,14 @@
       "clientsTotal": "Clientes esperados",
       "total": "Total del proyecto",
       "missing": "{n, plural, one {# línea sin material o sin precio cuenta} other {# líneas sin material o sin precio cuentan}} como $0.",
-      "noClients": "Escribe los clientes esperados en Comercial para sumar lo de los clientes."
+      "noClients": "Escribe los clientes esperados en Comercial para sumar lo de los clientes.",
+      "purchase": {
+        "title": "Compra por proveedor",
+        "hint": "Lo del despliegue (diseño y otros materiales) agrupado por quién lo vende: el proveedor elegido en Materiales, o el más barato. Se descuenta lo que ya hay en la bodega.",
+        "noSupplier": "Sin proveedor: agrégalo en Materiales",
+        "partial": "En bodega {has} {unit}: comprar {buy} {unit}",
+        "covered": "En bodega {has} {unit}: alcanza"
+      }
     }
   }
 }

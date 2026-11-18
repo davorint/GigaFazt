@@ -79,7 +79,8 @@
       "perMonth": "MXN/mes",
       "byKind": "{residencial, plural, one {# residencial} other {# residenciales}} · {administracion, plural, one {# administración} other {# administraciones}} · {empresa, plural, one {# empresa} other {# empresas}} · {tv} de TV",
       "site": "Despliegue",
-      "allSites": "Todos"
+      "allSites": "Todos",
+      "newReport": "Nuevo reporte de falla de este cliente"
     },
     "leads": {
       "intro": "Lo que llega del formulario «Contratar» del sitio. Cambia el estado conforme avanzas y conviértela en cliente al instalar.",
@@ -209,6 +210,35 @@
       "none": "Todavía no hay despliegues: créalos en Administración → Despliegues.",
       "unset": "Sin elegir",
       "tower": "Torre del despliegue"
+    },
+    "light": {
+      "filter": "Luz en el ONT",
+      "all": "Todas",
+      "bad": "Baja, justa o saturada",
+      "none": "Sin lectura",
+      "chip": "{rx} dBm",
+      "rx": "Luz recibida en el ONT",
+      "rxHint": "Lo que recibe el ONT. Se llena al pegar las lecturas de la OLT en Importar, o a mano.",
+      "oltRx": "Luz en la OLT desde este ONT",
+      "readOn": "leída el {date}",
+      "status": {
+        "bien": "Bien",
+        "justo": "Justa (menos de 3 dB de margen)",
+        "baja": "Baja: por debajo de −27 dBm",
+        "satura": "Satura: arriba de −8 dBm"
+      },
+      "importTitle": "Luz de cada cliente desde la OLT",
+      "importHint": "Pega lo que muestra la OLT (por ejemplo «display ont optical-info 0 all» dentro de «interface gpon 0/1», o el detalle de un ONT), o renglones «0/1/0, 5, -19.38». Cada lectura va al servicio de internet que tiene ese puerto de OLT y ese ONT ID. El formato de la OLT no se pudo comprobar con un equipo real: si alguna lectura no se reconoce, mándanos lo que pegaste.",
+      "site": "Despliegue de esta OLT",
+      "siteHint": "Los mismos puertos se repiten en cada OLT: elige el despliegue para buscar solo entre sus clientes.",
+      "anySite": "Todos los clientes",
+      "paste": "Lo que muestra la OLT",
+      "found": "{n, plural, one {# lectura} other {# lecturas}} · {offline} sin luz (fuera de línea) · {matched} con cliente",
+      "nothing": "No se reconoció ninguna lectura. Revisa que se vean el puerto (o el prompt «gpon-0/1» y el comando) y los dBm.",
+      "unknown": "{n, plural, one {# lectura sin cliente} other {# lecturas sin cliente}} con ese puerto y ONT ID:",
+      "unknownLine": "renglón {line}: {port} ONT {ont} · {rx} dBm",
+      "apply": "Guardar lecturas",
+      "done": "{n, plural, one {# lectura guardada} other {# lecturas guardadas}} en {clients, plural, one {# cliente} other {# clientes}}."
     }
   }
 }

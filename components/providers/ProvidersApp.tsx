@@ -126,7 +126,9 @@ function Editor({ t, p }: { t: T; p: Provider }) {
   const up = (x: Partial<Provider>) => saveProvider({ ...p, ...x })
   const upTerms = (x: Partial<Provider["terms"]>) => up({ terms: { ...p.terms, ...x } })
   const upCarrier = (x: Partial<Provider["carrier"]>) => up({ carrier: { ...p.carrier, ...x } })
-  const sells = catalog.items.filter((x) => x.supplierId === p.id)
+  // Every material this provider quotes, at its price (the cheapest supplier may be another one).
+  const sells = catalog.items.filter((x) => x.offers.some((o) => o.supplierId === p.id))
+  const quoted = (x: (typeof sells)[number]) => x.offers.find((o) => o.supplierId === p.id)?.price ?? null
   const scoreOptions = (key: "stars" | "priceLevels") => [{ value: "", label: t(`${key}.none`) }, ...["1", "2", "3", "4", "5"].map((s) => ({ value: s, label: t(`${key}.${s}`) }))]
   const setScore = (k: keyof Provider["rating"], v: string) => up({ rating: { ...p.rating, [k]: v ? (Number(v) as Score) : null } })
   const rfcBad = p.rfc.trim() !== "" && !RFC.test(p.rfc.trim())
@@ -233,7 +235,7 @@ function Editor({ t, p }: { t: T; p: Provider }) {
               {sells.map((x) => (
                 <li key={x.id} className="flex justify-between gap-3">
                   <span>{x.name}</span>
-                  <span className="font-mono text-zinc-100">{x.price === null ? "—" : mxn(x.price)}</span>
+                  <span className="font-mono text-zinc-100">{quoted(x) === null ? "—" : mxn(quoted(x)!)}</span>
                 </li>
               ))}
             </ul>

@@ -58,6 +58,15 @@ export function saveClient(c: Client) {
   markChanged("clients", [c.id])
 }
 
+/** Several clients changed at once (light readings from the OLT): one write, one sync mark. */
+export function saveClients(changed: Client[]) {
+  if (!changed.length) return
+  const now = new Date().toISOString()
+  const byId = new Map(changed.map((c) => [c.id, { ...c, updatedAt: now }]))
+  write(list().map((x) => byId.get(x.id) ?? x))
+  markChanged("clients", [...byId.keys()])
+}
+
 export function deleteClient(id: string) {
   write(list().filter((x) => x.id !== id))
   markChanged("clients", [id], true)

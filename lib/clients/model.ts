@@ -46,6 +46,10 @@ export type Service = {
   /** OLT frame/slot/port, e.g. 0/1/3. */
   oltPort: string
   ontId: number | null
+  /** Light at the ONT and at the OLT from that ONT (dBm), and when it was read (lib/clients/optics.ts). */
+  rxDbm: number | null
+  oltRxDbm: number | null
+  rxDate: string
 }
 
 export type Client = {
@@ -91,6 +95,9 @@ export function newService(type: ServiceType, p: Partial<Service> = {}): Service
     deployment: "",
     oltPort: "",
     ontId: null,
+    rxDbm: null,
+    oltRxDbm: null,
+    rxDate: "",
     ...p,
   }
 }
@@ -150,6 +157,9 @@ function decodeService(v: unknown): Service | null {
     deployment: net ? str(v.deployment, 120) : "",
     oltPort: net ? str(v.oltPort, 20) : "",
     ontId: net ? num(v.ontId, 0, 255) : null,
+    rxDbm: net ? num(v.rxDbm, -60, 15) : null,
+    oltRxDbm: net ? num(v.oltRxDbm, -60, 15) : null,
+    rxDate: net ? date(v.rxDate) : "",
   }
 }
 

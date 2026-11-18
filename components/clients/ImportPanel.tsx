@@ -1,11 +1,15 @@
 "use client"
 
-import { useId, useMemo, useState } from "react"
+import { useId, useMemo, useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import { TextField } from "@/components/mikrotik/TextField"
 import { AreaField, PickField } from "@/components/surveys/SurveyFields"
 import { IMPORT_FIELDS, guessField, hasHeader, parseTable, pppSecretsToClients, rowsToClients, type ImportField } from "@/lib/clients/import"
-import { importClients } from "@/lib/clients/store"
+import { clientsServerSnapshot, clientsSnapshot, importClients, saveClients, subscribeClients } from "@/lib/clients/store"
+import { localToday } from "@/lib/clients/from-lead"
+import { applyOptics, lightStatus, matchOptics, parseOltOptics, type LightStatus } from "@/lib/clients/optics"
+import { siteLabel } from "@/lib/sites/model"
+import { sitesServerSnapshot, sitesSnapshot, subscribeSites } from "@/lib/sites/store"
 import type { Client } from "@/lib/clients/model"
 
 const PRIMARY = "h-11 w-fit rounded-full bg-white px-5 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50"
@@ -19,6 +23,7 @@ export function ImportPanel() {
       <p className="text-sm leading-relaxed text-zinc-300">{t("import.intro")}</p>
       <SheetImport />
       <MikrotikImport />
+      <OpticsImport />
     </div>
   )
 }
@@ -156,6 +161,68 @@ function MikrotikImport() {
       {text.trim() && <p className="text-sm text-zinc-100">{t("import.found", { n: r.clients.length, skipped: r.skipped })}</p>}
       <button type="button" onClick={run} disabled={!r.clients.length} className={PRIMARY}>
         {t("import.doImport")}
+      </button>
+      {done && (
+        <p role="status" className="text-sm text-emerald-300">
+          {done}
+        </p>
+      )}
+    </section>
+  )
+}
+
+/** Light readings pasted from the OLT onto each client's internet service (by OLT port + ONT ID, within a location). */
+function OpticsImport() {
+  const t = useTranslations("clientes")
+  const clients = useSyncExternalStore(subscribeClients, clientsSnapshot, clientsServerSnapshot).list
+  const sites = useSyncExternalStore(subscribeSites, sitesSnapshot, sitesServerSnapshot).list
+  const [text, setText] = useState("")
+  const [siteId, setSiteId] = useState("")
+  const [done, setDone] = useState("")
+  const parsed = useMemo(() => (text.trim() ? parseOltOptics(text) : { readings: [], offline: 0 }), [text])
+  const m = useMemo(() => matchOptics(parsed.readings, clients, siteId), [parsed, clients, siteId])
+  const counts = m.matched.reduce<Record<LightStatus, number>>((a, x) => ((a[lightStatus(x.reading.rx)!] += 1), a), { bien: 0, justo: 0, baja: 0, satura: 0 })
+  const run = () => {
+    const changed = applyOptics(m, localToday())
+    saveClients(changed)
+    setDone(t("light.done", { n: m.matched.length, clients: changed.length }))
+    setText("")
+  }
+  return (
+    <section aria-labelledby="luz" className="grid gap-4 rounded-xl border border-white/10 p-4">
+      <h3 id="luz" className="text-base font-medium text-foreground">
+        {t("light.importTitle")}
+      </h3>
+      <p className="text-xs leading-snug text-zinc-400">{t("light.importHint")}</p>
+      <PickField label={t("light.site")} value={siteId} onChange={setSiteId} hint={t("light.siteHint")} options={[{ value: "", label: t("light.anySite") }, ...[...sites].sort((a, b) => siteLabel(a).localeCompare(siteLabel(b), "es")).map((x) => ({ value: x.id, label: siteLabel(x) }))]} />
+      <AreaField
+        label={t("light.paste")}
+        value={text}
+        onChange={(v) => {
+          setText(v)
+          setDone("")
+        }}
+        rows={6}
+      />
+      {text.trim() && (
+        <div className="grid gap-1 text-sm">
+          <p className="text-zinc-100">{t("light.found", { n: parsed.readings.length, offline: parsed.offline, matched: m.matched.length })}</p>
+          {m.matched.length > 0 && <p className="text-xs text-zinc-300">{(["bien", "justo", "baja", "satura"] as const).map((k) => `${t(`light.status.${k}`)}: ${counts[k]}`).join(" · ")}</p>}
+          {!parsed.readings.length && <p className="text-xs text-amber-200">{t("light.nothing")}</p>}
+          {m.unknown.length > 0 && (
+            <div className="grid gap-1">
+              <p className="text-xs text-amber-200">{t("light.unknown", { n: m.unknown.length })}</p>
+              <ul className="max-h-40 overflow-y-auto font-mono text-xs text-zinc-300">
+                {m.unknown.slice(0, 100).map((r) => (
+                  <li key={`${r.line}-${r.port}-${r.ontId}`}>{t("light.unknownLine", { port: r.port, ont: r.ontId, rx: r.rx, line: r.line })}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+      <button type="button" onClick={run} disabled={!m.matched.length} className={PRIMARY}>
+        {t("light.apply")}
       </button>
       {done && (
         <p role="status" className="text-sm text-emerald-300">

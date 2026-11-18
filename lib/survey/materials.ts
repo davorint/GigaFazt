@@ -158,3 +158,33 @@ export function withPicks(s: Survey, catalog: Item[]): Survey {
   for (const x of [...c.build, ...c.client]) if (x.role && x.item) pick[x.role] = x.item.id
   return { ...s, materials: { ...s.materials, pick } }
 }
+
+// ── What to buy, by supplier ────────────────────────────────────────────────
+
+export type PurchaseLine = { item: Item; qty: number; total: number | null }
+export type PurchaseGroup = { key: string; supplierId: string; supplier: string; lines: PurchaseLine[]; total: number; missing: number }
+
+/**
+ * The deployment's materials (from the design and the extras) grouped by who sells them: each item's chosen or
+ * cheapest supplier (Materiales). Lines without an item are left out; items without a supplier are grouped together.
+ */
+export function purchaseList(c: Costs): PurchaseGroup[] {
+  const groups = new Map<string, PurchaseGroup>()
+  for (const l of [...c.build, ...c.extras]) {
+    if (!l.item || !(l.qty > 0)) continue
+    const it = l.item
+    const key = it.supplierId ? `p:${it.supplierId}` : it.supplier.trim() ? `t:${it.supplier.trim().toLowerCase()}` : ""
+    const g = groups.get(key) ?? { key, supplierId: it.supplierId, supplier: it.supplier.trim(), lines: [], total: 0, missing: 0 }
+    const same = g.lines.find((x) => x.item.id === it.id)
+    if (same) same.qty += l.qty
+    else g.lines.push({ item: it, qty: l.qty, total: null })
+    groups.set(key, g)
+  }
+  for (const g of groups.values()) {
+    for (const l of g.lines) l.total = l.item.price === null ? null : l.item.price * l.qty
+    g.total = g.lines.reduce((a, l) => a + (l.total ?? 0), 0)
+    g.missing = g.lines.filter((l) => l.total === null).length
+  }
+  // Suppliers first (largest purchase first), the ones without a supplier last.
+  return [...groups.values()].sort((a, b) => Number(!a.key) - Number(!b.key) || b.total - a.total)
+}

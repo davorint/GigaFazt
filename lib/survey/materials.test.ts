@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { catalogFile, decodeItem, mergeItems, readCatalogFile, starterCatalog, type Item, type Role } from "../materials/catalog"
+import { catalogFile, decodeItem, mergeItems, newOffer, readCatalogFile, starterCatalog, withEffective, type Item, type Role } from "../materials/catalog"
 import { balancedDesign, tapDesign, DEFAULT_OPTICS } from "./design"
 import { decodeMaterials, designNeeds, surveyCosts, usedItems, withPicks } from "./materials"
 import { emptyTower, newSurvey, syncFloors, type Survey } from "./model"
@@ -13,7 +13,7 @@ const survey = (kind: "balanced" | "taps" = "balanced"): Survey => {
   return { ...s, room: { ...s.room, toDuctM: 15 }, commercial: { ...s.commercial, expectedClients: 30 }, towers: [{ ...t, design }] }
 }
 /** The starter list with a price on every item: 10 MXN per unit, 100 for the ONT. */
-const priced = (): Item[] => starterCatalog().map((x) => ({ ...x, price: x.role === "ont" ? 100 : 10 }))
+const priced = (): Item[] => starterCatalog().map((x) => withEffective({ ...x, offers: [newOffer({ price: x.role === "ont" ? 100 : 10 })] }))
 
 describe("what the design needs", () => {
   it("balanced: one 1:8 at the base, five 1:16 boxes, splices, fiber with slack", () => {

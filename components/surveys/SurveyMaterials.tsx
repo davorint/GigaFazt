@@ -6,7 +6,11 @@ import { NumberField } from "@/components/mikrotik/NumberField"
 import { mxn, type Item, type Role } from "@/lib/materials/catalog"
 import { catalogServerSnapshot, catalogSnapshot, subscribeCatalog } from "@/lib/materials/store"
 import { newId } from "@/lib/survey/id"
-import { designNeeds, surveyCosts, type CostLine, type SurveyMaterials } from "@/lib/survey/materials"
+import { designNeeds, purchaseList, surveyCosts, type Costs, type CostLine, type SurveyMaterials } from "@/lib/survey/materials"
+import { providerName } from "@/lib/providers/model"
+import { providersServerSnapshot, providersSnapshot, subscribeProviders } from "@/lib/providers/store"
+import { BODEGA, countAt } from "@/lib/stock/model"
+import { movesStore, unitsStore } from "@/lib/stock/store"
 import { AddButton, PickField } from "./SurveyFields"
 import type { SectionProps } from "./SurveySections"
 
@@ -106,6 +110,7 @@ export function MaterialsSection({ s, set }: SectionProps) {
         {!c.clients && <p className="text-xs text-zinc-400">{t("noClients")}</p>}
         {c.missing > 0 && <p className="text-xs text-amber-200">{t("missing", { n: c.missing })}</p>}
       </div>
+      <Purchase t={t} c={c} />
     </div>
   )
 }
@@ -134,5 +139,53 @@ function RoleLine({ t, tr, line, computed, options, onPick, onQty }: { t: T; tr:
       )}
       <Price t={t} line={line} />
     </div>
+  )
+}
+
+/** The deployment's materials by supplier, with what the warehouse already has (Materiales → Existencias). */
+function Purchase({ t, c }: { t: T; c: Costs }) {
+  const providers = useSyncExternalStore(subscribeProviders, providersSnapshot, providersServerSnapshot).list
+  const moves = useSyncExternalStore(movesStore.subscribe, movesStore.snapshot, movesStore.serverSnapshot).list
+  const units = useSyncExternalStore(unitsStore.subscribe, unitsStore.snapshot, unitsStore.serverSnapshot).list
+  const groups = purchaseList(c)
+  if (!groups.length) return null
+  return (
+    <section aria-labelledby="purchase-title" className="grid gap-3">
+      <div className="grid gap-1">
+        <h4 id="purchase-title" className="text-base font-medium text-foreground">
+          {t("purchase.title")}
+        </h4>
+        <p className="text-xs text-zinc-400">{t("purchase.hint")}</p>
+      </div>
+      {groups.map((g) => {
+        const named = providers.find((p) => p.id === g.supplierId)
+        const who = named ? providerName(named) : g.supplier || t("purchase.noSupplier")
+        return (
+          <div key={g.key || "none"} role="group" aria-label={who} className={`grid gap-2 rounded-xl border p-3 ${g.key ? "border-white/10" : "border-amber-400/30"}`}>
+            <p className="flex justify-between gap-3 text-sm">
+              <span className={g.key ? "font-medium text-zinc-100" : "font-medium text-amber-200"}>{who}</span>
+              <span className="font-mono text-zinc-100">{mxn(g.total)}</span>
+            </p>
+            <ul className="grid gap-1">
+              {g.lines.map((l) => {
+                const has = countAt(l.item, moves, units, BODEGA)
+                const buy = Math.max(0, Math.ceil(l.qty - Math.max(0, has)))
+                return (
+                  <li key={l.item.id} className="grid gap-0.5 text-xs">
+                    <span className="flex justify-between gap-3">
+                      <span className="text-zinc-200">
+                        {l.item.name} × {l.qty} {l.item.unit}
+                      </span>
+                      <span className="shrink-0 font-mono text-zinc-300">{l.total === null ? t("noPrice") : mxn(l.total)}</span>
+                    </span>
+                    {has > 0 && <span className="text-zinc-400">{buy ? t("purchase.partial", { has, buy, unit: l.item.unit }) : t("purchase.covered", { has, unit: l.item.unit })}</span>}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )
+      })}
+    </section>
   )
 }

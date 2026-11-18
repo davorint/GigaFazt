@@ -247,7 +247,8 @@
     "contact": "Contact",
     "phone": "Phone",
     "email": "Email",
-    "legal": "Legal"
+    "legal": "Legal",
+    "report": "Report a problem"
   },
   "fiber": {
     "lead": "Download and upload at the same speed, over the same strand of glass. See it in action.",
@@ -1181,5 +1182,54 @@
   },
   "coverage": {
     "area": "the Mexico City metro area and Cuernavaca, Tepoztlán and Amatlán (Morelos)"
+  },
+  "report": {
+    "metaTitle": "Report a problem",
+    "metaDescription": "Is your {name} fiber internet down? Tell us what's happening and we'll get in touch to fix it.",
+    "eyebrow": "Support",
+    "title": "Report a problem",
+    "lead": "Tell us what's happening with your service. We'll contact you by WhatsApp or phone to fix it.",
+    "tipsTitle": "Before you report, try this",
+    "tips": [
+      "Restart the modem: unplug it for 10 seconds and plug it back in.",
+      "Check that the fiber cable going into the modem isn't unplugged, bent or crushed.",
+      "If only the Wi-Fi fails, try near the modem or with a network cable."
+    ],
+    "name": "Account holder's name",
+    "phone": "WhatsApp or phone",
+    "address": "Building and apartment",
+    "addressHint": "For example: Tower B, apartment 1204.",
+    "category": "What's happening?",
+    "categories": {
+      "sin-servicio": "I have no internet",
+      "lento": "The internet is slow",
+      "intermitente": "It drops or comes and goes",
+      "wifi": "Wi-Fi doesn't reach or won't connect",
+      "tv": "TV isn't working",
+      "equipo": "The modem or other equipment",
+      "otro": "Something else"
+    },
+    "description": "Tell us more (optional)",
+    "descriptionHint": "Since when, on which devices, and which lights you see on the modem.",
+    "honeypot": "Leave this field empty",
+    "simplified": "Simplified privacy notice: <entity></entity> (“{name}”), located at <address></address>, will use your name, phone and address to handle your report and give you technical support. We don't share your data with third parties except when the law requires it.",
+    "readFull": "Read the full privacy notice.",
+    "consent": "I agree to my data being used to handle this report.",
+    "submit": "Send report",
+    "sending": "Sending…",
+    "sent": "We received your report {code}.",
+    "sentHint": "We'll contact you soon by WhatsApp or phone. If you message us, mention that code.",
+    "error": "We couldn't send your report. Try again in a moment.",
+    "errorWhatsapp": "Or message us on WhatsApp.",
+    "orWhatsapp": "Prefer WhatsApp? Message us.",
+    "waText": "Hi, I'd like to report a problem with my service.",
+    "errors": {
+      "name": "Enter your name.",
+      "phone": "Enter a 10-digit phone number.",
+      "address": "Enter your building and apartment.",
+      "category": "Choose what's happening.",
+      "description": "The description is too long.",
+      "consent": "We need your permission to handle the report."
+    }
   }
 }

@@ -2,7 +2,7 @@
  * The master materials list in this browser (localStorage), like the surveys: the first time, the starting list is
  * saved so its ids stay put (surveys point to items by id). Other tabs follow through the storage event.
  */
-import { decodeItem, mergeItems, starterCatalog, type Item } from "./catalog"
+import { decodeItem, mergeItems, starterCatalog, withEffective, type Item } from "./catalog"
 import { markChanged } from "../sync/state"
 import { remapMaterialRefs } from "../survey/store"
 
@@ -60,7 +60,9 @@ export const catalogServerSnapshot = (): CatalogStore => SERVER
 
 const items = () => catalogSnapshot().items
 
-export function saveItem(it: Item) {
+export function saveItem(raw: Item) {
+  // Its price and supplier always come from its offers.
+  const it = withEffective(raw)
   const list = items()
   write(list.some((x) => x.id === it.id) ? list.map((x) => (x.id === it.id ? it : x)) : [...list, it])
   markChanged("materials", [it.id])

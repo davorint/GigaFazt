@@ -101,6 +101,7 @@ export function Footer({ base = "", variant }: { base?: string; variant?: "biz" 
             <li><a href={`${prefix}#fiber`} className={A}>{tn("fibra")}</a></li>
             <li><a href={`${prefix}#map`} className={A}>{tn("cobertura")}</a></li>
             <li><a href={`${prefix}#faq`} className={A}>{t("faq")}</a></li>
+            <li><Link href="/reportar" className={A}>{t("report")}</Link></li>
           </ul>
         </nav>
 

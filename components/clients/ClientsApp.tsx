@@ -29,6 +29,7 @@ import {
 import { useDropUntouched } from "@/components/interno/useDropUntouched"
 import { useOpenParam } from "@/components/interno/useOpenParam"
 import { markFresh } from "@/lib/fresh"
+import { clientLight, lightStatus, type LightStatus } from "@/lib/clients/optics"
 import { clientsServerSnapshot, clientsSnapshot, deleteClient, saveClient, subscribeClients } from "@/lib/clients/store"
 import { siteLabel, towerLabel } from "@/lib/sites/model"
 import { sitesServerSnapshot, sitesSnapshot, subscribeSites } from "@/lib/sites/store"
@@ -109,6 +110,7 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
   const [q, setQ] = useState("")
   const [kind, setKind] = useState<ClientKind | "">("")
   const [status, setStatus] = useState<ClientStatus | "">("")
+  const [light, setLight] = useState<"" | "mala" | "sin">("")
   const [building, setBuilding] = useState("")
   const [site, setSite] = useState("")
   const sites = useSyncExternalStore(subscribeSites, sitesSnapshot, sitesServerSnapshot).list
@@ -117,7 +119,7 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
   if (!store.loaded) return null
   const needle = fold(q.trim())
   const shown = list
-    .filter((c) => (!kind || c.kind === kind) && (!status || clientStatus(c) === status) && (!building || c.building.trim() === building) && (!site || (site === "-" ? !sites.some((x) => x.id === c.siteId) : c.siteId === site)))
+    .filter((c) => (!kind || c.kind === kind) && (!status || clientStatus(c) === status) && matchesLight(c, light) && (!building || c.building.trim() === building) && (!site || (site === "-" ? !sites.some((x) => x.id === c.siteId) : c.siteId === site)))
     .filter(
       (c) =>
         !needle ||
@@ -170,6 +172,7 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
             options={[{ value: "", label: t("list.allSites") }, { value: "-", label: t("site.unset") }, ...[...sites].sort((a, b) => siteLabel(a).localeCompare(siteLabel(b), "es")).map((x) => ({ value: x.id, label: siteLabel(x) }))]}
           />
         )}
+        <PickField label={t("light.filter")} value={light} onChange={setLight} options={[{ value: "" as const, label: t("light.all") }, { value: "mala" as const, label: t("light.bad") }, { value: "sin" as const, label: t("light.none") }]} />
         <PickField label={t("list.building")} value={building} onChange={setBuilding} options={[{ value: "", label: t("list.allBuildings") }, ...buildings.map((b) => ({ value: b, label: b }))]} />
       </div>
       <div className="grid gap-0.5 font-mono text-xs text-zinc-400">
@@ -188,9 +191,24 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
   )
 }
 
+const LIGHT_TONE: Record<LightStatus, string> = {
+  bien: "border-emerald-400/30 text-emerald-200",
+  justo: "border-amber-400/40 text-amber-200",
+  baja: "border-red-400/40 text-red-200",
+  satura: "border-red-400/40 text-red-200",
+}
+/** Light filter: "mala" = low, at the limit or saturating; "sin" = an active internet service without a reading. */
+function matchesLight(c: Client, f: "" | "mala" | "sin") {
+  if (!f) return true
+  const l = clientLight(c)
+  if (f === "mala") return !!l && l.status !== "bien"
+  return c.services.some((s) => s.type === "internet" && s.status !== "cancelado" && s.rxDbm === null)
+}
+
 function Row({ t, c, open, onToggle }: { t: T; c: Client; open: boolean; onToggle: () => void }) {
   const where = [c.building, c.tower, c.apartment].filter(Boolean).join(" · ")
   const status = clientStatus(c)
+  const light = clientLight(c)
   const services = c.services.filter((s) => s.status !== "cancelado").map((s) => (s.type === "internet" && s.plan ? `${t("services.types.internet")} ${s.plan}` : t(`services.types.${s.type}`)))
   const sub = [where, services.join(" + ") || t("list.noServices"), c.name ? pppoeUsers(c)[0] : ""].filter(Boolean).join(" · ")
   return (
@@ -202,6 +220,7 @@ function Row({ t, c, open, onToggle }: { t: T; c: Client; open: boolean; onToggl
         </span>
         <span className="flex shrink-0 flex-col items-end gap-1">
           <span className={`rounded-full border px-2 py-0.5 text-xs ${TONE[status]}`}>{t(`statuses.${status}`)}</span>
+          {light && light.status !== "bien" && <span className={`rounded-full border px-2 py-0.5 font-mono text-xs ${LIGHT_TONE[light.status]}`}>{t("light.chip", { rx: light.rx.toFixed(1) })}</span>}
           <span className="text-xs text-zinc-400">{t(`kinds.${c.kind}`)}</span>
         </span>
       </button>
@@ -326,6 +345,9 @@ function Editor({ t, c }: { t: T; c: Client }) {
         </div>
         <AreaField label={t("fields.notes")} value={c.notes} onChange={(v) => up({ notes: v })} />
       </fieldset>
+      <a href={`/interno/admin/reportes_clientes?nuevo=${c.id}`} className="inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+        {t("list.newReport")}
+      </a>
       <button type="button" onClick={() => window.confirm(t("list.confirmRemove", { name: clientLabel(c) })) && deleteClient(c.id)} className={DANGER}>
         {t("list.remove")}
       </button>
@@ -363,6 +385,8 @@ function ServiceCard({ t, c, s, n, onChange, onRemove }: { t: T; c: Client; s: S
             {field("deployment")}
             {field("oltPort")}
             <NumberField label={t("fields.ontId")} unit="#" integer optional max={255} value={s.ontId} onChange={(v) => up({ ontId: v })} />
+            <NumberField label={t("light.rx")} unit="dBm" optional min={-60} max={15} precision={2} value={s.rxDbm} onChange={(v) => up({ rxDbm: v, rxDate: v === null ? "" : s.rxDate || localToday() })} hint={s.rxDbm !== null ? t(`light.status.${lightStatus(s.rxDbm)}`) + (s.rxDate ? ` · ${t("light.readOn", { date: s.rxDate })}` : "") : t("light.rxHint")} />
+            <NumberField label={t("light.oltRx")} unit="dBm" optional min={-60} max={15} precision={2} value={s.oltRxDbm} onChange={(v) => up({ oltRxDbm: v })} />
           </>
         )}
       </div>

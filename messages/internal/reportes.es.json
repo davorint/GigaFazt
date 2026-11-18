@@ -1,0 +1,141 @@
+{
+  "reportes": {
+    "meta": {
+      "title": "Reportes de clientes · Interno"
+    },
+    "kicker": "Administración",
+    "title": "Reportes de clientes",
+    "lead": "Las fallas que reportan los clientes por teléfono, WhatsApp o el formulario del sitio: quién lo atiende, la visita, la causa y cómo se resolvió. Varios reportes del mismo despliegue a la vez se marcan como posible falla general.",
+    "tiles": {
+      "open": "Abiertos",
+      "urgent": "Urgentes",
+      "fresh": "Nuevos sin atender",
+      "freshWeb": "{n} ({web} del sitio)",
+      "solved30": "Resueltos en 30 días",
+      "avg": "Tiempo promedio de solución",
+      "hours": "{n} h"
+    },
+    "repeatTitle": "Clientes que reportan seguido (3 o más en 90 días)",
+    "repeat": "{client}: {n} reportes",
+    "unknownClient": "Cliente borrado",
+    "add": "Nuevo reporte",
+    "search": "Buscar",
+    "searchHint": "Código (R-…), cliente, teléfono, descripción o quién lo atiende.",
+    "show": "Mostrar",
+    "shows": {
+      "abiertos": "Abiertos",
+      "todos": "Todos"
+    },
+    "category": "Qué pasa",
+    "allCategories": "Todo",
+    "site": "Despliegue",
+    "allSites": "Todos",
+    "noSite": "Sin elegir",
+    "assignee": "Quién lo atiende",
+    "allAssignees": "Todos",
+    "noAssignee": "Sin asignar",
+    "priority": "Prioridad",
+    "count": "{n, plural, one {# reporte} other {# reportes}}",
+    "empty": "Todavía no hay reportes.",
+    "none": "Ningún reporte coincide.",
+    "noClient": "Sin cliente identificado",
+    "web": "del sitio",
+    "fromWeb": "Llegó por el formulario del sitio",
+    "visitOn": "visita {date}",
+    "opened": "abierto {ago} por {by}",
+    "ago": {
+      "minutes": "hace {n} min",
+      "hours": "hace {n} h",
+      "days": "hace {n} d"
+    },
+    "back": "← Todos los reportes",
+    "related": "Posible falla general: {n, plural, one {otro reporte abierto} other {# reportes abiertos}} en {site} en las mismas 24 horas",
+    "categories": {
+      "sin-servicio": "Sin internet",
+      "lento": "Internet lento",
+      "intermitente": "Se corta o va y viene",
+      "wifi": "Wi-Fi (alcance o contraseña)",
+      "tv": "TV",
+      "equipo": "Módem u otro equipo",
+      "otro": "Otro"
+    },
+    "statuses": {
+      "nuevo": "Nuevo",
+      "en-proceso": "En proceso",
+      "visita": "Visita programada",
+      "resuelto": "Resuelto",
+      "descartado": "Descartado"
+    },
+    "priorities": {
+      "urgente": "Urgente",
+      "alta": "Alta",
+      "normal": "Normal",
+      "baja": "Baja"
+    },
+    "causes": {
+      "none": "Sin definir",
+      "fibra": "Fibra (corte o doblez)",
+      "conector": "Conector sucio o dañado",
+      "ont": "ONT",
+      "equipo-cliente": "Equipo del cliente",
+      "wifi-cliente": "Wi-Fi del departamento",
+      "red": "Nuestra red (OLT, MikroTik)",
+      "carrier": "Carrier",
+      "pago": "Servicio suspendido por pago",
+      "configuracion": "Configuración",
+      "sin-falla": "No se encontró falla",
+      "otro": "Otro"
+    },
+    "client": {
+      "title": "Cliente",
+      "pick": "Cliente",
+      "search": "Buscar cliente",
+      "searchHint": "Nombre, departamento, teléfono o usuario PPPoE.",
+      "none": "Sin identificar",
+      "name": "Nombre que dio",
+      "phone": "Teléfono que dio",
+      "address": "Edificio y departamento que dio",
+      "statuses": {
+        "activo": "Activo",
+        "suspendido": "Suspendido",
+        "cancelado": "Cancelado",
+        "sin-servicio": "Sin servicio"
+      },
+      "port": "puerto",
+      "light": "Luz en el ONT: {rx} dBm ({status})",
+      "lightStatus": {
+        "bien": "bien",
+        "justo": "justa",
+        "baja": "baja",
+        "satura": "satura"
+      },
+      "open": "Abrir en Clientes",
+      "call": "Llamar {phone}",
+      "whatsapp": "WhatsApp",
+      "waText": "Hola, te escribimos de GigaFazt sobre tu reporte {code}."
+    },
+    "problem": {
+      "title": "Problema",
+      "description": "Qué dice el cliente",
+      "descriptionHint": "Desde cuándo, qué equipos, qué luces tiene el módem, si ya lo reinició."
+    },
+    "attention": {
+      "title": "Atención",
+      "status": "Estado",
+      "visit": "Fecha de visita",
+      "cause": "Causa",
+      "resolution": "Qué se hizo",
+      "resolutionHint": "Lo que resolvió el problema (o por qué se descartó).",
+      "closedAt": "Cerrado el {date}"
+    },
+    "notes": {
+      "title": "Notas",
+      "none": "Sin notas. Los cambios de estado se anotan solos.",
+      "new": "Nota nueva",
+      "add": "Agregar nota"
+    },
+    "history": "Otros reportes de este cliente ({n})",
+    "remove": "Borrar reporte",
+    "confirmRemove": "¿Borrar el reporte {code}? Se quita en todos los teléfonos."
+  }
+}

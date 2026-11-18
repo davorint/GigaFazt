@@ -34,26 +34,70 @@ export const ROLES = [
 export type Role = (typeof ROLES)[number]
 export const CLIENT_ROLES: Role[] = ["drop-m", "ont", "client-connector", "client-labor"]
 
+/** Who sells an item and at what price (owner, 2026-11-18: several suppliers per material, a price each). */
+export type Offer = {
+  id: string
+  /** The provider from /interno/admin/proveedores, or "" (then `supplier` says who). */
+  supplierId: string
+  supplier: string
+  /** MXN with IVA included; null = ask. */
+  price: number | null
+  /** When that price was quoted (yyyy-mm-dd). */
+  date: string
+  sku: string
+  notes: string
+}
+
 export type Item = {
   id: string
   name: string
   category: Category
   unit: string
-  /** MXN with IVA included; null = no price yet. */
+  /**
+   * The price, supplier and part number used everywhere (survey costs, Proveedores): those of the chosen offer
+   * (`offerId`), else the cheapest priced one. Kept in step with `offers` by `withEffective`; MXN with IVA.
+   */
   price: number | null
   role: Role | ""
-  /** The provider from /interno/admin/proveedores, or "". */
   supplierId: string
-  /** Free-text supplier when it isn't in the list. */
   supplier: string
   sku: string
   notes: string
+  offers: Offer[]
+  /** The offer to buy from ("" = the cheapest). */
+  offerId: string
+  /** Warn when the warehouse has fewer than this (null = no warning). */
+  minStock: number | null
+  /** Tracked one by one by serial number (ONTs and other loaned equipment). */
+  serialized: boolean
 }
+
+export const newOffer = (p: Partial<Offer> = {}): Offer => ({ id: newId(), supplierId: "", supplier: "", price: null, date: "", sku: "", notes: "", ...p })
+
+/** The offer an item's price comes from: the chosen one, else the cheapest with a price, else the first. */
+export function effectiveOffer(it: Pick<Item, "offers" | "offerId">): Offer | null {
+  const chosen = it.offerId ? it.offers.find((o) => o.id === it.offerId) : undefined
+  if (chosen) return chosen
+  const priced = it.offers.filter((o) => o.price !== null).sort((a, b) => a.price! - b.price!)
+  return priced[0] ?? it.offers[0] ?? null
+}
+
+/** The item with its price, supplier and part number taken from its offers (no offers: no price, no supplier). */
+export function withEffective(it: Item): Item {
+  const o = effectiveOffer(it)
+  return { ...it, price: o?.price ?? null, supplierId: o?.supplierId ?? "", supplier: o?.supplier ?? "", sku: o?.sku ?? "" }
+}
+
+/** The item's offer from a provider, if it has one. */
+export const offerFrom = (it: Item, providerId: string) => it.offers.find((o) => o.supplierId === providerId)
+
+/** A new item. */
+export const newItem = (p: Partial<Item> = {}): Item => ({ id: newId(), name: "", category: "otros", unit: "pza", price: null, role: "", supplierId: "", supplier: "", sku: "", notes: "", offers: [], offerId: "", minStock: null, serialized: false, ...p })
 
 /** Starter ids are fixed (from the role, or the name), so every browser's starter list has the same ids. */
 const starterId = (name: string, role: Role | "") =>
   `starter-${role || name.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`.slice(0, 64)
-const item = (name: string, category: Category, unit: string, role: Role | "" = ""): Item => ({ id: starterId(name, role), name, category, unit, price: null, role, supplierId: "", supplier: "", sku: "", notes: "" })
+const item = (name: string, category: Category, unit: string, role: Role | "" = ""): Item => ({ id: starterId(name, role), name, category, unit, price: null, role, supplierId: "", supplier: "", sku: "", notes: "", offers: [], offerId: "", minStock: null, serialized: role === "ont" })
 
 /** The first list, without prices (fixed ids). */
 export function starterCatalog(): Item[] {
@@ -83,20 +127,51 @@ type Obj = Record<string, unknown>
 const isObj = (v: unknown): v is Obj => !!v && typeof v === "object" && !Array.isArray(v)
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "")
 
+const okId = (v: unknown) => typeof v === "string" && /^[\w-]{6,64}$/.test(v)
+const money = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 1e8 ? v : null)
+
+function decodeOffer(v: unknown): Offer | null {
+  if (!isObj(v)) return null
+  return {
+    id: okId(v.id) ? (v.id as string) : newId(),
+    supplierId: okId(v.supplierId) ? (v.supplierId as string) : "",
+    supplier: str(v.supplier, 200),
+    price: money(v.price),
+    date: typeof v.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v.date) ? v.date : "",
+    sku: str(v.sku, 100),
+    notes: str(v.notes, 500),
+  }
+}
+
 export function decodeItem(v: unknown): Item | null {
   if (!isObj(v) || typeof v.name !== "string") return null
-  return {
-    id: typeof v.id === "string" && /^[\w-]{6,64}$/.test(v.id) ? v.id : newId(),
+  const id = okId(v.id) ? (v.id as string) : newId()
+  const role = (ROLES as readonly unknown[]).includes(v.role) ? (v.role as Role) : ""
+  // Items saved before offers existed: their one price and supplier become the first offer (fixed id, so it's stable).
+  const legacy = !Array.isArray(v.offers) && (money(v.price) !== null || okId(v.supplierId) || !!str(v.supplier, 200) || !!str(v.sku, 100))
+  const offers: Offer[] = Array.isArray(v.offers)
+    ? v.offers.slice(0, 30).map(decodeOffer).filter((x): x is Offer => x !== null)
+    : legacy
+      ? [{ id: id.slice(0, 56) + "-of1", supplierId: okId(v.supplierId) ? (v.supplierId as string) : "", supplier: str(v.supplier, 200), price: money(v.price), date: "", sku: str(v.sku, 100), notes: "" }]
+      : []
+  const offerId = okId(v.offerId) && offers.some((o) => o.id === v.offerId) ? (v.offerId as string) : ""
+  const minStock = typeof v.minStock === "number" && Number.isFinite(v.minStock) && v.minStock >= 0 && v.minStock <= 1e6 ? v.minStock : null
+  return withEffective({
+    id,
     name: str(v.name, 200),
     category: (CATEGORIES as readonly unknown[]).includes(v.category) ? (v.category as Category) : "otros",
     unit: str(v.unit, 20) || "pza",
-    price: typeof v.price === "number" && Number.isFinite(v.price) && v.price >= 0 && v.price <= 1e8 ? v.price : null,
-    role: (ROLES as readonly unknown[]).includes(v.role) ? (v.role as Role) : "",
-    supplierId: typeof v.supplierId === "string" && /^[\w-]{6,64}$/.test(v.supplierId) ? v.supplierId : "",
-    supplier: str(v.supplier, 200),
-    sku: str(v.sku, 100),
+    price: null,
+    role,
+    supplierId: "",
+    supplier: "",
+    sku: "",
     notes: str(v.notes, 1000),
-  }
+    offers,
+    offerId,
+    minStock,
+    serialized: typeof v.serialized === "boolean" ? v.serialized : role === "ont",
+  })
 }
 
 export const CATALOG_FILE = "gigafazt-materiales"
