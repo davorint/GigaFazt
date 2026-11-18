@@ -60,7 +60,7 @@ export const clients: ClientSite[] = [
   {
     id: "demo-conjunto-cuarzo",
     name: "Conjunto Cuarzo",
-    area: "Cuernavaca",
+    area: "Morelos",
     state: "MOR",
     lngLat: [-99.23, 18.92],
     kind: "residential",

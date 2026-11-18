@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Internet de fibra óptica simétrica en CDMX y Morelos",
-    "description": "Internet de fibra óptica simétrica en la CDMX, su zona metropolitana, Cuernavaca, Tepoztlán y Amatlán. Hasta {max}{perks}.",
+    "description": "Internet de fibra óptica simétrica en la CDMX, su zona metropolitana y Morelos. Hasta {max}{perks}.",
     "perks": {
       "freeInstall": "instalación gratis",
       "noTerm": "sin plazo forzoso"
@@ -241,7 +241,7 @@
   "footer": {
     "privacy": "Aviso de Privacidad",
     "terms": "Términos y condiciones",
-    "tagline": "Internet de fibra óptica simétrica en la zona metropolitana de la Ciudad de México y en Cuernavaca, Tepoztlán y Amatlán.",
+    "tagline": "Internet de fibra óptica simétrica en la zona metropolitana de la Ciudad de México y en Morelos.",
     "explore": "Explora",
     "faq": "Preguntas frecuentes",
     "coverage": "Cobertura",
@@ -453,7 +453,7 @@
     }
   },
   "map": {
-    "lead": "Damos servicio en la zona metropolitana de la Ciudad de México y en Cuernavaca, Morelos. Tenemos más de {count} clientes activos, sobre todo en el poniente de la ciudad. Aquí ves algunos edificios que ya son clientes y algunos ejemplos ilustrativos.",
+    "lead": "Damos servicio en la zona metropolitana de la Ciudad de México y en Morelos. Tenemos más de {count} clientes activos, sobre todo en el poniente de la ciudad. Aquí ves algunos edificios que ya son clientes y algunos ejemplos ilustrativos.",
     "layers": "Capas",
     "layer": {
       "clients": "Clientes",
@@ -481,7 +481,7 @@
     "listTitle": "Clientes y zonas de servicio",
     "listDesc": "Versión en texto del mapa. Elige un cliente para ubicarlo.",
     "approx": "Ubicaciones aproximadas a nivel colonia.",
-    "mapAlt": "Mapa de la zona de servicio: las 16 alcaldías de la Ciudad de México, municipios vecinos del Estado de México al poniente, norte y oriente, y Cuernavaca y Tepoztlán en Morelos, sobre el contorno de los tres estados. Marca {real} edificios cliente y {demo} ejemplos ilustrativos, con líneas ilustrativas entre el centro de la ciudad, el poniente, el norte y Cuernavaca.",
+    "mapAlt": "Mapa de la zona de servicio: las 16 alcaldías de la Ciudad de México, municipios vecinos del Estado de México al poniente, norte y oriente, y Morelos, sobre el contorno de los tres estados. Marca {real} edificios cliente y {demo} ejemplos ilustrativos, con líneas ilustrativas entre el centro de la ciudad, el poniente, el norte y Morelos.",
     "cta": "¿Vives en la zona? Contrata y confirmamos tu cobertura",
     "ui": {
       "map": "Mapa",
@@ -632,8 +632,8 @@
     "serviceName": "Internet de fibra óptica simétrica",
     "serviceType": "Internet de fibra óptica (FTTH)",
     "serviceDescription": "Internet de fibra óptica hasta el hogar con la misma velocidad de bajada y de subida.",
-    "ogAlt": "Fibra óptica simétrica en la zona metropolitana de la Ciudad de México y en Cuernavaca, Tepoztlán y Amatlán",
-    "ogZones": "Zona metropolitana CDMX · Cuernavaca · Tepoztlán · Amatlán",
+    "ogAlt": "Fibra óptica simétrica en la zona metropolitana de la Ciudad de México y en Morelos",
+    "ogZones": "Zona metropolitana CDMX · Morelos",
     "bizInternetName": "Internet para empresas",
     "bizInternetType": "Internet dedicado y empresarial por fibra óptica",
     "bizInternetDescription": "Enlaces simétricos de fibra óptica de hasta {max} Gbps para empresas, en tres paquetes según la disponibilidad: dedicado, empresarial y para negocios.",
@@ -661,8 +661,8 @@
     "morelos": {
       "name": "Morelos",
       "in": "Morelos",
-      "served": "Cuernavaca, Tepoztlán y Amatlán",
-      "scope": "Cuernavaca, Tepoztlán y Amatlán."
+      "served": "Morelos",
+      "scope": "Morelos."
     }
   },
   "business": {
@@ -1182,7 +1182,7 @@
     ]
   },
   "coverage": {
-    "area": "la zona metropolitana de la Ciudad de México y en Cuernavaca, Tepoztlán y Amatlán (Morelos)"
+    "area": "la zona metropolitana de la Ciudad de México y en Morelos"
   },
   "report": {
     "metaTitle": "Reportar una falla",

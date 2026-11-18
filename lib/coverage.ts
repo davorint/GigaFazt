@@ -35,8 +35,8 @@ export const SERVICE_ZONE: Record<StateCode, { scope: "all" | "metro" | "localit
       "Xalatlaco",
     ],
   },
-  // Amatlán (de Quetzalcóatl) is a locality of the Tepoztlán municipio.
-  MOR: { scope: "localities", places: ["Cuernavaca", "Tepoztlán", "Amatlán"] },
+  // Named as "Morelos" on the site (owner, 2026-11-18); the map still shades the zone where the network runs.
+  MOR: { scope: "all", places: [] },
 }
 
 /** One state page per service state; each page states its exact scope. */
