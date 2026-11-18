@@ -80,8 +80,20 @@ function NavLink({ href, className, children }: { href: string; className: strin
   )
 }
 
-/** Holder filter values: "" all, "k:<kind>" every one of a kind, "p:<name>" one person/vehicle/place, "s:<id>" a location. */
-const holderKey = (x: Tool) => (x.holderKind === "despliegue" ? `s:${x.siteId}` : x.holderKind === "bodega" ? "k:bodega" : x.holder.trim() ? `p:${fold(x.holder.trim())}` : `k:${x.holderKind}`)
+/**
+ * Holder filter values: "" all, "k:<kind>" every one of a kind, "p:<kind>:<name>" one person/vehicle/place (the kind
+ * keeps a technician and a vehicle with the same name apart), "s:<id>" a location (none picked yet: just the kind).
+ */
+const holderKey = (x: Tool) =>
+  x.holderKind === "despliegue"
+    ? x.siteId
+      ? `s:${x.siteId}`
+      : "k:despliegue"
+    : x.holderKind === "bodega"
+      ? "k:bodega"
+      : x.holder.trim()
+        ? `p:${x.holderKind}:${fold(x.holder.trim())}`
+        : `k:${x.holderKind}`
 const matchesHolder = (x: Tool, who: string) => !who || holderKey(x) === who || (who.startsWith("k:") && x.holderKind === who.slice(2))
 
 const toolList = () => toolsSnapshot().list

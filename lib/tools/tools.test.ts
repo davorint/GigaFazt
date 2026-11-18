@@ -31,8 +31,10 @@ describe("tools", () => {
     expect(toolAlerts(newTool({ serviceMonths: 12, purchaseDate: "2025-10-01" }), TODAY)).toEqual(["service-overdue"])
     expect(toolAlerts(newTool({ serviceMonths: 12, purchaseDate: "2025-12-01" }), TODAY)).toEqual(["service-soon"])
     expect(toolAlerts(newTool({ serviceMonths: 12 }), TODAY)).toEqual(["service-unknown"])
-    expect(toolAlerts(newTool({ counter: 2700, counterLimit: 3000 }), TODAY)).toEqual(["counter-near"])
-    expect(toolAlerts(newTool({ counter: 3000, counterLimit: 3000, condition: "reparacion" }), TODAY)).toEqual(["counter-limit", "condition"])
+    expect(toolAlerts(newTool({ counterLabel: "Arcos", counter: 2700, counterLimit: 3000 }), TODAY)).toEqual(["counter-near"])
+    expect(toolAlerts(newTool({ counterLabel: "Arcos", counter: 3000, counterLimit: 3000, condition: "reparacion" }), TODAY)).toEqual(["counter-limit", "condition"])
+    // Counter name cleared: its fields are hidden in the editor, so no alert that couldn't be cleared.
+    expect(toolAlerts(newTool({ counterLabel: " ", counter: 3000, counterLimit: 3000 }), TODAY)).toEqual([])
     expect(toolAlerts(newTool({ warrantyEnd: "2026-12-01" }), TODAY)).toEqual(["warranty-soon"])
     expect(toolAlerts(newTool({ warrantyEnd: "2026-11-01", counter: 10 }), TODAY)).toEqual([])
   })

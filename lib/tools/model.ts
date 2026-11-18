@@ -180,7 +180,8 @@ export function toolAlerts(x: Tool, today: string): Alert[] {
     else if (next < today) out.push("service-overdue")
     else if (days(today, next) <= 30) out.push("service-soon")
   }
-  if (x.counterLimit && x.counter !== null) {
+  // Only while the counter has a name: the editor hides its fields without one, so an alert then couldn't be cleared.
+  if (x.counterLabel.trim() && x.counterLimit && x.counter !== null) {
     if (x.counter >= x.counterLimit) out.push("counter-limit")
     else if (x.counter >= x.counterLimit * 0.9) out.push("counter-near")
   }
