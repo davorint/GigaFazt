@@ -102,6 +102,26 @@ export const providers = pgTable(
 )
 export const providerVersions = versions("provider_versions", "provider_id")
 
+// ── Subscribers ─────────────────────────────────────────────────────────────
+
+export const clients = pgTable(
+  "clients",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull().default(""),
+    building: text("building").notNull().default(""),
+    apartment: text("apartment").notNull().default(""),
+    pppoeUser: text("pppoe_user").notNull().default(""),
+    /** activo / suspendido / cancelado. */
+    status: text("status").notNull().default("activo"),
+    /** The whole client (lib/clients/model.ts). */
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("clients_rev_idx").on(t.rev), index("clients_pppoe_idx").on(t.pppoeUser), index("clients_building_idx").on(t.building)]
+)
+export const clientVersions = versions("client_versions", "client_id")
+
 // ── Saved MikroTik deployments ──────────────────────────────────────────────
 
 export const deployments = pgTable(

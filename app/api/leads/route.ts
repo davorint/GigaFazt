@@ -1,12 +1,14 @@
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { leadSchema } from "@/lib/lead"
+import { saveLead } from "@/lib/leads/server"
 
 const MAX_BODY_BYTES = 8 * 1024
 
 /**
- * Lead intake. Validates with the shared zod schema (lib/lead.ts), then
- * forwards to a CRM webhook if configured (BUSINESS.md → CRM / lead webhook),
- * otherwise logs to the server console.
+ * Lead intake. Validates with the shared zod schema (lib/lead.ts), saves it
+ * to the database after answering (the visitor never waits on it; listed in
+ * /interno/admin/clientes), then forwards to a CRM webhook if configured
+ * (BUSINESS.md → CRM / lead webhook), otherwise logs to the server console.
  */
 export async function POST(request: Request) {
   const raw = await request.text()
@@ -45,6 +47,13 @@ export async function POST(request: Request) {
   const { website: _honeypot, ...lead } = parsed.data
   void _honeypot
   const payload = { ...lead, receivedAt: new Date().toISOString() }
+  let locale = "es"
+  try {
+    if (/^\/en(\/|$)/.test(new URL(request.headers.get("referer") ?? "").pathname)) locale = "en"
+  } catch {
+    // No referer: Spanish, the default.
+  }
+  after(() => saveLead(lead, locale))
 
   const webhook = process.env.CRM_WEBHOOK_URL
   if (webhook) {

@@ -102,6 +102,7 @@
   "links": {
     "interno": "Herramientas internas",
     "admin": "Administración",
+    "clientes": "Clientes",
     "proveedores": "Proveedores",
     "materiales": "Materiales",
     "levantamientos": "Levantamientos"

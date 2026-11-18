@@ -6,7 +6,7 @@
  * including the ones it just saved. Two phones changing the same record: the most recent edit wins and the other copy
  * goes to the history marked as a conflict (owner's choice, 2026-11-17).
  */
-export const SYNC_KINDS = ["surveys", "materials", "providers"] as const
+export const SYNC_KINDS = ["surveys", "materials", "providers", "clients"] as const
 export type SyncKind = (typeof SYNC_KINDS)[number]
 
 export type Change = {

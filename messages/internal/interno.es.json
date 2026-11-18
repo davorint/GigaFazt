@@ -14,7 +14,7 @@
       },
       "admin": {
         "name": "Administración",
-        "desc": "Proveedores (materiales, carriers, servicios) y la lista maestra de materiales con precios."
+        "desc": "Clientes y solicitudes, proveedores (materiales, carriers, servicios) y la lista maestra de materiales con precios."
       },
       "mikrotik-optimo": {
         "name": "Guía óptima MikroTik",
@@ -47,9 +47,13 @@
         "title": "Administración · Interno"
       },
       "title": "Administración",
-      "lead": "Lo que usan las demás secciones: proveedores y la lista maestra de materiales.",
+      "lead": "Lo que usan las demás secciones: clientes, proveedores y la lista maestra de materiales.",
       "back": "Herramientas internas",
       "pages": {
+        "clientes": {
+          "name": "Clientes",
+          "desc": "Suscriptores con contacto, servicio, equipo y pago, y las solicitudes del sitio; importación desde Excel o el MikroTik."
+        },
         "proveedores": {
           "name": "Proveedores",
           "desc": "Materiales y equipo, carriers, servicios y contratistas: contactos, condiciones, calificación y, para carriers, cobertura y precios."

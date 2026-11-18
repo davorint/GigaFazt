@@ -17,6 +17,7 @@ import type { PoolClient } from "pg"
 import { decodeItem } from "../materials/catalog"
 import { decodeProvider, providerName } from "../providers/model"
 import { decodeSurvey } from "../survey/model"
+import { decodeClient } from "../clients/model"
 import { getPool } from "../db/client"
 import { MAX_RECORDS, type Change, type Outcome, type Remote, type SyncKind, type SyncResponse } from "./protocol"
 
@@ -63,6 +64,17 @@ const SPECS: Record<SyncKind, KindSpec> = {
       if (!p) return null
       const d = { ...p, id }
       return { data: d, cols: { name: providerName(d), kinds: d.kinds.join(","), rfc: d.rfc } }
+    },
+  },
+  clients: {
+    table: "clients",
+    versions: "client_versions",
+    fk: "client_id",
+    read: (id, data) => {
+      const c = decodeClient(data)
+      if (!c) return null
+      const d = { ...c, id }
+      return { data: d, cols: { name: d.name, building: d.building, apartment: d.apartment, pppoe_user: d.pppoeUser, status: d.status } }
     },
   },
 }
