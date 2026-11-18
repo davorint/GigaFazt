@@ -3,15 +3,19 @@
  * - a spreadsheet: CSV, or rows pasted straight from Excel / Google Sheets (tabs), with a header row or not; each
  *   column is matched to a field (guessed from the header, changeable), values converted (dates dd/mm/aaaa or
  *   aaaa-mm-dd, "$1,234.50", sí/no), and every line with a problem listed before anything is saved;
- * - the MikroTik: `/ppp secret export` (or `export terse`): each account becomes a client with its PPPoE user, its
- *   profile as the plan, the comment as the name, and suspended when the account is disabled or on DSX-suspendido.
+ *   A row gives one client with an internet service (when it has internet columns), an IPTV service (TV column "sí",
+ *   a TV package or price, or a client of type TV) or both;
+ * - the MikroTik: `/ppp secret export` (or `export terse`): each account becomes a client with an internet service
+ *   (PPPoE user, profile as the plan, suspended when the account is disabled or on DSX-suspendido), the comment as the
+ *   name.
  * Matching with the clients already there is done by mergeClients (model.ts): known clients only get empty fields
  * filled.
  */
-import { CLIENT_STATUSES, PAY_METHODS, newClient, type Client, type ClientStatus, type PayMethod } from "./model"
+import { CLIENT_KINDS, PAY_METHODS, clientStatus, newClient, newService, type Client, type ClientKind, type PayMethod, type Service, type ServiceStatus } from "./model"
 
 /** Fields a spreadsheet column can fill. */
 export const IMPORT_FIELDS = [
+  "kind",
   "name",
   "phone",
   "whatsapp",
@@ -20,7 +24,6 @@ export const IMPORT_FIELDS = [
   "tower",
   "apartment",
   "plan",
-  "tv",
   "installDate",
   "monthly",
   "status",
@@ -30,6 +33,9 @@ export const IMPORT_FIELDS = [
   "deployment",
   "oltPort",
   "ontId",
+  "tv",
+  "tvPackage",
+  "tvMonthly",
   "payDay",
   "payMethod",
   "notes",
@@ -46,6 +52,7 @@ const fold = (s: string) =>
 
 /** Header words that point to each field (Spanish and English, as people name their columns). */
 const ALIASES: Record<ImportField, string[]> = {
+  kind: ["tipo", "tipo de cliente", "segmento", "kind", "client type"],
   name: ["nombre", "cliente", "name", "nombre completo", "titular"],
   phone: ["telefono", "tel", "celular", "phone", "movil"],
   whatsapp: ["whatsapp", "wa", "whats"],
@@ -53,8 +60,10 @@ const ALIASES: Record<ImportField, string[]> = {
   building: ["edificio", "condominio", "desarrollo", "building", "torre edificio", "conjunto"],
   tower: ["torre", "tower", "bloque"],
   apartment: ["departamento", "depto", "dpto", "apartment", "apt", "unidad", "numero interior", "interior"],
-  plan: ["plan", "paquete", "perfil", "profile", "velocidad"],
-  tv: ["tv", "television", "television add on"],
+  plan: ["plan", "plan internet", "perfil", "profile", "velocidad"],
+  tv: ["tv", "television", "iptv"],
+  tvPackage: ["paquete tv", "paquete de tv", "paquete iptv", "tv package"],
+  tvMonthly: ["mensualidad de tv", "mensualidad tv", "precio tv", "cuota tv", "tv monthly", "tv precio"],
   installDate: ["instalacion", "fecha instalacion", "fecha de instalacion", "alta", "fecha alta", "install date"],
   monthly: ["mensualidad", "precio", "renta", "cuota", "monto", "monthly", "pago mensual"],
   status: ["estado", "estatus", "status"],
@@ -63,7 +72,7 @@ const ALIASES: Record<ImportField, string[]> = {
   pppoeUser: ["usuario", "pppoe", "usuario pppoe", "user", "login", "cuenta"],
   deployment: ["despliegue", "red", "nodo", "deployment"],
   oltPort: ["puerto", "puerto olt", "pon", "olt port"],
-  ontId: ["ont id", "id ont", "onu id"],
+  ontId: ["ont id", "id ont", "id del ont", "onu id", "id de la onu"],
   payDay: ["dia de pago", "dia pago", "corte", "pay day"],
   payMethod: ["forma de pago", "metodo de pago", "pago", "pay method"],
   notes: ["notas", "observaciones", "comentarios", "notes", "comentario"],
@@ -73,8 +82,16 @@ export function guessField(header: string): ImportField | "" {
   const h = fold(header)
   if (!h) return ""
   for (const f of IMPORT_FIELDS) if (ALIASES[f].includes(h)) return f
-  for (const f of IMPORT_FIELDS) if (ALIASES[f].some((a) => a.length > 3 && h.includes(a))) return f
-  return ""
+  // Otherwise the field whose name appears in the title, the longest name first ("mensualidad de tv" before "mensualidad").
+  let best: ImportField | "" = ""
+  let len = 0
+  for (const f of IMPORT_FIELDS)
+    for (const a of ALIASES[f])
+      if (a.length > 3 && a.length > len && h.includes(a)) {
+        best = f
+        len = a.length
+      }
+  return best
 }
 
 /** Rows of a CSV / TSV text (quoted cells with commas, quotes and line breaks inside are understood). */
@@ -138,13 +155,22 @@ export function toMoney(v: string): number | null {
   const n = Number(normalized)
   return Number.isFinite(n) && n >= 0 && n <= 1e6 ? Math.round(n * 100) / 100 : null
 }
-function toStatus(v: string): ClientStatus | null {
+function toKind(v: string): ClientKind | null {
+  const f = fold(v)
+  if (!f) return null
+  if (/^(resid|depto|departamento|casa|hogar|home)/.test(f)) return "residencial"
+  if (/^(admin|condominio|torre|edificio)/.test(f)) return "administracion"
+  if (/^(empresa|negocio|oficina|comerc|company|business)/.test(f)) return "empresa"
+  if (/^(tv|iptv|television)/.test(f)) return "tv"
+  return (CLIENT_KINDS as readonly string[]).includes(f) ? (f as ClientKind) : null
+}
+function toStatus(v: string): ServiceStatus | null {
   const f = fold(v)
   if (!f) return null
   if (/^(activo|active|alta|ok|si)/.test(f)) return "activo"
   if (/^(suspend|corte|cortado|moroso|bloque)/.test(f)) return "suspendido"
   if (/^(cancel|baja|inactivo|retir)/.test(f)) return "cancelado"
-  return (CLIENT_STATUSES as readonly string[]).includes(f) ? (f as ClientStatus) : null
+  return null
 }
 function toMethod(v: string): PayMethod | null {
   const f = fold(v)
@@ -158,60 +184,86 @@ function toMethod(v: string): PayMethod | null {
 
 export type RowError = { line: number; field: ImportField | "row"; value: string }
 
-/** The clients of a table with its column → field mapping; lines with problems listed (and still imported without the bad value). */
+/** Fields that say a row has an internet service with us. */
+const NET_ONLY: ImportField[] = ["pppoeUser", "ontSn", "deployment", "oltPort", "ontId"]
+/** Fields that belong to the row's main service (internet, or IPTV for a TV client without internet). */
+const MAIN: ImportField[] = ["plan", "installDate", "monthly", "status"]
+
+/**
+ * The clients of a table with its column → field mapping; lines with problems listed (and still imported without the
+ * bad value). A row gives an internet service when it has internet columns (or a plan or price and isn't a TV client)
+ * and an IPTV service when it says TV, has a TV package or price, or is a TV client.
+ */
 export function rowsToClients(rows: string[][], mapping: (ImportField | "")[], skipHeader: boolean): { clients: Client[]; errors: RowError[] } {
   const clients: Client[] = []
   const errors: RowError[] = []
   rows.forEach((r, k) => {
     if (skipHeader && k === 0) return
     const line = k + 1
-    const c = newClient({ ontModel: "" })
+    const v: Partial<Record<ImportField, string>> = {}
     mapping.forEach((f, i) => {
-      const v = (r[i] ?? "").trim()
-      if (!f || !v) return
-      switch (f) {
-        case "tv":
-          c.tv = yes(v)
-          break
-        case "installDate": {
-          const d = toDate(v)
-          if (d) c.installDate = d
-          else errors.push({ line, field: f, value: v })
-          break
-        }
-        case "monthly": {
-          const n = toMoney(v)
-          if (n !== null) c.monthly = n
-          else errors.push({ line, field: f, value: v })
-          break
-        }
-        case "status": {
-          const s = toStatus(v)
-          if (s) c.status = s
-          else errors.push({ line, field: f, value: v })
-          break
-        }
-        case "payMethod": {
-          const m = toMethod(v)
-          if (m !== null) c.payMethod = m
-          break
-        }
-        case "payDay":
-        case "ontId": {
-          const n = Number(v)
-          const ok = Number.isInteger(n) && n >= (f === "payDay" ? 1 : 0) && n <= (f === "payDay" ? 31 : 255)
-          if (ok) c[f] = n
-          else errors.push({ line, field: f, value: v })
-          break
-        }
-        case "ontSn":
-          c.ontSn = v.toUpperCase().slice(0, 40)
-          break
-        default:
-          ;(c as Record<string, unknown>)[f] = v.slice(0, f === "notes" ? 4000 : 200)
-      }
+      const x = (r[i] ?? "").trim()
+      if (f && x && !v[f]) v[f] = x
     })
-    if (!c.name && !c.pppoeUser) {
+    const bad = (field: ImportField) => errors.push({ line, field, value: v[field] ?? "" })
+    const c = newClient()
+    if (v.kind) {
+      const kind = toKind(v.kind)
+      if (kind) c.kind = kind
+      else bad("kind")
+    }
+    for (const f of ["name", "phone", "whatsapp", "email", "building", "tower", "apartment", "notes"] as const) if (v[f]) c[f] = v[f].slice(0, f === "notes" ? 4000 : 200)
+    if (v.payDay) {
+      const n = Number(v.payDay)
+      if (Number.isInteger(n) && n >= 1 && n <= 31) c.payDay = n
+      else bad("payDay")
+    }
+    if (v.payMethod) c.payMethod = toMethod(v.payMethod) ?? ""
+    // The main service's values
+    const main: Partial<Service> = {}
+    if (v.plan) main.plan = v.plan.slice(0, 120)
+    if (v.installDate) {
+      const d = toDate(v.installDate)
+      if (d) main.start = d
+      else bad("installDate")
+    }
+    if (v.monthly) {
+      const n = toMoney(v.monthly)
+      if (n !== null) main.monthly = n
+      else bad("monthly")
+    }
+    if (v.status) {
+      const st = toStatus(v.status)
+      if (st) main.status = st
+      else bad("status")
+    }
+    const hasNet = NET_ONLY.some((f) => v[f]) || (c.kind !== "tv" && MAIN.some((f) => f !== "status" && v[f]))
+    const tvYes = v.tv ? yes(v.tv) : false
+    const hasTv = tvYes || !!v.tvPackage || !!v.tvMonthly || c.kind === "tv"
+    if (hasNet) {
+      const net = newService("internet", { ...main, ontModel: v.ontModel?.slice(0, 60) ?? "" })
+      if (v.ontSn) net.ontSn = v.ontSn.toUpperCase().slice(0, 40)
+      if (v.pppoeUser) net.pppoeUser = v.pppoeUser.slice(0, 64)
+      if (v.deployment) net.deployment = v.deployment.slice(0, 120)
+      if (v.oltPort) net.oltPort = v.oltPort.slice(0, 20)
+      if (v.ontId) {
+        const n = Number(v.ontId)
+        if (Number.isInteger(n) && n >= 0 && n <= 255) net.ontId = n
+        else bad("ontId")
+      }
+      c.services.push(net)
+    }
+    if (hasTv) {
+      const tv = newService("iptv", hasNet ? { status: main.status ?? "activo", start: main.start ?? "" } : main)
+      if (v.tvPackage) tv.plan = v.tvPackage.slice(0, 120)
+      if (v.tvMonthly) {
+        const n = toMoney(v.tvMonthly)
+        if (n !== null) tv.monthly = n
+        else bad("tvMonthly")
+      }
+      c.services.push(tv)
+    }
+    if (!c.name && !c.services.some((s) => s.pppoeUser)) {
       errors.push({ line, field: "row", value: r.join(" | ").slice(0, 80) })
       return
     }
@@ -229,7 +281,8 @@ function pairs(line: string): Record<string, string> {
   return out
 }
 
-/** The accounts of a `/ppp secret export` as clients (user, plan = profile, name = comment, status). */
+
+/** The accounts of a `/ppp secret export` as clients with an internet service (user, plan = profile, name = comment, status). */
 export function pppSecretsToClients(text: string): { clients: Client[]; skipped: number } {
   const joined = text.replace(/\r\n?/g, "\n").replace(/\\\n\s*/g, "")
   let inSecrets = false
@@ -254,23 +307,52 @@ export function pppSecretsToClients(text: string): { clients: Client[]; skipped:
     const suspended = p.disabled === "yes" || /^DSX-suspendido/i.test(p.profile ?? "")
     clients.push(
       newClient({
-        ontModel: "",
-        pppoeUser: p.name.slice(0, 64),
-        plan: (p.profile ?? "").slice(0, 80),
         name: (p.comment ?? "").slice(0, 200),
-        status: suspended ? "suspendido" : "activo",
+        services: [newService("internet", { ontModel: "", pppoeUser: p.name.slice(0, 64), plan: (p.profile ?? "").slice(0, 120), status: suspended ? "suspendido" : "activo" })],
       })
     )
   }
   return { clients, skipped }
 }
 
-/** The list as CSV (UTF-8 with BOM so Excel shows accents), with Spanish headers. */
-export function clientsCsv(list: Client[], headers: Record<ImportField, string>): string {
+/** The list as CSV (UTF-8 with BOM so Excel shows accents), with Spanish headers: one row per client, its first internet and first IPTV service (the same columns the import reads). */
+export function clientsCsv(list: Client[], headers: Record<ImportField, string>, labels: { kind: Record<ClientKind, string>; status: Record<string, string> }): string {
   const esc = (v: unknown) => {
     const s = v === null || v === undefined ? "" : typeof v === "boolean" ? (v ? "sí" : "no") : String(v)
     return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
   }
-  const lines = [IMPORT_FIELDS.map((f) => esc(headers[f])).join(","), ...list.map((c) => IMPORT_FIELDS.map((f) => esc(c[f])).join(","))]
-  return "\uFEFF" + lines.join("\r\n") + "\r\n"
+  const row = (c: Client) => {
+    const net = c.services.find((s) => s.type === "internet")
+    const tv = c.services.find((s) => s.type === "iptv")
+    const main = net ?? tv
+    const val: Record<ImportField, unknown> = {
+      kind: labels.kind[c.kind],
+      name: c.name,
+      phone: c.phone,
+      whatsapp: c.whatsapp,
+      email: c.email,
+      building: c.building,
+      tower: c.tower,
+      apartment: c.apartment,
+      plan: net?.plan ?? "",
+      installDate: main?.start ?? "",
+      monthly: net?.monthly ?? (tv && !net ? tv.monthly : null),
+      status: labels.status[main?.status ?? clientStatus(c)],
+      ontModel: net?.ontModel ?? "",
+      ontSn: net?.ontSn ?? "",
+      pppoeUser: net?.pppoeUser ?? "",
+      deployment: net?.deployment ?? "",
+      oltPort: net?.oltPort ?? "",
+      ontId: net?.ontId ?? null,
+      tv: !!tv,
+      tvPackage: tv?.plan ?? "",
+      tvMonthly: net ? (tv?.monthly ?? null) : null,
+      payDay: c.payDay,
+      payMethod: c.payMethod,
+      notes: c.notes,
+    }
+    return IMPORT_FIELDS.map((f) => esc(val[f])).join(",")
+  }
+  const lines = [IMPORT_FIELDS.map((f) => esc(headers[f])).join(","), ...list.map(row)]
+  return "﻿" + lines.join("\r\n") + "\r\n"
 }

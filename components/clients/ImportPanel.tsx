@@ -6,6 +6,7 @@ import { TextField } from "@/components/mikrotik/TextField"
 import { AreaField, PickField } from "@/components/surveys/SurveyFields"
 import { IMPORT_FIELDS, guessField, hasHeader, parseTable, pppSecretsToClients, rowsToClients, type ImportField } from "@/lib/clients/import"
 import { importClients } from "@/lib/clients/store"
+import type { Client } from "@/lib/clients/model"
 
 const PRIMARY = "h-11 w-fit rounded-full bg-white px-5 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50"
 const PREVIEW_ROWS = 5
@@ -131,7 +132,8 @@ function MikrotikImport() {
   const [done, setDone] = useState("")
   const r = useMemo(() => (text.trim() ? pppSecretsToClients(text) : { clients: [], skipped: 0 }), [text])
   const run = () => {
-    const res = importClients(r.clients.map((c) => ({ ...c, deployment: deployment.trim(), building: deployment.trim() || c.building })))
+    const d = deployment.trim()
+    const res = importClients(r.clients.map((c): Client => ({ ...c, building: d || c.building, services: c.services.map((s) => ({ ...s, deployment: d })) })))
     setDone(t("import.done", res))
     setText("")
   }

@@ -1,0 +1,1 @@
+ALTER TABLE "clients" ADD COLUMN "kind" text DEFAULT 'residencial' NOT NULL;

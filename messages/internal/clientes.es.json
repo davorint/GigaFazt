@@ -5,7 +5,7 @@
     },
     "kicker": "Administración",
     "title": "Clientes",
-    "lead": "Los suscriptores con su contacto, servicio, equipo y pago, y las solicitudes que llegan del sitio. Se comparte entre los teléfonos por la base de datos.",
+    "lead": "Residentes, administraciones de edificios y torres, empresas y clientes de TV, cada uno con sus servicios (internet, TV, otros), y las solicitudes que llegan del sitio. Se comparte entre los teléfonos por la base de datos.",
     "privacy": "Datos personales: solo con la contraseña del equipo. No los compartas fuera.",
     "tabs": {
       "clients": "Clientes",
@@ -13,6 +13,7 @@
       "import": "Importar"
     },
     "fields": {
+      "kind": "Tipo de cliente",
       "name": "Nombre",
       "phone": "Teléfono",
       "whatsapp": "WhatsApp",
@@ -20,8 +21,8 @@
       "building": "Edificio",
       "tower": "Torre",
       "apartment": "Departamento",
-      "plan": "Plan",
-      "tv": "TV",
+      "plan": "Plan de internet",
+      "tv": "TV (IPTV)",
       "installDate": "Fecha de instalación",
       "monthly": "Mensualidad",
       "status": "Estado",
@@ -33,12 +34,15 @@
       "ontId": "ID del ONT",
       "payDay": "Día de pago",
       "payMethod": "Forma de pago",
-      "notes": "Notas"
+      "notes": "Notas",
+      "tvPackage": "Paquete de TV",
+      "tvMonthly": "Mensualidad de TV"
     },
     "statuses": {
       "activo": "Activo",
       "suspendido": "Suspendido",
-      "cancelado": "Cancelado"
+      "cancelado": "Cancelado",
+      "sin-servicio": "Sin servicio"
     },
     "methods": {
       "none": "Sin dato",
@@ -51,7 +55,7 @@
     "list": {
       "add": "Agregar cliente",
       "search": "Buscar",
-      "searchHint": "Nombre, teléfono, edificio, departamento, usuario PPPoE o serie del ONT.",
+      "searchHint": "Nombre, teléfono, edificio, departamento, contacto, plan, usuario PPPoE o serie del ONT.",
       "status": "Estado",
       "allStatuses": "Todos",
       "building": "Edificio",
@@ -61,18 +65,19 @@
       "exportCsv": "Exportar CSV",
       "untitled": "Sin nombre",
       "groups": {
-        "contact": "Contacto",
-        "service": "Servicio",
-        "network": "Equipo y red",
+        "contact": "Datos del cliente",
         "billing": "Pago"
       },
-      "perMonth": "MXN/mes",
       "yes": "Sí",
       "no": "No",
       "remove": "Quitar cliente",
       "confirmRemove": "¿Quitar a «{name}»? Queda en el historial de la base de datos y se puede recuperar.",
       "fromLead": "Vino de una solicitud del sitio",
-      "planHint": "El nombre del perfil en el MikroTik (plan-200M…) o el plan."
+      "kind": "Tipo",
+      "allKinds": "Todos",
+      "noServices": "Sin servicios",
+      "perMonth": "MXN/mes",
+      "byKind": "{residencial, plural, one {# residencial} other {# residenciales}} · {administracion, plural, one {# administración} other {# administraciones}} · {empresa, plural, one {# empresa} other {# empresas}} · {tv} de TV"
     },
     "leads": {
       "intro": "Lo que llega del formulario «Contratar» del sitio. Cambia el estado conforme avanzas y conviértela en cliente al instalar.",
@@ -105,7 +110,7 @@
     "import": {
       "intro": "Trae a tus clientes actuales de una hoja de cálculo o del MikroTik. Si un cliente ya está (mismo usuario PPPoE, o mismo nombre, edificio y departamento), solo se llenan sus datos vacíos: nada de lo que escribiste se borra.",
       "sheetTitle": "Desde una hoja de cálculo",
-      "sheetHint": "Copia las filas en Excel o Google Sheets y pégalas aquí (o sube un CSV). Con o sin fila de títulos.",
+      "sheetHint": "Copia las filas en Excel o Google Sheets y pégalas aquí (o sube un CSV). Con o sin fila de títulos. Una fila puede traer internet y TV: las columnas de TV (sí/no, paquete, mensualidad) crean el servicio de TV; en un cliente de tipo TV sin internet, plan, precio y estado son los de su TV.",
       "paste": "Filas pegadas o CSV",
       "file": "Subir CSV",
       "header": "La primera fila son títulos",
@@ -120,11 +125,80 @@
       "doImport": "Importar",
       "done": "Importado: {added} nuevos, {filled} completados, {same} ya estaban igual.",
       "mikrotikTitle": "Desde el MikroTik",
-      "mikrotikHint": "En la terminal del router: /ppp secret export (o export terse). Pega el resultado: cada cuenta es un cliente con su usuario, su perfil como plan y el comentario como nombre; suspendido si la cuenta está deshabilitada o en DSX-suspendido. Las contraseñas no se guardan.",
+      "mikrotikHint": "En la terminal del router: /ppp secret export (o export terse). Pega el resultado: cada cuenta es un cliente con un servicio de internet (su usuario, su perfil como plan; suspendido si la cuenta está deshabilitada o en DSX-suspendido) y el comentario como nombre. Las contraseñas no se guardan.",
       "mikrotikPaste": "Resultado de /ppp secret export",
       "deployment": "Despliegue de estas cuentas",
       "deploymentHint": "Opcional: el nombre del edificio o despliegue de este router.",
       "found": "{n, plural, one {# cuenta encontrada} other {# cuentas encontradas}}{skipped, plural, =0 {} other {, # omitidas (sin nombre o no PPPoE)}}"
+    },
+    "kinds": {
+      "residencial": "Residencial",
+      "administracion": "Administración",
+      "empresa": "Empresa",
+      "tv": "TV"
+    },
+    "kindHints": {
+      "residencial": "Vive en uno de los edificios.",
+      "administracion": "Administra un edificio, una torre o un condominio.",
+      "empresa": "Una empresa o negocio.",
+      "tv": "Compra TV (IPTV); puede o no tener nuestro internet."
+    },
+    "nameByKind": {
+      "residencial": "Nombre",
+      "administracion": "Administración",
+      "empresa": "Empresa",
+      "tv": "Nombre"
+    },
+    "buildingByKind": {
+      "residencial": "Edificio",
+      "administracion": "Edificio o condominio",
+      "empresa": "Dirección",
+      "tv": "Edificio o dirección"
+    },
+    "services": {
+      "title": "Servicios",
+      "none": "Sin servicios todavía.",
+      "types": {
+        "internet": "Internet",
+        "iptv": "TV (IPTV)",
+        "otro": "Otro servicio"
+      },
+      "add": {
+        "internet": "+ Internet",
+        "iptv": "+ TV (IPTV)",
+        "otro": "+ Otro servicio"
+      },
+      "plan": {
+        "internet": "Plan",
+        "iptv": "Paquete",
+        "otro": "Qué es"
+      },
+      "planHint": {
+        "internet": "El nombre del perfil en el MikroTik (plan-200M…) o el plan.",
+        "iptv": "El paquete de canales.",
+        "otro": "Proyecto de red, cableado, Wi-Fi, renta de equipo…"
+      },
+      "status": "Estado",
+      "start": "Desde",
+      "monthly": "Mensualidad",
+      "notes": "Notas del servicio",
+      "remove": "Quitar servicio",
+      "confirmRemove": "¿Quitar este servicio de «{name}»?",
+      "fiberOurs": "Sobre nuestra fibra",
+      "fiberOther": "Por el internet de otro proveedor",
+      "total": "Total al mes de los servicios activos: {total}",
+      "totalMissing": "{n, plural, one {# servicio activo sin precio} other {# servicios activos sin precio}}"
+    },
+    "contacts": {
+      "title": "Contactos",
+      "hint": "Las personas con las que tratas: dueño, sistemas, contabilidad, administrador del edificio…",
+      "none": "Sin contactos todavía.",
+      "add": "Agregar contacto",
+      "name": "Nombre",
+      "role": "Puesto",
+      "phone": "Teléfono",
+      "email": "Correo",
+      "remove": "Quitar contacto"
     }
   }
 }

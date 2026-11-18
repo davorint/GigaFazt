@@ -1,7 +1,7 @@
-/** A website request turned into a client: contact, address as the building, plan, TV and the monthly price from the site's plans. */
+/** A website request turned into a residential client: contact, address as the building, an internet service with the plan and its price, and an IPTV service when TV was asked for. */
 import { getAddOn, getPlan } from "../plans"
 import { speedLabel } from "../format"
-import { newClient, type Client } from "./model"
+import { newClient, newService, type Client } from "./model"
 
 export type LeadLike = { id: string; name: string; phone: string; email: string; address: string; planId: string; addOnIds: string[] }
 
@@ -11,21 +11,11 @@ export const localToday = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
 
+const price = (x: unknown) => (typeof x === "number" ? x : null)
+
 export function clientFromLead(l: LeadLike, today = localToday()): Client {
   const plan = getPlan(l.planId)
-  const tv = l.addOnIds.includes("tv")
-  const price = (x: unknown) => (typeof x === "number" ? x : 0)
-  const monthly = plan ? price(plan.priceMxn) + (tv ? price(getAddOn("tv")?.priceMxn) : 0) : null
-  return newClient({
-    name: l.name,
-    phone: l.phone,
-    whatsapp: l.phone,
-    email: l.email,
-    building: l.address,
-    plan: plan ? speedLabel(plan.downMbps) : l.planId,
-    tv,
-    installDate: today,
-    monthly: monthly || null,
-    leadId: l.id,
-  })
+  const services = [newService("internet", { plan: plan ? speedLabel(plan.downMbps) : l.planId, monthly: plan ? price(plan.priceMxn) : null, start: today })]
+  if (l.addOnIds.includes("tv")) services.push(newService("iptv", { plan: "TV", monthly: price(getAddOn("tv")?.priceMxn), start: today }))
+  return newClient({ kind: "residencial", name: l.name, phone: l.phone, whatsapp: l.phone, email: l.email, building: l.address, services, leadId: l.id })
 }

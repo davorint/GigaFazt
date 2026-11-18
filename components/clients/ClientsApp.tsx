@@ -5,10 +5,28 @@ import { useTranslations } from "next-intl"
 import { NumberField } from "@/components/mikrotik/NumberField"
 import { TextField } from "@/components/mikrotik/TextField"
 import { AreaField, DateField, GRID, PickField } from "@/components/surveys/SurveyFields"
-import { clientsCsv, IMPORT_FIELDS, type ImportField } from "@/lib/clients/import"
-import { CLIENT_STATUSES, PAY_METHODS, clientLabel, newClient, type Client, type ClientStatus } from "@/lib/clients/model"
-import { clientsServerSnapshot, clientsSnapshot, deleteClient, saveClient, subscribeClients } from "@/lib/clients/store"
 import { localToday } from "@/lib/clients/from-lead"
+import { clientsCsv, IMPORT_FIELDS, type ImportField } from "@/lib/clients/import"
+import {
+  CLIENT_KINDS,
+  PAY_METHODS,
+  SERVICE_STATUSES,
+  SERVICE_TYPES,
+  clientLabel,
+  clientStatus,
+  monthlyTotal,
+  newClient,
+  newContact,
+  newService,
+  onOurFiber,
+  pppoeUsers,
+  type Client,
+  type ClientKind,
+  type ClientStatus,
+  type Contact,
+  type Service,
+} from "@/lib/clients/model"
+import { clientsServerSnapshot, clientsSnapshot, deleteClient, saveClient, subscribeClients } from "@/lib/clients/store"
 import { mxn } from "@/lib/materials/catalog"
 import { ImportPanel } from "./ImportPanel"
 import { LeadsPanel } from "./LeadsPanel"
@@ -17,11 +35,14 @@ type T = ReturnType<typeof useTranslations>
 const TABS = ["clients", "leads", "import"] as const
 type Tab = (typeof TABS)[number]
 const BTN = "h-11 rounded-full border border-white/15 px-5 text-sm text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+const SMALL = "inline-flex min-h-9 items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+const DANGER = "inline-flex min-h-9 w-fit items-center rounded-full border border-red-400/30 px-3 text-xs text-red-200 hover:bg-red-400/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const PRIMARY = "h-11 rounded-full bg-white px-5 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const TONE: Record<ClientStatus, string> = {
   activo: "border-emerald-400/40 text-emerald-300",
   suspendido: "border-amber-400/40 text-amber-200",
   cancelado: "border-white/15 text-zinc-400",
+  "sin-servicio": "border-white/15 text-zinc-400",
 }
 const fold = (s: string) =>
   s
@@ -38,7 +59,7 @@ function download(name: string, text: string, type: string) {
   URL.revokeObjectURL(url)
 }
 
-/** Subscribers, website requests and the import, as three tabs of /interno/admin/clientes. */
+/** Clients, website requests and the import, as three tabs of /interno/admin/clientes. */
 export function ClientsApp() {
   const t = useTranslations("clientes")
   const [tab, setTab] = useState<Tab>("clients")
@@ -77,6 +98,7 @@ export function ClientsApp() {
 function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; setOpenId: (id: string | null) => void }) {
   const store = useSyncExternalStore(subscribeClients, clientsSnapshot, clientsServerSnapshot)
   const [q, setQ] = useState("")
+  const [kind, setKind] = useState<ClientKind | "">("")
   const [status, setStatus] = useState<ClientStatus | "">("")
   const [building, setBuilding] = useState("")
   const list = store.list
@@ -84,17 +106,28 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
   if (!store.loaded) return null
   const needle = fold(q.trim())
   const shown = list
-    .filter((c) => (!status || c.status === status) && (!building || c.building.trim() === building))
-    .filter((c) => !needle || fold([c.name, c.phone, c.whatsapp, c.email, c.building, c.tower, c.apartment, c.pppoeUser, c.ontSn].join(" ")).includes(needle))
+    .filter((c) => (!kind || c.kind === kind) && (!status || clientStatus(c) === status) && (!building || c.building.trim() === building))
+    .filter(
+      (c) =>
+        !needle ||
+        fold(
+          [c.name, c.phone, c.whatsapp, c.email, c.building, c.tower, c.apartment, ...c.contacts.flatMap((x) => [x.name, x.phone, x.email]), ...c.services.flatMap((s) => [s.plan, s.pppoeUser, s.ontSn])].join(" ")
+        ).includes(needle)
+    )
     .sort((a, b) => clientLabel(a).localeCompare(clientLabel(b), "es"))
   const add = () => {
-    const c = newClient({ building })
+    const c = newClient({ kind: kind || "residencial", building })
     saveClient(c)
     setOpenId(c.id)
     setQ("")
     setStatus("")
   }
   const headers = Object.fromEntries(IMPORT_FIELDS.map((f) => [f, t(`fields.${f}`)])) as Record<ImportField, string>
+  const labels = {
+    kind: Object.fromEntries(CLIENT_KINDS.map((k) => [k, t(`kinds.${k}`)])) as Record<ClientKind, string>,
+    status: Object.fromEntries([...SERVICE_STATUSES, "sin-servicio"].map((s) => [s, t(`statuses.${s}`)])),
+  }
+  const byKind = Object.fromEntries(CLIENT_KINDS.map((k) => [k, list.filter((c) => c.kind === k).length])) as Record<ClientKind, number>
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap gap-2">
@@ -102,17 +135,26 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
           {t("list.add")}
         </button>
         {list.length > 0 && (
-          <button type="button" onClick={() => download(`clientes-${localToday()}.csv`, clientsCsv(shown, headers), "text/csv;charset=utf-8")} className={BTN}>
+          <button type="button" onClick={() => download(`clientes-${localToday()}.csv`, clientsCsv(shown, headers, labels), "text/csv;charset=utf-8")} className={BTN}>
             {t("list.exportCsv")}
           </button>
         )}
       </div>
-      <div className="grid items-start gap-4 sm:grid-cols-3">
+      <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <TextField label={t("list.search")} value={q} onChange={setQ} hint={t("list.searchHint")} />
-        <PickField label={t("list.status")} value={status} onChange={setStatus} options={[{ value: "" as const, label: t("list.allStatuses") }, ...CLIENT_STATUSES.map((s) => ({ value: s, label: t(`statuses.${s}`) }))]} />
+        <PickField label={t("list.kind")} value={kind} onChange={setKind} options={[{ value: "" as const, label: t("list.allKinds") }, ...CLIENT_KINDS.map((k) => ({ value: k, label: t(`kinds.${k}`) }))]} />
+        <PickField
+          label={t("list.status")}
+          value={status}
+          onChange={setStatus}
+          options={[{ value: "" as const, label: t("list.allStatuses") }, ...([...SERVICE_STATUSES, "sin-servicio"] as const).map((s) => ({ value: s, label: t(`statuses.${s}`) }))]}
+        />
         <PickField label={t("list.building")} value={building} onChange={setBuilding} options={[{ value: "", label: t("list.allBuildings") }, ...buildings.map((b) => ({ value: b, label: b }))]} />
       </div>
-      <p className="font-mono text-xs text-zinc-400">{t("list.count", { shown: shown.length, n: list.length, active: list.filter((c) => c.status === "activo").length })}</p>
+      <div className="grid gap-0.5 font-mono text-xs text-zinc-400">
+        <p>{t("list.count", { shown: shown.length, n: list.length, active: list.filter((c) => clientStatus(c) === "activo").length })}</p>
+        {list.length > 0 && <p>{t("list.byKind", byKind)}</p>}
+      </div>
       {!shown.length && <p className="text-sm text-zinc-400">{t("list.empty")}</p>}
       <ul className="grid gap-2">
         {shown.map((c) => (
@@ -127,16 +169,20 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
 
 function Row({ t, c, open, onToggle }: { t: T; c: Client; open: boolean; onToggle: () => void }) {
   const where = [c.building, c.tower, c.apartment].filter(Boolean).join(" · ")
+  const status = clientStatus(c)
+  const services = c.services.filter((s) => s.status !== "cancelado").map((s) => (s.type === "internet" && s.plan ? `${t("services.types.internet")} ${s.plan}` : t(`services.types.${s.type}`)))
+  const sub = [where, services.join(" + ") || t("list.noServices"), c.name ? pppoeUsers(c)[0] : ""].filter(Boolean).join(" · ")
   return (
     <div className="rounded-xl border border-white/10">
       <button type="button" onClick={onToggle} aria-expanded={open} className="flex w-full items-start justify-between gap-3 rounded-xl p-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
         <span className="grid min-w-0 gap-0.5">
-          <span className="truncate text-sm text-zinc-100">{c.name || c.pppoeUser || t("list.untitled")}</span>
-          <span className="truncate font-mono text-xs text-zinc-400">
-            {[where, c.plan, c.pppoeUser && c.name ? c.pppoeUser : ""].filter(Boolean).join(" · ") || "—"}
-          </span>
+          <span className="truncate text-sm text-zinc-100">{c.name || pppoeUsers(c)[0] || t("list.untitled")}</span>
+          <span className="truncate font-mono text-xs text-zinc-400">{sub}</span>
         </span>
-        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs ${TONE[c.status]}`}>{t(`statuses.${c.status}`)}</span>
+        <span className="flex shrink-0 flex-col items-end gap-1">
+          <span className={`rounded-full border px-2 py-0.5 text-xs ${TONE[status]}`}>{t(`statuses.${status}`)}</span>
+          <span className="text-xs text-zinc-400">{t(`kinds.${c.kind}`)}</span>
+        </span>
       </button>
       {open && <Editor t={t} c={c} />}
     </div>
@@ -145,45 +191,74 @@ function Row({ t, c, open, onToggle }: { t: T; c: Client; open: boolean; onToggl
 
 function Editor({ t, c }: { t: T; c: Client }) {
   const up = (p: Partial<Client>) => saveClient({ ...c, ...p })
-  const text = (f: "name" | "phone" | "whatsapp" | "email" | "building" | "tower" | "apartment" | "plan" | "ontModel" | "pppoeUser" | "deployment" | "oltPort", hint?: string) => (
-    <TextField label={t(`fields.${f}`)} value={c[f]} onChange={(v) => up({ [f]: v })} hint={hint} />
-  )
+  const text = (f: "phone" | "whatsapp" | "email" | "tower" | "apartment") => <TextField label={t(`fields.${f}`)} value={c[f]} onChange={(v) => up({ [f]: v })} />
+  const setService = (s: Service) => up({ services: c.services.map((x) => (x.id === s.id ? s : x)) })
+  const setContact = (k: Contact) => up({ contacts: c.contacts.map((x) => (x.id === k.id ? k : x)) })
+  const business = c.kind === "empresa" || c.kind === "administracion"
+  const active = c.services.filter((s) => s.status === "activo")
+  const missing = active.filter((s) => s.monthly === null).length
   return (
-    <div className="grid gap-5 border-t border-white/10 p-3">
+    <div className="grid gap-6 border-t border-white/10 p-3">
       {c.leadId && <p className="text-xs text-cyan-200">{t("list.fromLead")}</p>}
       <fieldset className="grid gap-3">
         <legend className="mb-1 text-sm font-medium text-foreground">{t("list.groups.contact")}</legend>
         <div className={GRID}>
-          {text("name")}
+          <PickField label={t("fields.kind")} value={c.kind} onChange={(kind) => up({ kind })} options={CLIENT_KINDS.map((k) => ({ value: k, label: t(`kinds.${k}`) }))} hint={t(`kindHints.${c.kind}`)} />
+          <TextField label={t(`nameByKind.${c.kind}`)} value={c.name} onChange={(v) => up({ name: v })} />
           {text("phone")}
           {text("whatsapp")}
           {text("email")}
-          {text("building")}
+          <TextField label={t(`buildingByKind.${c.kind}`)} value={c.building} onChange={(v) => up({ building: v })} />
           {text("tower")}
-          {text("apartment")}
+          {c.kind !== "administracion" && text("apartment")}
         </div>
       </fieldset>
+
+      {(business || c.contacts.length > 0) && (
+        <fieldset className="grid gap-3">
+          <legend className="mb-1 text-sm font-medium text-foreground">{t("contacts.title")}</legend>
+          <p className="text-xs text-zinc-400">{t("contacts.hint")}</p>
+          {!c.contacts.length && <p className="text-sm text-zinc-400">{t("contacts.none")}</p>}
+          {c.contacts.map((k, i) => (
+            <div key={k.id} role="group" aria-label={`${t("contacts.title")} ${i + 1}`} className="grid gap-3 rounded-lg border border-white/10 p-3">
+              <div className={GRID}>
+                <TextField label={t("contacts.name")} value={k.name} onChange={(v) => setContact({ ...k, name: v })} />
+                <TextField label={t("contacts.role")} value={k.role} onChange={(v) => setContact({ ...k, role: v })} />
+                <TextField label={t("contacts.phone")} value={k.phone} onChange={(v) => setContact({ ...k, phone: v })} />
+                <TextField label={t("contacts.email")} value={k.email} onChange={(v) => setContact({ ...k, email: v })} />
+              </div>
+              <button type="button" onClick={() => up({ contacts: c.contacts.filter((x) => x.id !== k.id) })} className={DANGER}>
+                {t("contacts.remove")}
+              </button>
+            </div>
+          ))}
+          <button type="button" onClick={() => up({ contacts: [...c.contacts, newContact()] })} className={`${SMALL} w-fit`}>
+            {t("contacts.add")}
+          </button>
+        </fieldset>
+      )}
+
       <fieldset className="grid gap-3">
-        <legend className="mb-1 text-sm font-medium text-foreground">{t("list.groups.service")}</legend>
-        <div className={GRID}>
-          <PickField label={t("fields.status")} value={c.status} onChange={(status) => up({ status })} options={CLIENT_STATUSES.map((s) => ({ value: s, label: t(`statuses.${s}`) }))} />
-          {text("plan", t("list.planHint"))}
-          <PickField label={t("fields.tv")} value={c.tv ? "si" : "no"} onChange={(v) => up({ tv: v === "si" })} options={[{ value: "no", label: t("list.no") }, { value: "si", label: t("list.yes") }]} />
-          <DateField label={t("fields.installDate")} value={c.installDate} onChange={(v) => up({ installDate: v })} />
-          <NumberField label={t("fields.monthly")} unit={t("list.perMonth")} optional max={1e6} value={c.monthly} onChange={(v) => up({ monthly: v })} hint={c.monthly !== null ? mxn(c.monthly) : undefined} />
+        <legend className="mb-1 text-sm font-medium text-foreground">{t("services.title")}</legend>
+        {!c.services.length && <p className="text-sm text-zinc-400">{t("services.none")}</p>}
+        {c.services.map((s, i) => (
+          <ServiceCard key={s.id} t={t} c={c} s={s} n={i + 1} onChange={setService} onRemove={() => window.confirm(t("services.confirmRemove", { name: clientLabel(c) })) && up({ services: c.services.filter((x) => x.id !== s.id) })} />
+        ))}
+        <div className="flex flex-wrap gap-2">
+          {SERVICE_TYPES.map((type) => (
+            <button key={type} type="button" onClick={() => up({ services: [...c.services, newService(type, { start: localToday() })] })} className={SMALL}>
+              {t(`services.add.${type}`)}
+            </button>
+          ))}
         </div>
+        {active.length > 0 && (
+          <p className="text-sm text-zinc-100">
+            {t("services.total", { total: mxn(monthlyTotal(c)) })}
+            {missing > 0 && <span className="text-amber-200"> · {t("services.totalMissing", { n: missing })}</span>}
+          </p>
+        )}
       </fieldset>
-      <fieldset className="grid gap-3">
-        <legend className="mb-1 text-sm font-medium text-foreground">{t("list.groups.network")}</legend>
-        <div className={GRID}>
-          {text("ontModel")}
-          <TextField label={t("fields.ontSn")} value={c.ontSn} onChange={(v) => up({ ontSn: v.toUpperCase().slice(0, 40) })} />
-          {text("pppoeUser")}
-          {text("deployment")}
-          {text("oltPort")}
-          <NumberField label={t("fields.ontId")} unit="#" integer optional max={255} value={c.ontId} onChange={(v) => up({ ontId: v })} />
-        </div>
-      </fieldset>
+
       <fieldset className="grid gap-3">
         <legend className="mb-1 text-sm font-medium text-foreground">{t("list.groups.billing")}</legend>
         <div className={GRID}>
@@ -192,12 +267,49 @@ function Editor({ t, c }: { t: T; c: Client }) {
         </div>
         <AreaField label={t("fields.notes")} value={c.notes} onChange={(v) => up({ notes: v })} />
       </fieldset>
-      <button
-        type="button"
-        onClick={() => window.confirm(t("list.confirmRemove", { name: clientLabel(c) })) && deleteClient(c.id)}
-        className="h-10 w-fit rounded-full border border-red-400/30 px-4 text-sm text-red-200 hover:bg-red-400/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-      >
+      <button type="button" onClick={() => window.confirm(t("list.confirmRemove", { name: clientLabel(c) })) && deleteClient(c.id)} className={DANGER}>
         {t("list.remove")}
+      </button>
+    </div>
+  )
+}
+
+function ServiceCard({ t, c, s, n, onChange, onRemove }: { t: T; c: Client; s: Service; n: number; onChange: (s: Service) => void; onRemove: () => void }) {
+  const up = (p: Partial<Service>) => onChange({ ...s, ...p })
+  const net = s.type === "internet"
+  const field = (f: "ontModel" | "pppoeUser" | "deployment" | "oltPort") => (
+    <TextField label={t(`fields.${f}`)} value={s[f]} onChange={(v) => up({ [f]: v })} />
+  )
+  return (
+    <div role="group" aria-label={`${t(`services.types.${s.type}`)} ${n}`} className="grid gap-3 rounded-lg border border-white/10 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-medium text-zinc-100">{t(`services.types.${s.type}`)}</p>
+        {s.type === "iptv" && <p className="text-xs text-zinc-400">{onOurFiber(c) ? t("services.fiberOurs") : t("services.fiberOther")}</p>}
+      </div>
+      <div className={GRID}>
+        <PickField
+          label={t("services.status")}
+          value={s.status}
+          onChange={(status) => up({ status })}
+          options={SERVICE_STATUSES.map((x) => ({ value: x, label: t(`statuses.${x}`) }))}
+        />
+        <TextField label={t(`services.plan.${s.type}`)} value={s.plan} onChange={(v) => up({ plan: v })} hint={t(`services.planHint.${s.type}`)} />
+        <DateField label={t("services.start")} value={s.start} onChange={(v) => up({ start: v })} />
+        <NumberField label={t("services.monthly")} unit={t("list.perMonth")} optional max={1e7} value={s.monthly} onChange={(v) => up({ monthly: v })} hint={s.monthly !== null ? mxn(s.monthly) : undefined} />
+        {net && (
+          <>
+            {field("ontModel")}
+            <TextField label={t("fields.ontSn")} value={s.ontSn} onChange={(v) => up({ ontSn: v.toUpperCase().slice(0, 40) })} />
+            {field("pppoeUser")}
+            {field("deployment")}
+            {field("oltPort")}
+            <NumberField label={t("fields.ontId")} unit="#" integer optional max={255} value={s.ontId} onChange={(v) => up({ ontId: v })} />
+          </>
+        )}
+      </div>
+      <AreaField label={t("services.notes")} value={s.notes} onChange={(v) => up({ notes: v })} rows={2} />
+      <button type="button" onClick={onRemove} className={DANGER}>
+        {t("services.remove")}
       </button>
     </div>
   )

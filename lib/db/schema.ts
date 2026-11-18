@@ -108,11 +108,14 @@ export const clients = pgTable(
   "clients",
   {
     id: text("id").primaryKey(),
+    /** residencial / administracion / empresa / tv. */
+    kind: text("kind").notNull().default("residencial"),
     name: text("name").notNull().default(""),
     building: text("building").notNull().default(""),
     apartment: text("apartment").notNull().default(""),
+    /** The PPPoE users of its internet services, comma-separated. */
     pppoeUser: text("pppoe_user").notNull().default(""),
-    /** activo / suspendido / cancelado. */
+    /** From its services: activo / suspendido / cancelado / sin-servicio. */
     status: text("status").notNull().default("activo"),
     /** The whole client (lib/clients/model.ts). */
     data: jsonb("data").notNull(),
