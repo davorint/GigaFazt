@@ -1,0 +1,193 @@
+{
+  "despliegues": {
+    "meta": {
+      "title": "Despliegues · Interno"
+    },
+    "kicker": "Administración",
+    "title": "Despliegues",
+    "lead": "Cada ubicación donde tenemos red: sus torres, sus cuartos de telecom (uno o dos) con equipos, carriers y puertos PON, los contactos y el acceso, el acuerdo con el edificio y sus clientes. Se comparte entre los teléfonos por la base de datos.",
+    "list": {
+      "add": "Nuevo despliegue",
+      "search": "Buscar",
+      "searchHint": "Nombre, dirección, alcaldía o municipio, serie o IP de un equipo, carrier.",
+      "empty": "Todavía no hay despliegues.",
+      "none": "Ningún despliegue coincide.",
+      "count": "{n, plural, one {# despliegue} other {# despliegues}}",
+      "summary": "{towers, plural, one {# torre} other {# torres}} · {rooms, plural, one {# cuarto} other {# cuartos}} · {clients, plural, one {# cliente} other {# clientes}} ({active} activos)",
+      "untitled": "Sin nombre"
+    },
+    "nav": {
+      "label": "Secciones del despliegue",
+      "back": "← Todos los despliegues",
+      "general": "General",
+      "torres": "Torres",
+      "cuartos": "Cuartos de telecom",
+      "acceso": "Contactos y acceso",
+      "acuerdo": "Acuerdo",
+      "clientes": "Clientes"
+    },
+    "general": {
+      "name": "Nombre",
+      "nameHint": "Como le dicen en el equipo: Be Grand Pedregal, Terre Santa Fe…",
+      "address": "Dirección",
+      "municipality": "Alcaldía o municipio",
+      "notes": "Notas",
+      "tiles": {
+        "towers": "Torres",
+        "apartments": "Departamentos",
+        "rooms": "Cuartos de telecom",
+        "clients": "Clientes",
+        "active": "Activos",
+        "monthly": "Ingreso al mes",
+        "cost": "Costo del edificio al mes",
+        "capacity": "Capacidad de carriers"
+      },
+      "monthlyHint": "Servicios activos de sus clientes.",
+      "costHint": "Renta, más la luz cuando la pagamos nosotros.",
+      "remove": "Borrar despliegue",
+      "confirmRemove": "¿Borrar «{name}»? Queda en el historial de la base de datos y se puede recuperar. Sus clientes se quedan, sin despliegue."
+    },
+    "towers": {
+      "intro": "Las torres de la ubicación y qué cuarto de telecom atiende a cada una.",
+      "none": "Sin torres todavía.",
+      "add": "Agregar torre",
+      "name": "Nombre",
+      "nameHint": "Torre A, Norte, Edificio 2…",
+      "floors": "Niveles",
+      "floorsHint": "Sobre la calle, planta baja incluida.",
+      "apartments": "Departamentos",
+      "room": "Cuarto que la atiende",
+      "noRoom": "Sin definir",
+      "notes": "Notas",
+      "clients": "{clients, plural, one {# cliente} other {# clientes}} · {active} activos{apartments, select, none {} other { · {pct}% de los departamentos}}",
+      "remove": "Quitar torre",
+      "confirmRemove": "¿Quitar «{name}»? Sus clientes se quedan, sin torre."
+    },
+    "rooms": {
+      "intro": "Uno o dos (o más) por ubicación. Cada uno con dónde está, su energía, sus equipos, los carriers que llegan ahí y sus puertos PON.",
+      "add": "Agregar cuarto de telecom",
+      "name": "Nombre",
+      "nameHint": "Cuarto principal, Cuarto torre B, Sótano 2…",
+      "location": "Dónde está",
+      "locationHint": "Sótano, azotea, planta baja de la torre B…",
+      "access": "Acceso al cuarto",
+      "accessHint": "Quién abre, llave o tarjeta, con quién avisar.",
+      "breaker": "Interruptor (pastilla)",
+      "breakerHint": "Dónde está y de cuántos amperes.",
+      "upsHours": "Respaldo de batería",
+      "powerNotes": "Notas de energía",
+      "serves": "Atiende: {towers}",
+      "servesNone": "Todavía no atiende ninguna torre (elígelo en Torres).",
+      "remove": "Quitar cuarto",
+      "confirmRemove": "¿Quitar «{name}» con sus equipos, carriers y puertos? Las torres que atendía quedan sin cuarto.",
+      "equipment": {
+        "title": "Equipos",
+        "none": "Sin equipos todavía.",
+        "kinds": {
+          "router": "Router",
+          "olt": "OLT",
+          "switch": "Switch",
+          "ups": "UPS",
+          "otro": "Otro equipo"
+        },
+        "add": {
+          "router": "+ Router",
+          "olt": "+ OLT",
+          "switch": "+ Switch",
+          "ups": "+ UPS",
+          "otro": "+ Otro"
+        },
+        "model": "Modelo",
+        "serial": "Número de serie",
+        "ip": "IP de gestión",
+        "firmware": "Versión / firmware",
+        "notes": "Notas",
+        "remove": "Quitar equipo"
+      },
+      "carriers": {
+        "title": "Carriers",
+        "none": "Sin carriers todavía.",
+        "add": "Agregar carrier",
+        "provider": "Carrier",
+        "providerHint": "De la lista de Proveedores (tipo carrier).",
+        "other": "Otro (no está en la lista)",
+        "name": "Nombre del carrier",
+        "down": "Bajada",
+        "up": "Subida",
+        "ip": "IP",
+        "ipHint": "IP pública, o cómo llega: NAT, CGNAT, DHCP.",
+        "account": "Número de cuenta o servicio",
+        "notes": "Notas",
+        "capacity": "Capacidad total de bajada: {mbps} Mbps",
+        "remove": "Quitar carrier"
+      },
+      "ports": {
+        "title": "Puertos PON",
+        "none": "Sin puertos todavía.",
+        "add": "Agregar puerto",
+        "port": "Puerto",
+        "portHint": "Marco/tarjeta/puerto, p. ej. 0/1/0.",
+        "olt": "OLT",
+        "tower": "Torre que alimenta",
+        "noTower": "Sin definir",
+        "splitters": "Splitters",
+        "splittersHint": "p. ej. 1:8 en la base + 1:16 cada 2 pisos.",
+        "notes": "Notas",
+        "clients": "{n, plural, =0 {Sin clientes en este puerto} one {# cliente en este puerto} other {# clientes en este puerto}}",
+        "clientsHint": "Clientes de este despliegue cuyo servicio de internet tiene este puerto de la OLT.",
+        "remove": "Quitar puerto"
+      }
+    },
+    "access": {
+      "admin": "Administración del edificio",
+      "adminHint": "Un cliente de tipo Administración (en Clientes).",
+      "adminNone": "Sin elegir",
+      "adminMissing": "Todavía no hay clientes de tipo Administración. Créalo en Clientes.",
+      "adminContact": "Contacto: {contact}",
+      "contacts": "Otros contactos",
+      "contactsHint": "Vigilancia, mantenimiento, comité…",
+      "contactsNone": "Sin contactos todavía.",
+      "addContact": "Agregar contacto",
+      "contactName": "Nombre",
+      "contactRole": "Puesto",
+      "contactPhone": "Teléfono",
+      "contactEmail": "Correo",
+      "removeContact": "Quitar contacto",
+      "rules": "Reglas de acceso",
+      "rulesHint": "Aviso previo, identificación, lista de técnicos, uso del elevador de carga…",
+      "hours": "Horario para trabajar",
+      "keys": "Quién tiene las llaves",
+      "keysHint": "Llaves, tarjetas o controles del cuarto y del ducto, y quién los tiene."
+    },
+    "agreement": {
+      "rent": "Renta al edificio",
+      "power": "Luz al mes",
+      "powerPayer": "Quién paga la luz",
+      "payers": {
+        "": "Sin definir",
+        "nosotros": "Nosotros",
+        "edificio": "El edificio",
+        "incluido": "Incluida en la renta"
+      },
+      "start": "Inicio del contrato",
+      "end": "Fin del contrato",
+      "notes": "Notas del acuerdo",
+      "notesHint": "Lo que se acordó: exclusividad, comisión por cliente, servicios para áreas comunes…",
+      "cost": "Costo al mes para nosotros: {cost}",
+      "ends": "{days, plural, =0 {El contrato termina hoy.} one {El contrato termina mañana.} other {El contrato termina en # días.}}",
+      "ended": "El contrato terminó el {date}.",
+      "perMonth": "MXN/mes"
+    },
+    "clients": {
+      "intro": "Los clientes que tienen este despliegue elegido (en Clientes → Despliegue). Toca uno para abrirlo en Clientes.",
+      "none": "Todavía no hay clientes en este despliegue.",
+      "noTower": "Sin torre",
+      "statuses": {
+        "activo": "Activo",
+        "suspendido": "Suspendido",
+        "cancelado": "Cancelado",
+        "sin-servicio": "Sin servicio"
+      }
+    }
+  }
+}

@@ -14,6 +14,8 @@ import { applyRemoteProviders, providersSnapshot } from "../providers/store"
 import { decodeSurvey, type Survey } from "../survey/model"
 import { decodeClient, type Client } from "../clients/model"
 import { applyRemoteClients, clientsSnapshot } from "../clients/store"
+import { decodeSite, type Site } from "../sites/model"
+import { applyRemoteSites, sitesSnapshot } from "../sites/store"
 import { applyRemoteSurveys, surveysSnapshot } from "../survey/store"
 import { MAX_CHANGES, REV_OVERLAP, SYNC_KINDS, type Change, type SyncKind, type SyncResponse } from "./protocol"
 import { onSyncChange, pendingCount, readState, updateState } from "./state"
@@ -45,6 +47,11 @@ const ADAPTERS: Record<SyncKind, Adapter> = {
     get: (id) => clientsSnapshot().list.find((x) => x.id === id),
     ids: () => clientsSnapshot().list.map((x) => x.id),
     apply: (u, d) => applyRemoteClients(u.map(decodeClient).filter((x): x is Client => x !== null), d),
+  },
+  sites: {
+    get: (id) => sitesSnapshot().list.find((x) => x.id === id),
+    ids: () => sitesSnapshot().list.map((x) => x.id),
+    apply: (u, d) => applyRemoteSites(u.map(decodeSite).filter((x): x is Site => x !== null), d),
   },
 }
 
@@ -236,4 +243,4 @@ export function startSync(): () => void {
 }
 
 /** The local ids of every kind (for "Subir lo de este navegador"). */
-export const localIds = (): Record<SyncKind, string[]> => ({ surveys: ADAPTERS.surveys.ids(), materials: ADAPTERS.materials.ids(), providers: ADAPTERS.providers.ids(), clients: ADAPTERS.clients.ids() })
+export const localIds = (): Record<SyncKind, string[]> => ({ surveys: ADAPTERS.surveys.ids(), materials: ADAPTERS.materials.ids(), providers: ADAPTERS.providers.ids(), clients: ADAPTERS.clients.ids(), sites: ADAPTERS.sites.ids() })

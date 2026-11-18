@@ -18,6 +18,7 @@ import { decodeItem } from "../materials/catalog"
 import { decodeProvider, providerName } from "../providers/model"
 import { decodeSurvey } from "../survey/model"
 import { clientStatus, decodeClient, pppoeUsers } from "../clients/model"
+import { decodeSite } from "../sites/model"
 import { getPool } from "../db/client"
 import { MAX_RECORDS, type Change, type Outcome, type Remote, type SyncKind, type SyncResponse } from "./protocol"
 
@@ -75,6 +76,17 @@ const SPECS: Record<SyncKind, KindSpec> = {
       if (!c) return null
       const d = { ...c, id }
       return { data: d, cols: { kind: d.kind, name: d.name, building: d.building, apartment: d.apartment, pppoe_user: pppoeUsers(d).join(",").slice(0, 300), status: clientStatus(d) } }
+    },
+  },
+  sites: {
+    table: "sites",
+    versions: "site_versions",
+    fk: "site_id",
+    read: (id, data) => {
+      const s = decodeSite(data)
+      if (!s) return null
+      const d = { ...s, id }
+      return { data: d, cols: { name: d.name, address: d.address, municipality: d.municipality, rooms: d.rooms.length, towers: d.towers.length } }
     },
   },
 }

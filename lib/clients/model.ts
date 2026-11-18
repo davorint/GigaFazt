@@ -60,6 +60,9 @@ export type Client = {
   building: string
   tower: string
   apartment: string
+  /** The deployment location (/interno/admin/despliegues) and its tower; "" = not set. */
+  siteId: string
+  towerId: string
   contacts: Contact[]
   services: Service[]
   payDay: number | null
@@ -106,6 +109,8 @@ export function newClient(p: Partial<Client> = {}): Client {
     building: "",
     tower: "",
     apartment: "",
+    siteId: "",
+    towerId: "",
     contacts: [],
     services: [],
     payDay: null,
@@ -166,6 +171,8 @@ export function decodeClient(v: unknown): Client | null {
     building: str(v.building, 200),
     tower: str(v.tower, 60),
     apartment: str(v.apartment, 60),
+    siteId: typeof v.siteId === "string" && /^[\w-]{6,64}$/.test(v.siteId) ? v.siteId : "",
+    towerId: typeof v.towerId === "string" && /^[\w-]{6,64}$/.test(v.towerId) ? v.towerId : "",
     contacts: list(v.contacts, decodeContact, 30),
     services: list(v.services, decodeService, 50),
     payDay: num(v.payDay, 1, 31),

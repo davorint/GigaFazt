@@ -3,6 +3,7 @@ import copy from "@/messages/internal/proveedores.es.json"
 const LINKS = [
   ["/interno", "interno"],
   ["/interno/admin", "admin"],
+  ["/interno/admin/despliegues", "despliegues"],
   ["/interno/admin/clientes", "clientes"],
   ["/interno/admin/proveedores", "proveedores"],
   ["/interno/admin/materiales", "materiales"],

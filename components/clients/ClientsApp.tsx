@@ -27,6 +27,8 @@ import {
   type Service,
 } from "@/lib/clients/model"
 import { clientsServerSnapshot, clientsSnapshot, deleteClient, saveClient, subscribeClients } from "@/lib/clients/store"
+import { siteLabel, towerLabel } from "@/lib/sites/model"
+import { sitesServerSnapshot, sitesSnapshot, subscribeSites } from "@/lib/sites/store"
 import { mxn } from "@/lib/materials/catalog"
 import { ImportPanel } from "./ImportPanel"
 import { LeadsPanel } from "./LeadsPanel"
@@ -63,7 +65,8 @@ function download(name: string, text: string, type: string) {
 export function ClientsApp() {
   const t = useTranslations("clientes")
   const [tab, setTab] = useState<Tab>("clients")
-  const [openId, setOpenId] = useState<string | null>(null)
+  // /interno/admin/clientes?c=<id> opens that client (links from Despliegues).
+  const [openId, setOpenId] = useState<string | null>(() => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("c")))
   const show = (id: string) => {
     setTab("clients")
     setOpenId(id)
@@ -101,12 +104,14 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
   const [kind, setKind] = useState<ClientKind | "">("")
   const [status, setStatus] = useState<ClientStatus | "">("")
   const [building, setBuilding] = useState("")
+  const [site, setSite] = useState("")
+  const sites = useSyncExternalStore(subscribeSites, sitesSnapshot, sitesServerSnapshot).list
   const list = store.list
   const buildings = useMemo(() => [...new Set(list.map((c) => c.building.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es")), [list])
   if (!store.loaded) return null
   const needle = fold(q.trim())
   const shown = list
-    .filter((c) => (!kind || c.kind === kind) && (!status || clientStatus(c) === status) && (!building || c.building.trim() === building))
+    .filter((c) => (!kind || c.kind === kind) && (!status || clientStatus(c) === status) && (!building || c.building.trim() === building) && (!site || (site === "-" ? !sites.some((x) => x.id === c.siteId) : c.siteId === site)))
     .filter(
       (c) =>
         !needle ||
@@ -116,7 +121,8 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
     )
     .sort((a, b) => clientLabel(a).localeCompare(clientLabel(b), "es"))
   const add = () => {
-    const c = newClient({ kind: kind || "residencial", building })
+    const at = sites.find((x) => x.id === site)
+    const c = newClient({ kind: kind || "residencial", building: building || (at ? siteLabel(at) : ""), siteId: at?.id ?? "" })
     saveClient(c)
     setOpenId(c.id)
     setQ("")
@@ -140,7 +146,7 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
           </button>
         )}
       </div>
-      <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <TextField label={t("list.search")} value={q} onChange={setQ} hint={t("list.searchHint")} />
         <PickField label={t("list.kind")} value={kind} onChange={setKind} options={[{ value: "" as const, label: t("list.allKinds") }, ...CLIENT_KINDS.map((k) => ({ value: k, label: t(`kinds.${k}`) }))]} />
         <PickField
@@ -149,6 +155,14 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
           onChange={setStatus}
           options={[{ value: "" as const, label: t("list.allStatuses") }, ...([...SERVICE_STATUSES, "sin-servicio"] as const).map((s) => ({ value: s, label: t(`statuses.${s}`) }))]}
         />
+        {sites.length > 0 && (
+          <PickField
+            label={t("list.site")}
+            value={site}
+            onChange={setSite}
+            options={[{ value: "", label: t("list.allSites") }, { value: "-", label: t("site.unset") }, ...[...sites].sort((a, b) => siteLabel(a).localeCompare(siteLabel(b), "es")).map((x) => ({ value: x.id, label: siteLabel(x) }))]}
+          />
+        )}
         <PickField label={t("list.building")} value={building} onChange={setBuilding} options={[{ value: "", label: t("list.allBuildings") }, ...buildings.map((b) => ({ value: b, label: b }))]} />
       </div>
       <div className="grid gap-0.5 font-mono text-xs text-zinc-400">
@@ -189,6 +203,43 @@ function Row({ t, c, open, onToggle }: { t: T; c: Client; open: boolean; onToggl
   )
 }
 
+/** The client's deployment location and tower, from /interno/admin/despliegues. */
+function SitePick({ t, c, up }: { t: T; c: Client; up: (p: Partial<Client>) => void }) {
+  const sites = useSyncExternalStore(subscribeSites, sitesSnapshot, sitesServerSnapshot).list
+  const site = sites.find((x) => x.id === c.siteId)
+  const sorted = [...sites].sort((a, b) => siteLabel(a).localeCompare(siteLabel(b), "es"))
+  return (
+    <>
+      <PickField
+        label={t("site.label")}
+        value={c.siteId}
+        hint={sites.length ? t("site.hint") : t("site.none")}
+        onChange={(siteId) => {
+          const next = sites.find((x) => x.id === siteId)
+          // Choosing a location fills the building when it's still empty; the tower is cleared (it belonged to the other one).
+          up({ siteId, towerId: "", building: c.building || (next ? siteLabel(next) : "") })
+        }}
+        options={[
+          { value: "", label: t("site.unset") },
+          ...(c.siteId && !site ? [{ value: c.siteId, label: c.siteId.slice(0, 8) }] : []),
+          ...sorted.map((x) => ({ value: x.id, label: siteLabel(x) })),
+        ]}
+      />
+      {site && site.towers.length > 0 && (
+        <PickField
+          label={t("site.tower")}
+          value={c.towerId}
+          onChange={(towerId) => {
+            const tw = site.towers.find((x) => x.id === towerId)
+            up({ towerId, tower: c.tower || (tw ? towerLabel(tw, site.towers.indexOf(tw)) : "") })
+          }}
+          options={[{ value: "", label: t("site.unset") }, ...site.towers.map((x, i) => ({ value: x.id, label: towerLabel(x, i) }))]}
+        />
+      )}
+    </>
+  )
+}
+
 function Editor({ t, c }: { t: T; c: Client }) {
   const up = (p: Partial<Client>) => saveClient({ ...c, ...p })
   const text = (f: "phone" | "whatsapp" | "email" | "tower" | "apartment") => <TextField label={t(`fields.${f}`)} value={c[f]} onChange={(v) => up({ [f]: v })} />
@@ -208,6 +259,7 @@ function Editor({ t, c }: { t: T; c: Client }) {
           {text("phone")}
           {text("whatsapp")}
           {text("email")}
+          <SitePick t={t} c={c} up={up} />
           <TextField label={t(`buildingByKind.${c.kind}`)} value={c.building} onChange={(v) => up({ building: v })} />
           {text("tower")}
           {c.kind !== "administracion" && text("apartment")}

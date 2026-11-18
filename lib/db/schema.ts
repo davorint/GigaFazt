@@ -125,6 +125,26 @@ export const clients = pgTable(
 )
 export const clientVersions = versions("client_versions", "client_id")
 
+// ── Deployment locations (/interno/admin/despliegues) ───────────────────────
+
+export const sites = pgTable(
+  "sites",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull().default(""),
+    address: text("address").notNull().default(""),
+    municipality: text("municipality").notNull().default(""),
+    /** How many telecom rooms and towers it has. */
+    rooms: integer("rooms").notNull().default(0),
+    towers: integer("towers").notNull().default(0),
+    /** The whole location (lib/sites/model.ts). */
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("sites_rev_idx").on(t.rev)]
+)
+export const siteVersions = versions("site_versions", "site_id")
+
 // ── Saved MikroTik deployments ──────────────────────────────────────────────
 
 export const deployments = pgTable(

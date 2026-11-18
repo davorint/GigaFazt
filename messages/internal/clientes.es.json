@@ -29,7 +29,7 @@
       "ontModel": "Modelo de ONT",
       "ontSn": "Serie del ONT (SN)",
       "pppoeUser": "Usuario PPPoE",
-      "deployment": "Despliegue",
+      "deployment": "Despliegue MikroTik",
       "oltPort": "Puerto de la OLT",
       "ontId": "ID del ONT",
       "payDay": "Día de pago",
@@ -77,7 +77,9 @@
       "allKinds": "Todos",
       "noServices": "Sin servicios",
       "perMonth": "MXN/mes",
-      "byKind": "{residencial, plural, one {# residencial} other {# residenciales}} · {administracion, plural, one {# administración} other {# administraciones}} · {empresa, plural, one {# empresa} other {# empresas}} · {tv} de TV"
+      "byKind": "{residencial, plural, one {# residencial} other {# residenciales}} · {administracion, plural, one {# administración} other {# administraciones}} · {empresa, plural, one {# empresa} other {# empresas}} · {tv} de TV",
+      "site": "Despliegue",
+      "allSites": "Todos"
     },
     "leads": {
       "intro": "Lo que llega del formulario «Contratar» del sitio. Cambia el estado conforme avanzas y conviértela en cliente al instalar.",
@@ -199,6 +201,13 @@
       "phone": "Teléfono",
       "email": "Correo",
       "remove": "Quitar contacto"
+    },
+    "site": {
+      "label": "Despliegue",
+      "hint": "La ubicación en Despliegues: así el despliegue cuenta sus clientes por torre y por puerto PON.",
+      "none": "Todavía no hay despliegues: créalos en Administración → Despliegues.",
+      "unset": "Sin elegir",
+      "tower": "Torre del despliegue"
     }
   }
 }
