@@ -1,4 +1,5 @@
 import { defineConfig } from "drizzle-kit"
+import { appDatabaseUrl } from "./lib/db/url"
 
 /**
  * Migrations for the Neon database (lib/db/schema.ts → drizzle/*.sql, reviewed in git).
@@ -10,7 +11,8 @@ export default defineConfig({
   schema: "./lib/db/schema.ts",
   out: "./drizzle",
   dialect: "postgresql",
-  dbCredentials: { url: process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL || "" },
+  // Migrations use the direct (unpooled) string, always on the "gigafazt" database.
+  dbCredentials: { url: appDatabaseUrl(process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL) },
   strict: true,
   verbose: true,
 })

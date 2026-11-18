@@ -13,7 +13,9 @@ export async function GET(request: NextRequest) {
   if (!hasDatabase()) return json({ ok: false, error: "no-database-url" }, 503)
   try {
     const db = getDb()
-    const version = (await db.execute(sql`select current_setting('server_version') as v`)).rows[0]?.v
+    const info = (await db.execute(sql`select current_setting('server_version') as v, current_database() as d`)).rows[0]
+    const version = info?.v
+    const database = info?.d
     const tables = ["surveys", "materials", "providers", "deployments", "leads"]
     const counts: Record<string, number | null> = {}
     for (const t of tables) {
@@ -31,7 +33,7 @@ export async function GET(request: NextRequest) {
     } catch {
       migration = null
     }
-    return json({ ok: true, postgres: version, migration, counts })
+    return json({ ok: true, postgres: version, database, migration, counts })
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message.slice(0, 200) : "error" }, 500)
   }
