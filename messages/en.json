@@ -1359,5 +1359,24 @@
       "waText": "Hi, I'm a GigaFazt customer and I need help.",
       "monitoring": "Our team watches the network 24 hours a day; we answer during office hours."
     }
+  },
+  "notFound": {
+    "meta": "Page not found",
+    "code": "404",
+    "title": "This page does not exist",
+    "lead": "The link may be mistyped or the page may no longer exist. From here you can get to what you need:",
+    "home": "Go home",
+    "plans": "See plans",
+    "clients": "Customer area",
+    "whatsapp": "Message us on WhatsApp",
+    "whatsappText": "Hi, I reached a page on your site that does not exist."
+  },
+  "errorPage": {
+    "code": "Error",
+    "title": "Something went wrong",
+    "lead": "We had a problem showing this page. Try again in a moment or go back home.",
+    "retry": "Try again",
+    "home": "Go home",
+    "ref": "Reference: {digest}"
   }
 }

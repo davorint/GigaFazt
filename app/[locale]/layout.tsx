@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
 import { Geist, JetBrains_Mono } from "next/font/google"
 import { NextIntlClientProvider, hasLocale } from "next-intl"
-import { getTranslations, setRequestLocale } from "next-intl/server"
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server"
+import { clientMessages } from "@/lib/i18n-client"
 import { notFound } from "next/navigation"
 import { routing } from "@/i18n/routing"
 import { HREFLANG, SITE_URL, SITE_URL_CONFIGURED, pageMeta } from "@/lib/site"
@@ -58,7 +59,8 @@ export default async function LocaleLayout({
       className={`${geistSans.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full bg-background text-foreground">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        {/* Only what client components read (lib/i18n-client.ts); server components get the rest directly. */}
+        <NextIntlClientProvider messages={clientMessages(await getMessages())}>{children}</NextIntlClientProvider>
         <SurfaceLight />
         <SmoothScroll />
       </body>

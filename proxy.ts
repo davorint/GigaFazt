@@ -47,14 +47,14 @@ export default async function proxy(request: NextRequest) {
 
 export const config = {
   // First entry: skip API, Next internals and any path with a file extension
-  // (kept verbatim). Then every /interno URL in any capitalization (Vercel
-  // matches routes case-insensitively), including RSC/segment variants
-  // (/interno.rsc…) and the locale-prefixed route.
+  // (the dot is escaped twice: in a plain string "\." is just "." and the
+  // pattern would skip every path but "/"). Every page typed without the
+  // language (gigafazt.com/planes, /clientes) goes through next-intl, which
+  // sends it to /es or /en. Then every /interno URL in any capitalization
+  // (Vercel matches routes case-insensitively), including RSC/segment
+  // variants (/interno.rsc…) and the locale-prefixed route.
   matcher: [
-    "/((?!api|_next|_vercel|.*\..*).*)",
-    // Public pages people type without the language (gigafazt.com/clientes): next-intl sends them to /es or /en.
-    "/clientes",
-    "/reportar",
+    "/((?!api|_next|_vercel|.*\\..*).*)",
     "/:page([Ii][Nn][Tt][Ee][Rr][Nn][Oo])(.*)",
     "/:locale/:page([Ii][Nn][Tt][Ee][Rr][Nn][Oo])(.*)",
   ],

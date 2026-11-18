@@ -1,0 +1,18 @@
+{
+  "es": {
+    "code": "Error",
+    "title": "Algo salió mal",
+    "lead": "Tuvimos un problema al mostrar esta página. Vuelve a intentarlo en un momento o regresa al inicio.",
+    "retry": "Intentar de nuevo",
+    "home": "Ir al inicio",
+    "ref": "Referencia: {digest}"
+  },
+  "en": {
+    "code": "Error",
+    "title": "Something went wrong",
+    "lead": "We had a problem showing this page. Try again in a moment or go back home.",
+    "retry": "Try again",
+    "home": "Go home",
+    "ref": "Reference: {digest}"
+  }
+}
