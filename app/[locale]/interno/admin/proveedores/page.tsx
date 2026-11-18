@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import { NextIntlClientProvider } from "next-intl"
 import { setRequestLocale } from "next-intl/server"
 import { notFound } from "next/navigation"
+import { SyncBar } from "@/components/interno/SyncBar"
+import syncCopy from "@/messages/internal/sync.es.json"
 import { AdminLinks } from "@/components/interno/AdminLinks"
 import { ProvidersApp } from "@/components/providers/ProvidersApp"
 import copy from "@/messages/internal/proveedores.es.json"
@@ -23,7 +25,7 @@ export const metadata: Metadata = {
 }
 
 /** The number field shared with the MikroTik tools reads its "invalid" message from there. */
-const messages = { ...copy, mikrotik: { params: { invalid: mikrotik.mikrotik.params.invalid } } }
+const messages = { ...copy, ...syncCopy, mikrotik: { params: { invalid: mikrotik.mikrotik.params.invalid } } }
 
 export default async function ProveedoresPage({ params }: PageProps<"/[locale]/interno/admin/proveedores">) {
   const { locale } = await params
@@ -40,6 +42,7 @@ export default async function ProveedoresPage({ params }: PageProps<"/[locale]/i
         <AdminLinks current="proveedores" />
       </section>
       <NextIntlClientProvider locale="es" messages={messages}>
+        <SyncBar />
         <ProvidersApp />
       </NextIntlClientProvider>
     </main>

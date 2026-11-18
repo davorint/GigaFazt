@@ -1,0 +1,26 @@
+{
+  "sync": {
+    "label": "Sincronización",
+    "whoTitle": "¿Quién eres?",
+    "whoHint": "Tu nombre va con cada cambio que guardes, para saber quién cambió qué. Se guarda en este teléfono.",
+    "whoLabel": "Tu nombre",
+    "save": "Guardar",
+    "you": "Eres {name}",
+    "change": "Cambiar",
+    "now": "Sincronizar ahora",
+    "phase": {
+      "idle": "Sincronizado",
+      "syncing": "Sincronizando…",
+      "offline": "Sin conexión: se guarda aquí y se envía al volver la señal",
+      "error": "No se pudo sincronizar; se reintenta sola",
+      "no-name": "Escribe tu nombre para sincronizar",
+      "no-database": "La base de datos no está disponible"
+    },
+    "pending": "{n, plural, one {# cambio por enviar} other {# cambios por enviar}}",
+    "last": "Última vez: {time}",
+    "uploadTitle": "Este navegador tiene {n, plural, one {# registro} other {# registros}} que aún no están en la base de datos",
+    "uploadHint": "Levantamientos, materiales y proveedores que guardaste antes de conectar la base. Súbelos una vez; si alguno ya está en la base, gana la copia editada más recientemente.",
+    "upload": "Subir lo de este navegador",
+    "confirmUpload": "¿Subir {n} registros de este navegador a la base de datos?"
+  }
+}

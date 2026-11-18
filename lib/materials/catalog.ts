@@ -50,9 +50,12 @@ export type Item = {
   notes: string
 }
 
-const item = (name: string, category: Category, unit: string, role: Role | "" = ""): Item => ({ id: newId(), name, category, unit, price: null, role, supplierId: "", supplier: "", sku: "", notes: "" })
+/** Starter ids are fixed (from the role, or the name), so every browser's starter list has the same ids. */
+const starterId = (name: string, role: Role | "") =>
+  `starter-${role || name.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`.slice(0, 64)
+const item = (name: string, category: Category, unit: string, role: Role | "" = ""): Item => ({ id: starterId(name, role), name, category, unit, price: null, role, supplierId: "", supplier: "", sku: "", notes: "" })
 
-/** The first list, without prices. */
+/** The first list, without prices (fixed ids). */
 export function starterCatalog(): Item[] {
   return [
     item("Cable de fibra drop 1 hilo (acometida)", "fibra", "m", "drop-m"),
@@ -123,7 +126,8 @@ export function mergeItems(saved: Item[], incoming: Item[], replace: boolean): {
     if (k < 0) {
       out.push(it)
       added++
-    } else if (replace) {
+    } else if (replace || (out[k].price === null && it.price !== null)) {
+      // Arriving with a survey only fills what's missing: an item without a price here takes the incoming one.
       out[k] = it
       replaced++
     }

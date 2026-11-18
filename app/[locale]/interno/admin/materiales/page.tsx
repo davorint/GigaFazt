@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import { NextIntlClientProvider } from "next-intl"
 import { setRequestLocale } from "next-intl/server"
 import { notFound } from "next/navigation"
+import { SyncBar } from "@/components/interno/SyncBar"
+import syncCopy from "@/messages/internal/sync.es.json"
 import { AdminLinks } from "@/components/interno/AdminLinks"
 import { MaterialsApp } from "@/components/materials/MaterialsApp"
 import copy from "@/messages/internal/materiales.es.json"
@@ -22,7 +24,7 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 }
 
-const messages = { ...copy, mikrotik: { params: { invalid: mikrotik.mikrotik.params.invalid } } }
+const messages = { ...copy, ...syncCopy, mikrotik: { params: { invalid: mikrotik.mikrotik.params.invalid } } }
 
 export default async function MaterialesPage({ params }: PageProps<"/[locale]/interno/admin/materiales">) {
   const { locale } = await params
@@ -39,6 +41,7 @@ export default async function MaterialesPage({ params }: PageProps<"/[locale]/in
         <AdminLinks current="materiales" />
       </section>
       <NextIntlClientProvider locale="es" messages={messages}>
+        <SyncBar />
         <MaterialsApp />
       </NextIntlClientProvider>
     </main>

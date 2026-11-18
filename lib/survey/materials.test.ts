@@ -75,10 +75,17 @@ describe("costs (IVA included)", () => {
   it("on another phone with its own unpriced list, the exported survey keeps its total", () => {
     const mine = priced()
     const s = survey()
-    const theirs = starterCatalog() // other ids, no prices
+    // Same fixed starter ids, no prices; plus an older browser whose starter copies have random ids.
+    const theirs = starterCatalog()
+    const older = starterCatalog().map((x) => ({ ...x, id: `old-${x.id}` }))
     const arrived = mergeItems(theirs, usedItems(s, mine), false).list
-    expect(surveyCosts(s, arrived).total).not.toBe(surveyCosts(s, mine).total) // without the picks: their own items
-    expect(surveyCosts(withPicks(s, mine), arrived).total).toBe(surveyCosts(s, mine).total)
+    // Unpriced items with the same id take the incoming prices.
+    expect(surveyCosts(s, arrived).total).toBe(surveyCosts(s, mine).total)
+    // With other ids, the survey names its items (withPicks), so the total holds too.
+    const arrivedOld = mergeItems(older, usedItems(s, mine).map((x) => ({ ...x, id: `mine-${x.id}` })), false).list
+    const mineRenamed = mine.map((x) => ({ ...x, id: `mine-${x.id}` }))
+    const sRenamed = withPicks(s, mineRenamed)
+    expect(surveyCosts(sRenamed, arrivedOld).total).toBe(surveyCosts(s, mine).total)
   })
   it("the items a survey uses travel with it", () => {
     const cat = priced()

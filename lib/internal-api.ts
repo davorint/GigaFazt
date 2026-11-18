@@ -15,7 +15,16 @@ export async function requireInterno(request: NextRequest): Promise<NextResponse
 }
 
 /** The editor's name from the phone (trimmed, at most 40 characters; "" when not given). */
-export const editorOf = (request: NextRequest) => (request.headers.get("x-interno-nombre") ?? "").trim().slice(0, 40)
+export function editorOf(request: NextRequest): string {
+  const raw = request.headers.get("x-interno-nombre") ?? ""
+  let name = raw
+  try {
+    name = decodeURIComponent(raw)
+  } catch {
+    // Not encoded: keep it as sent.
+  }
+  return name.replace(/\p{Cc}/gu, "").trim().slice(0, 40)
+}
 
 /** JSON with the internal headers (noindex, no cache, no referrer). */
 export function json(body: unknown, status = 200): NextResponse {

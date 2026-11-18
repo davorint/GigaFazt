@@ -1,0 +1,109 @@
+"use client"
+
+import { useEffect, useId, useState, useSyncExternalStore } from "react"
+import { useTranslations } from "next-intl"
+import { localIds, startSync, subscribeSync, syncNow, syncServerSnapshot, syncSnapshot } from "@/lib/sync/engine"
+import { adoptLocal, setName } from "@/lib/sync/state"
+
+const TONE: Record<string, string> = {
+  idle: "border-emerald-400/40 text-emerald-300",
+  syncing: "border-cyan-400/40 text-cyan-200",
+  offline: "border-amber-400/40 text-amber-200",
+  error: "border-red-400/40 text-red-300",
+  "no-name": "border-amber-400/40 text-amber-200",
+  "no-database": "border-red-400/40 text-red-300",
+}
+const BTN = "min-h-9 rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+
+/**
+ * Syncing on the pages that use the database (Levantamientos, Materiales, Proveedores): asks who you are once, shows
+ * whether everything is sent, and offers the one-time upload of what this browser had before the database.
+ */
+export function SyncBar() {
+  const t = useTranslations("sync")
+  const s = useSyncExternalStore(subscribeSync, syncSnapshot, syncServerSnapshot)
+  const id = useId()
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState("")
+  useEffect(() => startSync(), [])
+  const askName = !s.name || editing
+  const save = () => {
+    if (!draft.trim()) return
+    setName(draft)
+    setEditing(false)
+    void syncNow()
+  }
+  return (
+    <section aria-label={t("label")} className="mt-4 grid gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+      {askName ? (
+        <form
+          className="grid gap-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            save()
+          }}
+        >
+          <p className="text-sm font-medium text-foreground">{t("whoTitle")}</p>
+          <p className="text-xs leading-snug text-zinc-400">{t("whoHint")}</p>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="grid min-w-0 flex-1 gap-1">
+              <label htmlFor={id} className="font-mono text-xs text-zinc-300">
+                {t("whoLabel")}
+              </label>
+              <input
+                id={id}
+                value={draft}
+                maxLength={40}
+                autoComplete="name"
+                onChange={(e) => setDraft(e.target.value)}
+                className="h-10 rounded-md border border-input bg-white/[0.03] px-2.5 text-base text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
+              />
+            </div>
+            <button type="submit" className="h-10 rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+              {t("save")}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2" aria-live="polite">
+          <span className={`rounded-full border px-2.5 py-1 text-xs ${TONE[s.phase] ?? TONE.idle}`}>{t(`phase.${s.phase}`)}</span>
+          {s.pending > 0 && <span className="font-mono text-xs text-zinc-300">{t("pending", { n: s.pending })}</span>}
+          {s.lastOk && <span className="font-mono text-xs text-zinc-400">{t("last", { time: new Date(s.lastOk).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) })}</span>}
+          <span className="ml-auto flex flex-wrap items-center gap-2">
+            <span className="text-xs text-zinc-300">{t("you", { name: s.name })}</span>
+            <button
+              type="button"
+              className={BTN}
+              onClick={() => {
+                setDraft(s.name)
+                setEditing(true)
+              }}
+            >
+              {t("change")}
+            </button>
+            <button type="button" className={BTN} onClick={() => void syncNow()} disabled={s.phase === "syncing"}>
+              {t("now")}
+            </button>
+          </span>
+        </div>
+      )}
+      {!askName && !s.adopted && s.unsent > 0 && (
+        <div className="grid gap-2 rounded-lg border border-amber-400/30 p-3">
+          <p className="text-sm text-amber-100">{t("uploadTitle", { n: s.unsent })}</p>
+          <p className="text-xs leading-snug text-zinc-300">{t("uploadHint")}</p>
+          <button
+            type="button"
+            className="h-10 w-fit rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+            onClick={() => {
+              if (!window.confirm(t("confirmUpload", { n: s.unsent }))) return
+              adoptLocal(localIds())
+              void syncNow()
+            }}
+          >
+            {t("upload")}
+          </button>
+        </div>
+      )}
+    </section>
+  )
+}

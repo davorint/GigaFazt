@@ -12,6 +12,9 @@ export function appDatabaseUrl(raw: string | undefined): string {
   try {
     const u = new URL(raw)
     u.pathname = `/${DB_NAME}`
+    // Neon's strings say sslmode=require; pg treats it as verify-full today and will weaken it in its next major
+    // version, so the full certificate check is asked for explicitly (Neon's certificates are publicly trusted).
+    if (["require", "prefer", "verify-ca"].includes(u.searchParams.get("sslmode") ?? "")) u.searchParams.set("sslmode", "verify-full")
     return u.toString()
   } catch {
     return ""

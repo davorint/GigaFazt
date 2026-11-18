@@ -4,6 +4,7 @@
  * event. If the browser blocks storage, the page works for the visit and says so (`persisted: false`).
  */
 import { decodeSurvey, mergeSurveys, type Survey } from "./model"
+import { markChanged } from "../sync/state"
 
 const KEY = "gigafazt-levantamientos"
 
@@ -58,15 +59,44 @@ const list = () => surveysSnapshot().list
 export function saveSurvey(s: Survey) {
   const next = { ...s, updatedAt: new Date().toISOString() }
   write([next, ...list().filter((x) => x.id !== s.id)])
+  markChanged("surveys", [s.id])
 }
 
 export function deleteSurvey(id: string) {
   write(list().filter((x) => x.id !== id))
+  markChanged("surveys", [id], true)
 }
 
 /** Surveys from a shared file: added, or replaced when the file's copy is as new or newer. */
 export function importSurveys(incoming: Survey[]) {
   const r = mergeSurveys(list(), incoming)
   write([...r.list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)))
+  // The copies that came in (new, or newer than ours) are edits to send.
+  markChanged("surveys", incoming.filter((x) => r.list.some((y) => y.id === x.id && y.updatedAt === x.updatedAt)).map((x) => x.id))
   return r
+}
+
+/** Records from the database (sync): replaced or removed as they are, not marked as edits to send. */
+export function applyRemoteSurveys(upserts: Survey[], deletes: string[]) {
+  if (!upserts.length && !deletes.length) return
+  const byId = new Map(list().map((x) => [x.id, x]))
+  for (const u of upserts) byId.set(u.id, u)
+  for (const d of deletes) byId.delete(d)
+  write([...byId.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)))
+}
+
+/** A material's id changed (merged with the database's copy): the surveys that pick it follow, and are sent. */
+export function remapMaterialRefs(from: string, to: string) {
+  const changed: string[] = []
+  const next = list().map((s) => {
+    const m = s.materials
+    const uses = Object.values(m.pick).includes(from) || m.extras.some((x) => x.itemId === from)
+    if (!uses) return s
+    changed.push(s.id)
+    const pick = Object.fromEntries(Object.entries(m.pick).map(([k, v]) => [k, v === from ? to : v]))
+    return { ...s, materials: { ...m, pick, extras: m.extras.map((x) => (x.itemId === from ? { ...x, itemId: to } : x)) } }
+  })
+  if (!changed.length) return
+  write(next)
+  markChanged("surveys", changed)
 }

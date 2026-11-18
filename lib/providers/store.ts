@@ -1,5 +1,6 @@
 /** Providers saved in this browser (localStorage), like the surveys and the materials list. */
 import { decodeProvider, mergeProviders, type Provider } from "./model"
+import { markChanged } from "../sync/state"
 
 const KEY = "gigafazt-proveedores"
 
@@ -54,12 +55,24 @@ export function saveProvider(p: Provider) {
   const next = { ...p, updatedAt: new Date().toISOString() }
   const l = list()
   write(l.some((x) => x.id === p.id) ? l.map((x) => (x.id === p.id ? next : x)) : [...l, next])
+  markChanged("providers", [p.id])
 }
 export function deleteProvider(id: string) {
   write(list().filter((x) => x.id !== id))
+  markChanged("providers", [id], true)
 }
 export function importProviders(incoming: Provider[]) {
   const r = mergeProviders(list(), incoming)
   write(r.list)
+  markChanged("providers", incoming.filter((x) => r.list.some((y) => y.id === x.id && y.updatedAt === x.updatedAt)).map((x) => x.id))
   return r
+}
+
+/** Records from the database (sync): replaced or removed as they are, not marked as edits to send. */
+export function applyRemoteProviders(upserts: Provider[], deletes: string[]) {
+  if (!upserts.length && !deletes.length) return
+  const byId = new Map(list().map((x) => [x.id, x]))
+  for (const u of upserts) byId.set(u.id, u)
+  for (const d of deletes) byId.delete(d)
+  write([...byId.values()])
 }

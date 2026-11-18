@@ -1,23 +1,34 @@
 /**
- * The database client for server code only (route handlers): Neon's HTTP driver, one request per query, which suits
- * Vercel functions (no connection to keep open). DATABASE_URL comes from Vercel (the Neon integration) or .env.local.
+ * The database client for server code only (route handlers): node-postgres with a small pool, handed to Vercel with
+ * `attachDatabasePool` so Fluid compute closes idle connections before a function instance is suspended (the
+ * neon-postgres skill's recommendation for Vercel; sync needs real transactions). The pooled DATABASE_URL (PgBouncer)
+ * is used for app traffic; the database is set to "gigafazt" (lib/db/url.ts).
  */
 import "server-only"
-import { neon } from "@neondatabase/serverless"
-import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http"
+import { attachDatabasePool } from "@vercel/functions"
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres"
+import { Pool } from "pg"
 import * as schema from "./schema"
 import { appDatabaseUrl } from "./url"
 
-let db: NeonHttpDatabase<typeof schema> | null = null
+let pool: Pool | null = null
+let db: NodePgDatabase<typeof schema> | null = null
 
 /** True when this deployment has a database to talk to. */
 export const hasDatabase = () => Boolean(process.env.DATABASE_URL)
 
-/** The database, created on first use; throws a clear error when DATABASE_URL is missing. */
-export function getDb(): NeonHttpDatabase<typeof schema> {
-  if (db) return db
+export function getPool(): Pool {
+  if (pool) return pool
   const url = appDatabaseUrl(process.env.DATABASE_URL)
   if (!url) throw new Error("DATABASE_URL is not set: pull it from Vercel into .env.local")
-  db = drizzle(neon(url), { schema })
+  pool = new Pool({ connectionString: url, max: 5, idleTimeoutMillis: 5_000, connectionTimeoutMillis: 10_000 })
+  attachDatabasePool(pool)
+  return pool
+}
+
+/** The database, created on first use; throws a clear error when DATABASE_URL is missing. */
+export function getDb(): NodePgDatabase<typeof schema> {
+  if (db) return db
+  db = drizzle(getPool(), { schema })
   return db
 }
