@@ -32,11 +32,16 @@ import {
   type ToolCategory,
 } from "@/lib/tools/model"
 import { useDropUntouched } from "@/components/interno/useDropUntouched"
-import { markFresh } from "@/lib/fresh"
+import { QuickAdd } from "@/components/interno/QuickAdd"
+import { catalogServerSnapshot, catalogSnapshot, subscribeCatalog } from "@/lib/materials/store"
+import { BODEGA, countAt } from "@/lib/stock/model"
+import { movesStore, unitsStore } from "@/lib/stock/store"
+import { RecordHistory } from "@/components/interno/RecordHistory"
+import { ExportButton } from "@/components/interno/ExportButton"
+import { toCsv } from "@/lib/csv"
 import { deleteTool, saveTool, subscribeTools, toolsServerSnapshot, toolsSnapshot } from "@/lib/tools/store"
 
 type T = ReturnType<typeof useTranslations>
-const PRIMARY = "h-11 w-fit rounded-full bg-white px-5 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const SMALL = "inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const DANGER = "inline-flex min-h-9 w-fit items-center rounded-full border border-red-400/30 px-3 text-xs text-red-200 hover:bg-red-400/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const CARD = "grid gap-3 rounded-lg border border-white/10 p-3"
@@ -174,6 +179,7 @@ function ToolList({ t, list, sites, params, today, persisted }: { t: T; list: To
   }
   const kindLabel = (k: HolderKind) => t(`holder.kinds.${k}`)
   const where = (x: Tool) => holderLabel(x, siteName, kindLabel)
+  const sellers = useSyncExternalStore(subscribeProviders, providersSnapshot, providersServerSnapshot).list
 
   // Holder filter: each kind, then each person, vehicle, place or location that has something.
   const holders = new Map<string, string>()
@@ -202,13 +208,17 @@ function ToolList({ t, list, sites, params, today, persisted }: { t: T; list: To
   const attention = owned.filter((x) => toolAlerts(x, today).length > 0).length
   const out = owned.filter((x) => x.condition !== "bien").length
 
-  const add = () => {
-    const at = sites.find((s) => `s:${s.id}` === who)
-    const holderKind: HolderKind = at ? "despliegue" : who.startsWith("k:") ? (who.slice(2) as HolderKind) : who.startsWith("p:") ? (list.find((x) => holderKey(x) === who)?.holderKind ?? "bodega") : "bodega"
-    const holder = who.startsWith("p:") ? (list.find((x) => holderKey(x) === who)?.holder ?? "") : ""
-    const x = newTool({ category: cat || "otros", holderKind, holder, siteId: at?.id ?? "" })
+  // Where the new tool starts: the list's holder filter (a location, a person, or a kind), else the warehouse.
+  const at = sites.find((s) => `s:${s.id}` === who)
+  const filteredKind: HolderKind = at ? "despliegue" : who.startsWith("k:") ? (who.slice(2) as HolderKind) : who.startsWith("p:") ? (list.find((x) => holderKey(x) === who)?.holderKind ?? "bodega") : "bodega"
+  const add = (v: Record<string, string>) => {
+    const holderKind = (HOLDER_KINDS as readonly string[]).includes(v.where) ? (v.where as HolderKind) : "bodega"
+    const sameAsFilter = holderKind === filteredKind
+    const holder = sameAsFilter && who.startsWith("p:") ? (list.find((x) => holderKey(x) === who)?.holder ?? "") : ""
+    const quantity = Math.max(0, Math.min(100000, Math.round(Number(v.quantity) || 1)))
+    const category = (TOOL_CATEGORIES as readonly string[]).includes(v.category) ? (v.category as ToolCategory) : "otros"
+    const x = newTool({ name: v.name, quantity, category, holderKind, holder, siteId: sameAsFilter ? (at?.id ?? "") : "" })
     saveTool(x)
-    markFresh(x)
     go(withTool(x.id))
   }
   return (
@@ -220,9 +230,34 @@ function ToolList({ t, list, sites, params, today, persisted }: { t: T; list: To
         <Tile label={t("list.tiles.attention")} value={String(attention)} />
         <Tile label={t("list.tiles.out")} value={String(out)} />
       </div>
-      <button type="button" onClick={add} className={PRIMARY}>
-        {t("list.add")}
-      </button>
+      <QuickAdd
+        title={t("list.add")}
+        submit={t("list.addSubmit")}
+        initial={{ category: cat || "otros", where: filteredKind }}
+        fields={[
+          { key: "name", label: t("general.name"), required: true, placeholder: t("list.addNamePlaceholder") },
+          { key: "quantity", label: t("general.quantity"), kind: "number", min: 0, placeholder: "1" },
+          { key: "category", label: t("general.category"), kind: "select", options: TOOL_CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) })) },
+          { key: "where", label: t("holder.kind"), kind: "select", options: HOLDER_KINDS.map((k) => ({ value: k, label: t(`holder.kinds.${k}`) })) },
+        ]}
+        onAdd={add}
+      />
+      <ExportButton
+        label={t("list.exportCsv")}
+        name="herramientas"
+        disabled={!list.length}
+        build={() =>
+          toCsv(
+            [t("general.name"), t("general.category"), t("general.brand"), t("general.model"), t("general.serial"), t("general.quantity"), t("general.condition"), t("list.holder"), t("purchase.price"), t("list.tiles.value"), t("purchase.supplier"), t("purchase.date"), t("purchase.warranty"), t("purchase.invoice"), t("maintenance.every"), t("csv.lastService"), t("csv.nextService"), t("csv.counter"), t("maintenance.counterLimit"), t("general.notes")],
+            [...list]
+              .sort((a, b) => TOOL_CATEGORIES.indexOf(a.category) - TOOL_CATEGORIES.indexOf(b.category) || a.name.localeCompare(b.name, "es"))
+              .map((x) => {
+                const sup = x.supplierId ? sellers.find((p) => p.id === x.supplierId) : undefined
+                return [x.name, t(`categories.${x.category}`), x.brand, x.model, x.serial, x.quantity, t(`conditions.${x.condition}`), where(x), x.price, toolValue(x), sup ? providerName(sup) : x.supplier, x.purchaseDate, x.warrantyEnd, x.invoice, x.serviceMonths, lastService(x), nextService(x), x.counterLabel.trim() ? `${x.counterLabel}: ${x.counter ?? ""}` : "", x.counterLabel.trim() ? x.counterLimit : null, x.notes]
+              })
+          )
+        }
+      />
       <div className="grid items-start gap-3 sm:grid-cols-2">
         <TextField label={t("list.search")} value={q} onChange={(v) => setParam("q", v)} hint={t("list.searchHint")} />
         <PickField label={t("list.category")} value={cat} onChange={(v) => setParam("cat", v)} options={[{ value: "" as const, label: t("list.allCategories") }, ...TOOL_CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) }))]} />
@@ -262,6 +297,62 @@ function ToolList({ t, list, sites, params, today, persisted }: { t: T; list: To
         })}
       </ul>
     </div>
+  )
+}
+
+/**
+ * Spare parts and consumables (owner, 2026-11-18: link tools and materials): items from the materials list this tool
+ * uses up (electrodes, cleaver blades, cleaning sticks…), each with what the warehouse has and its minimum.
+ */
+function Parts({ t, x, up }: { t: T; x: Tool; up: (p: Partial<Tool>) => void }) {
+  const items = useSyncExternalStore(subscribeCatalog, catalogSnapshot, catalogServerSnapshot).items
+  const moves = useSyncExternalStore(movesStore.subscribe, movesStore.snapshot, movesStore.serverSnapshot).list
+  const units = useSyncExternalStore(unitsStore.subscribe, unitsStore.snapshot, unitsStore.serverSnapshot).list
+  const used = x.parts.map((id) => ({ id, item: items.find((i) => i.id === id) }))
+  const free = [...items].filter((i) => !x.parts.includes(i.id)).sort((a, b) => a.name.localeCompare(b.name, "es"))
+  return (
+    <Fieldset title={t("parts.title")}>
+      <p className="text-sm text-zinc-400">{t("parts.lead")}</p>
+      {!used.length && <p className="text-sm text-zinc-400">{t("parts.none")}</p>}
+      <ul className="grid gap-2">
+        {used.map(({ id, item }) => {
+          const has = item ? countAt(item, moves, units, BODEGA) : null
+          const low = item && item.minStock !== null && has !== null && has < item.minStock
+          return (
+            <li key={id} className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2.5 ${low ? "border-amber-400/40" : "border-white/10"}`}>
+              <span className="grid gap-0.5">
+                {item ? (
+                  <a href={`/interno/admin/materiales?m=${id}`} className="text-sm text-zinc-100 underline-offset-4 hover:underline">
+                    {item.name}
+                  </a>
+                ) : (
+                  <span className="text-sm text-zinc-400">{t("parts.gone")}</span>
+                )}
+                {item && (
+                  <span className={`font-mono text-xs ${low ? "text-amber-200" : "text-zinc-400"}`}>
+                    {t("parts.stock", { n: has ?? 0, unit: item.unit })}
+                    {item.minStock !== null ? ` · ${t("parts.min", { n: item.minStock })}` : ""}
+                    {low ? ` · ${t("parts.low")}` : ""}
+                  </span>
+                )}
+              </span>
+              <button type="button" onClick={() => up({ parts: x.parts.filter((p) => p !== id) })} className={DANGER}>
+                {t("parts.remove")}
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+      {free.length > 0 && (
+        <PickField
+          label={t("parts.add")}
+          value=""
+          onChange={(id: string) => id && up({ parts: [...x.parts, id] })}
+          hint={t("parts.addHint")}
+          options={[{ value: "", label: t("parts.pick") }, ...free.map((i) => ({ value: i.id, label: `${i.name} (${t(`parts.categories.${i.category}`)})` }))]}
+        />
+      )}
+    </Fieldset>
   )
 }
 
@@ -427,6 +518,9 @@ function ToolEditor({ t, x, sites, all, today }: { t: T; x: Tool; sites: Site[];
         </div>
       </Fieldset>
 
+      <Parts t={t} x={x} up={up} />
+
+      <RecordHistory kind="tools" id={x.id} />
       <button
         type="button"
         onClick={() => {

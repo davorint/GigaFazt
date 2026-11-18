@@ -42,7 +42,7 @@ type KindSpec = {
   tombstone?: Columns
 }
 
-const SPECS: Record<SyncKind, KindSpec> = {
+export const SPECS: Record<SyncKind, KindSpec> = {
   surveys: {
     table: "surveys",
     versions: "survey_versions",

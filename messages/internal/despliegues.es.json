@@ -14,7 +14,11 @@
       "none": "Ningún despliegue coincide.",
       "count": "{n, plural, one {# despliegue} other {# despliegues}}",
       "summary": "{towers, plural, one {# torre} other {# torres}} · {rooms, plural, one {# cuarto} other {# cuartos}} · {clients, plural, one {# cliente} other {# clientes}} ({active} activos)",
-      "untitled": "Sin nombre"
+      "untitled": "Sin nombre",
+      "addSubmit": "Agregar",
+      "addNamePlaceholder": "Ej. Be Grand Pedregal",
+      "exportCsv": "Exportar CSV",
+      "csvMonthly": "Mensualidades de los clientes"
     },
     "nav": {
       "label": "Secciones del despliegue",
@@ -45,7 +49,12 @@
       "monthlyHint": "Servicios activos de sus clientes.",
       "costHint": "Renta, más la luz cuando la pagamos nosotros.",
       "remove": "Borrar despliegue",
-      "confirmRemove": "¿Borrar «{name}»? Queda en el historial de la base de datos y se puede recuperar. Sus clientes se quedan, sin despliegue."
+      "confirmRemove": "¿Borrar «{name}»? Queda en el historial de la base de datos y se puede recuperar. Sus clientes se quedan, sin despliegue.",
+      "tools": "Herramientas aquí ({n})",
+      "noTools": "Ninguna. En Herramientas, «Está en» → En despliegue, y esta ubicación.",
+      "siteNotes": "Notas de este despliegue ({n})",
+      "noSiteNotes": "Ninguna pendiente. Al pegar una nota, elige este despliegue en «Relacionada con».",
+      "toNotes": "Ir a Notas"
     },
     "towers": {
       "intro": "Las torres de la ubicación y qué cuarto de telecom atiende a cada una.",

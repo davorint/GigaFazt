@@ -13,6 +13,10 @@ import { newId } from "../survey/id"
 export const NOTE_COLORS = ["amarillo", "rosa", "azul", "verde", "naranja", "morado"] as const
 export type NoteColor = (typeof NOTE_COLORS)[number]
 
+/** What a note can be about (optional; owner, 2026-11-18). */
+export const LINK_KINDS = ["client", "site", "report"] as const
+export type LinkKind = (typeof LINK_KINDS)[number]
+
 export type Note = {
   id: string
   title: string
@@ -21,6 +25,9 @@ export type Note = {
   pinned: boolean
   /** When it was marked done (ISO); "" = open. */
   doneAt: string
+  /** The client, deployment or report it is about ("" = none). */
+  linkKind: LinkKind | ""
+  linkId: string
   /** Who wrote it (the phone's name). */
   by: string
   createdAt: string
@@ -31,7 +38,7 @@ export const TITLE_MAX = 120
 export const BODY_MAX = 4000
 
 export function newNote(p: Partial<Note> = {}): Note {
-  return { id: newId(), title: "", body: "", color: "amarillo", pinned: false, doneAt: "", by: "", createdAt: new Date().toISOString(), updatedAt: "", ...p }
+  return { id: newId(), title: "", body: "", color: "amarillo", pinned: false, doneAt: "", linkKind: "", linkId: "", by: "", createdAt: new Date().toISOString(), updatedAt: "", ...p }
 }
 
 export const isEmptyNote = (n: Pick<Note, "title" | "body">) => !n.title.trim() && !n.body.trim()
@@ -65,6 +72,13 @@ const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max
 const iso = (v: unknown) => (typeof v === "string" && Number.isFinite(Date.parse(v)) ? v.slice(0, 40) : "")
 const ID = /^[\w-]{6,64}$/
 
+const link = (k: unknown, id: unknown): { linkKind: LinkKind | ""; linkId: string } =>
+  (LINK_KINDS as readonly unknown[]).includes(k) && typeof id === "string" && ID.test(id) ? { linkKind: k as LinkKind, linkId: id } : { linkKind: "", linkId: "" }
+
+/** Where a linked record opens. */
+export const linkHref = (k: LinkKind, id: string) =>
+  k === "client" ? `/interno/admin/clientes?c=${id}` : k === "site" ? `/interno/admin/despliegues?d=${id}` : `/interno/admin/reportes_clientes?r=${id}`
+
 export function decodeNote(v: unknown): Note | null {
   if (!isObj(v)) return null
   return {
@@ -74,6 +88,7 @@ export function decodeNote(v: unknown): Note | null {
     color: (NOTE_COLORS as readonly unknown[]).includes(v.color) ? (v.color as NoteColor) : "amarillo",
     pinned: v.pinned === true,
     doneAt: iso(v.doneAt),
+    ...link(v.linkKind, v.linkId),
     by: str(v.by, 40),
     createdAt: iso(v.createdAt) || new Date().toISOString(),
     updatedAt: typeof v.updatedAt === "string" ? v.updatedAt.slice(0, 40) : "",

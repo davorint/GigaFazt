@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl"
 import { setRequestLocale } from "next-intl/server"
 import { notFound } from "next/navigation"
 import { SyncBar } from "@/components/interno/SyncBar"
+import { DeletedList } from "@/components/interno/RecordHistory"
 import { AdminLinks } from "@/components/interno/AdminLinks"
 import { NotesApp } from "@/components/notes/NotesApp"
 import syncCopy from "@/messages/internal/sync.es.json"
@@ -41,6 +42,9 @@ export default async function NotasPage({ params }: PageProps<"/[locale]/interno
       <NextIntlClientProvider locale="es" messages={messages}>
         <SyncBar />
         <NotesApp />
+        <div className="mt-12 grid gap-3">
+          <DeletedList kind="notes" />
+        </div>
       </NextIntlClientProvider>
     </main>
   )

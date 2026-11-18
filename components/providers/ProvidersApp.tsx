@@ -10,13 +10,13 @@ import { catalogServerSnapshot, catalogSnapshot, subscribeCatalog } from "@/lib/
 import { PROVIDER_KINDS, RFC, isKind, newProvider, providerName, providersFile, readProvidersFile, type Provider, type ProviderKind, type Score } from "@/lib/providers/model"
 import { useDropUntouched } from "@/components/interno/useDropUntouched"
 import { useOpenParam } from "@/components/interno/useOpenParam"
-import { markFresh } from "@/lib/fresh"
+import { QuickAdd } from "@/components/interno/QuickAdd"
+import { RecordHistory } from "@/components/interno/RecordHistory"
 import { deleteProvider, importProviders, providersServerSnapshot, providersSnapshot, saveProvider, subscribeProviders } from "@/lib/providers/store"
 import { newId } from "@/lib/survey/id"
 
 type T = ReturnType<typeof useTranslations>
 const BTN = "h-11 rounded-full border border-white/15 px-5 text-sm text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-const PRIMARY = "h-11 rounded-full bg-white px-5 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const fold = (s: string) =>
   s
     .normalize("NFD")
@@ -48,10 +48,10 @@ export function ProvidersApp() {
   if (!store.loaded) return null
   const list = [...store.list].sort((a, b) => providerName(a).localeCompare(providerName(b), "es"))
   const shown = list.filter((p) => (!kind || isKind(p, kind)) && (!q.trim() || fold([p.tradeName, p.legalName, p.rfc, p.notes, p.carrier.zones, ...p.contacts.map((c) => c.name)].join(" ")).includes(fold(q.trim()))))
-  const add = () => {
-    const p = newProvider(kind || "material")
+  const add = (v: Record<string, string>) => {
+    const k = (PROVIDER_KINDS as readonly string[]).includes(v.kind) ? (v.kind as ProviderKind) : "material"
+    const p = newProvider(k, v.name)
     saveProvider(p)
-    markFresh(p)
     setOpenId(p.id)
     setQ("")
   }
@@ -69,10 +69,17 @@ export function ProvidersApp() {
           {t("noStorage")}
         </p>
       )}
+      <QuickAdd
+        title={t("add")}
+        submit={t("addSubmit")}
+        initial={{ kind: kind || "material" }}
+        fields={[
+          { key: "name", label: t("tradeName"), required: true },
+          { key: "kind", label: t("kind"), kind: "select", options: PROVIDER_KINDS.map((k) => ({ value: k, label: t(`kinds.${k}`) })) },
+        ]}
+        onAdd={add}
+      />
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={add} className={PRIMARY}>
-          {t("add")}
-        </button>
         {list.length > 0 && (
           <button type="button" onClick={() => download(`proveedores-${new Date().toISOString().slice(0, 10)}.json`, providersFile(list))} className={BTN}>
             {t("export")}
@@ -242,6 +249,7 @@ function Editor({ t, p }: { t: T; p: Provider }) {
           )}
         </div>
       )}
+      <RecordHistory kind="providers" id={p.id} />
       <button
         type="button"
         onClick={() => window.confirm(t("confirmRemove", { name: providerName(p) || t("untitled") })) && deleteProvider(p.id)}

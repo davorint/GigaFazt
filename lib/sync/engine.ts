@@ -28,7 +28,7 @@ import { decodeNote, type Note } from "../notes/model"
 import { notesStore } from "../notes/store"
 import { applyRemoteSurveys, surveysSnapshot } from "../survey/store"
 import { MAX_CHANGES, REV_OVERLAP, SYNC_KINDS, type Change, type SyncKind, type SyncResponse } from "./protocol"
-import { onSyncChange, pendingCount, readState, updateState } from "./state"
+import { markChanged, onSyncChange, pendingCount, readState, updateState } from "./state"
 
 type Adapter = {
   /** The local record to send, or undefined when it's gone. */
@@ -215,6 +215,20 @@ let running = false
 let again = false
 
 /** Syncs every kind now (or right after the one in progress). */
+/**
+ * "Restaurar" (a past version, or a deleted record): puts that copy back in this browser and marks it as an edit, so
+ * it syncs like any other change (the server clears the deleted mark and keeps the version in the history).
+ */
+export function restoreRecord(kind: SyncKind, data: unknown) {
+  const id = data && typeof data === "object" && typeof (data as { id?: unknown }).id === "string" ? (data as { id: string }).id : ""
+  if (!id) return false
+  ADAPTERS[kind].apply([data], [])
+  if (ADAPTERS[kind].get(id) === undefined) return false
+  markChanged(kind, [id])
+  void syncNow()
+  return true
+}
+
 export async function syncNow(): Promise<void> {
   if (typeof window === "undefined") return
   if (running) {

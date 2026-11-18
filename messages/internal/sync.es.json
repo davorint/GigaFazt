@@ -21,6 +21,41 @@
     "uploadTitle": "Este navegador tiene {n, plural, one {# registro} other {# registros}} que aún no están en la base de datos",
     "uploadHint": "Levantamientos, materiales y proveedores que guardaste antes de conectar la base. Súbelos una vez; si alguno ya está en la base, gana la copia editada más recientemente.",
     "upload": "Subir lo de este navegador",
-    "confirmUpload": "¿Subir {n} registros de este navegador a la base de datos?"
+    "confirmUpload": "¿Subir {n} registros de este navegador a la base de datos?",
+    "quickAdd": {
+      "missing": "Falta: {fields}",
+      "next": "Lo demás se llena en la siguiente pantalla."
+    },
+    "history": {
+      "title": "Historial de cambios",
+      "lead": "Cada vez que alguien guardó este registro. «Restaurar» lo regresa a esa versión en todos los teléfonos (y queda como un cambio más en el historial).",
+      "loading": "Cargando…",
+      "error": "No se pudo cargar. Revisa la señal e inténtalo otra vez.",
+      "none": "Todavía no hay versiones guardadas en la base de datos.",
+      "version": "Versión {n}",
+      "anon": "sin nombre",
+      "conflict": "perdió un conflicto (otro teléfono guardó después)",
+      "restore": "Restaurar",
+      "confirm": "¿Regresar este registro a la versión {n}?",
+      "restored": "Listo: regresó a la versión {n}.",
+      "deletedTitle": "Borrados recientemente",
+      "deletedLead": "Lo que se borró en los últimos 90 días. «Restaurar» lo regresa a la lista en todos los teléfonos.",
+      "deletedNone": "No se ha borrado nada en los últimos 90 días.",
+      "deletedOn": "Borrado {date}",
+      "back": "Restaurado",
+      "kinds": {
+        "surveys": "Levantamientos",
+        "materials": "Materiales",
+        "providers": "Proveedores",
+        "clients": "Clientes",
+        "sites": "Despliegues",
+        "tools": "Herramientas",
+        "stock": "Movimientos de inventario",
+        "units": "Piezas con número de serie",
+        "reports": "Reportes",
+        "payments": "Pagos",
+        "notes": "Notas"
+      }
+    }
   }
 }

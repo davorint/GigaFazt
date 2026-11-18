@@ -38,13 +38,18 @@ import {
 } from "@/lib/sites/model"
 import { portClients, siteStats, type SiteStats } from "@/lib/sites/stats"
 import { useDropUntouched } from "@/components/interno/useDropUntouched"
-import { markFresh } from "@/lib/fresh"
+import { QuickAdd } from "@/components/interno/QuickAdd"
+import { notesStore } from "@/lib/notes/store"
+import { toolLabel } from "@/lib/tools/model"
+import { subscribeTools, toolsServerSnapshot, toolsSnapshot } from "@/lib/tools/store"
+import { RecordHistory } from "@/components/interno/RecordHistory"
+import { ExportButton } from "@/components/interno/ExportButton"
+import { toCsv } from "@/lib/csv"
 import { deleteSite, saveSite, sitesServerSnapshot, sitesSnapshot, subscribeSites } from "@/lib/sites/store"
 
 type T = ReturnType<typeof useTranslations>
 const SECTIONS = ["general", "torres", "cuartos", "acceso", "acuerdo", "clientes"] as const
 type Section = (typeof SECTIONS)[number]
-const PRIMARY = "h-11 w-fit rounded-full bg-white px-5 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const SMALL = "inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const DANGER = "inline-flex min-h-9 w-fit items-center rounded-full border border-red-400/30 px-3 text-xs text-red-200 hover:bg-red-400/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const CARD = "grid gap-3 rounded-lg border border-white/10 p-3"
@@ -110,17 +115,39 @@ function SiteList({ t, list, clients }: { t: T; list: Site[]; clients: Client[] 
         fold([s.name, s.address, s.municipality, ...s.rooms.flatMap((r) => [...r.equipment.flatMap((e) => [e.model, e.serial, e.ip]), ...r.carriers.flatMap((c) => [c.name, c.ip, c.account])])].join(" ")).includes(needle)
     )
     .sort((a, b) => siteLabel(a).localeCompare(siteLabel(b), "es"))
-  const add = () => {
-    const s = newSite()
+  const add = (v: Record<string, string>) => {
+    const s = newSite({ name: v.name, address: v.address, municipality: v.municipality })
     saveSite(s)
-    markFresh(s)
     go(`?d=${s.id}`)
   }
   return (
     <div className="mt-6 grid gap-4">
-      <button type="button" onClick={add} className={PRIMARY}>
-        {t("list.add")}
-      </button>
+      <QuickAdd
+        title={t("list.add")}
+        submit={t("list.addSubmit")}
+        fields={[
+          { key: "name", label: t("general.name"), required: true, placeholder: t("list.addNamePlaceholder") },
+          { key: "address", label: t("general.address") },
+          { key: "municipality", label: t("general.municipality") },
+        ]}
+        onAdd={add}
+      />
+      <ExportButton
+        label={t("list.exportCsv")}
+        name="despliegues"
+        disabled={!list.length}
+        build={() =>
+          toCsv(
+            [t("general.name"), t("general.address"), t("general.municipality"), t("general.tiles.towers"), t("general.tiles.apartments"), t("general.tiles.rooms"), t("general.tiles.clients"), t("general.tiles.active"), t("list.csvMonthly"), t("general.notes")],
+            [...list]
+              .sort((x, y) => siteLabel(x).localeCompare(siteLabel(y), "es"))
+              .map((x) => {
+                const st = siteStats(x, clients)
+                return [x.name, x.address, x.municipality, x.towers.length, x.towers.reduce((n, w) => n + (w.apartments ?? 0), 0) || null, x.rooms.length, st.clients, st.active, st.monthly || null, x.notes]
+              })
+          )
+        }
+      />
       {list.length > 0 && <TextField label={t("list.search")} value={q} onChange={setQ} hint={t("list.searchHint")} />}
       <p className="font-mono text-xs text-zinc-400">{t("list.count", { n: shown.length })}</p>
       {!list.length && <p className="text-sm text-zinc-400">{t("list.empty")}</p>}
@@ -197,6 +224,46 @@ function SiteEditor({ t, s, section, clients }: { t: T; s: Site; section: Sectio
 
 type Up = (p: Partial<Site>) => void
 
+const NOTES_PATH = "/interno/admin/notas"
+
+/** What is at this location now (owner, 2026-11-18: link the sections): tools left here and the notes about it. */
+function AtSite({ t, s }: { t: T; s: Site }) {
+  const tools = useSyncExternalStore(subscribeTools, toolsSnapshot, toolsServerSnapshot).list.filter((x) => x.holderKind === "despliegue" && x.siteId === s.id && x.quantity > 0)
+  const notes = useSyncExternalStore(notesStore.subscribe, notesStore.snapshot, notesStore.serverSnapshot).list.filter((n) => n.linkKind === "site" && n.linkId === s.id && !n.doneAt)
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <section className="grid content-start gap-2 rounded-xl border border-white/10 p-3">
+        <h3 className="text-sm font-medium text-foreground">{t("general.tools", { n: tools.length })}</h3>
+        {!tools.length && <p className="text-xs text-zinc-400">{t("general.noTools")}</p>}
+        <ul className="grid gap-1">
+          {tools.map((x) => (
+            <li key={x.id}>
+              <a href={`/interno/admin/herramientas?h=${x.id}`} className="text-sm text-zinc-200 underline-offset-4 hover:underline">
+                {toolLabel(x)}
+                {x.quantity > 1 ? ` × ${x.quantity}` : ""}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section className="grid content-start gap-2 rounded-xl border border-white/10 p-3">
+        <h3 className="text-sm font-medium text-foreground">{t("general.siteNotes", { n: notes.length })}</h3>
+        {!notes.length && <p className="text-xs text-zinc-400">{t("general.noSiteNotes")}</p>}
+        <ul className="grid gap-1">
+          {notes.map((n) => (
+            <li key={n.id} className="text-sm text-zinc-200">
+              {n.title || n.body.slice(0, 80)}
+            </li>
+          ))}
+        </ul>
+        <a href={NOTES_PATH} className="font-mono text-xs text-zinc-400 hover:text-zinc-100">
+          {t("general.toNotes")} →
+        </a>
+      </section>
+    </div>
+  )
+}
+
 function Tile({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="grid gap-0.5 rounded-lg border border-white/10 p-3">
@@ -228,6 +295,8 @@ function General({ t, s, up, stats }: { t: T; s: Site; up: Up; stats: SiteStats 
         <TextField label={t("general.municipality")} value={s.municipality} onChange={(v) => up({ municipality: v })} />
       </div>
       <AreaField label={t("general.notes")} value={s.notes} onChange={(v) => up({ notes: v })} />
+      <AtSite t={t} s={s} />
+      <RecordHistory kind="sites" id={s.id} />
       <button
         type="button"
         onClick={() => {

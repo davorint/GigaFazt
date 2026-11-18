@@ -23,7 +23,8 @@
       "status": {
         "draft": "Borrador",
         "done": "Terminado"
-      }
+      },
+      "newSubmit": "Empezar"
     },
     "editor": {
       "backToList": "Todos los levantamientos",

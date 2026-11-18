@@ -8,6 +8,8 @@ import { CLIENT_ROLES, type Item } from "@/lib/materials/catalog"
 import { BODEGA, countAt, placesUsed, type MoveKind } from "@/lib/stock/model"
 import { movesStore, unitsStore } from "@/lib/stock/store"
 import { MoveForm } from "./MoveForm"
+import { ExportButton } from "@/components/interno/ExportButton"
+import { toCsv } from "@/lib/csv"
 import { clientLine, usePlaceLabel, usePlaceOptions } from "./places"
 
 const SMALL = "inline-flex min-h-10 w-fit items-center rounded-full border border-white/15 px-4 text-sm text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -112,6 +114,24 @@ export function StockPanel({ items }: { items: Item[] }) {
         <h3 id="stock-history" className="text-lg font-medium text-foreground">
           {t("stock.history")}
         </h3>
+        <ExportButton
+          label={t("stock.exportCsv")}
+          name="movimientos"
+          disabled={!moves.length}
+          build={() => {
+            const itemName = (id: string) => items.find((x) => x.id === id)?.name ?? t("stock.unknownItem")
+            const clientName = (id: string) => {
+              const c = clients.find((x) => x.id === id)
+              return c ? clientLine(c) : id ? t("stock.unknownClient") : ""
+            }
+            return toCsv(
+              [t("move.date"), t("move.kind"), t("move.item"), t("move.qty"), t("move.from"), t("move.to"), t("move.client"), t("move.serials"), t("stock.csvBy"), t("move.notes")],
+              [...moves]
+                .sort((x, y) => y.date.localeCompare(x.date))
+                .map((m) => [m.date, t(`move.kinds.${m.kind}`), itemName(m.itemId), m.qty, m.from ? placeLabel(m.from) : "", m.to ? placeLabel(m.to) : "", clientName(m.clientId), m.serials.join(" "), m.by, m.notes])
+            )
+          }}
+        />
         <PickField label={t("stock.itemFilter")} value={itemFilter} onChange={setItemFilter} options={[{ value: "", label: t("stock.allItems") }, ...[...items].sort((a, b) => a.name.localeCompare(b.name, "es")).map((x) => ({ value: x.id, label: x.name }))]} />
         {!history.length && <p className="text-sm text-zinc-400">{t("stock.noHistory")}</p>}
         <ul className="grid gap-2">

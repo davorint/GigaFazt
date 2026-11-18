@@ -67,6 +67,19 @@ async function post(url: string, body: unknown): Promise<boolean> {
   return res.ok
 }
 
+/** Any other message to the same channels (the daily summary): plain text, and `type` + `data` for the webhook. */
+export async function sendText(type: string, text: string, data: unknown = null): Promise<{ telegram: boolean | null; webhook: boolean | null }> {
+  const token = process.env.REPORT_TELEGRAM_BOT_TOKEN
+  const chat = process.env.REPORT_TELEGRAM_CHAT_ID
+  const hook = process.env.REPORT_WEBHOOK_URL
+  const [telegram, webhook] = await Promise.all([
+    token && chat ? post(`https://api.telegram.org/bot${token}/sendMessage`, { chat_id: chat, text: text.slice(0, 4000), disable_web_page_preview: true }).catch(() => false) : Promise.resolve(null),
+    hook ? post(hook, { type, text, data }).catch(() => false) : Promise.resolve(null),
+  ])
+  if (telegram === false || webhook === false) console.error(`[${type}] send failed: telegram=${telegram} webhook=${webhook}`)
+  return { telegram, webhook }
+}
+
 /** Sends to every configured channel; returns which ones worked (for the test button and the log). */
 export async function sendAlert(a: ReportAlert, text = alertText(a)): Promise<{ telegram: boolean | null; webhook: boolean | null }> {
   const token = process.env.REPORT_TELEGRAM_BOT_TOKEN

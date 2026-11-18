@@ -53,6 +53,8 @@ export type Tool = {
   counterLabel: string
   counter: number | null
   counterLimit: number | null
+  /** Spare parts and consumables from the materials list (electrodes, cleaver blades, cleaning sticks…), by item id. */
+  parts: string[]
   notes: string
   updatedAt: string
 }
@@ -79,6 +81,7 @@ const blank = (): Omit<Tool, "id" | "name" | "category"> => ({
   counterLabel: "",
   counter: null,
   counterLimit: null,
+  parts: [],
   notes: "",
   updatedAt: "",
 })
@@ -245,6 +248,7 @@ export function decodeTool(v: unknown): Tool | null {
     counterLabel: str(v.counterLabel, 60),
     counter: num(v.counter, 0, 1e9),
     counterLimit: num(v.counterLimit, 1, 1e9),
+    parts: Array.isArray(v.parts) ? [...new Set(v.parts.map(id).filter(Boolean))].slice(0, 50) : [],
     notes: str(v.notes, 2000),
     updatedAt: typeof v.updatedAt === "string" ? v.updatedAt.slice(0, 40) : "",
   }

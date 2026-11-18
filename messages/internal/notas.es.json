@@ -1,6 +1,8 @@
 {
   "notas": {
-    "meta": { "title": "Notas · GigaFazt interno" },
+    "meta": {
+      "title": "Notas · GigaFazt interno"
+    },
     "kicker": "Interno · Administración",
     "title": "Notas",
     "lead": "Post-its del equipo: pendientes, recordatorios y avisos. Fija arriba lo importante y marca como hecho lo que ya quedó.",
@@ -47,6 +49,26 @@
       "confirmDelete": "¿Borrar la nota «{title}»? Se borra en todos los teléfonos."
     },
     "untitled": "sin título",
-    "noStorage": "Este navegador no deja guardar: las notas se pierden al cerrar la página."
+    "noStorage": "Este navegador no deja guardar: las notas se pierden al cerrar la página.",
+    "exportCsv": "Exportar CSV",
+    "csv": {
+      "text": "Texto",
+      "state": "Estado",
+      "by": "Quién la escribió",
+      "created": "Fecha",
+      "done": "Hecha el",
+      "isDone": "Hecha",
+      "isOpen": "Pendiente"
+    },
+    "link": {
+      "label": "Relacionada con (opcional)",
+      "none": "Nada en particular",
+      "gone": "ya no está o se cerró",
+      "kinds": {
+        "site": "Despliegue",
+        "client": "Cliente",
+        "report": "Reporte"
+      }
+    }
   }
 }

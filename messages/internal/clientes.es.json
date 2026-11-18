@@ -81,7 +81,8 @@
       "byKind": "{residencial, plural, one {# residencial} other {# residenciales}} · {administracion, plural, one {# administración} other {# administraciones}} · {empresa, plural, one {# empresa} other {# empresas}} · {tv} de TV",
       "site": "Despliegue",
       "allSites": "Todos",
-      "newReport": "Nuevo reporte de falla de este cliente"
+      "newReport": "Nuevo reporte de falla de este cliente",
+      "addSubmit": "Agregar"
     },
     "leads": {
       "intro": "Lo que llega del formulario «Contratar» del sitio. Cambia el estado conforme avanzas y conviértela en cliente al instalar.",

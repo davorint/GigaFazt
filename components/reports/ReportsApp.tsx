@@ -8,6 +8,10 @@ import { AreaField, DateField, GRID, PickField } from "@/components/surveys/Surv
 import { ClientPick, clientLine } from "@/components/clients/ClientPick"
 import { useDropUntouched } from "@/components/interno/useDropUntouched"
 import { markFresh } from "@/lib/fresh"
+import { QuickAdd } from "@/components/interno/QuickAdd"
+import { RecordHistory } from "@/components/interno/RecordHistory"
+import { ExportButton } from "@/components/interno/ExportButton"
+import { toCsv } from "@/lib/csv"
 import { clientLight } from "@/lib/clients/optics"
 import { clientStatus, type Client } from "@/lib/clients/model"
 import { clientsServerSnapshot, clientsSnapshot, subscribeClients } from "@/lib/clients/store"
@@ -19,6 +23,9 @@ import {
   PRIORITIES,
   REPORT_CATEGORIES,
   REPORT_STATUSES,
+  defaultPriority,
+  phoneKey,
+  type ReportCategory,
   isOpen,
   newNote,
   newReport,
@@ -34,7 +41,6 @@ import { reportsStore } from "@/lib/reports/store"
 import { AlertsBox } from "./AlertsBox"
 
 type T = ReturnType<typeof useTranslations>
-const PRIMARY = "h-11 w-fit rounded-full bg-white px-5 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const SMALL = "inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const DANGER = "inline-flex min-h-9 w-fit items-center rounded-full border border-red-400/30 px-3 text-xs text-red-200 hover:bg-red-400/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const STATUS_TONE: Record<ReportStatus, string> = {
@@ -142,10 +148,13 @@ function ReportList({ t, list, clients, sites }: { t: T; list: Report[]; clients
       return fold([reportCode(r), r.name, r.phone, r.address, r.description, r.assignee, c ? clientLine(c) : "", c?.phone ?? ""].join(" ")).includes(needle)
     })
     .sort((a, b) => Number(isOpen(b)) - Number(isOpen(a)) || rank(a.priority) - rank(b.priority) || b.createdAt.localeCompare(a.createdAt))
-  const add = () => {
-    const r = newReport({ by: readState().name, siteId: site })
+  // The phone given finds the client (last 10 digits), so the report starts linked to it and to its location.
+  const add = (v: Record<string, string>) => {
+    const key = phoneKey(v.phone)
+    const c = key.length === 10 ? clientsSnapshot().list.find((x) => phoneKey(x.phone) === key || phoneKey(x.whatsapp) === key) : undefined
+    const category = (REPORT_CATEGORIES as readonly string[]).includes(v.category) ? (v.category as ReportCategory) : "otro"
+    const r = newReport({ by: readState().name, name: v.name, phone: v.phone, category, priority: defaultPriority(category), description: v.description, clientId: c?.id ?? "", siteId: c?.siteId ?? site })
     reportsStore.save(r)
-    markFresh(r)
     go(`?r=${r.id}`)
   }
   return (
@@ -171,9 +180,38 @@ function ReportList({ t, list, clients, sites }: { t: T; list: Report[]; clients
           })}
         </div>
       )}
-      <button type="button" onClick={add} className={PRIMARY}>
-        {t("add")}
-      </button>
+      <QuickAdd
+        title={t("add")}
+        submit={t("addSubmit")}
+        hint={t("addHint")}
+        fields={[
+          { key: "name", label: t("client.name") },
+          { key: "phone", label: t("client.phone"), kind: "tel" },
+          { key: "category", label: t("category"), kind: "select", options: REPORT_CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) })) },
+          { key: "description", label: t("problem.description"), required: true },
+        ]}
+        onAdd={add}
+      />
+      <ExportButton
+        label={t("exportCsv")}
+        name="reportes"
+        disabled={!list.length}
+        build={() => {
+          const siteName = (id: string) => {
+            const x = sites.find((y) => y.id === id)
+            return x ? siteLabel(x) : ""
+          }
+          return toCsv(
+            [t("csv.code"), t("csv.opened"), t("attention.status"), t("priority"), t("category"), t("client.pick"), t("client.name"), t("client.phone"), t("client.address"), t("site"), t("problem.description"), t("assignee"), t("attention.visit"), t("attention.cause"), t("attention.resolution"), t("csv.closed"), t("csv.source")],
+            [...list]
+              .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+              .map((r) => {
+                const c = clientOf(r.clientId)
+                return [reportCode(r), r.createdAt.slice(0, 16).replace("T", " "), t(`statuses.${r.status}`), t(`priorities.${r.priority}`), t(`categories.${r.category}`), c ? clientLine(c) : "", r.name, r.phone, r.address, siteName(r.siteId), r.description, r.assignee, r.visitDate, r.cause ? t(`causes.${r.cause}`) : "", r.resolution, r.resolvedAt.slice(0, 10), r.source === "web" ? t("csv.web") : t("csv.staff")]
+              })
+          )
+        }}
+      />
       <div className="grid items-start gap-3 sm:grid-cols-2">
         <TextField label={t("search")} value={q} onChange={setQ} hint={t("searchHint")} />
         <PickField label={t("show")} value={show} onChange={setShow} options={[{ value: "abiertos" as const, label: t("shows.abiertos") }, { value: "todos" as const, label: t("shows.todos") }, ...REPORT_STATUSES.map((s) => ({ value: s, label: t(`statuses.${s}`) }))]} />
@@ -397,6 +435,7 @@ function ReportEditor({ t, r, all, clients, sites }: { t: T; r: Report; all: Rep
         </section>
       )}
 
+      <RecordHistory kind="reports" id={r.id} />
       <button
         type="button"
         onClick={() => {

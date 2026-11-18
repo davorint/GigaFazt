@@ -53,6 +53,8 @@ describe("tools", () => {
     const x = decodeTool({ name: "OTDR", category: "nave", quantity: -3, condition: "rota", holderKind: "luna", serial: "ab12", price: "100", serviceMonths: 0, purchaseDate: "1/2/2025", services: [{ date: "2026-01-01", cost: -5, what: 7 }, "x"], siteId: "../x" })!
     expect([x.category, x.quantity, x.condition, x.holderKind, x.serial, x.price, x.serviceMonths, x.purchaseDate, x.siteId]).toEqual(["otros", 1, "bien", "bodega", "AB12", null, null, "", ""])
     expect(x.services.map((s) => [s.date, s.cost, s.what])).toEqual([["2026-01-01", null, ""]])
+    expect(decodeTool({ name: "Fusionadora", parts: ["item-elec1", "item-elec1", "../x", 5, "item-blade"] })!.parts).toEqual(["item-elec1", "item-blade"])
+    expect(decodeTool({ name: "Fusionadora" })!.parts).toEqual([])
     expect(decodeTool(null)).toBeNull()
     expect(decodeTool([])).toBeNull()
   })

@@ -3,8 +3,16 @@
 import { useId, useState, useSyncExternalStore, type FormEvent } from "react"
 import { useTranslations } from "next-intl"
 import { Input } from "@/components/ui/input"
-import { BODY_MAX, NOTE_COLORS, TITLE_MAX, doneNotes, isEmptyNote, matchNote, newNote, openNotes, type Note, type NoteColor } from "@/lib/notes/model"
+import { BODY_MAX, LINK_KINDS, NOTE_COLORS, TITLE_MAX, doneNotes, isEmptyNote, linkHref, matchNote, newNote, openNotes, type LinkKind, type Note, type NoteColor } from "@/lib/notes/model"
+import { clientLabel } from "@/lib/clients/model"
+import { clientsServerSnapshot, clientsSnapshot, subscribeClients } from "@/lib/clients/store"
+import { isOpen, reportCode } from "@/lib/reports/model"
+import { reportsStore } from "@/lib/reports/store"
+import { siteLabel } from "@/lib/sites/model"
+import { sitesServerSnapshot, sitesSnapshot, subscribeSites } from "@/lib/sites/store"
 import { notesStore } from "@/lib/notes/store"
+import { ExportButton } from "@/components/interno/ExportButton"
+import { toCsv } from "@/lib/csv"
 import { readState } from "@/lib/sync/state"
 
 type T = ReturnType<typeof useTranslations>
@@ -52,16 +60,70 @@ function ColorPick({ t, value, onChange, dark }: { t: T; value: NoteColor; onCha
   )
 }
 
+/** The records a note can point to, with their names (deployments, clients, open reports). */
+function useLinkables() {
+  const sites = useSyncExternalStore(subscribeSites, sitesSnapshot, sitesServerSnapshot).list
+  const clients = useSyncExternalStore(subscribeClients, clientsSnapshot, clientsServerSnapshot).list
+  const reports = useSyncExternalStore(reportsStore.subscribe, reportsStore.snapshot, reportsStore.serverSnapshot).list
+  const groups: Record<LinkKind, { id: string; label: string }[]> = {
+    site: [...sites].map((x) => ({ id: x.id, label: siteLabel(x) })).sort((a, b) => a.label.localeCompare(b.label, "es")),
+    client: [...clients].map((x) => ({ id: x.id, label: clientLabel(x) })).sort((a, b) => a.label.localeCompare(b.label, "es")),
+    report: reports.filter(isOpen).map((x) => ({ id: x.id, label: [reportCode(x), x.name].filter(Boolean).join(" · ") })),
+  }
+  const labelOf = (k: LinkKind | "", id: string) => (k ? groups[k].find((x) => x.id === id)?.label : undefined)
+  return { groups, labelOf }
+}
+
+const LINK_SELECT = "h-10 w-full rounded-md border px-3 text-base outline-none focus-visible:ring-3 sm:text-sm"
+
+/** "Relacionada con": nothing, or a deployment, client or open report (value "<kind>:<id>"). */
+function LinkPick({ t, value, onChange, dark }: { t: T; value: string; onChange: (v: string) => void; dark?: boolean }) {
+  const id = useId()
+  const { groups } = useLinkables()
+  return (
+    <div className="grid gap-1">
+      <label htmlFor={id} className={`text-xs ${dark ? "text-zinc-800" : "text-zinc-400"}`}>
+        {t("link.label")}
+      </label>
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${LINK_SELECT} ${dark ? "border-zinc-900/25 bg-white/50 text-zinc-900 focus-visible:ring-zinc-900/50" : "border-input bg-transparent text-foreground focus-visible:ring-ring/50"}`}
+      >
+        <option value="" className="bg-zinc-900 text-zinc-100">
+          {t("link.none")}
+        </option>
+        {LINK_KINDS.filter((k) => groups[k].length).map((k) => (
+          <optgroup key={k} label={t(`link.kinds.${k}`)} className="bg-zinc-900 text-zinc-100">
+            {groups[k].map((x) => (
+              <option key={x.id} value={`${k}:${x.id}`}>
+                {x.label}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </div>
+  )
+}
+const splitLink = (v: string): { linkKind: LinkKind | ""; linkId: string } => {
+  const [k, ...rest] = v.split(":")
+  return (LINK_KINDS as readonly string[]).includes(k) && rest.length ? { linkKind: k as LinkKind, linkId: rest.join(":") } : { linkKind: "", linkId: "" }
+}
+
 function Composer({ t }: { t: T }) {
   const id = useId()
   const [title, setTitle] = useState("")
   const [body, setBody] = useState("")
   const [color, setColor] = useState<NoteColor>("amarillo")
+  const [link, setLink] = useState("")
   const [error, setError] = useState(false)
   const submit = (e: FormEvent) => {
     e.preventDefault()
     if (isEmptyNote({ title, body })) return setError(true)
-    notesStore.save(newNote({ title: title.trim(), body: body.trim(), color, by: readState().name }))
+    notesStore.save(newNote({ title: title.trim(), body: body.trim(), color, ...splitLink(link), by: readState().name }))
+    setLink("")
     setTitle("")
     setBody("")
     setError(false)
@@ -85,6 +147,9 @@ function Composer({ t }: { t: T }) {
       />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <ColorPick t={t} value={color} onChange={setColor} />
+        <div className="w-full sm:w-72">
+          <LinkPick t={t} value={link} onChange={setLink} />
+        </div>
         <button type="submit" className={PRIMARY}>
           {t("new.add")}
         </button>
@@ -99,6 +164,7 @@ function Composer({ t }: { t: T }) {
 }
 
 function NoteCard({ t, n }: { t: T; n: Note }) {
+  const { labelOf } = useLinkables()
   const id = useId()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(n)
@@ -111,7 +177,7 @@ function NoteCard({ t, n }: { t: T; n: Note }) {
   const commit = (e: FormEvent) => {
     e.preventDefault()
     if (isEmptyNote(draft)) return
-    save({ title: draft.title.trim(), body: draft.body.trim(), color: draft.color })
+    save({ title: draft.title.trim(), body: draft.body.trim(), color: draft.color, linkKind: draft.linkKind, linkId: draft.linkId })
     setEditing(false)
   }
   const remove = () => window.confirm(t("actions.confirmDelete", { title: n.title || t("untitled") })) && notesStore.remove(n.id)
@@ -143,6 +209,7 @@ function NoteCard({ t, n }: { t: T; n: Note }) {
               className={`${TEXTAREA} border-zinc-900/25 bg-white/50 text-zinc-900 placeholder:text-zinc-600 focus-visible:ring-zinc-900/50`}
             />
             <ColorPick t={t} value={draft.color} onChange={(c) => setDraft({ ...draft, color: c })} dark />
+            <LinkPick t={t} value={draft.linkKind ? `${draft.linkKind}:${draft.linkId}` : ""} onChange={(v) => setDraft({ ...draft, ...splitLink(v) })} dark />
             <div className="flex flex-wrap gap-2">
               <button type="submit" disabled={isEmptyNote(draft)} className={INK_SAVE}>
                 {t("actions.save")}
@@ -161,6 +228,11 @@ function NoteCard({ t, n }: { t: T; n: Note }) {
               {n.title || t("untitled")}
             </h3>
             {n.body && <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{n.body}</p>}
+            {n.linkKind && (
+              <a href={linkHref(n.linkKind, n.linkId)} className="w-fit rounded-full border border-zinc-900/25 px-2.5 py-1 text-xs font-medium text-zinc-900 hover:bg-black/10 focus-visible:ring-3 focus-visible:ring-zinc-900/60 focus-visible:outline-none">
+                {t(`link.kinds.${n.linkKind}`)}: {labelOf(n.linkKind, n.linkId) ?? t("link.gone")} →
+              </a>
+            )}
             <p className="mt-auto pt-2 font-mono text-[11px] leading-relaxed text-zinc-700">
               {t("by", { name: n.by || t("anon"), date: when(n.createdAt) })}
               {n.updatedAt && n.updatedAt.slice(0, 16) !== n.createdAt.slice(0, 16) && !done && (
@@ -230,6 +302,7 @@ export function NotesApp() {
       )}
       <Composer t={t} />
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
         <div className="flex gap-1 rounded-full border border-white/10 p-1">
           <button type="button" aria-current={tab === "open"} onClick={() => setTab("open")} className={TAB}>
             {t("tabs.open", { n: open.length })}
@@ -237,6 +310,18 @@ export function NotesApp() {
           <button type="button" aria-current={tab === "done"} onClick={() => setTab("done")} className={TAB}>
             {t("tabs.done", { n: done.length })}
           </button>
+        </div>
+          <ExportButton
+            label={t("exportCsv")}
+            name="notas"
+            disabled={!store.list.length}
+            build={() =>
+              toCsv(
+                [t("new.title"), t("csv.text"), t("color"), t("pinned"), t("csv.state"), t("csv.by"), t("csv.created"), t("csv.done")],
+                [...open, ...done].map((n) => [n.title, n.body, t(`colors.${n.color}`), n.pinned, n.doneAt ? t("csv.isDone") : t("csv.isOpen"), n.by, n.createdAt.slice(0, 16).replace("T", " "), n.doneAt.slice(0, 16).replace("T", " ")])
+              )
+            }
+          />
         </div>
         <Input type="search" aria-label={t("search")} placeholder={t("search")} value={q} onChange={(e) => setQ(e.target.value)} className="h-10 w-full text-base sm:w-64 sm:text-sm" />
       </div>

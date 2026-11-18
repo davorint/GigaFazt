@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent, typ
 import { useTranslations } from "next-intl"
 import { SECTIONS, completeness, newSurvey, readSurveyFile, surveyFile, surveyFileItems, type Section, type Survey } from "@/lib/survey/model"
 import { useDropUntouched } from "@/components/interno/useDropUntouched"
-import { markFresh } from "@/lib/fresh"
+import { QuickAdd } from "@/components/interno/QuickAdd"
+import { RecordHistory } from "@/components/interno/RecordHistory"
 import { readState } from "@/lib/sync/state"
 import { deleteSurvey, importSurveys, saveSurvey, subscribeSurveys, surveysServerSnapshot, surveysSnapshot } from "@/lib/survey/store"
 import { decodeItem, type Item } from "@/lib/materials/catalog"
@@ -132,12 +133,11 @@ function List({ list, catalog }: { list: Survey[]; catalog: Item[] }) {
   const t = useTranslations("levantamientos")
   const file = useRef<HTMLInputElement>(null)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
-  const create = () => {
+  const create = (v: Record<string, string>) => {
     const base = newSurvey(t("towers.defaultName", { l: "A" }))
     // Starts with the phone's name from the sync bar as who did it (editable).
-    const s = { ...base, ident: { ...base.ident, surveyors: readState().name } }
+    const s = { ...base, ident: { ...base.ident, name: v.name, address: v.address, municipality: v.municipality, surveyors: readState().name } }
     saveSurvey(s)
-    markFresh(s)
     go(hrefOf(s.id))
   }
   const onFile = async (f: File | undefined) => {
@@ -156,10 +156,17 @@ function List({ list, catalog }: { list: Survey[]; catalog: Item[] }) {
   }
   return (
     <div className="mt-8 grid gap-4">
+      <QuickAdd
+        title={t("list.new")}
+        submit={t("list.newSubmit")}
+        fields={[
+          { key: "name", label: t("ident.name"), required: true },
+          { key: "address", label: t("ident.address") },
+          { key: "municipality", label: t("ident.municipality") },
+        ]}
+        onAdd={create}
+      />
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={create} className={PRIMARY}>
-          {t("list.new")}
-        </button>
         <button type="button" onClick={() => file.current?.click()} className={BTN}>
           {t("list.import")}
         </button>
@@ -301,6 +308,7 @@ function Editor({ s, section, catalog }: { s: Survey; section: Section; catalog:
           <option value="draft">{t("list.status.draft")}</option>
           <option value="done">{t("list.status.done")}</option>
         </SelectField>
+        <RecordHistory kind="surveys" id={s.id} />
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => download(`levantamiento-${slug(s.ident.name)}.json`, surveyFile([withPicks(s, catalog)], usedItems(s, catalog)))} className={BTN}>
             {t("editor.export")}

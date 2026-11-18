@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl"
 import { setRequestLocale } from "next-intl/server"
 import { notFound } from "next/navigation"
 import { SyncBar } from "@/components/interno/SyncBar"
+import { DeletedList } from "@/components/interno/RecordHistory"
 import { AdminLinks } from "@/components/interno/AdminLinks"
 import { ClientsApp } from "@/components/clients/ClientsApp"
 import copy from "@/messages/internal/clientes.es.json"
@@ -44,6 +45,10 @@ export default async function ClientesPage({ params }: PageProps<"/[locale]/inte
       <NextIntlClientProvider locale="es" messages={messages}>
         <SyncBar />
         <ClientsApp />
+        <div className="mt-12 grid gap-3">
+          <DeletedList kind="clients" named />
+          <DeletedList kind="payments" named />
+        </div>
       </NextIntlClientProvider>
     </main>
   )

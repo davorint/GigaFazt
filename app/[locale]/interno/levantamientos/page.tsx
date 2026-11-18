@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl"
 import { setRequestLocale } from "next-intl/server"
 import { notFound } from "next/navigation"
 import { SyncBar } from "@/components/interno/SyncBar"
+import { DeletedList } from "@/components/interno/RecordHistory"
 import syncCopy from "@/messages/internal/sync.es.json"
 import { AdminLinks } from "@/components/interno/AdminLinks"
 import { SurveysApp } from "@/components/surveys/SurveysApp"
@@ -45,6 +46,9 @@ export default async function LevantamientosPage({ params }: PageProps<"/[locale
       <NextIntlClientProvider locale="es" messages={messages}>
         <SyncBar />
         <SurveysApp />
+        <div className="mt-12 grid gap-3">
+          <DeletedList kind="surveys" />
+        </div>
       </NextIntlClientProvider>
     </main>
   )

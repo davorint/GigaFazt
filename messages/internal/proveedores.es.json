@@ -97,10 +97,11 @@
     "remove": "Quitar proveedor",
     "confirmRemove": "¿Quitar «{name}»? Los materiales, levantamientos y enlaces que lo usaban se quedan sin proveedor.",
     "removeContact": "Quitar",
-    "usedBy": "Lo usan"
+    "usedBy": "Lo usan",
+    "addSubmit": "Agregar"
   },
   "links": {
-    "interno": "Herramientas internas",
+    "interno": "Inicio",
     "admin": "Administración",
     "notas": "Notas",
     "despliegues": "Despliegues",
@@ -110,6 +111,12 @@
     "proveedores": "Proveedores",
     "materiales": "Materiales",
     "levantamientos": "Levantamientos",
-    "newReports": "nuevos"
+    "newReports": "nuevos",
+    "mikrotik-optimo": "Guía MikroTik",
+    "mikrotik": "Scripts MikroTik",
+    "calculadora": "Calculadoras",
+    "olt": "OLT Huawei",
+    "adminGroup": "Administración",
+    "techGroup": "Herramientas técnicas"
   }
 }

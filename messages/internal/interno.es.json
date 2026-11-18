@@ -79,6 +79,75 @@
           "desc": "La lista maestra con unidad, precio con IVA y proveedor. De aquí se escoge lo que lleva cada proyecto."
         }
       }
-    }
+    },
+    "today": {
+      "title": "Hoy",
+      "asOf": "Con lo sincronizado el {date}",
+      "notSynced": "Todavía no se sincroniza este teléfono: escribe tu nombre arriba para traer los datos del equipo.",
+      "allClear": "Nada pendiente: sin reportes abiertos, nadie atrasado, herramientas y existencias en orden.",
+      "open": "Abrir",
+      "more": "y {n} más",
+      "search": {
+        "title": "Buscar en todo",
+        "placeholder": "Nombre, teléfono, usuario PPPoE, número de serie, edificio…",
+        "none": "Nada coincide.",
+        "kinds": {
+          "clients": "Clientes",
+          "sites": "Despliegues",
+          "reports": "Reportes",
+          "tools": "Herramientas",
+          "providers": "Proveedores",
+          "materials": "Materiales",
+          "units": "Equipos por número de serie",
+          "surveys": "Levantamientos",
+          "notes": "Notas"
+        }
+      },
+      "reports": {
+        "title": "Reportes abiertos",
+        "line": "{fresh, plural, =0 {Ninguno nuevo} one {# nuevo sin atender} other {# nuevos sin atender}} · {urgent} urgentes o de prioridad alta · {stale} con más de 2 días"
+      },
+      "payments": {
+        "title": "Clientes atrasados",
+        "line": "Deben en total {amount}."
+      },
+      "tools": {
+        "title": "Herramientas por atender",
+        "alerts": {
+          "service-overdue": "mantenimiento vencido",
+          "service-soon": "mantenimiento pronto",
+          "service-unknown": "falta fecha de servicio",
+          "counter-limit": "contador al límite",
+          "counter-near": "contador cerca del límite",
+          "condition": "dañada, en reparación o perdida",
+          "warranty-soon": "garantía por terminar"
+        }
+      },
+      "stock": {
+        "title": "Existencias bajas",
+        "line": "{name}: {has} de {min} {unit}"
+      },
+      "notes": {
+        "title": "Notas fijadas"
+      },
+      "digest": {
+        "send": "Enviar resumen al chat",
+        "sending": "Enviando…",
+        "sent": "Enviado al chat del equipo.",
+        "clear": "No se envió: todo está en orden.",
+        "off": "Falta configurar Telegram o el webhook en el hosting (los mismos avisos de reportes).",
+        "error": "No se pudo enviar. Inténtalo otra vez."
+      },
+      "quiet": "En orden: {list}"
+    },
+    "session": {
+      "title": "Este teléfono",
+      "backup": "Descargar respaldo completo",
+      "wipe": "Salir y borrar los datos de este teléfono",
+      "hint": "El respaldo trae todo lo de la base de datos (clientes, pagos, reportes, despliegues, herramientas, inventario, levantamientos, notas y solicitudes del sitio): guárdalo en un lugar seguro, tiene datos personales. «Salir y borrar» quita de este navegador todo lo que guardan las herramientas internas; úsalo si el teléfono se pierde o deja de ser del equipo.",
+      "confirmWipe": "¿Borrar de este teléfono todos los datos de las herramientas internas y salir? Siguen en la base de datos.",
+      "confirmWipePending": "Hay {n, plural, one {# cambio} other {# cambios}} sin enviar que se perderán. ¿Borrar de todos modos los datos de este teléfono y salir?"
+    },
+    "toolsTitle": "Todas las secciones"
   }
 }

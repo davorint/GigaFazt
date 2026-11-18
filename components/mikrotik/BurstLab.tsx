@@ -5,6 +5,7 @@ import dynamic from "next/dynamic"
 import { RotateCcw } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
+import { AdminLinks } from "@/components/interno/AdminLinks"
 import { IslandFrame } from "@/components/layout/IslandFrame"
 import { WhenVisible } from "@/components/layout/WhenVisible"
 import type { Wan } from "@/lib/mikrotik/balance"
@@ -93,8 +94,8 @@ const PAGE_SECTIONS: Record<LabPage, Jump[]> = {
   scripts: ["params", "deployments", "links", "setup", "advanced", "export", "bulk"],
   calculators: ["params", "sim", "compare", "shared", "deployments", "capacity", "solver", "how"],
 }
-const PAGE_PATH: Record<LabPage, string> = { guide: "/interno/mikrotik-optimo", scripts: "/interno/mikrotik", calculators: "/interno/calculadora" }
-const PAGES: LabPage[] = ["guide", "scripts", "calculators"]
+/** Each page's entry in the internal menu (components/interno/AdminLinks.tsx). */
+const PAGE_KEY = { guide: "mikrotik-optimo", scripts: "mikrotik", calculators: "calculadora" } as const satisfies Record<LabPage, string>
 const ANCHORS: Record<Jump, string> = {
   params: "parametros",
   sim: "simulacion",
@@ -305,26 +306,7 @@ export function BurstLab({ page }: { page: LabPage }) {
         </div>
         <h1 className="mt-4 text-4xl font-light tracking-tight text-foreground sm:text-6xl">{t(`intro.title.${page}`)}</h1>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300 sm:text-lg">{t(`intro.lead.${page}`)}</p>
-        <p className="mt-3 text-sm text-zinc-400">
-          {/* The other internal pages: a full load (each page keeps its own state; proxy.ts rewrites it). */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-          <a href="/interno" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
-            {t("intro.home")}
-          </a>
-          {" · "}
-          {PAGES.filter((p) => p !== page).map((p) => (
-            <span key={p}>
-              <a href={PAGE_PATH[p]} className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
-                {t(`intro.to.${p}`)}
-              </a>
-              {" · "}
-            </span>
-          ))}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-          <a href="/interno/olt" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
-            {t("intro.olt")}
-          </a>
-        </p>
+        <AdminLinks current={PAGE_KEY[page]} />
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <CopyButton getText={shareUrl} label={t("intro.share")} done={t("intro.shared")} size="default" variant="default" />
           <Button type="button" variant="outline" onClick={reset}>

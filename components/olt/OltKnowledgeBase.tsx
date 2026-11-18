@@ -3,6 +3,7 @@
 import { useId, useMemo, useState, type ReactNode } from "react"
 import { useTranslations } from "next-intl"
 import { Input } from "@/components/ui/input"
+import { AdminLinks } from "@/components/interno/AdminLinks"
 import { SectionNav } from "@/components/mikrotik/SectionNav"
 import { SelectField } from "@/components/mikrotik/SelectField"
 import { BoardCompare } from "./BoardCompare"
@@ -288,23 +289,7 @@ export function OltKnowledgeBase() {
             standard: () => <span className="rounded border border-violet-400/40 px-1 font-mono text-[11px] text-violet-300">{t("intro.standard")}</span>,
           })}
         </p>
-        <p className="mt-3 text-sm text-zinc-400">
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-          <a href="/interno" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
-            {t("intro.home")}
-          </a>
-          {" · "}
-          {t("intro.links")}{" "}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-          <a href="/interno/mikrotik" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
-            {t("intro.mikrotik")}
-          </a>
-          {" · "}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-          <a href="/interno/calculadora" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
-            {t("intro.calc")}
-          </a>
-        </p>
+        <AdminLinks current="olt" />
       </section>
 
       <SectionNav label={t("intro.navLabel")} items={nav} />

@@ -157,6 +157,17 @@
       "testing": "Enviando…",
       "testOk": "Aviso de prueba enviado. Revisa el chat.",
       "testFail": "No se pudo enviar. Revisa el token y el chat en Vercel."
+    },
+    "addSubmit": "Agregar",
+    "addHint": "Con el teléfono se encuentra al cliente. Lo demás (prioridad, quién lo atiende, visita) en la siguiente pantalla.",
+    "exportCsv": "Exportar CSV",
+    "csv": {
+      "code": "Código",
+      "opened": "Abierto",
+      "closed": "Cerrado",
+      "source": "Origen",
+      "web": "Formulario del sitio",
+      "staff": "Equipo"
     }
   }
 }

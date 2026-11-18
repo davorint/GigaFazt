@@ -64,7 +64,10 @@
       },
       "count": "{n, plural, one {# herramienta} other {# herramientas}}",
       "none": "Ninguna herramienta coincide.",
-      "quantity": "{n, plural, =0 {sin cantidad} one {# pza} other {# pzas}}"
+      "quantity": "{n, plural, =0 {sin cantidad} one {# pza} other {# pzas}}",
+      "addSubmit": "Agregar",
+      "addNamePlaceholder": "Ej. Cortadora de precisión",
+      "exportCsv": "Exportar CSV"
     },
     "editor": {
       "back": "← Todas las herramientas",
@@ -144,6 +147,35 @@
       "by": "Quién lo hizo",
       "addEntry": "Registrar servicio",
       "removeEntry": "Quitar servicio"
+    },
+    "csv": {
+      "lastService": "Último servicio",
+      "nextService": "Próximo servicio",
+      "counter": "Contador"
+    },
+    "parts": {
+      "title": "Refacciones y consumibles",
+      "lead": "Lo que esta herramienta gasta, de la lista de Materiales (electrodos, cuchillas, palitos de limpieza…), con lo que hay en la bodega. El mínimo se pone en Materiales → Existencias.",
+      "none": "Ninguna todavía.",
+      "gone": "Material borrado de la lista",
+      "stock": "En bodega: {n} {unit}",
+      "min": "mínimo {n}",
+      "low": "por debajo del mínimo",
+      "remove": "Quitar",
+      "add": "Agregar refacción o consumible",
+      "addHint": "Si no está, agrégalo primero en Materiales.",
+      "pick": "Elegir material…",
+      "categories": {
+        "fibra": "Fibra y cable",
+        "splitters": "Splitters y taps",
+        "cajas": "Cajas y gabinetes",
+        "conectores": "Conectores y empalmes",
+        "ont": "ONTs",
+        "equipo": "Equipo activo",
+        "wifi": "Wi-Fi",
+        "obra": "Mano de obra",
+        "otros": "Otros"
+      }
     }
   }
 }

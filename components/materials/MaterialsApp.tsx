@@ -7,7 +7,8 @@ import { TextField } from "@/components/mikrotik/TextField"
 import { AreaField, DateField, PickField } from "@/components/surveys/SurveyFields"
 import { useDropUntouched } from "@/components/interno/useDropUntouched"
 import { useOpenParam } from "@/components/interno/useOpenParam"
-import { markFresh } from "@/lib/fresh"
+import { QuickAdd } from "@/components/interno/QuickAdd"
+import { RecordHistory } from "@/components/interno/RecordHistory"
 import { CATEGORIES, ROLES, catalogFile, effectiveOffer, mxn, newItem, newOffer, readCatalogFile, type Category, type Item, type Offer, type Role } from "@/lib/materials/catalog"
 import { catalogServerSnapshot, catalogSnapshot, deleteItem, importItems, saveItem, subscribeCatalog } from "@/lib/materials/store"
 import { isKind, providerName, type Provider } from "@/lib/providers/model"
@@ -20,7 +21,6 @@ import { UnitsPanel } from "./UnitsPanel"
 
 type T = ReturnType<typeof useTranslations>
 const BTN = "h-11 rounded-full border border-white/15 px-5 text-sm text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-const PRIMARY = "h-11 rounded-full bg-white px-5 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const SMALL = "inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const DANGER = "inline-flex min-h-9 w-fit items-center rounded-full border border-red-400/30 px-3 text-xs text-red-200 hover:bg-red-400/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const TABS = ["precios", "existencias", "equipos"] as const
@@ -108,10 +108,10 @@ function PriceList({ t, items }: { t: T; items: Item[] }) {
   const nameOf = (o: Offer | null) => (o ? (o.supplierId ? providerName(providers.find((p) => p.id === o.supplierId) ?? ({ tradeName: "", legalName: "" } as Provider)) : o.supplier) : "")
   const needle = fold(q.trim())
   const shown = items.filter((x) => (!cat || x.category === cat) && (!needle || fold([x.name, x.notes, ...x.offers.flatMap((o) => [o.supplier, o.sku, nameOf(o)])].join(" ")).includes(needle)))
-  const add = () => {
-    const it = newItem({ name: t("newItem"), category: cat || "otros" })
+  const add = (v: Record<string, string>) => {
+    const category = (CATEGORIES as readonly string[]).includes(v.category) ? (v.category as Category) : "otros"
+    const it = newItem({ name: v.name, unit: v.unit || "pza", category })
     saveItem(it)
-    markFresh(it)
     setOpenId(it.id)
     setQ("")
   }
@@ -125,10 +125,18 @@ function PriceList({ t, items }: { t: T; items: Item[] }) {
   return (
     <div className="grid gap-4">
       <p className="text-sm text-zinc-300">{t("pricesIntro")}</p>
+      <QuickAdd
+        title={t("add")}
+        submit={t("addSubmit")}
+        initial={{ category: cat || "otros" }}
+        fields={[
+          { key: "name", label: t("name"), required: true },
+          { key: "unit", label: t("unit"), placeholder: "pza" },
+          { key: "category", label: t("category"), kind: "select", options: CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) })) },
+        ]}
+        onAdd={add}
+      />
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={add} className={PRIMARY}>
-          {t("add")}
-        </button>
         <button type="button" onClick={() => download(`materiales-${new Date().toISOString().slice(0, 10)}.json`, catalogFile(items))} className={BTN}>
           {t("export")}
         </button>
@@ -253,6 +261,7 @@ function ItemRow({ t, item: x, supplierName, open, onToggle }: { t: T; item: Ite
           </fieldset>
 
           <AreaField label={t("notes")} value={x.notes} onChange={(v) => up({ notes: v })} rows={2} />
+          <RecordHistory kind="materials" id={x.id} />
           <button type="button" onClick={() => window.confirm(t("confirmRemove", { name: x.name })) && deleteItem(x.id)} className={DANGER}>
             {t("remove")}
           </button>

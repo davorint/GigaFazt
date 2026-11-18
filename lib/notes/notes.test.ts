@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { BODY_MAX, decodeNote, doneNotes, matchNote, newNote, openNotes } from "./model"
+import { BODY_MAX, decodeNote, doneNotes, linkHref, matchNote, newNote, openNotes } from "./model"
 
 describe("notes", () => {
   it("decodes field by field and never throws", () => {
@@ -24,5 +24,14 @@ describe("notes", () => {
     expect(matchNote(n, "telmex ont")).toBe(true)
     expect(matchNote(n, "ANDRES")).toBe(true)
     expect(matchNote(n, "telmex izzi")).toBe(false)
+  })
+})
+
+describe("note links", () => {
+  it("keeps a valid link, drops a bad one", () => {
+    expect(decodeNote({ id: "abcdef12", linkKind: "site", linkId: "site-0001" })).toMatchObject({ linkKind: "site", linkId: "site-0001" })
+    expect(decodeNote({ id: "abcdef12", linkKind: "planet", linkId: "site-0001" })).toMatchObject({ linkKind: "", linkId: "" })
+    expect(decodeNote({ id: "abcdef12", linkKind: "client", linkId: "../x" })).toMatchObject({ linkKind: "", linkId: "" })
+    expect(linkHref("report", "rep-1")).toBe("/interno/admin/reportes_clientes?r=rep-1")
   })
 })

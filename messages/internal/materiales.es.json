@@ -118,7 +118,9 @@
       "noHistory": "Sin movimientos.",
       "undo": "Deshacer",
       "confirmUndo": "¿Deshacer este movimiento? Las existencias vuelven a como estaban.",
-      "serialUndo": "Con números de serie: para corregirlo, cambia el equipo en «ONTs por serie»."
+      "serialUndo": "Con números de serie: para corregirlo, cambia el equipo en «ONTs por serie».",
+      "exportCsv": "Exportar movimientos (CSV)",
+      "csvBy": "Quién lo registró"
     },
     "move": {
       "title": "Registrar movimiento",
@@ -220,6 +222,7 @@
       "editHint": "Para entregar o mover un equipo usa Existencias (queda en el historial); aquí se corrige a mano.",
       "openClient": "Abrir el cliente",
       "history": "Historial"
-    }
+    },
+    "addSubmit": "Agregar"
   }
 }

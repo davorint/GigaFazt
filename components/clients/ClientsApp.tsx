@@ -28,7 +28,8 @@ import {
 } from "@/lib/clients/model"
 import { useDropUntouched } from "@/components/interno/useDropUntouched"
 import { useOpenParam } from "@/components/interno/useOpenParam"
-import { markFresh } from "@/lib/fresh"
+import { QuickAdd } from "@/components/interno/QuickAdd"
+import { RecordHistory } from "@/components/interno/RecordHistory"
 import { clientLight, lightStatus, type LightStatus } from "@/lib/clients/optics"
 import { clientsServerSnapshot, clientsSnapshot, deleteClient, saveClient, subscribeClients } from "@/lib/clients/store"
 import { siteLabel, towerLabel } from "@/lib/sites/model"
@@ -44,7 +45,6 @@ type Tab = (typeof TABS)[number]
 const BTN = "h-11 rounded-full border border-white/15 px-5 text-sm text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const SMALL = "inline-flex min-h-9 items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const DANGER = "inline-flex min-h-9 w-fit items-center rounded-full border border-red-400/30 px-3 text-xs text-red-200 hover:bg-red-400/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-const PRIMARY = "h-11 rounded-full bg-white px-5 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const TONE: Record<ClientStatus, string> = {
   activo: "border-emerald-400/40 text-emerald-300",
   suspendido: "border-amber-400/40 text-amber-200",
@@ -68,10 +68,25 @@ function download(name: string, text: string, type: string) {
 
 const clientList = () => clientsSnapshot().list
 
+const subscribeTabUrl = (cb: () => void) => {
+  window.addEventListener("popstate", cb)
+  return () => window.removeEventListener("popstate", cb)
+}
+
 /** Clients, payments, website requests and the import, as four tabs of /interno/admin/clientes. */
 export function ClientsApp() {
   const t = useTranslations("clientes")
-  const [tab, setTab] = useState<Tab>("clients")
+  // The tab is in the URL (?tab=payments, also the link from the "today" screen on /interno).
+  const search = useSyncExternalStore(subscribeTabUrl, () => window.location.search, () => "")
+  const raw = new URLSearchParams(search).get("tab") ?? ""
+  const tab: Tab = (TABS as readonly string[]).includes(raw) ? (raw as Tab) : "clients"
+  const setTab = (k: Tab) => {
+    const p = new URLSearchParams(window.location.search)
+    if (k === "clients") p.delete("tab")
+    else p.set("tab", k)
+    window.history.replaceState(window.history.state, "", p.toString() ? `?${p}` : window.location.pathname)
+    window.dispatchEvent(new PopStateEvent("popstate"))
+  }
   // The open client is in the URL (?c=<id>, also the links from Despliegues), so the back button closes it.
   const [openId, setOpenId] = useOpenParam("c")
   useDropUntouched(openId, clientList, deleteClient)
@@ -130,11 +145,11 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
         ).includes(needle)
     )
     .sort((a, b) => clientLabel(a).localeCompare(clientLabel(b), "es"))
-  const add = () => {
-    const at = sites.find((x) => x.id === site)
-    const c = newClient({ kind: kind || "residencial", building: building || (at ? siteLabel(at) : ""), siteId: at?.id ?? "" })
+  const add = (v: Record<string, string>) => {
+    const at = sites.find((x) => x.id === v.site)
+    const k = (CLIENT_KINDS as readonly string[]).includes(v.kind) ? (v.kind as ClientKind) : "residencial"
+    const c = newClient({ name: v.name, phone: v.phone, kind: k, building: building || (at ? siteLabel(at) : ""), siteId: at?.id ?? "" })
     saveClient(c)
-    markFresh(c)
     setOpenId(c.id)
     setQ("")
     setStatus("")
@@ -147,10 +162,19 @@ function ClientList({ t, openId, setOpenId }: { t: T; openId: string | null; set
   const byKind = Object.fromEntries(CLIENT_KINDS.map((k) => [k, list.filter((c) => c.kind === k).length])) as Record<ClientKind, number>
   return (
     <div className="grid gap-4">
+      <QuickAdd
+        title={t("list.add")}
+        submit={t("list.addSubmit")}
+        initial={{ kind: kind || "residencial", site: site && site !== "-" ? site : "" }}
+        fields={[
+          { key: "name", label: t("fields.name"), required: true },
+          { key: "phone", label: t("fields.phone"), kind: "tel" },
+          { key: "kind", label: t("fields.kind"), kind: "select", options: CLIENT_KINDS.map((k) => ({ value: k, label: t(`kinds.${k}`) })) },
+          { key: "site", label: t("site.label"), kind: "select", options: [{ value: "", label: "—" }, ...[...sites].sort((a, b) => siteLabel(a).localeCompare(siteLabel(b), "es")).map((s) => ({ value: s.id, label: siteLabel(s) }))] },
+        ]}
+        onAdd={add}
+      />
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={add} className={PRIMARY}>
-          {t("list.add")}
-        </button>
         {list.length > 0 && (
           <button type="button" onClick={() => download(`clientes-${localToday()}.csv`, clientsCsv(shown, headers, labels), "text/csv;charset=utf-8")} className={BTN}>
             {t("list.exportCsv")}
@@ -351,6 +375,7 @@ function Editor({ t, c }: { t: T; c: Client }) {
       <a href={`/interno/admin/reportes_clientes?nuevo=${c.id}`} className="inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
         {t("list.newReport")}
       </a>
+      <RecordHistory kind="clients" id={c.id} />
       <button type="button" onClick={() => window.confirm(t("list.confirmRemove", { name: clientLabel(c) })) && deleteClient(c.id)} className={DANGER}>
         {t("list.remove")}
       </button>
