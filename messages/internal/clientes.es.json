@@ -107,7 +107,8 @@
       "converted": "Ya es cliente",
       "call": "Llamar",
       "whatsapp": "WhatsApp",
-      "count": "{n, plural, one {# solicitud} other {# solicitudes}} · {fresh} nuevas"
+      "count": "{n, plural, one {# solicitud} other {# solicitudes}} · {fresh} nuevas",
+      "capped": "Se muestran las {n} más recientes; las anteriores siguen en la base de datos."
     },
     "import": {
       "intro": "Trae a tus clientes actuales de una hoja de cálculo o del MikroTik. Si un cliente ya está (mismo usuario PPPoE, o mismo nombre, edificio y departamento), solo se llenan sus datos vacíos: nada de lo que escribiste se borra.",

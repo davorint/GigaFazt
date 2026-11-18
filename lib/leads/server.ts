@@ -3,6 +3,7 @@
  * the visitor never waits on it), and /interno/admin/clientes lists them, changes their status and notes, and turns
  * one into a client. Personal data: read and changed only through signed-in /api/interno routes.
  */
+import { LEADS_LIMIT } from "./limits"
 import "server-only"
 import { desc, eq } from "drizzle-orm"
 import { getDb, hasDatabase } from "../db/client"
@@ -64,7 +65,7 @@ const row = (r: typeof leads.$inferSelect): LeadRow => ({
 })
 
 /** The newest requests first. */
-export async function listLeads(limit = 500): Promise<LeadRow[]> {
+export async function listLeads(limit = LEADS_LIMIT): Promise<LeadRow[]> {
   const rows = await getDb().select().from(leads).orderBy(desc(leads.createdAt)).limit(limit)
   return rows.map(row)
 }

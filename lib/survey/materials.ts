@@ -36,9 +36,11 @@ export function designNeeds(s: Survey): { build: Partial<Record<Role, number>>; 
   let dropSum = 0
   let units = 0
   for (const t of s.towers) {
+    // Average drop over the floors whose farthest door is known (an unknown distance isn't 0 m).
     for (const f of t.floors) {
-      dropSum += (f.units ?? 0) * ((f.farthestM ?? 0) + o.dropSlackM)
-      units += f.units ?? 0
+      if (f.farthestM === null || !f.units) continue
+      dropSum += f.units * (f.farthestM + o.dropSlackM)
+      units += f.units
     }
     const d = t.design
     if (!d) continue

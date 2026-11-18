@@ -134,9 +134,10 @@ async function syncKind(kind: SyncKind, name: string): Promise<void> {
         const stillSame = m.dirty === sent.get(r.id)
         if (r.outcome === "saved" || r.outcome === "kept-server") {
           if (r.version === 0) delete st.meta[kind][r.id]
-          // Saved: this copy is that version. Kept-server: the base stays, so the server's copy coming back is applied.
+          // Saved: this copy is that version. Kept-server: the base stays, so the server's copy coming back is applied,
+          // unless it was edited here again while this ran: that newer edit is sent next (and wins, being newer).
           else if (r.outcome === "saved") st.meta[kind][r.id] = { ...m, v: r.version, dirty: stillSame ? 0 : m.dirty }
-          else st.meta[kind][r.id] = { ...m, dirty: 0 }
+          else st.meta[kind][r.id] = { ...m, dirty: stillSame ? 0 : m.dirty }
         } else if (r.outcome === "merged") {
           delete st.meta[kind][r.id]
           merged.push([r.id, r.into])

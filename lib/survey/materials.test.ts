@@ -30,6 +30,13 @@ describe("what the design needs", () => {
     })
     expect(n.client).toEqual({ "drop-m": 23, ont: 1, "client-connector": 2, "client-labor": 1 })
   })
+  it("the average drop leaves out floors whose farthest door isn't known (not 0 m)", () => {
+    const s = survey()
+    const t = { ...s.towers[0], floors: s.towers[0].floors.map((f) => (f.level >= 5 ? { ...f, farthestM: null } : f)) }
+    expect(designNeeds({ ...s, towers: [t] }).client["drop-m"]).toBe(23)
+    const none = { ...t, floors: t.floors.map((f) => ({ ...f, farthestM: null })) }
+    expect(designNeeds({ ...s, towers: [none] }).client["drop-m"]).toBe(0)
+  })
   it("taps: four taps, five floor splitters, no base box, connectors when the joints are connectors", () => {
     const s = survey("taps")
     const n = designNeeds({ ...s, optics: { ...s.optics, joint: "connector" } })

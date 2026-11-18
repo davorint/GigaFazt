@@ -170,7 +170,7 @@ function ToolList({ t, list, sites, params, today, persisted }: { t: T; list: To
     .filter((x) => matchesHolder(x, who))
     .filter((x) => {
       if (show === "atencion") return x.quantity > 0 && toolAlerts(x, today).length > 0
-      if (show === "fuera") return x.condition !== "bien"
+      if (show === "fuera") return x.quantity > 0 && x.condition !== "bien"
       if (show === "sin-cantidad") return x.quantity === 0
       return true
     })

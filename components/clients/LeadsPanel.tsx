@@ -1,5 +1,6 @@
 "use client"
 
+import { LEADS_LIMIT } from "@/lib/leads/limits"
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import { PickField } from "@/components/surveys/SurveyFields"
@@ -73,6 +74,8 @@ export function LeadsPanel({ onClient }: { onClient: (clientId: string) => void 
         {state === "offline" && <p className="text-sm text-amber-200">{t("offline")}</p>}
         {state === "error" && <p className="text-sm text-red-300">{t("error")}</p>}
         {state === "ok" && <p className="font-mono text-xs text-zinc-400">{t("count", { n: leads?.length ?? 0, fresh: (leads ?? []).filter((l) => l.status === "nuevo").length })}</p>}
+        {/* The server sends the newest LEADS_LIMIT (lib/leads/server.ts listLeads). */}
+        {state === "ok" && (leads?.length ?? 0) >= LEADS_LIMIT && <p className="text-xs text-amber-200">{t("capped", { n: LEADS_LIMIT })}</p>}
       </div>
       {state === "ok" && !shown.length && <p className="text-sm text-zinc-400">{t("empty")}</p>}
       <ul className="grid gap-3">
