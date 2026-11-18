@@ -10,9 +10,9 @@
 export const INTERNAL_ROOT = "interno"
 export const INTERNAL_PAGES = ["levantamientos", "admin", "mikrotik-optimo", "mikrotik", "calculadora", "olt"] as const
 /** The admin area's pages (/interno/admin/<page>). */
-export const ADMIN_PAGES = ["despliegues", "clientes", "proveedores", "materiales"] as const
+export const ADMIN_PAGES = ["despliegues", "clientes", "herramientas", "proveedores", "materiales"] as const
 /** Other spellings of an admin page. */
-const ADMIN_ALIASES: Record<string, (typeof ADMIN_PAGES)[number]> = { deployments: "despliegues" }
+const ADMIN_ALIASES: Record<string, (typeof ADMIN_PAGES)[number]> = { deployments: "despliegues", tools: "herramientas" }
 /** The sign-in page: the only internal page served without the password. */
 export const LOGIN_PAGE = "entrar"
 export const LOGIN_PATH = `/${INTERNAL_ROOT}/${LOGIN_PAGE}`

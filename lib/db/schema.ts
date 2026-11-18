@@ -145,6 +145,28 @@ export const sites = pgTable(
 )
 export const siteVersions = versions("site_versions", "site_id")
 
+// ── Tools (/interno/admin/herramientas) ───────────────────────────────────
+
+export const tools = pgTable(
+  "tools",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull().default(""),
+    category: text("category").notNull().default(""),
+    serial: text("serial").notNull().default(""),
+    quantity: integer("quantity").notNull().default(1),
+    condition: text("condition").notNull().default("bien"),
+    /** Where it is: bodega / tecnico / despliegue / vehiculo / otro, and who (a name, or the location's id). */
+    holderKind: text("holder_kind").notNull().default("bodega"),
+    holder: text("holder").notNull().default(""),
+    /** The whole tool (lib/tools/model.ts). */
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("tools_rev_idx").on(t.rev), index("tools_holder_idx").on(t.holder)]
+)
+export const toolVersions = versions("tool_versions", "tool_id")
+
 // ── Saved MikroTik deployments ──────────────────────────────────────────────
 
 export const deployments = pgTable(

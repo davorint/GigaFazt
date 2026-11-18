@@ -1,0 +1,149 @@
+{
+  "herramientas": {
+    "meta": {
+      "title": "Herramientas · Interno"
+    },
+    "kicker": "Administración",
+    "title": "Herramientas",
+    "lead": "Pinzas, fusionadora, medidores, escaleras y lo demás: cuántas hay, quién o dónde tiene cada una, su compra y su mantenimiento. Se comparte entre los teléfonos por la base de datos.",
+    "categories": {
+      "empalme": "Fusión y empalme",
+      "medicion": "Medición y prueba",
+      "corte": "Corte y pelado",
+      "limpieza": "Limpieza",
+      "mano": "Herramienta de mano",
+      "electrica": "Herramienta eléctrica",
+      "altura": "Escaleras y altura",
+      "seguridad": "Equipo de seguridad",
+      "otros": "Otros"
+    },
+    "conditions": {
+      "bien": "Funciona bien",
+      "reparacion": "En reparación",
+      "danada": "Dañada",
+      "perdida": "Perdida"
+    },
+    "alerts": {
+      "service-overdue": "Mantenimiento vencido ({date})",
+      "service-soon": "Mantenimiento el {date}",
+      "service-unknown": "Falta la fecha del último servicio o de compra",
+      "counter-limit": "{label}: llegó al límite",
+      "counter-near": "{label}: cerca del límite",
+      "warranty-soon": "La garantía termina el {date}"
+    },
+    "list": {
+      "notSaved": "Este navegador no deja guardar: los cambios se pierden al cerrar la página.",
+      "tiles": {
+        "pieces": "Piezas",
+        "kinds": "{n, plural, one {# herramienta} other {# herramientas}}",
+        "value": "Valor (con IVA)",
+        "noPrice": "{n, plural, one {# sin precio} other {# sin precio}}",
+        "attention": "Necesitan atención",
+        "out": "Fuera de servicio"
+      },
+      "add": "Agregar herramienta",
+      "search": "Buscar",
+      "searchHint": "Nombre, marca, modelo, número de serie, quién la tiene, proveedor, factura.",
+      "category": "Categoría",
+      "allCategories": "Todas",
+      "holder": "Quién o dónde",
+      "allHolders": "Todos",
+      "everyKind": {
+        "bodega": "En la bodega",
+        "tecnico": "Con algún técnico",
+        "despliegue": "En algún despliegue",
+        "vehiculo": "En algún vehículo",
+        "otro": "En otro lugar"
+      },
+      "show": "Mostrar",
+      "shows": {
+        "all": "Todas",
+        "atencion": "Las que necesitan atención",
+        "fuera": "Fuera de servicio",
+        "sin-cantidad": "Sin cantidad (falta llenar)"
+      },
+      "count": "{n, plural, one {# herramienta} other {# herramientas}}",
+      "none": "Ninguna herramienta coincide.",
+      "quantity": "{n, plural, =0 {sin cantidad} one {# pza} other {# pzas}}"
+    },
+    "editor": {
+      "back": "← Todas las herramientas",
+      "zero": "Sin cantidad: escribe cuántas tienen, o bórrala si no la usan.",
+      "remove": "Borrar herramienta",
+      "confirmRemove": "¿Borrar \"{name}\"? Se quita en todos los teléfonos."
+    },
+    "general": {
+      "title": "Datos",
+      "name": "Nombre",
+      "category": "Categoría",
+      "brand": "Marca",
+      "model": "Modelo",
+      "serial": "Número de serie",
+      "serialHint": "Para una sola pieza. Varias piezas con número de serie: una herramienta por pieza.",
+      "quantity": "Cantidad",
+      "pieces": "pzas",
+      "quantityHint": "Piezas iguales que están en el mismo lugar.",
+      "condition": "Estado",
+      "notes": "Notas"
+    },
+    "holder": {
+      "title": "Dónde está",
+      "kind": "Está en",
+      "kinds": {
+        "bodega": "Bodega",
+        "tecnico": "Técnico",
+        "despliegue": "Despliegue",
+        "vehiculo": "Vehículo",
+        "otro": "Otro lugar"
+      },
+      "site": "Despliegue",
+      "noSites": "Todavía no hay despliegues: créalos en Administración → Despliegues.",
+      "unset": "Sin elegir",
+      "name": {
+        "tecnico": "Nombre del técnico",
+        "vehiculo": "Vehículo",
+        "otro": "Lugar"
+      },
+      "nameHint": "Sugiere los nombres que ya usaste, para que el filtro los junte.",
+      "openSite": "Abrir {name} en Despliegues"
+    },
+    "purchase": {
+      "title": "Compra",
+      "price": "Precio por pieza",
+      "priceHint": "Con IVA incluido.",
+      "supplierPick": "Proveedor",
+      "supplierHint": "De Administración → Proveedores.",
+      "noSupplier": "No está en la lista",
+      "supplier": "Proveedor (texto)",
+      "date": "Fecha de compra",
+      "warranty": "Garantía hasta",
+      "invoice": "Factura o folio",
+      "value": "Valor de las {n} piezas: {value}",
+      "warrantyUntil": "En garantía hasta el {date}.",
+      "warrantyEnded": "La garantía ya terminó."
+    },
+    "maintenance": {
+      "title": "Mantenimiento",
+      "every": "Servicio cada",
+      "months": "meses",
+      "everyHint": "Calibración, limpieza o revisión periódica. Vacío si no necesita.",
+      "last": "Último servicio: {date, select, none {ninguno registrado} other {{date}}}",
+      "next": "próximo: {date}",
+      "nextUnknown": "próximo: falta la fecha del último servicio o de compra",
+      "counter": "Contador",
+      "counterLabel": "Contador de desgaste",
+      "counterLabelHint": "Por ejemplo arcos del electrodo o cortes de la cuchilla. Vacío si no aplica.",
+      "counterLimit": "Límite del contador",
+      "counterLimitHint": "Avisa al 90 % y al llegar (lo indica el fabricante).",
+      "log": "Servicios",
+      "logNone": "Ningún servicio registrado.",
+      "entry": "Servicio",
+      "date": "Fecha",
+      "cost": "Costo",
+      "what": "Qué se hizo",
+      "by": "Quién lo hizo",
+      "addEntry": "Registrar servicio",
+      "removeEntry": "Quitar servicio"
+    }
+  }
+}

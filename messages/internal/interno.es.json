@@ -47,7 +47,7 @@
         "title": "Administración · Interno"
       },
       "title": "Administración",
-      "lead": "Lo que usan las demás secciones: despliegues, clientes, proveedores y la lista maestra de materiales.",
+      "lead": "Lo que usan las demás secciones: despliegues, clientes, herramientas, proveedores y la lista maestra de materiales.",
       "back": "Herramientas internas",
       "pages": {
         "despliegues": {
@@ -57,6 +57,10 @@
         "clientes": {
           "name": "Clientes",
           "desc": "Suscriptores con contacto, servicio, equipo y pago, y las solicitudes del sitio; importación desde Excel o el MikroTik."
+        },
+        "herramientas": {
+          "name": "Herramientas",
+          "desc": "Pinzas, fusionadora, medidores y demás: quién o dónde tiene cada una, su compra, su mantenimiento y lo que necesita atención."
         },
         "proveedores": {
           "name": "Proveedores",

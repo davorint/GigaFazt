@@ -31,8 +31,8 @@ export type SyncState = {
 const empty = (): SyncState => ({
   name: "",
   adopted: false,
-  rev: { surveys: 0, materials: 0, providers: 0, clients: 0, sites: 0 },
-  meta: { surveys: {}, materials: {}, providers: {}, clients: {}, sites: {} },
+  rev: { surveys: 0, materials: 0, providers: 0, clients: 0, sites: 0, tools: 0 },
+  meta: { surveys: {}, materials: {}, providers: {}, clients: {}, sites: {}, tools: {} },
 })
 
 export function readState(): SyncState {

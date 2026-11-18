@@ -9,7 +9,9 @@
  * - someone else saved in between → the most recent edit wins; the losing copy goes to the history with
  *   `conflict = true`;
  * - an untouched starter material (no price, no supplier) whose name, role and unit the database already has →
- *   not inserted: the phone is told to use the existing id (each browser made its own copy of the 27 starters).
+ *   not inserted: the phone is told to use the existing id (each browser made its own copy of the 27 starters);
+ * - a starter (fixed id: materials, tools) deleted before anyone saved it → a deleted row is stored, so every other
+ *   phone removes its own copy.
  * Every write takes a new number from the shared `sync_rev` sequence, which is what pulls compare.
  */
 import "server-only"
@@ -19,6 +21,7 @@ import { decodeProvider, providerName } from "../providers/model"
 import { decodeSurvey } from "../survey/model"
 import { clientStatus, decodeClient, pppoeUsers } from "../clients/model"
 import { decodeSite } from "../sites/model"
+import { decodeTool, toolLabel } from "../tools/model"
 import { getPool } from "../db/client"
 import { MAX_RECORDS, type Change, type Outcome, type Remote, type SyncKind, type SyncResponse } from "./protocol"
 
@@ -31,6 +34,8 @@ type KindSpec = {
   fk: string
   /** The record decoded and its listing columns, or null when it isn't a valid record. */
   read: (id: string, data: unknown) => { data: Record<string, unknown>; cols: Columns } | null
+  /** Listing columns without a default, for the row that records a deleted starter. */
+  tombstone?: Columns
 }
 
 const SPECS: Record<SyncKind, KindSpec> = {
@@ -49,6 +54,7 @@ const SPECS: Record<SyncKind, KindSpec> = {
     table: "materials",
     versions: "material_versions",
     fk: "material_id",
+    tombstone: { name: "", category: "", unit: "" },
     read: (id, data) => {
       const it = decodeItem(data)
       if (!it) return null
@@ -89,6 +95,18 @@ const SPECS: Record<SyncKind, KindSpec> = {
       return { data: d, cols: { name: d.name, address: d.address, municipality: d.municipality, rooms: d.rooms.length, towers: d.towers.length } }
     },
   },
+  tools: {
+    table: "tools",
+    versions: "tool_versions",
+    fk: "tool_id",
+    read: (id, data) => {
+      const x = decodeTool(data)
+      if (!x) return null
+      const d = { ...x, id }
+      const holder = d.holderKind === "despliegue" ? d.siteId : d.holderKind === "bodega" ? "" : d.holder
+      return { data: d, cols: { name: toolLabel(d).slice(0, 300), category: d.category, serial: d.serial, quantity: d.quantity, condition: d.condition, holder_kind: d.holderKind, holder: holder.slice(0, 100) } }
+    },
+  },
 }
 
 /** The phone's edit time, never in the future (a wrong phone clock can't win every conflict). */
@@ -107,6 +125,18 @@ async function applyOne(c: PoolClient, kind: SyncKind, ch: Change, editor: strin
   const cur = (await c.query(`select version, updated_at, data from "${spec.table}" where id = $1 for update`, [ch.id])).rows[0] as { version: number; updated_at: Date; data: unknown } | undefined
 
   if (!cur) {
+    // A starter record (fixed id, created by every browser on its own) deleted before anyone edited it: store the
+    // deletion, or the other phones would keep their copy forever.
+    if (ch.deleted && ch.id.startsWith("starter-")) {
+      const extra = spec.tombstone ?? {}
+      const keys = Object.keys(extra)
+      await c.query(
+        `insert into "${spec.table}" (id, data, version, updated_at, updated_by, deleted_at${keys.map((k) => `, ${k}`).join("")}) values ($1, $2, 1, $3, $4, now()${keys.map((_, i) => `, $${i + 5}`).join("")})`,
+        [ch.id, { id: ch.id }, at, editor, ...Object.values(extra)]
+      )
+      await c.query(`insert into "${spec.versions}" (${spec.fk}, version, data, saved_by) values ($1, 1, $2, $3)`, [ch.id, { id: ch.id }, `${editor} (borrado)`])
+      return { id: ch.id, outcome: "saved", version: 1 }
+    }
     // Deleted before it ever reached the database: nothing to store.
     if (ch.deleted || !read) return { id: ch.id, outcome: "saved", version: 0 }
     if (kind === "materials") {
