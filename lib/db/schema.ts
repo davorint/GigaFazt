@@ -253,6 +253,22 @@ export const payments = pgTable(
 )
 export const paymentVersions = versions("payment_versions", "payment_id")
 
+// ── Notes (/interno/admin/notas) ───────────────────────────────────────────
+
+export const notes = pgTable(
+  "notes",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull().default(""),
+    /** Marked done (archived in "Hechas"). */
+    done: boolean("done").notNull().default(false),
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("notes_rev_idx").on(t.rev)]
+)
+export const noteVersions = versions("note_versions", "note_id")
+
 // ── Saved MikroTik deployments ──────────────────────────────────────────────
 
 export const deployments = pgTable(

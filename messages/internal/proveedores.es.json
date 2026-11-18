@@ -102,6 +102,7 @@
   "links": {
     "interno": "Herramientas internas",
     "admin": "Administración",
+    "notas": "Notas",
     "despliegues": "Despliegues",
     "clientes": "Clientes",
     "reportes_clientes": "Reportes",

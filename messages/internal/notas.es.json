@@ -1,0 +1,52 @@
+{
+  "notas": {
+    "meta": { "title": "Notas · GigaFazt interno" },
+    "kicker": "Interno · Administración",
+    "title": "Notas",
+    "lead": "Post-its del equipo: pendientes, recordatorios y avisos. Fija arriba lo importante y marca como hecho lo que ya quedó.",
+    "new": {
+      "label": "Nueva nota",
+      "title": "Título (opcional)",
+      "body": "Escribe la nota…",
+      "add": "Pegar nota",
+      "empty": "Escribe un título o un texto."
+    },
+    "color": "Color",
+    "colors": {
+      "amarillo": "Amarillo",
+      "rosa": "Rosa",
+      "azul": "Azul",
+      "verde": "Verde",
+      "naranja": "Naranja",
+      "morado": "Morado"
+    },
+    "search": "Buscar en las notas",
+    "tabs": {
+      "open": "Pendientes ({n})",
+      "done": "Hechas ({n})"
+    },
+    "empty": {
+      "open": "No hay notas pendientes. Pega la primera arriba.",
+      "done": "Todavía no hay notas hechas.",
+      "search": "Ninguna nota tiene eso."
+    },
+    "by": "{name} · {date}",
+    "anon": "Sin nombre",
+    "edited": "editada {date}",
+    "doneOn": "Hecha {date}",
+    "pinned": "Fijada",
+    "actions": {
+      "pin": "Fijar arriba",
+      "unpin": "Quitar de arriba",
+      "done": "Hecha",
+      "reopen": "Regresar a pendientes",
+      "edit": "Editar",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "delete": "Borrar",
+      "confirmDelete": "¿Borrar la nota «{title}»? Se borra en todos los teléfonos."
+    },
+    "untitled": "sin título",
+    "noStorage": "Este navegador no deja guardar: las notas se pierden al cerrar la página."
+  }
+}

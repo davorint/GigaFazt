@@ -25,12 +25,13 @@ import { decodeTool, toolLabel } from "../tools/model"
 import { decodeMove, decodeUnit } from "../stock/model"
 import { decodeReport } from "../reports/model"
 import { decodePayment } from "../payments/model"
+import { decodeNote } from "../notes/model"
 import { getPool } from "../db/client"
 import { MAX_RECORDS, type Change, type Outcome, type Remote, type SyncKind, type SyncResponse } from "./protocol"
 
 const ID = /^[\w-]{6,64}$/
 
-type Columns = Record<string, string | number | null>
+type Columns = Record<string, string | number | boolean | null>
 type KindSpec = {
   table: string
   versions: string
@@ -152,6 +153,17 @@ const SPECS: Record<SyncKind, KindSpec> = {
       if (!p) return null
       const d = { ...p, id }
       return { data: d, cols: { client_id: d.clientId, date: d.date || null, amount: d.amount } }
+    },
+  },
+  notes: {
+    table: "notes",
+    versions: "note_versions",
+    fk: "note_id",
+    read: (id, data) => {
+      const n = decodeNote(data)
+      if (!n) return null
+      const d = { ...n, id }
+      return { data: d, cols: { title: d.title, done: Boolean(d.doneAt) } }
     },
   },
 }

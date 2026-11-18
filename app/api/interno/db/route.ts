@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const info = (await db.execute(sql`select current_setting('server_version') as v, current_database() as d`)).rows[0]
     const version = info?.v
     const database = info?.d
-    const tables = ["surveys", "materials", "providers", "clients", "sites", "tools", "stock_moves", "units", "reports", "payments", "deployments", "leads"]
+    const tables = ["surveys", "materials", "providers", "clients", "sites", "tools", "stock_moves", "units", "reports", "payments", "notes", "deployments", "leads"]
     const counts: Record<string, number | null> = {}
     for (const t of tables) {
       try {

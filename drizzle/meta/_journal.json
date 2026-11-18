@@ -50,6 +50,13 @@
       "when": 1795014530133,
       "tag": "0006_payments_report_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795026091384,
+      "tag": "0007_notes",
+      "breakpoints": true
     }
   ]
 }

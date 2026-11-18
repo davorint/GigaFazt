@@ -50,6 +50,10 @@
       "lead": "Lo que usan las demás secciones: despliegues, clientes y sus reportes, herramientas, proveedores y materiales.",
       "back": "Herramientas internas",
       "pages": {
+        "notas": {
+          "name": "Notas",
+          "desc": "Post-its del equipo: pendientes, recordatorios y avisos de colores, fijados arriba o marcados como hechos. Se comparten entre teléfonos."
+        },
         "despliegues": {
           "name": "Despliegues",
           "desc": "Cada ubicación con sus torres, cuartos de telecom (equipos, carriers, puertos PON), contactos, acceso, el acuerdo con el edificio y sus clientes."

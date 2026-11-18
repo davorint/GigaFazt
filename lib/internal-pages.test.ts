@@ -18,6 +18,11 @@ describe("/interno routes", () => {
     expect(matchInternal("/ES/Interno/OLT")).toEqual({ rewriteTo: "/es/interno/olt", open: false })
     expect(matchInternal("/interno/MIKROTIK-OPTIMAL")).toEqual({ rewriteTo: "/es/interno/mikrotik-optimo", open: false })
   })
+  it("admin pages and their other spellings", () => {
+    expect(matchInternal("/interno/admin/notas")).toEqual({ rewriteTo: "/es/interno/admin/notas", open: false })
+    expect(matchInternal("/Interno/Admin/Post-It")).toEqual({ rewriteTo: "/es/interno/admin/notas", open: false })
+    expect(matchInternal("/es/interno/admin/notes")).toEqual({ rewriteTo: "/es/interno/admin/notas", open: false })
+  })
   it("only the sign-in page is open", () => {
     expect(matchInternal("/interno/entrar")?.open).toBe(true)
     expect(matchInternal("/Interno/Entrar.rsc")).toEqual({ rewriteTo: "/es/interno/entrar.rsc", open: true })

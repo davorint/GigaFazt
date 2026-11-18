@@ -4,6 +4,7 @@ import { NewReportsBadge } from "./NewReportsBadge"
 const LINKS = [
   ["/interno", "interno"],
   ["/interno/admin", "admin"],
+  ["/interno/admin/notas", "notas"],
   ["/interno/admin/despliegues", "despliegues"],
   ["/interno/admin/clientes", "clientes"],
   ["/interno/admin/reportes_clientes", "reportes_clientes"],
