@@ -62,3 +62,11 @@ describe("client problem reports", () => {
     expect(matchInternal("/interno/admin/reportes-clientes")?.rewriteTo).toBe("/es/interno/admin/reportes_clientes")
   })
 })
+
+describe("report alerts, limits and consent", () => {
+  it("keeps the consent time; staff reports have none", () => {
+    expect(decodeReport({ consentAt: "2026-11-18T10:00:00.000Z" })?.consentAt).toBe("2026-11-18T10:00:00.000Z")
+    expect(decodeReport({ consentAt: "ayer" })?.consentAt).toBe("")
+    expect(newReport().consentAt).toBe("")
+  })
+})

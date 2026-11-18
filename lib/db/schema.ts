@@ -223,6 +223,36 @@ export const reports = pgTable(
 )
 export const reportVersions = versions("report_versions", "report_id")
 
+/**
+ * Public report form flood control (lib/reports/limits.ts): one row per accepted web report with a salted hash of the
+ * sender's address (never the address itself), kept a day.
+ */
+export const reportHits = pgTable(
+  "report_hits",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    ipHash: text("ip_hash").notNull().default(""),
+    at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("report_hits_at_idx").on(t.at), index("report_hits_ip_idx").on(t.ipHash, t.at)]
+)
+
+// ── Payments (/interno/admin/clientes → Cobranza) ─────────────────────────
+
+export const payments = pgTable(
+  "payments",
+  {
+    id: text("id").primaryKey(),
+    clientId: text("client_id").notNull().default(""),
+    date: date("date"),
+    amount: numeric("amount", { precision: 12, scale: 2, mode: "number" }).notNull().default(0),
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("payments_rev_idx").on(t.rev), index("payments_client_idx").on(t.clientId), index("payments_date_idx").on(t.date)]
+)
+export const paymentVersions = versions("payment_versions", "payment_id")
+
 // ── Saved MikroTik deployments ──────────────────────────────────────────────
 
 export const deployments = pgTable(

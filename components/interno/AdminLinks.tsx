@@ -1,4 +1,5 @@
 import copy from "@/messages/internal/proveedores.es.json"
+import { NewReportsBadge } from "./NewReportsBadge"
 
 const LINKS = [
   ["/interno", "interno"],
@@ -25,6 +26,7 @@ export function AdminLinks({ current }: { current: (typeof LINKS)[number][1] }) 
               className="block rounded-md px-2.5 py-1.5 text-zinc-300 underline-offset-4 hover:text-foreground hover:underline aria-[current=page]:bg-white/10 aria-[current=page]:text-foreground aria-[current=page]:no-underline"
             >
               {copy.links[key]}
+              {key === "reportes_clientes" && <NewReportsBadge label={copy.links.newReports} />}
             </a>
           </li>
         ))}

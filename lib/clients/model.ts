@@ -71,6 +71,8 @@ export type Client = {
   services: Service[]
   payDay: number | null
   payMethod: PayMethod
+  /** YYYY-MM: the first month charged in Cobranza ("" = from the first payment recorded or this month; lib/payments). */
+  billingFrom: string
   notes: string
   /** The website request it came from, if any. */
   leadId: string
@@ -122,6 +124,7 @@ export function newClient(p: Partial<Client> = {}): Client {
     services: [],
     payDay: null,
     payMethod: "",
+    billingFrom: "",
     notes: "",
     leadId: "",
     createdAt: now,
@@ -187,6 +190,7 @@ export function decodeClient(v: unknown): Client | null {
     services: list(v.services, decodeService, 50),
     payDay: num(v.payDay, 1, 31),
     payMethod: oneOf(PAY_METHODS, v.payMethod, ""),
+    billingFrom: typeof v.billingFrom === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(v.billingFrom) ? v.billingFrom : "",
     notes: str(v.notes, 4000),
     leadId: str(v.leadId, 64),
     createdAt: iso(v.createdAt),

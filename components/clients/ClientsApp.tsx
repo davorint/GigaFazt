@@ -36,9 +36,10 @@ import { sitesServerSnapshot, sitesSnapshot, subscribeSites } from "@/lib/sites/
 import { mxn } from "@/lib/materials/catalog"
 import { ImportPanel } from "./ImportPanel"
 import { LeadsPanel } from "./LeadsPanel"
+import { ClientBilling, PaymentsPanel } from "./PaymentsPanel"
 
 type T = ReturnType<typeof useTranslations>
-const TABS = ["clients", "leads", "import"] as const
+const TABS = ["clients", "payments", "leads", "import"] as const
 type Tab = (typeof TABS)[number]
 const BTN = "h-11 rounded-full border border-white/15 px-5 text-sm text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const SMALL = "inline-flex min-h-9 items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -67,7 +68,7 @@ function download(name: string, text: string, type: string) {
 
 const clientList = () => clientsSnapshot().list
 
-/** Clients, website requests and the import, as three tabs of /interno/admin/clientes. */
+/** Clients, payments, website requests and the import, as four tabs of /interno/admin/clientes. */
 export function ClientsApp() {
   const t = useTranslations("clientes")
   const [tab, setTab] = useState<Tab>("clients")
@@ -98,6 +99,7 @@ export function ClientsApp() {
       </div>
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="min-w-0">
         {tab === "clients" && <ClientList t={t} openId={openId} setOpenId={setOpenId} />}
+        {tab === "payments" && <PaymentsPanel onClient={show} />}
         {tab === "leads" && <LeadsPanel onClient={show} />}
         {tab === "import" && <ImportPanel />}
       </div>
@@ -343,6 +345,7 @@ function Editor({ t, c }: { t: T; c: Client }) {
           <NumberField label={t("fields.payDay")} unit="1–31" integer optional min={1} max={31} value={c.payDay} onChange={(v) => up({ payDay: v })} />
           <PickField label={t("fields.payMethod")} value={c.payMethod} onChange={(payMethod) => up({ payMethod })} options={PAY_METHODS.map((m) => ({ value: m, label: t(`methods.${m || "none"}`) }))} />
         </div>
+        <ClientBilling t={t} c={c} onChange={up} />
         <AreaField label={t("fields.notes")} value={c.notes} onChange={(v) => up({ notes: v })} />
       </fieldset>
       <a href={`/interno/admin/reportes_clientes?nuevo=${c.id}`} className="inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">

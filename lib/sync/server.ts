@@ -24,6 +24,7 @@ import { decodeSite } from "../sites/model"
 import { decodeTool, toolLabel } from "../tools/model"
 import { decodeMove, decodeUnit } from "../stock/model"
 import { decodeReport } from "../reports/model"
+import { decodePayment } from "../payments/model"
 import { getPool } from "../db/client"
 import { MAX_RECORDS, type Change, type Outcome, type Remote, type SyncKind, type SyncResponse } from "./protocol"
 
@@ -140,6 +141,17 @@ const SPECS: Record<SyncKind, KindSpec> = {
       if (!r) return null
       const d = { ...r, id }
       return { data: d, cols: { status: d.status, category: d.category, client_id: d.clientId, source: d.source } }
+    },
+  },
+  payments: {
+    table: "payments",
+    versions: "payment_versions",
+    fk: "payment_id",
+    read: (id, data) => {
+      const p = decodePayment(data)
+      if (!p) return null
+      const d = { ...p, id }
+      return { data: d, cols: { client_id: d.clientId, date: d.date || null, amount: d.amount } }
     },
   },
 }

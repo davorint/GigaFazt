@@ -1,0 +1,216 @@
+/**
+ * Payments (Clientes → Cobranza, owner 2026-11-18: "do 9"; billing stays manual, no Wisphub).
+ *
+ * A payment is what a client paid on a date (amount with IVA, method, reference). What each client owes comes from
+ * its services: every month from its billing start costs the monthly price of its active and suspended services
+ * (cancelled ones stop counting), due on its payment day (1 when not set). Payments are applied to the oldest month
+ * first, so paying three months at once leaves the next two covered and a partial payment leaves the rest owed.
+ *
+ * Billing start: the month typed on the client ("Cobrar desde"); otherwise the month of its first recorded payment or
+ * the current month, whichever is earlier, never before its first service started. So clients with no payments recorded
+ * start owing from this month, not from years back. Past months use today's prices (a price change is not dated).
+ *
+ * Synced like the other sections (kind "payments", table `payments`); deleting a payment removes it on every phone.
+ */
+import type { Client } from "../clients/model"
+import { newId } from "../survey/id"
+
+export const PAYMENT_METHODS = ["efectivo", "transferencia", "deposito", "tarjeta", "otro"] as const
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number]
+
+export type Payment = {
+  id: string
+  clientId: string
+  /** YYYY-MM-DD. */
+  date: string
+  /** MXN with IVA. */
+  amount: number
+  method: PaymentMethod
+  /** Transfer reference, receipt number… */
+  reference: string
+  notes: string
+  by: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** Days after the payment day before a month counts as late. */
+export const GRACE_DAYS = 5
+/** Days before the payment day when a month shows as coming due. */
+export const SOON_DAYS = 5
+
+export function newPayment(p: Partial<Payment> = {}): Payment {
+  return { id: newId(), clientId: "", date: "", amount: 0, method: "efectivo", reference: "", notes: "", by: "", createdAt: new Date().toISOString(), updatedAt: "", ...p }
+}
+
+// ── Months ───────────────────────────────────────────────────────────────
+
+const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/
+export const monthOf = (date: string) => date.slice(0, 7)
+export const isMonth = (m: string) => MONTH.test(m)
+
+export function addMonths(m: string, n: number): string {
+  const [y, mo] = m.split("-").map(Number)
+  const i = y * 12 + (mo - 1) + n
+  return `${Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, "0")}`
+}
+
+/** Every month from `from` to `to`, both included (empty when `from` is after `to`). */
+export function monthsBetween(from: string, to: string): string[] {
+  const out: string[] = []
+  for (let m = from; m <= to && out.length < 600; m = addMonths(m, 1)) out.push(m)
+  return out
+}
+
+/** The payment day of that month (31 in a 30-day month is the 30th). */
+export function dueDate(month: string, payDay: number | null): string {
+  const [y, mo] = month.split("-").map(Number)
+  const last = new Date(Date.UTC(y, mo, 0)).getUTCDate()
+  return `${month}-${String(Math.min(Math.max(payDay ?? 1, 1), last)).padStart(2, "0")}`
+}
+
+const daysBetween = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 864e5)
+
+// ── What a client owes ───────────────────────────────────────────────────
+
+/** Monthly charge: active and suspended services with a price (cancelled ones stop counting). */
+export const monthlyDue = (c: Client) => c.services.filter((s) => s.status !== "cancelado").reduce((a, s) => a + (s.monthly ?? 0), 0)
+
+export function billingStart(c: Client, payments: Payment[], today: string): string {
+  if (isMonth(c.billingFrom)) return c.billingFrom
+  const mine = payments.filter((p) => p.clientId === c.id && p.date).map((p) => monthOf(p.date))
+  let start = [monthOf(today), ...mine].sort()[0]
+  const firstService = c.services.map((s) => s.start).filter(Boolean).sort()[0]
+  if (firstService && monthOf(firstService) > start) start = monthOf(firstService)
+  return start
+}
+
+export type PayStatus = "atrasado" | "por-vencer" | "al-corriente" | "sin-cobro"
+
+export type MonthLine = { month: string; due: string; charge: number; paid: number }
+
+export type Ledger = {
+  monthly: number
+  start: string
+  months: MonthLine[]
+  paidTotal: number
+  /** Unpaid amount of months whose payment day has come. */
+  owed: number
+  /** Months past their grace period and not fully paid. */
+  lateMonths: string[]
+  status: PayStatus
+  /** Last month fully paid ("" when none). */
+  coveredUntil: string
+  /** Paid beyond the current month that doesn't make a whole month. */
+  credit: number
+  lastPayment: Payment | null
+}
+
+/**
+ * The client's months from its billing start to the current one, with the payments applied oldest month first, and
+ * its status: late (a month past its payment day + grace is unpaid), coming due (this month unpaid, its payment day
+ * within SOON_DAYS or within the grace), paid up, or nothing to charge (no priced service and nothing owed).
+ */
+export function ledger(c: Client, all: Payment[], today: string): Ledger {
+  const payments = all.filter((p) => p.clientId === c.id).sort((a, b) => a.date.localeCompare(b.date))
+  const monthly = monthlyDue(c)
+  const start = billingStart(c, all, today)
+  const current = monthOf(today)
+  const paidTotal = payments.reduce((a, p) => a + p.amount, 0)
+  let left = paidTotal
+  const months: MonthLine[] = monthsBetween(start, current).map((month) => {
+    const paid = Math.min(left, monthly)
+    left -= paid
+    return { month, due: dueDate(month, c.payDay), charge: monthly, paid }
+  })
+  let coveredUntil = ""
+  for (const m of months) {
+    if (!(monthly > 0 && m.paid >= monthly - 0.005)) break
+    coveredUntil = m.month
+  }
+  // Whole months paid ahead.
+  if (monthly > 0 && coveredUntil === current)
+    while (left >= monthly - 0.005) {
+      coveredUntil = addMonths(coveredUntil, 1)
+      left -= monthly
+    }
+  const unpaid = months.filter((m) => m.charge - m.paid > 0.005)
+  const owed = unpaid.filter((m) => m.due <= today).reduce((a, m) => a + m.charge - m.paid, 0)
+  const lateMonths = unpaid.filter((m) => daysBetween(m.due, today) > GRACE_DAYS).map((m) => m.month)
+  const thisMonth = unpaid.find((m) => m.month === current)
+  const status: PayStatus = lateMonths.length
+    ? "atrasado"
+    : thisMonth && daysBetween(today, thisMonth.due) <= SOON_DAYS
+      ? "por-vencer"
+      : monthly <= 0 && owed <= 0
+        ? "sin-cobro"
+        : "al-corriente"
+  return { monthly, start, months, paidTotal, owed, lateMonths, status, coveredUntil, credit: Math.max(0, left), lastPayment: payments.at(-1) ?? null }
+}
+
+export type CollectionStats = { expected: number; collected: number; late: number; lateAmount: number; soon: number; payments: number }
+
+/** This month: what the clients' services add up to, what was collected (payments dated this month), and who is late. */
+export function collectionStats(clients: Client[], payments: Payment[], today: string): CollectionStats {
+  const month = monthOf(today)
+  const ids = new Set(clients.map((c) => c.id))
+  const thisMonth = payments.filter((p) => monthOf(p.date) === month && ids.has(p.clientId))
+  let late = 0
+  let lateAmount = 0
+  let soon = 0
+  for (const c of clients) {
+    const l = ledger(c, payments, today)
+    if (l.status === "atrasado") {
+      late++
+      lateAmount += l.owed
+    }
+    if (l.status === "por-vencer") soon++
+  }
+  return { expected: clients.reduce((a, c) => a + monthlyDue(c), 0), collected: thisMonth.reduce((a, p) => a + p.amount, 0), late, lateAmount, soon, payments: thisMonth.length }
+}
+
+/**
+ * Lines for the MikroTik "Morosos" script (/interno/mikrotik → Scripts de experto): "usuario,plan" for each internet
+ * service with a PPPoE user of the late clients (the plan lets the script put the account back when it's paid).
+ */
+export function morososLines(clients: Client[], payments: Payment[], today: string): string {
+  return clients
+    .filter((c) => ledger(c, payments, today).status === "atrasado")
+    .flatMap((c) => c.services.filter((s) => s.type === "internet" && s.status !== "cancelado" && s.pppoeUser).map((s) => (s.plan ? `${s.pppoeUser},${s.plan}` : s.pppoeUser)))
+    .join("\n")
+}
+
+/** Payments as CSV (Spanish headers, BOM so Excel reads accents). */
+export function paymentsCsv(payments: Payment[], nameOf: (clientId: string) => string, methodLabel: (m: PaymentMethod) => string): string {
+  const cell = (v: string | number) => {
+    const s = String(v)
+    return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+  }
+  const rows = [["Fecha", "Cliente", "Monto", "Forma de pago", "Referencia", "Notas", "Registró"]]
+  for (const p of [...payments].sort((a, b) => b.date.localeCompare(a.date))) rows.push([p.date, nameOf(p.clientId), p.amount.toFixed(2), methodLabel(p.method), p.reference, p.notes, p.by])
+  return "﻿" + rows.map((r) => r.map(cell).join(",")).join("\r\n")
+}
+
+// ── Reading stored values ────────────────────────────────────────────────
+
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v)
+const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "")
+const id = (v: unknown) => (typeof v === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(v) ? v : "")
+const day = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) ? v : "")
+
+export function decodePayment(v: unknown): Payment | null {
+  if (!isObj(v)) return null
+  const amount = typeof v.amount === "number" && Number.isFinite(v.amount) ? Math.min(Math.max(Math.round(v.amount * 100) / 100, 0), 1e7) : 0
+  return {
+    id: id(v.id) || newId(),
+    clientId: id(v.clientId),
+    date: day(v.date),
+    amount,
+    method: (PAYMENT_METHODS as readonly string[]).includes(v.method as string) ? (v.method as PaymentMethod) : "otro",
+    reference: str(v.reference, 120),
+    notes: str(v.notes, 500),
+    by: str(v.by, 60),
+    createdAt: typeof v.createdAt === "string" ? v.createdAt.slice(0, 40) : "",
+    updatedAt: typeof v.updatedAt === "string" ? v.updatedAt.slice(0, 40) : "",
+  }
+}

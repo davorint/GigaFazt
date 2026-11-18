@@ -43,6 +43,13 @@
       "when": 1795006915608,
       "tag": "0005_stock_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795014530133,
+      "tag": "0006_payments_report_limits",
+      "breakpoints": true
     }
   ]
 }

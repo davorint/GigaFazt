@@ -31,6 +31,7 @@ import {
   type ReportStatus,
 } from "@/lib/reports/model"
 import { reportsStore } from "@/lib/reports/store"
+import { AlertsBox } from "./AlertsBox"
 
 type T = ReturnType<typeof useTranslations>
 const PRIMARY = "h-11 w-fit rounded-full bg-white px-5 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -156,6 +157,7 @@ function ReportList({ t, list, clients, sites }: { t: T; list: Report[]; clients
         <Tile label={t("tiles.solved30")} value={String(st.solved30)} />
         <Tile label={t("tiles.avg")} value={st.avgHours === null ? "—" : t("tiles.hours", { n: st.avgHours < 10 ? st.avgHours.toFixed(1) : Math.round(st.avgHours) })} />
       </div>
+      <AlertsBox />
       {repeat.length > 0 && (
         <div role="note" className="grid gap-1 rounded-xl border border-amber-400/30 p-3">
           <p className="text-sm font-medium text-amber-200">{t("repeatTitle")}</p>
@@ -271,6 +273,9 @@ function ReportEditor({ t, r, all, clients, sites }: { t: T; r: Report; all: Rep
         {r.source === "web" && <span className="text-xs text-sky-300">{t("fromWeb")}</span>}
         <span className="text-xs text-zinc-400">{t("opened", { ago: ago(t, r.createdAt), by: r.by || "—" })}</span>
       </div>
+      {r.source === "web" && (
+        <p className="text-xs text-zinc-400">{r.consentAt ? t("consent", { at: new Date(r.consentAt).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" }) }) : t("noConsent")}</p>
+      )}
 
       {related.length > 0 && (
         <div role="note" className="grid gap-1 rounded-xl border border-red-400/30 p-3">

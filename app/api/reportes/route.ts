@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server"
+import { after, NextResponse } from "next/server"
 import { reportSchema } from "@/lib/report-form"
+import { clientIp, ipHash } from "@/lib/reports/limits"
+import { sendAlert } from "@/lib/reports/notify"
 import { insertWebReport } from "@/lib/reports/server"
 
 const MAX_BODY_BYTES = 8 * 1024
@@ -7,7 +9,8 @@ const MAX_BODY_BYTES = 8 * 1024
 /**
  * A client's problem report from the public form (/reportar). Validated with the shared schema (lib/report-form.ts),
  * saved to the database before answering (the answer carries the report's code), listed in
- * /interno/admin/reportes_clientes. Personal data never goes to the server log.
+ * /interno/admin/reportes_clientes, with the consent time; the team gets an alert (lib/reports/notify.ts). Flood
+ * control and duplicates: lib/reports/limits.ts. Personal data never goes to the server log.
  */
 export async function POST(request: Request) {
   const raw = await request.text()
@@ -28,8 +31,14 @@ export async function POST(request: Request) {
   void _honeypot
   void _consent
   try {
-    const saved = await insertWebReport(form)
+    const saved = await insertWebReport(form, ipHash(clientIp(request.headers)))
     if (!saved) return NextResponse.json({ error: "unavailable" }, { status: 503 })
+    // Too many from this sender (or everyone) this hour: the form offers WhatsApp instead.
+    if (saved.kind === "limited") return NextResponse.json({ error: "too_many" }, { status: 429 })
+    // Same phone with a report still open: its code, nothing new.
+    if (saved.kind === "duplicate") return NextResponse.json({ ok: true, code: saved.code, duplicate: true })
+    // The team's alert goes out after the client has the answer.
+    after(() => sendAlert(saved.alert).then(() => undefined))
     return NextResponse.json({ ok: true, code: saved.code })
   } catch {
     console.error("[report] could not be saved")

@@ -10,7 +10,8 @@
     "tabs": {
       "clients": "Clientes",
       "leads": "Solicitudes",
-      "import": "Importar"
+      "import": "Importar",
+      "payments": "Cobranza"
     },
     "fields": {
       "kind": "Tipo de cliente",
@@ -239,6 +240,85 @@
       "unknownLine": "renglón {line}: {port} ONT {ont} · {rx} dBm",
       "apply": "Guardar lecturas",
       "done": "{n, plural, one {# lectura guardada} other {# lecturas guardadas}} en {clients, plural, one {# cliente} other {# clientes}}."
+    },
+    "pay": {
+      "intro": "Cada mes cuesta lo que suman los servicios activos y suspendidos del cliente (los cancelados ya no cuentan), con vencimiento en su día de pago (el 1 si no tiene). Los pagos cubren primero el mes más antiguo. Un mes sin pagar {grace} días después de su día de pago cuenta como atrasado. Se cobra desde \"Cobrar desde\" del cliente; si no lo tiene, desde su primer pago registrado o desde este mes. Los meses pasados usan el precio de hoy.",
+      "tiles": {
+        "expected": "Por cobrar cada mes",
+        "collected": "Cobrado este mes",
+        "payments": "{n, plural, one {# pago} other {# pagos}}",
+        "late": "Atrasados",
+        "soon": "Por vencer"
+      },
+      "unpriced": "{n, plural, one {# cliente tiene} other {# clientes tienen}} algún servicio sin mensualidad: no se le cobra hasta ponerla.",
+      "filter": "Mostrar",
+      "filters": {
+        "cobro": "Con cobro (todos menos sin cobro)",
+        "all": "Todos"
+      },
+      "site": "Despliegue",
+      "allSites": "Todos",
+      "search": "Buscar cliente",
+      "count": "{n, plural, one {# cliente} other {# clientes}}",
+      "more": "Y {n} más: usa los filtros.",
+      "statuses": {
+        "atrasado": "Atrasado",
+        "por-vencer": "Por vencer",
+        "al-corriente": "Al corriente",
+        "sin-cobro": "Sin cobro"
+      },
+      "noCharge": "Sin servicios con mensualidad",
+      "monthly": "{amount} al mes",
+      "owed": "debe {amount}",
+      "lateMonths": "{n, plural, one {# mes atrasado} other {# meses atrasados}}",
+      "covered": "pagado hasta {month}",
+      "notCovered": "sin pagar desde {month}",
+      "day": "paga el {n}",
+      "record": "Registrar pago",
+      "remind": "Recordar por WhatsApp",
+      "open": "Ver cliente",
+      "waText": "Hola {name}, te recordamos que tu servicio de internet tiene un saldo pendiente de {amount}. Si ya pagaste, por favor mándanos tu comprobante. ¡Gracias!",
+      "from": "Cobrar desde (mes)",
+      "fromHint": "Vacío: desde su primer pago registrado o desde este mes.",
+      "methods": {
+        "efectivo": "Efectivo",
+        "transferencia": "Transferencia",
+        "deposito": "Depósito",
+        "tarjeta": "Tarjeta",
+        "otro": "Otro"
+      },
+      "form": {
+        "title": "Pago de {name}",
+        "amount": "Monto (con IVA)",
+        "date": "Fecha del pago",
+        "method": "Forma de pago",
+        "reference": "Referencia o folio",
+        "notes": "Notas",
+        "save": "Guardar pago",
+        "cancel": "Cancelar",
+        "needAmount": "Escribe el monto.",
+        "needDate": "Escribe la fecha.",
+        "saved": "Pago de {amount} de {name} guardado. Pagado hasta {covered}."
+      },
+      "history": {
+        "title": "Pagos registrados",
+        "none": "Sin pagos registrados.",
+        "unknownClient": "Cliente borrado",
+        "ref": "ref. {ref}",
+        "by": "registró {by}",
+        "remove": "Borrar pago",
+        "confirmRemove": "¿Borrar el pago de {amount} del {date}? Se borra en todos los teléfonos.",
+        "more": "Y {n} más (en el archivo CSV).",
+        "csv": "Descargar pagos (CSV)"
+      },
+      "morosos": {
+        "title": "Usuarios para cortar en el MikroTik",
+        "hint": "Los usuarios PPPoE de los clientes atrasados, en el formato que pide /interno/mikrotik → Scripts de experto → Morosos (usuario,plan por línea). Cortar sigue siendo a mano: revisa la lista antes de pegarla.",
+        "copy": "Copiar la lista",
+        "copied": "{n, plural, one {# usuario copiado} other {# usuarios copiados}}.",
+        "copyFailed": "No se pudo copiar: selecciona el texto y cópialo.",
+        "none": "Ningún cliente atrasado con usuario PPPoE."
+      }
     }
   }
 }

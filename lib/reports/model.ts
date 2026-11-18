@@ -44,6 +44,8 @@ export type Report = {
   resolution: string
   resolvedAt: string
   notes: ReportNote[]
+  /** Public form: when the person accepted the privacy notice (LFPDPPP: consent must be provable). "" for staff reports. */
+  consentAt: string
   by: string
   updatedAt: string
 }
@@ -72,6 +74,7 @@ export function newReport(p: Partial<Report> = {}): Report {
     resolution: "",
     resolvedAt: "",
     notes: [],
+    consentAt: "",
     by: "",
     updatedAt: "",
     ...p,
@@ -179,6 +182,7 @@ export function decodeReport(v: unknown): Report | null {
           .slice(0, 300)
           .map((n) => ({ id: id(n.id) || newId(), at: iso(n.at), by: str(n.by, 60), text: str(n.text, 2000) }))
       : [],
+    consentAt: iso(v.consentAt),
     by: str(v.by, 60),
     updatedAt: typeof v.updatedAt === "string" ? v.updatedAt.slice(0, 40) : "",
   }

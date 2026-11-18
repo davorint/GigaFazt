@@ -26,7 +26,8 @@ export function ReportForm() {
   const id = useId()
   const [v, setV] = useState({ name: "", phone: "", address: "", category: "", description: "", consent: false, website: "" })
   const [errors, setErrors] = useState<Field[]>([])
-  const [status, setStatus] = useState<"idle" | "sending" | "error">("idle")
+  const [status, setStatus] = useState<"idle" | "sending" | "error" | "busy">("idle")
+  const [duplicate, setDuplicate] = useState(false)
   const [code, setCode] = useState("")
   const localHref = (x: string) => (x.startsWith("/") ? `/${locale}${x}` : x)
   const legalValue = (x: Maybe<string>) => (isPlaceholder(x) ? <PlaceholderChip keyName={x.key} /> : <span className="text-foreground">{x}</span>)
@@ -54,13 +55,18 @@ export function ReportForm() {
     setStatus("sending")
     try {
       const res = await fetch("/api/reportes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(v) })
-      const body = (await res.json().catch(() => ({}))) as { code?: string; fields?: string[] }
+      const body = (await res.json().catch(() => ({}))) as { code?: string; fields?: string[]; duplicate?: boolean }
       if (res.status === 422 && body.fields?.length) {
         setErrors(body.fields.filter((f): f is Field => ["name", "phone", "address", "category", "description", "consent"].includes(f)))
         setStatus("idle")
         return
       }
+      if (res.status === 429) {
+        setStatus("busy")
+        return
+      }
       if (!res.ok || !body.code) throw new Error(String(res.status))
+      setDuplicate(body.duplicate === true)
       setCode(body.code)
     } catch {
       setStatus("error")
@@ -79,8 +85,8 @@ export function ReportForm() {
     return (
       <div role="status" className="grid justify-items-start gap-3 rounded-2xl border border-emerald-400/30 p-6">
         <CheckCircle2 aria-hidden className="size-8 text-emerald-300" />
-        <p className="text-xl text-foreground">{t("sent", { code })}</p>
-        <p className="text-sm text-muted-foreground">{t("sentHint")}</p>
+        <p className="text-xl text-foreground">{t(duplicate ? "sentDuplicate" : "sent", { code })}</p>
+        <p className="text-sm text-muted-foreground">{t(duplicate ? "sentDuplicateHint" : "sentHint")}</p>
       </div>
     )
   }
@@ -159,9 +165,9 @@ export function ReportForm() {
         </label>
         {err("consent")}
       </div>
-      {status === "error" && (
+      {(status === "error" || status === "busy") && (
         <p role="alert" className="text-sm text-destructive">
-          {t("error")}{" "}
+          {t(status === "busy" ? "busy" : "error")}{" "}
           {wa && (
             <a href={wa} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">
               {t("errorWhatsapp")}

@@ -136,6 +136,27 @@
     },
     "history": "Otros reportes de este cliente ({n})",
     "remove": "Borrar reporte",
-    "confirmRemove": "¿Borrar el reporte {code}? Se quita en todos los teléfonos."
+    "confirmRemove": "¿Borrar el reporte {code}? Se quita en todos los teléfonos.",
+    "consent": "Aceptó el aviso de privacidad al enviarlo: {at}.",
+    "noConsent": "Sin registro de la hora en que aceptó el aviso de privacidad (enviado antes de guardarla).",
+    "alerts": {
+      "loading": "Avisos de reportes de la web…",
+      "unknown": "Avisos de reportes de la web: no se pudo comprobar",
+      "on": "Avisos de reportes de la web: activos por {list}",
+      "off": "Avisos de reportes de la web: apagados (nadie se entera hasta abrir esta página)",
+      "what": "Cada reporte del formulario del sitio manda un mensaje con el código, qué pasa, nombre, teléfono, dirección, el cliente y su despliegue si se encontró, si hay otros reportes del mismo despliegue (posible falla general) y el enlace al reporte.",
+      "steps": [
+        "En Telegram, habla con @BotFather, envía /newbot y sigue los pasos: te da el token del bot.",
+        "Crea un grupo con el equipo y agrega el bot (o escríbele directo si es solo para una persona) y manda cualquier mensaje.",
+        "Abre https://api.telegram.org/bot<TOKEN>/getUpdates en el navegador: el número en \"chat\":{\"id\": es el chat (en grupos empieza con -).",
+        "En Vercel → el proyecto → Settings → Environment Variables (Production) agrega REPORT_TELEGRAM_BOT_TOKEN y REPORT_TELEGRAM_CHAT_ID, y vuelve a desplegar.",
+        "Regresa aquí y usa \"Enviar aviso de prueba\"."
+      ],
+      "webhook": "Otra opción: REPORT_WEBHOOK_URL recibe cada reporte como JSON (para mandarlo a correo, a un proveedor de WhatsApp, Make o Zapier). Los valores viven solo en Vercel, nunca en el código.",
+      "test": "Enviar aviso de prueba",
+      "testing": "Enviando…",
+      "testOk": "Aviso de prueba enviado. Revisa el chat.",
+      "testFail": "No se pudo enviar. Revisa el token y el chat en Vercel."
+    }
   }
 }
