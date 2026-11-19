@@ -4,9 +4,6 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  // Which Vercel deployment this is ("production", "preview"; empty locally), for the browser: analytics only counts
-  // production (components/layout/SiteAnalytics.tsx).
-  env: { NEXT_PUBLIC_VERCEL_ENV: process.env.VERCEL_ENV ?? "" },
   experimental: {
     agentFeedback: true,
     // app/global-not-found.tsx: the 404 for URLs that match no route (the root layout is [locale]).
