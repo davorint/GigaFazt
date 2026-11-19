@@ -1,10 +1,10 @@
 {
   "materiales": {
     "meta": {
-      "title": "Materiales · Interno"
+      "title": "Materiales en existencia · Interno"
     },
     "kicker": "Administración",
-    "title": "Materiales",
+    "title": "Materiales en existencia",
     "lead": "Lo que hay en la bodega y en cada despliegue para instalaciones y reemplazos, las bobinas de fibra y cada ONT por número de serie. Los precios y las opciones de compra están en Compras de materiales.",
     "storage": "Se comparte con los demás teléfonos por la base de datos. «Exportar lista» sirve como respaldo en archivo.",
     "back": "Herramientas internas",

@@ -72,7 +72,7 @@
           "desc": "Fallas que reportan los clientes por teléfono, WhatsApp o el formulario del sitio: estado, prioridad, quién lo atiende, visita, causa y solución."
         },
         "herramientas": {
-          "name": "Herramientas",
+          "name": "Herramientas en existencia",
           "desc": "Pinzas, fusionadora, medidores y demás que ya tenemos: quién o dónde tiene cada una, su compra, su mantenimiento y lo que necesita atención."
         },
         "compras-herramientas": {
@@ -84,7 +84,7 @@
           "desc": "Materiales y equipo, carriers, servicios y contratistas: contactos, condiciones, calificación y, para carriers, cobertura y precios."
         },
         "materiales": {
-          "name": "Materiales",
+          "name": "Materiales en existencia",
           "desc": "Existencias en la bodega y en cada despliegue, bobinas de fibra y ONTs por número de serie."
         },
         "compras-materiales": {
