@@ -8,6 +8,7 @@ import { hourLabel } from "@/lib/format"
 import { isPlaceholder } from "@/lib/placeholder"
 import { factText, faqEntries } from "./faq-content"
 import { RevealHeading } from "@/components/layout/RevealHeading"
+import { Link } from "@/i18n/navigation"
 
 /**
  * FAQ (SPEC §8), two columns (2026-11-07): a sticky intro + WhatsApp help card
@@ -83,6 +84,12 @@ export function Faq() {
               </summary>
               <div className="px-5 pb-5 pl-[3.25rem] text-sm leading-relaxed text-muted-foreground">
                 <p>{answer}</p>
+                {item.id === "business" && (
+                  <Link href="/empresas" className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-fiber underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+                    {t("faq.businessLink")}
+                    <ArrowRight className="size-4" aria-hidden />
+                  </Link>
+                )}
                 {item.facts.length > 0 && (
                   <dl className="mt-4 flex flex-wrap gap-2 font-mono text-xs">
                     {item.facts.map((f) => (

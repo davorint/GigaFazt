@@ -587,7 +587,7 @@
       },
       "business": {
         "q": "Do you have business plans?",
-        "a": "Yes. The same plans work for homes and businesses, and all of them are symmetrical."
+        "a": "Yes. For companies and businesses we have three packages with symmetrical links: Business internet, Enterprise internet and Dedicated internet. They differ in how guaranteed your link is and in support. We also design and install fiber, cabling and Wi-Fi networks for your space. If your business is small, the plans on this page work for you too."
       },
       "tv": {
         "q": "What does TV include?",
@@ -600,7 +600,8 @@
     },
     "officeHoursValue": "Monday to Friday, {open} to {close}",
     "helpTitle": "Can't find your answer?",
-    "helpBody": "Message us on WhatsApp and we'll help you out."
+    "helpBody": "Message us on WhatsApp and we'll help you out.",
+    "businessLink": "See business packages"
   },
   "cta": {
     "title": "Ready for symmetrical internet?",

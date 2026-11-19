@@ -587,7 +587,7 @@
       },
       "business": {
         "q": "¿Tienen planes para negocio?",
-        "a": "Sí. Los mismos planes sirven para casa y para negocio, y todos son simétricos."
+        "a": "Sí. Para empresas y negocios tenemos tres paquetes con enlaces simétricos: Internet para negocios, Internet empresarial e Internet dedicado. Cambian en qué tanto está garantizado tu enlace y en el soporte. También diseñamos e instalamos redes de fibra, cableado y Wi-Fi para tu espacio. Si tu negocio es pequeño, los planes de esta página también te sirven."
       },
       "tv": {
         "q": "¿Qué incluye la TV?",
@@ -600,7 +600,8 @@
     },
     "officeHoursValue": "Lunes a viernes, de {open} a {close} h",
     "helpTitle": "¿No encuentras tu respuesta?",
-    "helpBody": "Escríbenos por WhatsApp y resolvemos tus dudas."
+    "helpBody": "Escríbenos por WhatsApp y resolvemos tus dudas.",
+    "businessLink": "Ver paquetes para empresas"
   },
   "cta": {
     "title": "¿Listo para internet simétrico?",
