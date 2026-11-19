@@ -40,6 +40,23 @@ export type Buffer = (typeof BUFFERS)[number]
 export const ENDS = ["ninguno", "sc-apc-1", "sc-apc-2", "sc-upc-2", "lc-upc-2", "otro"] as const
 export type Ends = (typeof ENDS)[number]
 
+/** Brands the team prefers, first in the brand menu (owner, 2026-11-18: "one of the fiber brands we like is fiberhome"). */
+export const PREFERRED_BRANDS = ["FiberHome"]
+
+/** The brand menu: the preferred ones, then every other brand already used (once, ignoring case), A–Z. */
+export function brandOptions(rolls: Pick<Roll, "brand">[]): string[] {
+  // The first spelling seen wins ("Icoptiks" before a later "icoptiks").
+  const seen = new Set(PREFERRED_BRANDS.map((x) => x.toLowerCase()))
+  const used: string[] = []
+  for (const r of rolls) {
+    const name = r.brand.trim()
+    if (!name || seen.has(name.toLowerCase())) continue
+    seen.add(name.toLowerCase())
+    used.push(name)
+  }
+  return [...PREFERRED_BRANDS, ...used.sort((x, y) => x.localeCompare(y, "es"))]
+}
+
 /** What a kind of cable usually is, to fill the menus when it's picked. */
 export function cableDefaults(c: Cable): { env: Env; mode: Mode; fiber: Fiber } {
   if (c === "drop-plano" || c === "drop-redondo" || c === "drop-autosoportado") return { env: "exterior", mode: "sm", fiber: "g657a2" }

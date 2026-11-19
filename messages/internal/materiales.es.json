@@ -337,7 +337,10 @@
         "otro": "Otros"
       },
       "endsLabel": "Conectores de fábrica",
-      "brand": "Marca o línea (opcional)"
+      "brand": "Marca",
+      "brandNone": "Sin indicar",
+      "brandOther": "Otra… (escribir)",
+      "brandTyped": "Nombre de la marca"
     }
   }
 }

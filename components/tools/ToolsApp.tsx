@@ -23,8 +23,10 @@ import {
   newTool,
   nextService,
   toolAlerts,
+  toolBrandOptions,
   toolLabel,
   toolValue,
+  PREFERRED_TOOL_BRANDS,
   type Alert,
   type HolderKind,
   type ServiceEntry,
@@ -423,7 +425,13 @@ function ToolEditor({ t, x, sites, all, today }: { t: T; x: Tool; sites: Site[];
         <div className={GRID}>
           <TextField label={t("general.name")} value={x.name} onChange={(v) => up({ name: v })} />
           <PickField label={t("general.category")} value={x.category} onChange={(category) => up({ category })} options={TOOL_CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) }))} />
-          <TextField label={t("general.brand")} value={x.brand} onChange={(v) => up({ brand: v })} />
+          <SuggestField
+            label={t("general.brand")}
+            value={x.brand}
+            onChange={(v) => up({ brand: v })}
+            options={toolBrandOptions(x.category, all)}
+            hint={PREFERRED_TOOL_BRANDS[x.category] && !x.brand.trim() ? t("general.brandPreferred", { brands: PREFERRED_TOOL_BRANDS[x.category]!.join(", ") }) : undefined}
+          />
           <TextField label={t("general.model")} value={x.model} onChange={(v) => up({ model: v })} />
           <TextField label={t("general.serial")} value={x.serial} onChange={(v) => up({ serial: v.toUpperCase() })} hint={t("general.serialHint")} />
           <NumberField label={t("general.quantity")} unit={t("general.pieces")} integer max={100000} value={x.quantity} onChange={(v) => up({ quantity: v ?? 0 })} hint={t("general.quantityHint")} />

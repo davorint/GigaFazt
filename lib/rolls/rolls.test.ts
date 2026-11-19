@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { addRolls, cableDefaults, decodeRoll, fibersFor, modeOf, leftOptions, newRoll, nextCode, percentLeft, rollState, rollTotals, spendMeters } from "./model"
+import { addRolls, brandOptions, cableDefaults, decodeRoll, fibersFor, modeOf, leftOptions, newRoll, nextCode, percentLeft, rollState, rollTotals, spendMeters } from "./model"
 
 const SPEC = { mode: "sm", env: "exterior", jacket: "", buffer: "", ends: "ninguno", brand: "" } as const
 
@@ -42,6 +42,11 @@ describe("fiber rolls", () => {
     const a = newRoll({ cable: "interior", fiber: "g657a1", env: "interior" })
     const b = newRoll({ cable: "interior", mode: "mm", fiber: "om3", env: "interior" })
     expect(rollTotals([a, b])).toHaveLength(2)
+  })
+  it("brand menu: FiberHome first, then the brands already used, once each", () => {
+    const r = (brand: string) => newRoll({ brand })
+    expect(brandOptions([r("Icoptiks"), r("fiberhome"), r(" "), r("icoptiks"), r("Furukawa")])).toEqual(["FiberHome", "Furukawa", "Icoptiks"])
+    expect(brandOptions([])).toEqual(["FiberHome"])
   })
   it("reads stored values leniently", () => {
     // Saved before mode, indoor/outdoor and the rest existed.

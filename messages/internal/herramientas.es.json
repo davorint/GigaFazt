@@ -80,6 +80,7 @@
       "name": "Nombre",
       "category": "Categoría",
       "brand": "Marca",
+      "brandPreferred": "La que usamos: {brands}.",
       "model": "Modelo",
       "serial": "Número de serie",
       "serialHint": "Para una sola pieza. Varias piezas con número de serie: una herramienta por pieza.",

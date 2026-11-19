@@ -196,6 +196,23 @@ export function toolAlerts(x: Tool, today: string): Alert[] {
 /** Value of the record: price per piece × pieces (null when there is no price). */
 export const toolValue = (x: Tool) => (x.price === null ? null : x.price * x.quantity)
 
+/** Brands the team prefers per kind of tool, first in the brand suggestions (owner, 2026-11-18: Signal Fire for the fusion splicer). */
+export const PREFERRED_TOOL_BRANDS: Partial<Record<ToolCategory, string[]>> = { empalme: ["Signal Fire"] }
+
+/** Brand suggestions for a tool: the preferred ones for its kind, then every brand already used (once, ignoring case), A–Z. */
+export function toolBrandOptions(category: ToolCategory, tools: Pick<Tool, "brand">[]): string[] {
+  const first = PREFERRED_TOOL_BRANDS[category] ?? []
+  const seen = new Set(first.map((b) => b.toLowerCase()))
+  const used: string[] = []
+  for (const x of tools) {
+    const b = x.brand.trim()
+    if (!b || seen.has(b.toLowerCase())) continue
+    seen.add(b.toLowerCase())
+    used.push(b)
+  }
+  return [...first, ...used.sort((a, b) => a.localeCompare(b, "es"))]
+}
+
 export const toolLabel = (x: Tool) => [x.name || "Sin nombre", x.brand, x.model].filter(Boolean).join(" · ")
 
 /** Who or where, for lists: the warehouse, the person, the vehicle, or the location's name. */

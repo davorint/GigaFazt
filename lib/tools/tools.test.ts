@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { matchInternal } from "../internal-pages"
-import { addMonths, decodeTool, holderLabel, lastService, newServiceEntry, newTool, nextService, starterTools, toolAlerts, toolValue, untouchedStarter } from "./model"
+import { addMonths, decodeTool, holderLabel, lastService, newServiceEntry, newTool, nextService, starterTools, toolAlerts, toolBrandOptions, toolValue, untouchedStarter } from "./model"
 
 const TODAY = "2026-11-18"
 
@@ -48,6 +48,11 @@ describe("tools", () => {
     expect(holderLabel(newTool({ holderKind: "tecnico", holder: " Juan " }), site, kind)).toBe("Juan")
     expect(holderLabel(newTool({ holderKind: "tecnico" }), site, kind)).toBe("[tecnico]")
     expect(holderLabel(newTool({ holderKind: "bodega", holder: "x" }), site, kind)).toBe("[bodega]")
+  })
+  it("brand suggestions: Signal Fire first for splicing tools, then brands already used", () => {
+    const used = [newTool({ brand: "Fujikura" }), newTool({ brand: "signal fire" }), newTool({ brand: "Klein" }), newTool({ brand: "fujikura" })]
+    expect(toolBrandOptions("empalme", used)).toEqual(["Signal Fire", "Fujikura", "Klein"])
+    expect(toolBrandOptions("mano", used)).toEqual(["Fujikura", "Klein", "signal fire"])
   })
   it("reads stored values leniently", () => {
     const x = decodeTool({ name: "OTDR", category: "nave", quantity: -3, condition: "rota", holderKind: "luna", serial: "ab12", price: "100", serviceMonths: 0, purchaseDate: "1/2/2025", services: [{ date: "2026-01-01", cost: -5, what: 7 }, "x"], siteId: "../x" })!

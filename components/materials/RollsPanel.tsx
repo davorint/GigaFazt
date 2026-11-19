@@ -8,7 +8,7 @@ import { AreaField, PickField } from "@/components/surveys/SurveyFields"
 import { ExportButton } from "@/components/interno/ExportButton"
 import { RecordHistory } from "@/components/interno/RecordHistory"
 import { toCsv } from "@/lib/csv"
-import { BUFFERS, CABLES, ENDS, ENVS, JACKETS, LENGTHS, MAX_COUNT, MAX_LENGTH, MODES, STRANDS, USED_STEPS, addRolls, cableDefaults, fibersFor, leftOptions, newRoll, percentLeft, rollState, rollTotals, spendMeters, type Cable, type Env, type Fiber, type Mode, type Roll, type RollSpec, type RollState } from "@/lib/rolls/model"
+import { BUFFERS, CABLES, ENDS, ENVS, JACKETS, LENGTHS, MAX_COUNT, MAX_LENGTH, MODES, STRANDS, USED_STEPS, addRolls, brandOptions, cableDefaults, fibersFor, leftOptions, newRoll, percentLeft, rollState, rollTotals, spendMeters, type Cable, type Env, type Fiber, type Mode, type Roll, type RollSpec, type RollState } from "@/lib/rolls/model"
 import { rollsStore } from "@/lib/rolls/store"
 import { BODEGA } from "@/lib/stock/model"
 import { readState } from "@/lib/sync/state"
@@ -230,6 +230,12 @@ function RollRow({ r, kind, place, placeOptions, open, onToggle }: { r: Roll; ki
  */
 function SpecFields({ spec, onChange }: { spec: Spec; onChange: (p: Partial<Spec>) => void }) {
   const t = useTranslations("materiales.rolls")
+  const rolls = useSyncExternalStore(rollsStore.subscribe, rollsStore.snapshot, rollsStore.serverSnapshot).list
+  const brands = brandOptions(rolls)
+  // "Otra…" picked: a field to type it (also when the roll's brand isn't in the menu yet).
+  const [typing, setTyping] = useState(false)
+  const typed = typing || (!!spec.brand && !brands.some((b) => b.toLowerCase() === spec.brand.trim().toLowerCase()))
+  const picked = typed ? OTHER : (brands.find((b) => b.toLowerCase() === spec.brand.trim().toLowerCase()) ?? "")
   return (
     <>
       <PickField label={t("cable")} value={spec.cable} onChange={(cable) => onChange({ cable, ...cableDefaults(cable) })} options={CABLES.map((c) => ({ value: c, label: t(`cables.${c}`) }))} />
@@ -245,7 +251,16 @@ function SpecFields({ spec, onChange }: { spec: Spec; onChange: (p: Partial<Spec
       <PickField label={t("jacket")} value={spec.jacket} onChange={(jacket) => onChange({ jacket })} options={JACKETS.map((j) => ({ value: j, label: t(`jackets.${j || "none"}`) }))} />
       <PickField label={t("buffer")} value={spec.buffer} onChange={(buffer) => onChange({ buffer })} options={BUFFERS.map((b) => ({ value: b, label: t(`buffers.${b || "none"}`) }))} />
       <PickField label={t("endsLabel")} value={spec.ends} onChange={(ends) => onChange({ ends })} options={ENDS.map((e) => ({ value: e, label: t(`ends.${e}`) }))} />
-      <TextField label={t("brand")} value={spec.brand} onChange={(brand) => onChange({ brand: brand.slice(0, 80) })} />
+      <PickField
+        label={t("brand")}
+        value={picked}
+        onChange={(v) => {
+          setTyping(v === OTHER)
+          onChange({ brand: v === OTHER ? "" : v })
+        }}
+        options={[{ value: "", label: t("brandNone") }, ...brands.map((b) => ({ value: b, label: b })), { value: OTHER, label: t("brandOther") }]}
+      />
+      {typed && <TextField label={t("brandTyped")} value={spec.brand} onChange={(brand) => onChange({ brand: brand.slice(0, 80) })} />}
     </>
   )
 }
