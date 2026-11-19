@@ -1,5 +1,5 @@
-import { createHash } from "node:crypto"
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
+import { pbkdf2Sync, randomBytes } from "node:crypto"
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 import { matchInternal } from "./internal-pages"
 
 describe("/interno routes", () => {
@@ -33,33 +33,68 @@ describe("/interno routes", () => {
   })
 })
 
-// A throwaway password set through the host variables, so the real one never appears in the repository.
+// A throwaway password and secret set through the host variables, so the real ones never appear in the repository.
 describe("/interno password", () => {
-  const sha = (s: string) => createHash("sha256").update(s).digest("hex")
-  const PASS = "clave-de-prueba"
+  const PASS = "clave-de-prueba-larga"
+  const ITER = 100_000
+  const hashOf = (pass: string, salt = randomBytes(16)) => `pbkdf2-sha256:${ITER}:${salt.toString("base64url")}:${pbkdf2Sync(pass, salt, ITER, 32, "sha256").toString("base64url")}`
+  const HASH = hashOf(PASS)
+  const SECRET = randomBytes(32).toString("base64url")
   let auth: typeof import("./internal-auth")
   beforeAll(async () => {
-    vi.stubEnv("INTERNO_PASS_SHA256", sha(`login|${PASS}`))
-    vi.stubEnv("INTERNO_COOKIE_SHA256", sha(sha(`cookie|${PASS}`)))
+    vi.stubEnv("INTERNO_PASS_HASH", HASH)
+    vi.stubEnv("INTERNO_SESSION_SECRET", SECRET)
     vi.resetModules()
     auth = await import("./internal-auth")
+  })
+  afterEach(() => {
+    vi.stubEnv("INTERNO_PASS_HASH", HASH)
+    vi.stubEnv("INTERNO_SESSION_SECRET", SECRET)
   })
   afterAll(() => {
     vi.unstubAllEnvs()
   })
   it("accepts the password and nothing else", async () => {
+    expect(auth.authConfigured()).toBe(true)
     expect(await auth.passwordOk(PASS)).toBe(true)
     for (const p of ["", PASS.toUpperCase(), `${PASS} `, "otra"]) expect(await auth.passwordOk(p)).toBe(false)
   })
-  it("the session cookie comes only from the password, and the stored hashes don't give it", async () => {
-    const c = await auth.cookieFor(PASS)
-    expect(c).toBe(sha(`cookie|${PASS}`))
-    expect(await auth.cookieOk(c)).toBe(true)
-    expect(await auth.cookieOk(sha(`login|${PASS}`))).toBe(false)
-    expect(await auth.cookieOk(sha(sha(`cookie|${PASS}`)))).toBe(false)
-    expect(await auth.cookieOk(await auth.cookieFor("otra"))).toBe(false)
-    expect(await auth.cookieOk(undefined)).toBe(false)
-    expect(await auth.cookieOk("x")).toBe(false)
+  it("without both host values (or with a weak hash) nobody signs in", async () => {
+    const session = await auth.newSession()
+    for (const [k, v] of [["INTERNO_PASS_HASH", ""], ["INTERNO_SESSION_SECRET", ""], ["INTERNO_SESSION_SECRET", "corto"], ["INTERNO_PASS_HASH", HASH.replace(`:${ITER}:`, ":1000:")], ["INTERNO_PASS_HASH", "764ebace7c0c2e46a186386509c724d3fe61d2b33804aa5b40c3b0391cca1307"]]) {
+      vi.stubEnv(k, v)
+      expect(auth.authConfigured()).toBe(false)
+      expect(await auth.passwordOk(PASS)).toBe(false)
+      expect(await auth.cookieOk(session)).toBe(false)
+      await expect(auth.newSession()).rejects.toThrow()
+      vi.stubEnv("INTERNO_PASS_HASH", HASH)
+      vi.stubEnv("INTERNO_SESSION_SECRET", SECRET)
+    }
+  })
+  it("a session is signed, random, expires, and doesn't come from the password", async () => {
+    const now = Date.now()
+    const a = await auth.newSession(now)
+    const b = await auth.newSession(now)
+    expect(a).not.toBe(b)
+    expect(a).not.toContain(PASS)
+    expect(await auth.cookieOk(a, now)).toBe(true)
+    expect(await auth.cookieOk(a, now + (auth.AUTH_DAYS - 1) * 86_400_000)).toBe(true)
+    expect(await auth.cookieOk(a, now + (auth.AUTH_DAYS * 86_400_000) + 1000)).toBe(false)
+    const [exp, nonce, sig] = a.split(".")
+    // A later expiry, another nonce or another signature: refused.
+    expect(await auth.cookieOk(`${Number(exp) + 86_400}.${nonce}.${sig}`, now)).toBe(false)
+    expect(await auth.cookieOk(`${exp}.${b.split(".")[1]}.${sig}`, now)).toBe(false)
+    expect(await auth.cookieOk(`${exp}.${nonce}.${b.split(".")[2]}`, now)).toBe(false)
+    for (const x of [undefined, "", "x", "1.2", "a.b.c", HASH, SECRET, `${a}.x`]) expect(await auth.cookieOk(x, now)).toBe(false)
+  })
+  it("a new password or a new secret signs everyone out", async () => {
+    const s = await auth.newSession()
+    vi.stubEnv("INTERNO_PASS_HASH", hashOf("otra-clave-larga-123"))
+    expect(await auth.cookieOk(s)).toBe(false)
+    vi.stubEnv("INTERNO_PASS_HASH", HASH)
+    expect(await auth.cookieOk(s)).toBe(true)
+    vi.stubEnv("INTERNO_SESSION_SECRET", randomBytes(32).toString("base64url"))
+    expect(await auth.cookieOk(s)).toBe(false)
   })
   it("after signing in, only pages under /interno", () => {
     expect(auth.safeNext("/interno/olt")).toBe("/interno/olt")

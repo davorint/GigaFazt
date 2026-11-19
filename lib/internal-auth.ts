@@ -1,25 +1,43 @@
 /**
- * The /interno password (owner, 2026-11-17). Only two SHA-256 hashes live here, never the password:
- * - the login hash, sha256("login|" + password), checked when the form is sent;
- * - the cookie hash, sha256(cookie), where the session cookie is sha256("cookie|" + password).
- * Neither hash lets anyone build the cookie without the password. To change it: `node scripts/interno-hash.mjs "CLAVE"`
- * and paste the result here, or set INTERNO_PASS_SHA256 and INTERNO_COOKIE_SHA256 on the host (they win). Changing it
- * signs everyone out. Runs in the proxy and in the login route (Web Crypto only).
+ * The /interno password (owner, 2026-11-17; hardened 2026-11-18). Nothing secret lives in the repository: both values
+ * are set on the host, and without them nobody can sign in.
+ * - INTERNO_PASS_HASH: "pbkdf2-sha256:<iterations>:<salt>:<hash>" (base64url), a slow salted hash of the password,
+ *   checked only when the sign-in form is sent;
+ * - INTERNO_SESSION_SECRET: a long random value that signs the session cookie ("<expires>.<nonce>.<signature>"). The
+ *   cookie says when it expires and is checked on every request; it can't be made without the secret, and it doesn't
+ *   come from the password.
+ * Changing either value signs everyone out (the signature also covers the password hash). To make both:
+ * `node scripts/interno-hash.mjs "CLAVE"`. Web Crypto only: runs in the proxy and in the API routes.
  */
 
 export const AUTH_COOKIE = "gf_interno"
 /** Days a sign-in lasts on a device. */
 export const AUTH_DAYS = 30
 
-const PASS_SHA256 = process.env.INTERNO_PASS_SHA256 || "764ebace7c0c2e46a186386509c724d3fe61d2b33804aa5b40c3b0391cca1307"
-const COOKIE_SHA256 = process.env.INTERNO_COOKIE_SHA256 || "32189bc1486b50ee4bc6d6c30171fe74c469020c16df83a0bb6fbc89f0aa5e77"
+const PREFIX = "pbkdf2-sha256"
+/** Accepted iteration counts: below the minimum is too fast to guess against, above the maximum is a misconfiguration. */
+const MIN_ITER = 100_000
+const MAX_ITER = 5_000_000
 
-async function sha256(text: string): Promise<string> {
-  const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)))
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")
+const enc = new TextEncoder()
+
+function b64url(bytes: Uint8Array): string {
+  let s = ""
+  for (const b of bytes) s += String.fromCharCode(b)
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
 }
 
-/** Same-length hex strings compared without stopping at the first difference. */
+function fromB64url(text: string): Uint8Array | null {
+  if (!/^[A-Za-z0-9_-]+$/.test(text)) return null
+  try {
+    const s = atob(text.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((text.length + 3) % 4))
+    return Uint8Array.from(s, (c) => c.charCodeAt(0))
+  } catch {
+    return null
+  }
+}
+
+/** Same-length strings compared without stopping at the first difference. */
 function same(a: string, b: string): boolean {
   if (a.length !== b.length) return false
   let d = 0
@@ -27,18 +45,72 @@ function same(a: string, b: string): boolean {
   return d === 0
 }
 
+type Stored = { iterations: number; salt: Uint8Array<ArrayBuffer>; hash: string }
+
+function stored(): Stored | null {
+  const parts = (process.env.INTERNO_PASS_HASH ?? "").trim().split(":")
+  if (parts.length !== 4 || parts[0] !== PREFIX) return null
+  const iterations = Number(parts[1])
+  const salt = fromB64url(parts[2])
+  if (!Number.isInteger(iterations) || iterations < MIN_ITER || iterations > MAX_ITER || !salt || salt.length < 16 || !fromB64url(parts[3])) return null
+  return { iterations, salt: new Uint8Array(salt), hash: parts[3] }
+}
+
+function secret(): string | null {
+  const s = (process.env.INTERNO_SESSION_SECRET ?? "").trim()
+  return s.length >= 32 ? s : null
+}
+
+/** Both host values are set and well formed; otherwise every sign-in is refused. */
+export function authConfigured(): boolean {
+  return stored() !== null && secret() !== null
+}
+
+/** The PBKDF2-SHA256 hash of a password, base64url (also used by scripts/interno-hash.mjs's format). */
+export async function pbkdf2(password: string, salt: Uint8Array<ArrayBuffer>, iterations: number): Promise<string> {
+  const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"])
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, key, 256)
+  return b64url(new Uint8Array(bits))
+}
+
 export async function passwordOk(password: string): Promise<boolean> {
-  return same(await sha256(`login|${password}`), PASS_SHA256)
+  const s = stored()
+  if (!s || !secret() || !password) return false
+  return same(await pbkdf2(password, s.salt, s.iterations), s.hash)
 }
 
-/** The session cookie's value for a correct password. */
-export function cookieFor(password: string): Promise<string> {
-  return sha256(`cookie|${password}`)
+let keyCache: { material: string; key: Promise<CryptoKey> } | null = null
+
+function hmacKey(sec: string): Promise<CryptoKey> {
+  if (keyCache?.material !== sec) {
+    keyCache = { material: sec, key: crypto.subtle.importKey("raw", enc.encode(sec), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]) }
+  }
+  return keyCache.key
 }
 
-export async function cookieOk(value: string | undefined): Promise<boolean> {
-  if (!value || value.length !== 64) return false
-  return same(await sha256(value), COOKIE_SHA256)
+/** What the signature covers: the expiry, the nonce and the password hash (a new password ends every session). */
+const signed = (exp: string, nonce: string) => enc.encode(`v1|${process.env.INTERNO_PASS_HASH?.trim()}|${exp}|${nonce}`)
+
+/** A new session cookie value, valid for AUTH_DAYS. Throws when the host values are missing. */
+export async function newSession(now = Date.now()): Promise<string> {
+  const sec = secret()
+  if (!sec || !stored()) throw new Error("interno auth not configured")
+  const exp = String(Math.floor(now / 1000) + AUTH_DAYS * 24 * 60 * 60)
+  const nonce = b64url(crypto.getRandomValues(new Uint8Array(16)))
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", await hmacKey(sec), signed(exp, nonce)))
+  return `${exp}.${nonce}.${b64url(sig)}`
+}
+
+export async function cookieOk(value: string | undefined, now = Date.now()): Promise<boolean> {
+  const sec = secret()
+  if (!value || value.length > 200 || !sec || !stored()) return false
+  const parts = value.split(".")
+  if (parts.length !== 3 || !/^\d{1,12}$/.test(parts[0])) return false
+  const [exp, nonce, sigText] = parts
+  if (Number(exp) * 1000 <= now) return false
+  const sig = fromB64url(sigText)
+  if (!sig || sig.length !== 32 || !fromB64url(nonce)) return false
+  return crypto.subtle.verify("HMAC", await hmacKey(sec), new Uint8Array(sig), signed(exp, nonce))
 }
 
 /** Where to go after signing in: only a page under /interno (never another site). */

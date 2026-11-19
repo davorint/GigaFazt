@@ -40,7 +40,9 @@
       "lead": "Escribe la contraseña del equipo. La sesión dura 30 días en este dispositivo.",
       "password": "Contraseña",
       "submit": "Entrar",
-      "error": "Contraseña incorrecta."
+      "error": "Contraseña incorrecta.",
+      "errorLimit": "Demasiados intentos desde esta conexión. Espera una hora o entra desde otra red.",
+      "errorConfig": "El acceso no está configurado en el servidor. Falta la contraseña en las variables del hosting."
     },
     "admin": {
       "meta": {

@@ -28,7 +28,7 @@ export default async function EntrarPage({ params }: PageProps<"/[locale]/intern
       <p className="eyebrow">{t.kicker}</p>
       <h1 className="mt-4 text-4xl font-light tracking-tight text-foreground">{t.login.title}</h1>
       <p className="mt-3 text-sm leading-relaxed text-zinc-300">{t.login.lead}</p>
-      <LoginForm labels={{ password: t.login.password, submit: t.login.submit, error: t.login.error }} />
+      <LoginForm labels={t.login} />
     </main>
   )
 }

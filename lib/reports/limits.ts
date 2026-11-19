@@ -25,10 +25,14 @@ export function clientIp(headers: Headers): string {
   return fwd || headers.get("x-real-ip")?.trim() || ""
 }
 
+/** The salt for stored hashes of addresses and phones: REPORT_HASH_SALT, else the /interno session secret (both set on the host). */
+export function hashSalt(): string {
+  return process.env.REPORT_HASH_SALT || process.env.INTERNO_SESSION_SECRET || "gigafazt-reportes"
+}
+
 /** Salted, so the stored value can't be turned back into an address by trying them all. Changes every day. */
 export function ipHash(ip: string, day = new Date().toISOString().slice(0, 10)): string {
-  const salt = process.env.REPORT_HASH_SALT || process.env.INTERNO_COOKIE_SHA256 || "gigafazt-reportes"
-  return createHash("sha256").update(`${salt}|${day}|${ip}`).digest("hex").slice(0, 32)
+  return createHash("sha256").update(`${hashSalt()}|${day}|${ip}`).digest("hex").slice(0, 32)
 }
 
 /** Whether one more report from this address fits; old rows are cleared on the way. */

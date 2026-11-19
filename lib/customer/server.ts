@@ -17,7 +17,7 @@ import { decodeClient } from "../clients/model"
 import { getPool, hasDatabase } from "../db/client"
 import { todayInMexico } from "../lead"
 import { decodePayment, dueDate, ledger, monthOf, addMonths, type PayStatus, type Payment } from "../payments/model"
-import { hit, underLimit } from "../reports/limits"
+import { hashSalt, hit, underLimit } from "../reports/limits"
 import { phoneKey, reportCode, type ReportCategory, type ReportStatus } from "../reports/model"
 
 export const LOOKUPS_PER_HOUR = 30
@@ -83,7 +83,7 @@ export type PublicBalance = {
 }
 export type BalanceLookup = { kind: "ok"; balance: PublicBalance } | { kind: "no-match" } | { kind: "limited" } | null
 
-const phoneHash = (key: string) => createHash("sha256").update(`${process.env.REPORT_HASH_SALT || process.env.INTERNO_COOKIE_SHA256 || "gigafazt"}|tel|${key}`).digest("hex").slice(0, 24)
+const phoneHash = (key: string) => createHash("sha256").update(`${hashSalt()}|tel|${key}`).digest("hex").slice(0, 24)
 
 export async function lookupBalance(phone: string, pppoe: string, sender: string): Promise<BalanceLookup> {
   if (!hasDatabase()) return null
