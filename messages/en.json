@@ -1342,7 +1342,10 @@
       "owed": "Amount due today: {amount}",
       "lateMonths": "Overdue months: {months}",
       "covered": "Paid until: {month}",
-      "nextDue": "Next payment date: {date}"
+      "nextDue": "Next payment date: {date}",
+      "payHow": "Pay {amount} with the details under “How to pay”",
+      "paySend": "I've paid: send my receipt on WhatsApp",
+      "payWa": "Hi, here is the receipt of my {amount} payment. My internet user is {user}."
     },
     "pay": {
       "title": "How to pay",

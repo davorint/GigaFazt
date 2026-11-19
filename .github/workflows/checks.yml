@@ -29,3 +29,17 @@ jobs:
       - run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
+      # End-to-end flows (playwright.config.ts) against that build: no database, a throwaway /interno password.
+      - run: npx playwright install --with-deps chromium
+      - name: e2e
+        env:
+          E2E_PASSWORD: e2e-only-not-a-real-password
+        run: |
+          node scripts/interno-hash.mjs "$E2E_PASSWORD" > .env.production.local
+          npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: test-results/
+          retention-days: 7

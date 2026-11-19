@@ -1342,7 +1342,10 @@
       "owed": "Saldo a pagar hoy: {amount}",
       "lateMonths": "Meses vencidos: {months}",
       "covered": "Pagado hasta: {month}",
-      "nextDue": "Próxima fecha de pago: {date}"
+      "nextDue": "Próxima fecha de pago: {date}",
+      "payHow": "Paga {amount} con los datos de «Cómo pagar»",
+      "paySend": "Ya pagué: mandar comprobante por WhatsApp",
+      "payWa": "Hola, les mando el comprobante de mi pago de {amount}. Mi usuario de internet es {user}."
     },
     "pay": {
       "title": "Cómo pagar",

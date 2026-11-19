@@ -1,0 +1,19 @@
+# Weekly dependency updates as pull requests (owner, 2026-11-19); .github/workflows/checks.yml tests each one before
+# it is merged. Minor and patch updates come grouped in one pull request; majors one by one.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: America/Mexico_City
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

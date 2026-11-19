@@ -5,6 +5,9 @@ import { useLocale, useTranslations } from "next-intl"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { company } from "@/lib/company"
+import { whatsappHref } from "@/lib/contact"
+import { isPlaceholder } from "@/lib/placeholder"
 
 type Balance = { firstName: string; status: "atrasado" | "por-vencer" | "al-corriente" | "sin-cobro"; monthly: number; owed: number; lateMonths: string[]; coveredUntil: string; nextDue: string }
 const TONE: Record<Balance["status"], string> = {
@@ -86,6 +89,18 @@ export function BalanceCheck() {
                 {b.coveredUntil && <li>{t("covered", { month: month(b.coveredUntil) })}</li>}
                 {b.nextDue && <li>{t("nextDue", { date: day(b.nextDue) })}</li>}
               </ul>
+            )}
+            {b.owed > 0 && (
+              <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                <a href="#como-pagar" className="text-fiber underline underline-offset-4">
+                  {t("payHow", { amount: money(b.owed) })}
+                </a>
+                {!isPlaceholder(company.whatsapp) && (
+                  <a href={whatsappHref(company.whatsapp, t("payWa", { amount: money(b.owed), user: pppoe.trim() }))} target="_blank" rel="noopener noreferrer" className="text-fiber underline underline-offset-4">
+                    {t("paySend")}
+                  </a>
+                )}
+              </div>
             )}
           </div>
         )}

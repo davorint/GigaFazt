@@ -1,0 +1,15 @@
+{
+  "name": "GigaFazt Interno",
+  "short_name": "GigaFazt",
+  "description": "Herramientas internas de GigaFazt: levantamientos, clientes, inventario y más, también sin señal.",
+  "start_url": "/interno",
+  "scope": "/interno",
+  "display": "standalone",
+  "background_color": "#05070a",
+  "theme_color": "#05070a",
+  "lang": "es-MX",
+  "icons": [
+    { "src": "/brand/gigafazt-logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/gigafazt-icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

@@ -36,6 +36,14 @@ const nextConfig: NextConfig = {
           { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive, nosnippet" },
         ],
       },
+      // The offline worker of the internal tools (public/sw-interno.js): allowed to control /interno, always revalidated.
+      {
+        source: "/sw-interno.js",
+        headers: [
+          { key: "Service-Worker-Allowed", value: "/interno" },
+          { key: "Cache-Control", value: "no-cache" },
+        ],
+      },
       // Internal tools: never indexed (proxy.ts also sets this).
       {
         source: "/:locale/mikrotik/:path*",
