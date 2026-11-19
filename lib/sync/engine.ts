@@ -32,6 +32,9 @@ import { decodeToolBuy, type ToolBuy } from "../toolbuys/model"
 import { toolBuysStore } from "../toolbuys/store"
 import { decodeAppointment, type Appointment } from "../agenda/model"
 import { agendaStore } from "../agenda/store"
+import { decodePayable, type Payable } from "../finance/payables"
+import { decodeReceivable, type Receivable } from "../finance/receivables"
+import { payablesStore, receivablesStore } from "../finance/store"
 import { applyRemoteSurveys, surveysSnapshot } from "../survey/store"
 import { MAX_CHANGES, REV_OVERLAP, SYNC_KINDS, type Change, type SyncKind, type SyncResponse } from "./protocol"
 import { markChanged, onSyncChange, pendingCount, readState, updateState } from "./state"
@@ -114,6 +117,16 @@ const ADAPTERS: Record<SyncKind, Adapter> = {
     get: (id) => agendaStore.list().find((x) => x.id === id),
     ids: () => agendaStore.list().map((x) => x.id),
     apply: (u, d) => agendaStore.applyRemote(u.map(decodeAppointment).filter((x): x is Appointment => x !== null), d),
+  },
+  porpagar: {
+    get: (id) => payablesStore.list().find((x) => x.id === id),
+    ids: () => payablesStore.list().map((x) => x.id),
+    apply: (u, d) => payablesStore.applyRemote(u.map(decodePayable).filter((x): x is Payable => x !== null), d),
+  },
+  porcobrar: {
+    get: (id) => receivablesStore.list().find((x) => x.id === id),
+    ids: () => receivablesStore.list().map((x) => x.id),
+    apply: (u, d) => receivablesStore.applyRemote(u.map(decodeReceivable).filter((x): x is Receivable => x !== null), d),
   },
 }
 
@@ -349,4 +362,4 @@ export function startSync(): () => void {
 }
 
 /** The local ids of every kind (for "Subir lo de este navegador"). */
-export const localIds = (): Record<SyncKind, string[]> => ({ surveys: ADAPTERS.surveys.ids(), materials: ADAPTERS.materials.ids(), providers: ADAPTERS.providers.ids(), clients: ADAPTERS.clients.ids(), sites: ADAPTERS.sites.ids(), tools: ADAPTERS.tools.ids(), stock: ADAPTERS.stock.ids(), units: ADAPTERS.units.ids(), reports: ADAPTERS.reports.ids(), payments: ADAPTERS.payments.ids(), notes: ADAPTERS.notes.ids(), rolls: ADAPTERS.rolls.ids(), toolbuys: ADAPTERS.toolbuys.ids(), agenda: ADAPTERS.agenda.ids() })
+export const localIds = (): Record<SyncKind, string[]> => ({ surveys: ADAPTERS.surveys.ids(), materials: ADAPTERS.materials.ids(), providers: ADAPTERS.providers.ids(), clients: ADAPTERS.clients.ids(), sites: ADAPTERS.sites.ids(), tools: ADAPTERS.tools.ids(), stock: ADAPTERS.stock.ids(), units: ADAPTERS.units.ids(), reports: ADAPTERS.reports.ids(), payments: ADAPTERS.payments.ids(), notes: ADAPTERS.notes.ids(), rolls: ADAPTERS.rolls.ids(), toolbuys: ADAPTERS.toolbuys.ids(), agenda: ADAPTERS.agenda.ids(), porpagar: ADAPTERS.porpagar.ids(), porcobrar: ADAPTERS.porcobrar.ids() })

@@ -30,6 +30,8 @@ import { decodeNote } from "../notes/model"
 import { decodeRoll } from "../rolls/model"
 import { buyLabel, decodeToolBuy } from "../toolbuys/model"
 import { decodeAppointment } from "../agenda/model"
+import { decodePayable } from "../finance/payables"
+import { decodeReceivable } from "../finance/receivables"
 import { getPool } from "../db/client"
 import { MAX_RECORDS, type Change, type Outcome, type Remote, type SyncKind, type SyncResponse } from "./protocol"
 
@@ -201,6 +203,28 @@ export const SPECS: Record<SyncKind, KindSpec> = {
       if (!a) return null
       const d = { ...a, id }
       return { data: d, cols: { date: d.date, kind: d.kind, who: d.who.slice(0, 60), status: d.status } }
+    },
+  },
+  porpagar: {
+    table: "payables",
+    versions: "payable_versions",
+    fk: "payable_id",
+    read: (id, data) => {
+      const p = decodePayable(data)
+      if (!p) return null
+      const d = { ...p, id }
+      return { data: d, cols: { payee: d.payee.slice(0, 200), category: d.category, amount: d.amount, due_date: d.dueDate } }
+    },
+  },
+  porcobrar: {
+    table: "receivables",
+    versions: "receivable_versions",
+    fk: "receivable_id",
+    read: (id, data) => {
+      const r = decodeReceivable(data)
+      if (!r) return null
+      const d = { ...r, id }
+      return { data: d, cols: { payer: d.payer.slice(0, 200), client_id: d.clientId, amount: d.amount, due_date: d.dueDate } }
     },
   },
 }

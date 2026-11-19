@@ -381,3 +381,35 @@ export const teamMembers = pgTable("team_members", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })
+
+// ── Cuentas por pagar / por cobrar (/interno/admin/cuentas-por-pagar, -por-cobrar) ──
+
+export const payables = pgTable(
+  "payables",
+  {
+    id: text("id").primaryKey(),
+    payee: text("payee").notNull().default(""),
+    category: text("category").notNull().default("otro"),
+    amount: doublePrecision("amount").notNull().default(0),
+    dueDate: text("due_date").notNull().default(""),
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("payables_rev_idx").on(t.rev), index("payables_due_idx").on(t.dueDate)]
+)
+export const payableVersions = versions("payable_versions", "payable_id")
+
+export const receivables = pgTable(
+  "receivables",
+  {
+    id: text("id").primaryKey(),
+    payer: text("payer").notNull().default(""),
+    clientId: text("client_id").notNull().default(""),
+    amount: doublePrecision("amount").notNull().default(0),
+    dueDate: text("due_date").notNull().default(""),
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("receivables_rev_idx").on(t.rev), index("receivables_due_idx").on(t.dueDate)]
+)
+export const receivableVersions = versions("receivable_versions", "receivable_id")

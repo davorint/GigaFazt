@@ -102,6 +102,14 @@
         "equipo": {
           "name": "Equipo",
           "desc": "Las cuentas del equipo: cada persona entra con su nombre y su contraseña, y su nombre queda en cada cambio."
+        },
+        "cuentas-por-pagar": {
+          "name": "Cuentas por pagar",
+          "desc": "Lo que debemos a proveedores, carriers, el edificio y servicios: vencimientos, pagos parciales, antigüedad y facturas (CFDI)."
+        },
+        "cuentas-por-cobrar": {
+          "name": "Cuentas por cobrar",
+          "desc": "Todo lo que nos deben: cargos de proyectos y equipo, y las mensualidades pendientes de Cobranza, con antigüedad y facturas (CFDI)."
         }
       }
     },

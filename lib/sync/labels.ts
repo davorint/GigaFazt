@@ -6,6 +6,8 @@ import { decodePayment } from "../payments/model"
 import { decodeRoll } from "../rolls/model"
 import { buyLabel, decodeToolBuy } from "../toolbuys/model"
 import { decodeAppointment } from "../agenda/model"
+import { decodePayable } from "../finance/payables"
+import { decodeReceivable } from "../finance/receivables"
 import { decodeProvider, providerName } from "../providers/model"
 import { decodeReport, reportCode } from "../reports/model"
 import { decodeSite, siteLabel } from "../sites/model"
@@ -59,6 +61,14 @@ export function recordLabel(kind: SyncKind, data: unknown): string {
     case "toolbuys": {
       const b = decodeToolBuy(data)
       return b ? `${b.need || "—"} · ${buyLabel(b)} · ${b.status}` : "—"
+    }
+    case "porpagar": {
+      const p = decodePayable(data)
+      return p ? `${p.dueDate || "—"} · ${p.payee || "—"} · $${p.amount}` : "—"
+    }
+    case "porcobrar": {
+      const r = decodeReceivable(data)
+      return r ? `${r.dueDate || "—"} · ${r.payer || "—"} · $${r.amount}` : "—"
     }
     case "agenda": {
       const a = decodeAppointment(data)

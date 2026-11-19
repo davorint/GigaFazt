@@ -58,7 +58,9 @@
         "notes": "Notas",
         "rolls": "Bobinas de fibra",
         "toolbuys": "Compras de herramientas",
-        "agenda": "Agenda"
+        "agenda": "Agenda",
+        "porpagar": "Cuentas por pagar",
+        "porcobrar": "Cuentas por cobrar"
       }
     },
     "rejected": {
@@ -86,7 +88,9 @@
         "notes": "Nota",
         "rolls": "Bobina",
         "toolbuys": "Opción de compra",
-        "agenda": "Cita de la agenda"
+        "agenda": "Cita de la agenda",
+        "porpagar": "Cuenta por pagar",
+        "porcobrar": "Cuenta por cobrar"
       }
     },
     "signinHint": "Tu sesión ya no es válida (te dieron de baja, o ya hay cuentas del equipo y entraste con la contraseña compartida). Lo que cambiaste queda guardado en este teléfono.",

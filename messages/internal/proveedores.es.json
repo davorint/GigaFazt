@@ -122,6 +122,8 @@
     "techGroup": "Herramientas técnicas",
     "agenda": "Agenda",
     "numeros": "Números",
-    "equipo": "Equipo"
+    "equipo": "Equipo",
+    "cuentas-por-pagar": "Cuentas por pagar",
+    "cuentas-por-cobrar": "Cuentas por cobrar"
   }
 }
