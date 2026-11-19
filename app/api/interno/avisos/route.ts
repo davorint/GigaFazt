@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
   if (denied) return denied
   const ch = alertChannels()
   if (!ch.telegram && !ch.webhook) return json({ ok: false, error: "not-configured" }, 409)
-  const by = editorOf(request)
+  const by = await editorOf(request)
   const sent = await sendAlert(
     { id: "prueba", code: "R-PRUEBA", category: "otro", priority: "normal", name: "Prueba", phone: "", address: "", description: "", clientName: "", siteName: "", sameSite: 0 },
     `✅ Prueba de avisos de reportes de GigaFazt${by ? ` (la envió ${by})` : ""}. Si ves esto, los reportes de la web llegarán aquí.`

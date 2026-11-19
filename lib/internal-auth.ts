@@ -88,29 +88,48 @@ function hmacKey(sec: string): Promise<CryptoKey> {
   return keyCache.key
 }
 
-/** What the signature covers: the expiry, the nonce and the password hash (a new password ends every session). */
-const signed = (exp: string, nonce: string) => enc.encode(`v1|${process.env.INTERNO_PASS_HASH?.trim()}|${exp}|${nonce}`)
+/**
+ * What the signature covers: the expiry, the nonce, the team member (or "-" for the shared password) and the password
+ * hash (a new shared password ends every session). v1 cookies (no member) are still read until they expire.
+ */
+const signed = (exp: string, nonce: string, member?: string) =>
+  enc.encode(member === undefined ? `v1|${process.env.INTERNO_PASS_HASH?.trim()}|${exp}|${nonce}` : `v2|${process.env.INTERNO_PASS_HASH?.trim()}|${exp}|${nonce}|${member}`)
 
-/** A new session cookie value, valid for AUTH_DAYS. Throws when the host values are missing. */
-export async function newSession(now = Date.now()): Promise<string> {
+/**
+ * A new session cookie value, valid for AUTH_DAYS: "<expires>.<nonce>.<member>.<signature>", the member being a team
+ * account's id (lib/team) or "-" for the shared team password. Throws when the host values are missing.
+ */
+export async function newSession(now = Date.now(), memberId = ""): Promise<string> {
   const sec = secret()
   if (!sec || !stored()) throw new Error("interno auth not configured")
   const exp = String(Math.floor(now / 1000) + AUTH_DAYS * 24 * 60 * 60)
   const nonce = b64url(crypto.getRandomValues(new Uint8Array(16)))
-  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", await hmacKey(sec), signed(exp, nonce)))
-  return `${exp}.${nonce}.${b64url(sig)}`
+  const member = memberId && /^[\w-]{1,64}$/.test(memberId) ? memberId : "-"
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", await hmacKey(sec), signed(exp, nonce, member)))
+  return `${exp}.${nonce}.${member}.${b64url(sig)}`
+}
+
+export type Session = { /** The team account's id, "" for the shared password. */ member: string }
+
+/** The session a cookie carries, or null when it's missing, expired, forged or the host values aren't set. */
+export async function sessionOf(value: string | undefined, now = Date.now()): Promise<Session | null> {
+  const sec = secret()
+  if (!value || value.length > 300 || !sec || !stored()) return null
+  const parts = value.split(".")
+  if ((parts.length !== 3 && parts.length !== 4) || !/^\d{1,12}$/.test(parts[0])) return null
+  const [exp, nonce] = parts
+  const member = parts.length === 4 ? parts[2] : undefined
+  const sigText = parts[parts.length - 1]
+  if (Number(exp) * 1000 <= now) return null
+  if (member !== undefined && !/^(-|[\w-]{1,64})$/.test(member)) return null
+  const sig = fromB64url(sigText)
+  if (!sig || sig.length !== 32 || !fromB64url(nonce)) return null
+  const ok = await crypto.subtle.verify("HMAC", await hmacKey(sec), new Uint8Array(sig), signed(exp, nonce, member))
+  return ok ? { member: member && member !== "-" ? member : "" } : null
 }
 
 export async function cookieOk(value: string | undefined, now = Date.now()): Promise<boolean> {
-  const sec = secret()
-  if (!value || value.length > 200 || !sec || !stored()) return false
-  const parts = value.split(".")
-  if (parts.length !== 3 || !/^\d{1,12}$/.test(parts[0])) return false
-  const [exp, nonce, sigText] = parts
-  if (Number(exp) * 1000 <= now) return false
-  const sig = fromB64url(sigText)
-  if (!sig || sig.length !== 32 || !fromB64url(nonce)) return false
-  return crypto.subtle.verify("HMAC", await hmacKey(sec), new Uint8Array(sig), signed(exp, nonce))
+  return (await sessionOf(value, now)) !== null
 }
 
 /** Where to go after signing in: only a page under /interno (never another site). */

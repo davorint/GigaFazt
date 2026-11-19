@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     })
   }
   try {
-    return json(await sync(b.kind as SyncKind, since, changes, editorOf(request)))
+    return json(await sync(b.kind as SyncKind, since, changes, await editorOf(request)))
   } catch (e) {
     return json({ error: "server", detail: e instanceof Error ? e.message.slice(0, 160) : "error" }, 500)
   }

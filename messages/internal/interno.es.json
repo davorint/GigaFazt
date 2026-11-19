@@ -37,12 +37,15 @@
     "logout": "Cerrar sesión",
     "login": {
       "title": "Entrar",
-      "lead": "Escribe la contraseña del equipo. La sesión dura 30 días en este dispositivo.",
+      "lead": "Escribe tu nombre y tu contraseña. La sesión dura 30 días en este dispositivo.",
       "password": "Contraseña",
       "submit": "Entrar",
-      "error": "Contraseña incorrecta.",
+      "error": "Nombre o contraseña incorrectos.",
       "errorLimit": "Demasiados intentos desde esta conexión. Espera una hora o entra desde otra red.",
-      "errorConfig": "El acceso no está configurado en el servidor. Falta la contraseña en las variables del hosting."
+      "errorConfig": "El acceso no está configurado en el servidor. Falta la contraseña en las variables del hosting.",
+      "name": "Tu nombre",
+      "nameHint": "El de tu cuenta del equipo. Si todavía no hay cuentas, déjalo vacío y usa la contraseña compartida.",
+      "errorAccounts": "Ya hay cuentas del equipo: entra con tu nombre y tu contraseña. Si no tienes cuenta, pídela a quien administra."
     },
     "admin": {
       "meta": {

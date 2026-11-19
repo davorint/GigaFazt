@@ -80,12 +80,23 @@ describe("/interno password", () => {
     expect(await auth.cookieOk(a, now)).toBe(true)
     expect(await auth.cookieOk(a, now + (auth.AUTH_DAYS - 1) * 86_400_000)).toBe(true)
     expect(await auth.cookieOk(a, now + (auth.AUTH_DAYS * 86_400_000) + 1000)).toBe(false)
-    const [exp, nonce, sig] = a.split(".")
+    const [exp, nonce, member, sig] = a.split(".")
+    expect(member).toBe("-")
     // A later expiry, another nonce or another signature: refused.
-    expect(await auth.cookieOk(`${Number(exp) + 86_400}.${nonce}.${sig}`, now)).toBe(false)
-    expect(await auth.cookieOk(`${exp}.${b.split(".")[1]}.${sig}`, now)).toBe(false)
-    expect(await auth.cookieOk(`${exp}.${nonce}.${b.split(".")[2]}`, now)).toBe(false)
-    for (const x of [undefined, "", "x", "1.2", "a.b.c", HASH, SECRET, `${a}.x`]) expect(await auth.cookieOk(x, now)).toBe(false)
+    expect(await auth.cookieOk(`${Number(exp) + 86_400}.${nonce}.${member}.${sig}`, now)).toBe(false)
+    expect(await auth.cookieOk(`${exp}.${b.split(".")[1]}.${member}.${sig}`, now)).toBe(false)
+    expect(await auth.cookieOk(`${exp}.${nonce}.${member}.${b.split(".")[3]}`, now)).toBe(false)
+    for (const x of [undefined, "", "x", "1.2", "a.b.c", "a.b.c.d", HASH, SECRET, `${a}.x`]) expect(await auth.cookieOk(x, now)).toBe(false)
+  })
+  it("a team member's session says who it is, and the member can't be swapped", async () => {
+    const now = Date.now()
+    const id = "3f1c2a4e-1111-4222-8333-944455556666"
+    const s = await auth.newSession(now, id)
+    expect(await auth.sessionOf(s, now)).toEqual({ member: id })
+    expect(await auth.sessionOf(await auth.newSession(now), now)).toEqual({ member: "" })
+    const [exp, nonce, , sig] = s.split(".")
+    expect(await auth.sessionOf(`${exp}.${nonce}.otro-miembro-1.${sig}`, now)).toBeNull()
+    expect(await auth.sessionOf(`${exp}.${nonce}.-.${sig}`, now)).toBeNull()
   })
   it("a new password or a new secret signs everyone out", async () => {
     const s = await auth.newSession()

@@ -36,7 +36,7 @@ export async function PATCH(request: NextRequest) {
   if (body.status !== undefined && !status) return json({ error: "bad-status" }, 400)
   if (body.notes !== undefined && typeof body.notes !== "string") return json({ error: "bad-notes" }, 400)
   try {
-    const lead = await updateLead(body.id, { status, notes: body.notes as string | undefined }, editorOf(request))
+    const lead = await updateLead(body.id, { status, notes: body.notes as string | undefined }, await editorOf(request))
     return lead ? json({ lead }) : json({ error: "not-found" }, 404)
   } catch (e) {
     return json({ error: "server", detail: e instanceof Error ? e.message.slice(0, 160) : "error" }, 500)

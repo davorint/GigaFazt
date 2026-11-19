@@ -59,7 +59,7 @@ export function NumbersApp() {
       <section aria-label={t("monthly")} className="grid gap-2">
         <h2 className="text-base font-medium text-foreground">{t("monthly")}</h2>
         <p className="text-xs text-zinc-400">{t("monthlyHint")}</p>
-        <div className="overflow-x-auto rounded-xl border border-white/10">
+        <div tabIndex={0} role="region" aria-label={t("monthly")} className="overflow-x-auto rounded-xl border border-white/10 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
           <table className="w-full min-w-[46rem] text-sm">
             <thead className="border-b border-white/10">
               <tr>
@@ -103,7 +103,7 @@ export function NumbersApp() {
         {!bySite.length ? (
           <p className="text-sm text-zinc-400">{t("noSites")}</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-white/10">
+          <div tabIndex={0} role="region" aria-label={t("sites")} className="overflow-x-auto rounded-xl border border-white/10 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
             <table className="w-full min-w-[38rem] text-sm">
               <thead className="border-b border-white/10">
                 <tr>

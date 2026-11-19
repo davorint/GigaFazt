@@ -42,7 +42,7 @@ test("/interno needs the password; a wrong one is refused", async ({ page }) => 
   await page.goto("/interno/admin/clientes")
   await expect(page).toHaveURL(/\/interno\/entrar/)
   await signIn(page, "contraseña-equivocada")
-  await expect(page.getByText("Contraseña incorrecta.")).toBeVisible()
+  await expect(page.getByText("Nombre o contraseña incorrectos.")).toBeVisible()
 })
 
 test("signed in: a note is kept in the phone and survives a reload", async ({ page }) => {

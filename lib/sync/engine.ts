@@ -120,7 +120,7 @@ const ADAPTERS: Record<SyncKind, Adapter> = {
 // ── Status for the screen ───────────────────────────────────────────────────
 
 export type SyncStatus = {
-  phase: "idle" | "syncing" | "offline" | "error" | "no-name" | "no-database"
+  phase: "idle" | "syncing" | "offline" | "error" | "no-name" | "no-database" | "signin"
   pending: number
   /** Local records never sent (before "Subir lo de este navegador"). */
   unsent: number
@@ -306,7 +306,7 @@ export async function syncNow(): Promise<void> {
     setStatus({ phase: "idle", lastOk: new Date().toISOString() })
   } catch (e) {
     const code = (e as { code?: string }).code
-    setStatus({ phase: code === "no-database" ? "no-database" : navigator.onLine ? "error" : "offline", error: e instanceof Error ? e.message : "error" })
+    setStatus({ phase: code === "no-database" ? "no-database" : code === "unauthorized" ? "signin" : navigator.onLine ? "error" : "offline", error: e instanceof Error ? e.message : "error" })
   } finally {
     running = false
     refreshCounts()

@@ -3,7 +3,7 @@
 import { useEffect, useId, useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import { discardLocal, localIds, startSync, subscribeSync, syncNow, syncServerSnapshot, syncSnapshot } from "@/lib/sync/engine"
-import { adoptLocal, setName } from "@/lib/sync/state"
+import { adoptLocal, readState, setName } from "@/lib/sync/state"
 
 const TONE: Record<string, string> = {
   idle: "border-emerald-400/40 text-emerald-300",
@@ -12,6 +12,7 @@ const TONE: Record<string, string> = {
   error: "border-red-400/40 text-red-300",
   "no-name": "border-amber-400/40 text-amber-200",
   "no-database": "border-red-400/40 text-red-300",
+  signin: "border-red-400/40 text-red-300",
 }
 const BTN = "min-h-9 rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 
@@ -26,7 +27,26 @@ export function SyncBar() {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState("")
   useEffect(() => startSync(), [])
-  const askName = !s.name || editing
+  // With a team account the name comes from it (lib/team): set once, not editable here.
+  const [account, setAccount] = useState(false)
+  useEffect(() => {
+    let alive = true
+    fetch("/api/interno/yo")
+      .then((r) => (r.ok ? (r.json() as Promise<{ member: { name: string } | null }>) : null))
+      .then((v) => {
+        if (!alive || !v?.member) return
+        setAccount(true)
+        if (readState().name !== v.member.name) {
+          setName(v.member.name)
+          void syncNow()
+        }
+      })
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [])
+  const askName = !account && (!s.name || editing)
   const save = () => {
     if (!draft.trim()) return
     setName(draft)
@@ -71,21 +91,32 @@ export function SyncBar() {
           {s.lastOk && <span className="font-mono text-xs text-zinc-400">{t("last", { time: new Date(s.lastOk).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) })}</span>}
           <span className="ml-auto flex flex-wrap items-center gap-2">
             <span className="text-xs text-zinc-300">{t("you", { name: s.name })}</span>
-            <button
-              type="button"
-              className={BTN}
-              onClick={() => {
-                setDraft(s.name)
-                setEditing(true)
-              }}
-            >
-              {t("change")}
-            </button>
+            {!account && (
+              <button
+                type="button"
+                className={BTN}
+                onClick={() => {
+                  setDraft(s.name)
+                  setEditing(true)
+                }}
+              >
+                {t("change")}
+              </button>
+            )}
             <button type="button" className={BTN} onClick={() => void syncNow()} disabled={s.phase === "syncing"}>
               {t("now")}
             </button>
           </span>
         </div>
+      )}
+      {s.phase === "signin" && (
+        <p role="alert" className="text-sm text-red-200">
+          {t("signinHint")}{" "}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- the sign-in page: a full load */}
+          <a href="/interno/entrar" className="underline underline-offset-4">
+            {t("signinLink")}
+          </a>
+        </p>
       )}
       {!askName && s.rejected.length > 0 && (
         <div role="alert" className="grid gap-2 rounded-lg border border-red-400/30 p-3">

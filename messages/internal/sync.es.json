@@ -14,7 +14,8 @@
       "offline": "Sin conexión: se guarda aquí y se envía al volver la señal",
       "error": "No se pudo sincronizar; se reintenta sola",
       "no-name": "Escribe tu nombre para sincronizar",
-      "no-database": "La base de datos no está disponible"
+      "no-database": "La base de datos no está disponible",
+      "signin": "Tu sesión terminó"
     },
     "pending": "{n, plural, one {# cambio por enviar} other {# cambios por enviar}}",
     "last": "Última vez: {time}",
@@ -56,7 +57,8 @@
         "payments": "Pagos",
         "notes": "Notas",
         "rolls": "Bobinas de fibra",
-        "toolbuys": "Compras de herramientas"
+        "toolbuys": "Compras de herramientas",
+        "agenda": "Agenda"
       }
     },
     "rejected": {
@@ -86,6 +88,8 @@
         "toolbuys": "Opción de compra",
         "agenda": "Cita de la agenda"
       }
-    }
+    },
+    "signinHint": "Tu sesión ya no es válida (te dieron de baja, o ya hay cuentas del equipo y entraste con la contraseña compartida). Lo que cambiaste queda guardado en este teléfono.",
+    "signinLink": "Entrar de nuevo"
   }
 }

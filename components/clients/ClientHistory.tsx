@@ -76,7 +76,7 @@ export function ClientHistory({ c }: { c: Client }) {
 
       <section aria-label={t("reports")} className="grid gap-2">
         <h3 className="font-mono text-xs uppercase tracking-wide text-zinc-400">{t("reportsCount", { n: mineReports.length })}</h3>
-        {!mineReports.length && <p className="text-xs text-zinc-500">{t("none")}</p>}
+        {!mineReports.length && <p className="text-xs text-zinc-400">{t("none")}</p>}
         {mineReports.slice(0, MAX).map((r) => (
           <a key={r.id} href={`/interno/admin/reportes_clientes?r=${r.id}`} className={ROW}>
             <span className="text-zinc-100">
@@ -87,12 +87,12 @@ export function ClientHistory({ c }: { c: Client }) {
             </span>
           </a>
         ))}
-        {mineReports.length > MAX && <p className="text-xs text-zinc-500">{t("more", { n: mineReports.length - MAX })}</p>}
+        {mineReports.length > MAX && <p className="text-xs text-zinc-400">{t("more", { n: mineReports.length - MAX })}</p>}
       </section>
 
       <section aria-label={t("equipment")} className="grid gap-2">
         <h3 className="font-mono text-xs uppercase tracking-wide text-zinc-400">{t("equipment")}</h3>
-        {!held.length && <p className="text-xs text-zinc-500">{t("noEquipment")}</p>}
+        {!held.length && <p className="text-xs text-zinc-400">{t("noEquipment")}</p>}
         {held.map((u) => (
           // eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load
           <a key={u.id} href="/interno/admin/materiales?t=equipos" className={ROW}>
@@ -104,7 +104,7 @@ export function ClientHistory({ c }: { c: Client }) {
 
       <section aria-label={t("moves")} className="grid gap-2">
         <h3 className="font-mono text-xs uppercase tracking-wide text-zinc-400">{t("moves")}</h3>
-        {!mineMoves.length && <p className="text-xs text-zinc-500">{t("none")}</p>}
+        {!mineMoves.length && <p className="text-xs text-zinc-400">{t("none")}</p>}
         {mineMoves.slice(0, MAX).map((m) => (
           <div key={m.id} className={ROW}>
             <span className="text-zinc-100">
@@ -115,12 +115,12 @@ export function ClientHistory({ c }: { c: Client }) {
             </span>
           </div>
         ))}
-        {mineMoves.length > MAX && <p className="text-xs text-zinc-500">{t("more", { n: mineMoves.length - MAX })}</p>}
+        {mineMoves.length > MAX && <p className="text-xs text-zinc-400">{t("more", { n: mineMoves.length - MAX })}</p>}
       </section>
 
       <section aria-label={t("notes")} className="grid gap-2">
         <h3 className="font-mono text-xs uppercase tracking-wide text-zinc-400">{t("notes")}</h3>
-        {!mineNotes.length && <p className="text-xs text-zinc-500">{t("none")}</p>}
+        {!mineNotes.length && <p className="text-xs text-zinc-400">{t("none")}</p>}
         {mineNotes.map((n) => (
           // eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load
           <a key={n.id} href="/interno/admin/notas" className={ROW}>

@@ -23,7 +23,7 @@ const TONE: Record<ApptStatus, string> = {
   pendiente: "border-amber-400/40 text-amber-200",
   confirmada: "border-cyan-400/40 text-cyan-200",
   hecha: "border-emerald-400/40 text-emerald-300",
-  cancelada: "border-white/15 text-zinc-500 line-through",
+  cancelada: "border-white/15 text-zinc-400 line-through",
 }
 
 /** "lunes 23 de noviembre". */
@@ -50,13 +50,15 @@ export function AgendaApp() {
   const reports = useSyncExternalStore(reportsStore.subscribe, reportsStore.snapshot, reportsStore.serverSnapshot).list
   const clients = useSyncExternalStore(subscribeClients, clientsSnapshot, clientsServerSnapshot).list
   const names = useTechnicians()
-  const today = localToday()
-  const [day, setDay] = useState(today)
+  // "" = this week (today's date is read after loading: never while the page is prerendered).
+  const [picked, setDay] = useState("")
   const [who, setWho] = useState("")
   const [adding, setAdding] = useState(false)
   const [clientId, setClientId] = useState("")
   const [openId, setOpenId] = useState<string | null>(null)
   if (!store.loaded) return null
+  const today = localToday()
+  const day = picked || today
   const week = weekOf(day)
   const mine = (w: string) => !who || (who === "-" ? !w.trim() : w.trim() === who)
   const rows: Row[] = [
@@ -131,7 +133,7 @@ export function AgendaApp() {
               {d === today ? ` · ${t("today")}` : ""}
             </h2>
             {!items.length ? (
-              <p className="text-xs text-zinc-500">{t("free")}</p>
+              <p className="text-xs text-zinc-400">{t("free")}</p>
             ) : (
               <ul className="grid gap-2">
                 {items.map((r) => (

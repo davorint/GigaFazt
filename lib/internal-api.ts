@@ -1,21 +1,43 @@
 /**
  * The /api/interno/* routes check the same session cookie as the /interno pages (the proxy lets /api through, so each
- * route checks it itself) and read who is making the change from the `x-interno-nombre` header (the name the phone
- * gave). Server code only.
+ * route checks it itself), and here also who it is: a team account must still be active, and once accounts exist the
+ * shared team password's sessions no longer reach the data (lib/team). A refused session answers 401
+ * { error: "signin" } so the phone sends the person to sign in again. Server code only.
  */
 import "server-only"
 import { NextResponse, type NextRequest } from "next/server"
-import { AUTH_COOKIE, cookieOk } from "./internal-auth"
+import { AUTH_COOKIE, sessionOf } from "./internal-auth"
 import { INTERNAL_HEADERS } from "./internal-pages"
+import { accountsOn, memberById, type Member } from "./team/server"
+
+export type Who = { member: Member | null }
+
+/** Who is signed in, or null when the session isn't valid (or no longer allowed). */
+export async function whoIs(request: NextRequest): Promise<Who | null> {
+  const s = await sessionOf(request.cookies.get(AUTH_COOKIE)?.value)
+  if (!s) return null
+  try {
+    if (s.member) {
+      const m = await memberById(s.member)
+      return m && m.active ? { member: m } : null
+    }
+    // The shared password: only while no team account has been set up.
+    return (await accountsOn()) ? null : { member: null }
+  } catch {
+    // The database being down shouldn't lock everyone out of what doesn't need it; data routes fail on their own.
+    return { member: null }
+  }
+}
 
 /** null when the request is signed in; otherwise the 401 to return. */
 export async function requireInterno(request: NextRequest): Promise<NextResponse | null> {
-  if (await cookieOk(request.cookies.get(AUTH_COOKIE)?.value)) return null
-  return json({ error: "unauthorized" }, 401)
+  return (await whoIs(request)) ? null : json({ error: "signin" }, 401)
 }
 
-/** The editor's name from the phone (trimmed, at most 40 characters; "" when not given). */
-export function editorOf(request: NextRequest): string {
+/** The editor's name: the team account's, else the name the phone gave (`x-interno-nombre`), at most 40 characters. */
+export async function editorOf(request: NextRequest): Promise<string> {
+  const w = await whoIs(request)
+  if (w?.member) return w.member.name
   const raw = request.headers.get("x-interno-nombre") ?? ""
   let name = raw
   try {
