@@ -1,4 +1,4 @@
-import { NextResponse, after } from "next/server"
+import { NextResponse } from "next/server"
 import { leadSchema } from "@/lib/lead"
 import { saveLead } from "@/lib/leads/server"
 import { hasDatabase } from "@/lib/db/client"
@@ -7,9 +7,10 @@ const MAX_BODY_BYTES = 8 * 1024
 
 /**
  * Lead intake. Validates with the shared zod schema (lib/lead.ts), saves it
- * to the database after answering (the visitor never waits on it; listed in
- * /interno/admin/clientes), then forwards to a CRM webhook if configured
- * (BUSINESS.md → CRM / lead webhook), otherwise logs to the server console.
+ * to the database (listed in /interno/admin/clientes) and forwards it to a CRM
+ * webhook if configured (BUSINESS.md → CRM / lead webhook), both before
+ * answering: the visitor gets an error when neither kept it, so the request is
+ * never lost silently. With neither configured it is only logged.
  */
 export async function POST(request: Request) {
   const raw = await request.text()
@@ -54,9 +55,10 @@ export async function POST(request: Request) {
   } catch {
     // No referer: Spanish, the default.
   }
-  after(() => saveLead(lead, locale))
 
+  const saved = await saveLead(lead, locale)
   const webhook = process.env.CRM_WEBHOOK_URL
+  let forwarded = false
   if (webhook) {
     const res = await fetch(webhook, {
       method: "POST",
@@ -64,15 +66,14 @@ export async function POST(request: Request) {
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(8000),
     }).catch(() => null)
-    if (!res?.ok) {
-      // With the database the request is kept anyway: an error would only make the visitor send it twice.
-      if (hasDatabase()) console.error("[lead] CRM webhook failed; kept in the database")
-      else return NextResponse.json({ error: "upstream" }, { status: 502 })
-    }
-  } else if (!hasDatabase()) {
+    forwarded = !!res?.ok
+    if (!forwarded && saved) console.error("[lead] CRM webhook failed; kept in the database")
+  }
+  if (!saved && !forwarded) {
     // Neither a CRM nor the database: the log is the only place the request is seen. With the database, personal
     // data stays out of the server logs.
-    console.log("[lead]", payload)
+    if (!webhook && !hasDatabase()) console.log("[lead]", payload)
+    else return NextResponse.json({ error: "unavailable" }, { status: 503 })
   }
 
   return NextResponse.json({ ok: true })

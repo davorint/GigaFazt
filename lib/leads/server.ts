@@ -27,9 +27,9 @@ export type LeadRow = {
   updatedBy: string
 }
 
-/** Saves a validated request; never throws (the form already answered the visitor). */
-export async function saveLead(lead: Omit<Lead, "website">, locale: string): Promise<void> {
-  if (!hasDatabase()) return
+/** Saves a website request; false when there is no database or the insert failed. */
+export async function saveLead(lead: Omit<Lead, "website">, locale: string): Promise<boolean> {
+  if (!hasDatabase()) return false
   try {
     await getDb()
       .insert(leads)
@@ -43,8 +43,10 @@ export async function saveLead(lead: Omit<Lead, "website">, locale: string): Pro
         preferredDate: lead.preferredDate || null,
         locale: locale === "en" ? "en" : "es",
       })
+    return true
   } catch (e) {
     console.error("[lead] not saved to the database:", e instanceof Error ? e.message : e)
+    return false
   }
 }
 
