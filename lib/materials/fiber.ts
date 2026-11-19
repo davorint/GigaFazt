@@ -15,6 +15,8 @@ export const CABLE_TYPES = [
   "drop-redondo",
   "drop-autosoportado",
   "adss",
+  "mini-adss",
+  "asu",
   "figura-8",
   "ducto",
   "armado",
@@ -32,6 +34,8 @@ export const FIBER_BUILDS = ["tubo-holgado", "tubo-central", "ajustado", "cinta"
 export const FIBER_JACKETS = ["lszh", "pvc", "pe", "ofnr", "ofnp"] as const
 /** What carries the pull or the span. */
 export const FIBER_STRENGTH = ["frp", "acero", "aramida", "mensajero", "ninguno"] as const
+/** A connector put on at the factory (pre-connectorized drops and assemblies); "" = bare cable. */
+export const FIBER_CONNECTORS = ["sc-apc", "sc-upc", "lc-apc", "lc-upc"] as const
 /** Usual strand counts. */
 export const STRAND_COUNTS = [1, 2, 4, 6, 8, 12, 24, 36, 48, 72, 96, 144, 288] as const
 
@@ -42,6 +46,7 @@ export type FiberPlace = (typeof FIBER_PLACES)[number]
 export type FiberBuild = (typeof FIBER_BUILDS)[number]
 export type FiberJacket = (typeof FIBER_JACKETS)[number]
 export type FiberStrength = (typeof FIBER_STRENGTH)[number]
+export type FiberConnector = (typeof FIBER_CONNECTORS)[number]
 
 export type FiberSpec = {
   mode: FiberMode | ""
@@ -53,9 +58,15 @@ export type FiberSpec = {
   build: FiberBuild | ""
   jacket: FiberJacket | ""
   strength: FiberStrength | ""
+  /** Aerial cables: the longest span between poles it's rated for, in meters; null = not said. */
+  span: number | null
+  /** Outer diameter in mm (aerial hardware is sold by it); null = not said. */
+  diameter: number | null
+  /** Pre-connectorized: the factory connector on its ends ("" = none). */
+  connector: FiberConnector | ""
 }
 
-export const emptyFiber = (): FiberSpec => ({ mode: "", grade: "", cable: "", place: "", strands: null, build: "", jacket: "", strength: "" })
+export const emptyFiber = (): FiberSpec => ({ mode: "", grade: "", cable: "", place: "", strands: null, build: "", jacket: "", strength: "", span: null, diameter: null, connector: "" })
 
 /** The grade's mode: G.65x is single-mode, OMx multimode. */
 export const gradeMode = (g: FiberGrade): FiberMode => (SM_GRADES.includes(g) ? "sm" : "mm")
@@ -73,6 +84,9 @@ export function setFiber(f: FiberSpec, p: Partial<FiberSpec>): FiberSpec {
 
 const pick = <T extends string>(list: readonly T[], v: unknown): T | "" => ((list as readonly unknown[]).includes(v) ? (v as T) : "")
 
+const num = (v: unknown, min: number, max: number, decimals: number) =>
+  typeof v === "number" && Number.isFinite(v) && v >= min && v <= max ? Math.round(v * 10 ** decimals) / 10 ** decimals : null
+
 export function decodeFiber(v: unknown): FiberSpec {
   if (!v || typeof v !== "object" || Array.isArray(v)) return emptyFiber()
   const o = v as Record<string, unknown>
@@ -86,6 +100,9 @@ export function decodeFiber(v: unknown): FiberSpec {
     build: pick(FIBER_BUILDS, o.build),
     jacket: pick(FIBER_JACKETS, o.jacket),
     strength: pick(FIBER_STRENGTH, o.strength),
+    span: num(o.span, 1, 2000, 0),
+    diameter: num(o.diameter, 0.5, 60, 1),
+    connector: pick(FIBER_CONNECTORS, o.connector),
   }
 }
 

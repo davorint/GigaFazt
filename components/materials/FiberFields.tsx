@@ -1,9 +1,11 @@
 "use client"
 
 import type { useTranslations } from "next-intl"
+import { NumberField } from "@/components/mikrotik/NumberField"
 import { PickField } from "@/components/surveys/SurveyFields"
 import {
   CABLE_TYPES,
+  FIBER_CONNECTORS,
   FIBER_BUILDS,
   FIBER_JACKETS,
   FIBER_MODES,
@@ -14,6 +16,7 @@ import {
   setFiber,
   type CableType,
   type FiberBuild,
+  type FiberConnector,
   type FiberGrade,
   type FiberJacket,
   type FiberMode,
@@ -39,6 +42,8 @@ export function fiberSummary(t: T, f: FiberSpec): string {
     f.cable ? t(`fiber.cables.${f.cable}`).replace(/ \(.*\)$/, "") : "",
     f.place ? t(`fiber.places.${f.place}`) : "",
     f.strands ? t("fiber.summaryStrands", { n: f.strands }) : "",
+    f.span ? t("fiber.summarySpan", { n: f.span }) : "",
+    f.connector ? t(`fiber.connectors.${f.connector}`) : "",
   ]
     .filter(Boolean)
     .join(" · ")
@@ -77,6 +82,9 @@ export function FiberFields({ t, value: f, onChange }: { t: T; value: FiberSpec;
         <PickField label={t("fiber.build")} value={f.build} onChange={(build: FiberBuild | "") => up({ build })} options={opts(t, none, FIBER_BUILDS, "builds")} />
         <PickField label={t("fiber.jacket")} value={f.jacket} onChange={(jacket: FiberJacket | "") => up({ jacket })} options={opts(t, none, FIBER_JACKETS, "jackets")} />
         <PickField label={t("fiber.strength")} value={f.strength} onChange={(strength: FiberStrength | "") => up({ strength })} options={opts(t, none, FIBER_STRENGTH, "strengths")} />
+        <NumberField label={t("fiber.span")} unit="m" optional integer max={2000} value={f.span} onChange={(span) => up({ span })} hint={t("fiber.spanHint")} />
+        <NumberField label={t("fiber.diameter")} unit="mm" optional max={60} precision={1} value={f.diameter} onChange={(diameter) => up({ diameter })} hint={t("fiber.diameterHint")} />
+        <PickField label={t("fiber.connector")} value={f.connector} onChange={(connector: FiberConnector | "") => up({ connector })} options={opts(t, t("fiber.noConnector"), FIBER_CONNECTORS, "connectors")} />
       </div>
     </fieldset>
   )

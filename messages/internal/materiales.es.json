@@ -399,6 +399,8 @@
         "drop-redondo": "Drop redondo",
         "drop-autosoportado": "Drop autosoportado (con mensajero)",
         "adss": "ADSS aéreo autosoportado",
+        "mini-adss": "Mini-ADSS (vanos cortos, menor diámetro)",
+        "asu": "ASU (autosoportado unitubo)",
         "figura-8": "Figura 8 (mensajero de acero)",
         "ducto": "Para ducto o canalización",
         "armado": "Armado (blindado contra roedores)",
@@ -433,7 +435,20 @@
         "mensajero": "Mensajero de acero",
         "ninguno": "Ninguno"
       },
-      "filters": "Filtrar fibra y cable"
+      "filters": "Filtrar fibra y cable",
+      "span": "Vano máximo",
+      "spanHint": "Cables aéreos: distancia máxima entre postes que soporta (dato de la ficha).",
+      "diameter": "Diámetro exterior",
+      "diameterHint": "Los herrajes aéreos se eligen por diámetro.",
+      "connector": "Conector de fábrica",
+      "noConnector": "Sin conectores (cable solo)",
+      "connectors": {
+        "sc-apc": "SC/APC (preconectorizado)",
+        "sc-upc": "SC/UPC (preconectorizado)",
+        "lc-apc": "LC/APC (preconectorizado)",
+        "lc-upc": "LC/UPC (preconectorizado)"
+      },
+      "summarySpan": "vano {n} m"
     }
   }
 }
