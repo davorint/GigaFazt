@@ -175,9 +175,149 @@
         "equipo": "Equipo activo",
         "wifi": "Wi-Fi",
         "obra": "Mano de obra",
+        "herrajes": "Herrajes",
+        "consumibles": "Consumibles",
         "otros": "Otros"
       }
     },
-    "buyLink": "Opciones de compra →"
+    "buyLink": "Opciones de compra →",
+    "specs": {
+      "type": "Tipo de herramienta",
+      "noType": "Sin especificar",
+      "typeHint": "Las características dependen del tipo. Si falta una opción, anótala en notas y pide que se agregue.",
+      "anyType": "Todos los tipos",
+      "title": "Características",
+      "none": "Sin especificar",
+      "types": {
+        "fusionadora": "Fusionadora",
+        "cortadora": "Cortadora (cleaver)",
+        "pistola-calor": "Pistola de calor",
+        "herramienta-conectores": "Herramienta para conectores rápidos",
+        "otdr": "OTDR",
+        "medidor-potencia": "Medidor de potencia óptica",
+        "medidor-pon": "Medidor de potencia PON",
+        "fuente-luz": "Fuente de luz láser",
+        "vfl": "Localizador visual de fallas (VFL)",
+        "microscopio": "Microscopio de inspección",
+        "multimetro": "Multímetro",
+        "probador-red": "Probador de cable de red",
+        "peladora-fibra": "Peladora de fibra",
+        "peladora-drop": "Peladora de drop",
+        "tijeras-kevlar": "Tijeras para kevlar",
+        "cortador-buffer": "Cortador de tubo buffer",
+        "pinzas-corte": "Pinzas de corte",
+        "limpiador-one-click": "Limpiador one-click",
+        "dispensador-alcohol": "Dispensador de alcohol",
+        "pinzas": "Pinzas",
+        "ponchadora": "Ponchadora",
+        "guia-pasacables": "Guía pasacables",
+        "desarmadores": "Desarmadores",
+        "etiquetadora": "Etiquetadora",
+        "lampara": "Lámpara",
+        "caja-herramientas": "Caja de herramientas",
+        "taladro": "Taladro",
+        "rotomartillo": "Rotomartillo",
+        "escalera-tijera": "Escalera de tijera",
+        "escalera-extensible": "Escalera extensible",
+        "arnes": "Arnés",
+        "casco": "Casco",
+        "lentes": "Lentes de seguridad",
+        "guantes": "Guantes"
+      },
+      "fields": {
+        "alignment": "Alineación",
+        "motors": "Motores",
+        "heaters": "Hornos",
+        "spliceSec": "Tiempo de empalme",
+        "batterySplices": "Empalmes por carga",
+        "cleaveType": "Tipo de corte",
+        "bladeLife": "Vida de la cuchilla",
+        "wavelengths": "Longitudes de onda (nm)",
+        "dynamicRangeDb": "Rango dinámico",
+        "deadZoneM": "Zona muerta de evento",
+        "minDbm": "Potencia mínima",
+        "maxDbm": "Potencia máxima",
+        "ponPassThrough": "Mide en línea (pass-through)",
+        "vflPowerMw": "Potencia",
+        "vflRangeKm": "Alcance",
+        "magnification": "Aumentos",
+        "connectorIface": "Adaptador / interfaz",
+        "stripperHoles": "Orificios",
+        "lengthM": "Longitud",
+        "power": "Alimentación",
+        "voltage": "Voltaje",
+        "batteryAh": "Batería",
+        "ladderMaterial": "Material",
+        "heightM": "Altura",
+        "steps": "Peldaños",
+        "loadKg": "Carga máxima",
+        "dielectric": "Dieléctrico",
+        "harnessClass": "Tipo",
+        "size": "Talla"
+      },
+      "options": {
+        "alignment": {
+          "nucleo": "Por núcleo",
+          "revestimiento": "Por revestimiento",
+          "v-groove": "V-groove fijo"
+        },
+        "cleaveType": {
+          "manual": "Manual",
+          "automatico": "Automático (retorno de yunque)"
+        },
+        "wavelengths": {
+          "1310-1550": "1310 / 1550",
+          "1310-1550-1625": "1310 / 1550 / 1625",
+          "1310-1490-1550": "1310 / 1490 / 1550 (PON)",
+          "1310-1550-1650": "1310 / 1550 / 1650",
+          "850-1300": "850 / 1300 (multimodo)",
+          "650": "650 (luz roja)"
+        },
+        "ponPassThrough": {
+          "si": "Sí",
+          "no": "No"
+        },
+        "dielectric": {
+          "si": "Sí",
+          "no": "No"
+        },
+        "connectorIface": {
+          "sc": "SC",
+          "fc": "FC",
+          "lc": "LC",
+          "universal-2-5": "Universal 2.5 mm",
+          "universal-1-25": "Universal 1.25 mm"
+        },
+        "power": {
+          "bateria": "Batería",
+          "electrica": "Eléctrica (cable)",
+          "manual": "Manual"
+        },
+        "voltage": {
+          "12v": "12 V",
+          "18v": "18 V",
+          "20v": "20 V",
+          "24v": "24 V",
+          "36v": "36 V",
+          "127v": "127 V"
+        },
+        "ladderMaterial": {
+          "fibra-de-vidrio": "Fibra de vidrio",
+          "aluminio": "Aluminio"
+        },
+        "harnessClass": {
+          "cuerpo-completo": "Cuerpo completo",
+          "posicionamiento": "Posicionamiento",
+          "linea-de-vida": "Línea de vida"
+        },
+        "size": {
+          "ch": "CH",
+          "m": "M",
+          "g": "G",
+          "eg": "EG",
+          "unitalla": "Unitalla"
+        }
+      }
+    }
   }
 }

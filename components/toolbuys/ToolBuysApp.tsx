@@ -17,6 +17,8 @@ import { BUY_STATUSES, PRIORITIES, bestOffer, buyIntoTools, buyLabel, buyTotal, 
 import { toolBuysStore } from "@/lib/toolbuys/store"
 import { TOOL_CATEGORIES, type ToolCategory } from "@/lib/tools/model"
 import { saveTool, subscribeTools, toolsServerSnapshot, toolsSnapshot } from "@/lib/tools/store"
+import { SpecFields, specSummary } from "@/components/interno/SpecFields"
+import { TOOL_SPECS } from "@/lib/tools/specs"
 
 type T = ReturnType<typeof useTranslations>
 const SMALL = "inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -143,6 +145,7 @@ function BuyRow({ t, tc, x, needs, open, onToggle }: { t: T; tc: T; x: ToolBuy; 
             {best ? ` · ${storeOf(best)}` : ""}
             {x.offers.length > 1 ? ` · ${t("offersCount", { n: x.offers.length })}` : ""}
             {x.quantity > 1 ? ` · ×${x.quantity}` : ""}
+            {x.ptype ? ` · ${specSummary(tc, TOOL_SPECS, x.category, x.ptype, x.traits)}` : ""}
           </span>
         </span>
         <span className={`shrink-0 font-mono text-sm ${total === null ? "text-amber-200" : "text-zinc-100"}`}>{total === null ? t("noPrice") : mxn(total)}</span>
@@ -151,13 +154,14 @@ function BuyRow({ t, tc, x, needs, open, onToggle }: { t: T; tc: T; x: ToolBuy; 
         <div className="grid gap-5 border-t border-white/10 p-3">
           <div className="grid items-start gap-4 sm:grid-cols-2">
             <PickField label={t("need")} value={x.need} onChange={(v) => up({ need: v })} hint={t("needHint")} options={[...(needs.includes(x.need) ? [] : [{ value: x.need, label: x.need || t("noNeed") }]), ...needs.map((n) => ({ value: n, label: n }))]} />
-            <PickField label={t("category")} value={x.category} onChange={(v) => up({ category: v })} options={TOOL_CATEGORIES.map((c) => ({ value: c, label: tc(`categories.${c}`) }))} />
+            <PickField label={t("category")} value={x.category} onChange={(v) => up({ category: v, ptype: "", traits: {} })} options={TOOL_CATEGORIES.map((c) => ({ value: c, label: tc(`categories.${c}`) }))} />
             <TextField label={t("brand")} value={x.brand} onChange={(v) => up({ brand: v.slice(0, 100) })} />
             <TextField label={t("model")} value={x.model} onChange={(v) => up({ model: v.slice(0, 150) })} />
             <NumberField label={t("quantity")} unit={t("pieces")} integer min={1} max={10000} value={x.quantity} onChange={(v) => up({ quantity: v ?? 1 })} />
             <PickField label={t("priority")} value={x.priority} onChange={(v: Priority) => up({ priority: v })} options={PRIORITIES.map((p) => ({ value: p, label: t(`priorities.${p}`) }))} />
             <PickField label={t("status")} value={x.status} onChange={(v: BuyStatus) => up({ status: v })} hint={t("statusHint")} options={BUY_STATUSES.map((s) => ({ value: s, label: t(`statuses.${s}`) }))} />
           </div>
+          <SpecFields t={tc} cat={TOOL_SPECS} category={x.category} ptype={x.ptype} traits={x.traits} onChange={up} />
           <AreaField label={t("specs")} value={x.specs} onChange={(v) => up({ specs: v.slice(0, 1000) })} rows={2} />
 
           <fieldset className="grid gap-3">

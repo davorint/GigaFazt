@@ -12,8 +12,10 @@
 import { newId } from "../survey/id"
 import { SPLIT_RATIOS, TAP_RATIOS } from "../survey/design"
 import { decodeFiber, emptyFiber, type FiberSpec } from "./fiber"
+import { decodeSpecs, decodeType, type Specs } from "../specs/engine"
+import { MATERIAL_SPECS } from "./specs"
 
-export const CATEGORIES = ["fibra", "splitters", "cajas", "conectores", "ont", "equipo", "wifi", "obra", "otros"] as const
+export const CATEGORIES = ["fibra", "splitters", "cajas", "conectores", "ont", "equipo", "wifi", "obra", "herrajes", "consumibles", "otros"] as const
 export type Category = (typeof CATEGORIES)[number]
 
 /** What an item is for in a design. Build: once per deployment. Client: once per apartment that signs up. */
@@ -80,6 +82,10 @@ export type Item = {
   serialized: boolean
   /** Fiber and cable items: mode, grade, cable type, indoor or outdoor, strands… (all optional). */
   fiber: FiberSpec
+  /** Product type within the category (specs.ts), "" = not said. */
+  ptype: string
+  /** Its characteristics: the type's fields with the values picked. */
+  traits: Specs
 }
 
 export const newOffer = (p: Partial<Offer> = {}): Offer => ({ id: newId(), supplierId: "", supplier: "", price: null, date: "", sku: "", notes: "", url: "", status: "vigente", ...p })
@@ -117,12 +123,15 @@ export function withEffective(it: Item): Item {
 export const offerFrom = (it: Item, providerId: string) => it.offers.find((o) => o.supplierId === providerId)
 
 /** A new item. */
-export const newItem = (p: Partial<Item> = {}): Item => ({ id: newId(), name: "", category: "otros", unit: "pza", price: null, role: "", supplierId: "", supplier: "", sku: "", notes: "", offers: [], offerId: "", minStock: null, serialized: false, fiber: emptyFiber(), ...p })
+export const newItem = (p: Partial<Item> = {}): Item => ({ id: newId(), name: "", category: "otros", unit: "pza", price: null, role: "", supplierId: "", supplier: "", sku: "", notes: "", offers: [], offerId: "", minStock: null, serialized: false, fiber: emptyFiber(), ptype: "", traits: {}, ...p })
 
 /** Starter ids are fixed (from the role, or the name), so every browser's starter list has the same ids. */
 const starterId = (name: string, role: Role | "") =>
   `starter-${role || name.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`.slice(0, 64)
-const item = (name: string, category: Category, unit: string, role: Role | "" = ""): Item => ({ id: starterId(name, role), name, category, unit, price: null, role, supplierId: "", supplier: "", sku: "", notes: "", offers: [], offerId: "", minStock: null, serialized: role === "ont", fiber: emptyFiber() })
+const item = (name: string, category: Category, unit: string, role: Role | "" = ""): Item => ({ id: starterId(name, role), name, category, unit, price: null, role, supplierId: "", supplier: "", sku: "", notes: "", offers: [], offerId: "", minStock: null, serialized: role === "ont", fiber: emptyFiber(), ptype: "", traits: {} })
+
+/** A starter item with its product type and the characteristics its name already states. */
+const typed = (it: Item, ptype: string, traits: Specs = {}): Item => ({ ...it, ptype, traits })
 
 /** The first list, without prices (fixed ids). */
 export function starterCatalog(): Item[] {
@@ -130,19 +139,19 @@ export function starterCatalog(): Item[] {
     item("Cable de fibra drop 1 hilo (acometida)", "fibra", "m", "drop-m"),
     item("Cable de fibra para el ducto (riser)", "fibra", "m", "riser-m"),
     item("Cable de fibra del cuarto a la base del ducto", "fibra", "m", "feeder-m"),
-    ...SPLIT_RATIOS.map((r) => item(`Splitter PLC 1:${r} SC/APC`, "splitters", "pza", `splitter-${r}` as Role)),
-    ...TAP_RATIOS.map((p) => item(`Splitter desbalanceado FBT ${p}/${100 - p}`, "splitters", "pza", `tap-${p}` as Role)),
-    item("Caja de distribución de piso (NAP)", "cajas", "pza", "floor-box"),
+    ...SPLIT_RATIOS.map((r) => typed(item(`Splitter PLC 1:${r} SC/APC`, "splitters", "pza", `splitter-${r}` as Role), "plc", { ratio: `1x${r}`, connector: "sc-apc" })),
+    ...TAP_RATIOS.map((p) => typed(item(`Splitter desbalanceado FBT ${p}/${100 - p}`, "splitters", "pza", `tap-${p}` as Role), "fbt", { tap: `${p}-${100 - p}` })),
+    typed(item("Caja de distribución de piso (NAP)", "cajas", "pza", "floor-box"), "nap"),
     item("Caja o gabinete de la base del ducto", "cajas", "pza", "base-box"),
-    item("Empalme por fusión (manguito protector)", "conectores", "pza", "splice"),
+    typed(item("Empalme por fusión (manguito protector)", "conectores", "pza", "splice"), "manguito-empalme"),
     item("Conector SC/APC (pigtail o rápido)", "conectores", "pza", "connector"),
-    item("Patch cord SC/APC de la OLT al ODF", "conectores", "pza", "olt-patch"),
-    item("Conector rápido SC/APC para el cliente", "conectores", "pza", "client-connector"),
-    item("ONT Huawei EG8145B7-50", "ont", "pza", "ont"),
-    item("Instalación por cliente (mano de obra)", "obra", "servicio", "client-labor"),
-    item("Mano de obra del despliegue", "obra", "día"),
+    typed(item("Patch cord SC/APC de la OLT al ODF", "conectores", "pza", "olt-patch"), "patch-cord", { connector: "sc-apc" }),
+    typed(item("Conector rápido SC/APC para el cliente", "conectores", "pza", "client-connector"), "conector-rapido", { connector: "sc-apc" }),
+    typed(item("ONT Huawei EG8145B7-50", "ont", "pza", "ont"), "ont", { pon: "gpon" }),
+    typed(item("Instalación por cliente (mano de obra)", "obra", "servicio", "client-labor"), "mano-de-obra"),
+    typed(item("Mano de obra del despliegue", "obra", "día"), "mano-de-obra"),
     item("Canaleta o tubería", "otros", "m"),
-    item("Access point Wi-Fi para áreas comunes", "wifi", "pza"),
+    typed(item("Access point Wi-Fi para áreas comunes", "wifi", "pza"), "access-point"),
   ]
 }
 
@@ -183,10 +192,12 @@ export function decodeItem(v: unknown): Item | null {
       : []
   const offerId = okId(v.offerId) && offers.some((o) => o.id === v.offerId) ? (v.offerId as string) : ""
   const minStock = typeof v.minStock === "number" && Number.isFinite(v.minStock) && v.minStock >= 0 && v.minStock <= 1e6 ? v.minStock : null
+  const category = (CATEGORIES as readonly unknown[]).includes(v.category) ? (v.category as Category) : "otros"
+  const ptype = decodeType(MATERIAL_SPECS, category, v.ptype)
   return withEffective({
     id,
     name: str(v.name, 200),
-    category: (CATEGORIES as readonly unknown[]).includes(v.category) ? (v.category as Category) : "otros",
+    category,
     unit: str(v.unit, 20) || "pza",
     price: null,
     role,
@@ -199,6 +210,8 @@ export function decodeItem(v: unknown): Item | null {
     minStock,
     serialized: typeof v.serialized === "boolean" ? v.serialized : role === "ont",
     fiber: decodeFiber(v.fiber),
+    ptype,
+    traits: decodeSpecs(MATERIAL_SPECS, category, ptype, v.traits),
   })
 }
 

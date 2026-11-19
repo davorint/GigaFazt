@@ -11,6 +11,8 @@
 import { safeUrl } from "../materials/catalog"
 import { newId } from "../survey/id"
 import { TOOL_CATEGORIES, newTool, type Tool, type ToolCategory } from "../tools/model"
+import { TOOL_SPECS } from "../tools/specs"
+import { decodeSpecs, decodeType, type Specs } from "../specs/engine"
 
 export const BUY_STATUSES = ["idea", "cotizado", "aprobado", "comprado", "descartado"] as const
 export type BuyStatus = (typeof BUY_STATUSES)[number]
@@ -38,6 +40,10 @@ export type ToolBuy = {
   brand: string
   model: string
   specs: string
+  /** Tool type within the category (tools/specs.ts), "" = not said. */
+  ptype: string
+  /** Its characteristics: the type's fields with the values picked. */
+  traits: Specs
   quantity: number
   priority: Priority
   status: BuyStatus
@@ -61,6 +67,8 @@ export const newToolBuy = (p: Partial<ToolBuy> = {}): ToolBuy => ({
   brand: "",
   model: "",
   specs: "",
+  ptype: "",
+  traits: {},
   quantity: 1,
   priority: "media",
   status: "idea",
@@ -111,6 +119,8 @@ export function buyIntoTools(x: ToolBuy, tools: Tool[], today: string): { tool: 
   const tool: Tool = empty
     ? { ...empty, ...purchase, quantity: Math.max(1, x.quantity) }
     : newTool({ name: x.need || buyLabel(x), category: x.category, quantity: Math.max(1, x.quantity), ...purchase })
+  // The bought type and characteristics go to the tool: set when it has no type, filled in when it's the same type.
+  if (x.ptype && tool.category === x.category && (!tool.ptype || tool.ptype === x.ptype)) Object.assign(tool, { ptype: x.ptype, traits: { ...(tool.ptype === x.ptype ? tool.traits : {}), ...x.traits } })
   return { tool, option: { ...x, status: "comprado", toolId: tool.id } }
 }
 
@@ -133,13 +143,17 @@ export function decodeToolBuy(v: unknown): ToolBuy | null {
   if (!isObj(v)) return null
   const offers = Array.isArray(v.offers) ? v.offers.slice(0, 30).map(decodeOffer).filter((x): x is BuyOffer => x !== null) : []
   const quantity = typeof v.quantity === "number" && Number.isFinite(v.quantity) && v.quantity >= 1 && v.quantity <= 10000 ? Math.round(v.quantity) : 1
+  const category = pick(TOOL_CATEGORIES, v.category, "otros")
+  const ptype = decodeType(TOOL_SPECS, category, v.ptype)
   return {
     id: id(v.id) || newId(),
     need: str(v.need, 200),
-    category: pick(TOOL_CATEGORIES, v.category, "otros"),
+    category,
     brand: str(v.brand, 100),
     model: str(v.model, 150),
     specs: str(v.specs, 1000),
+    ptype,
+    traits: decodeSpecs(TOOL_SPECS, category, ptype, v.traits),
     quantity,
     priority: pick(PRIORITIES, v.priority, "media"),
     status: pick(BUY_STATUSES, v.status, "idea"),

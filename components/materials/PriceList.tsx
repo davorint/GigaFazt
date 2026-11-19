@@ -19,6 +19,9 @@ import { usePlaceLabel } from "./places"
 import { MoveForm } from "./MoveForm"
 import { FiberFields, FiberFilters, NO_FIBER_FILTER, fiberMatches, fiberSummary, type FiberFilter } from "./FiberFields"
 import { hasFiber } from "@/lib/materials/fiber"
+import { MATERIAL_SPECS } from "@/lib/materials/specs"
+import { typesOf } from "@/lib/specs/engine"
+import { SpecFields, specSummary, typeOptions } from "@/components/interno/SpecFields"
 
 type T = ReturnType<typeof useTranslations>
 const BTN = "h-11 rounded-full border border-white/15 px-5 text-sm text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -72,6 +75,8 @@ function PriceList({ t, items }: { t: T; items: Item[] }) {
   const [q, setQ] = useState("")
   const [cat, setCat] = useState<Category | "">("")
   const [fq, setFq] = useState<FiberFilter>(NO_FIBER_FILTER)
+  const [ptype, setPtype] = useState("")
+  const pickCat = (c: Category | "") => (setCat(c), setPtype(""))
   // The fiber menus only filter while the list shows fiber (all categories or "Fibra y cable").
   const fiberShown = !cat || cat === "fibra"
   const [openId, setOpenId] = useOpenParam("m")
@@ -81,7 +86,7 @@ function PriceList({ t, items }: { t: T; items: Item[] }) {
   const providers = useSyncExternalStore(subscribeProviders, providersSnapshot, providersServerSnapshot).list
   const nameOf = (o: Offer | null) => (o ? (o.supplierId ? providerName(providers.find((p) => p.id === o.supplierId) ?? ({ tradeName: "", legalName: "" } as Provider)) : o.supplier) : "")
   const needle = fold(q.trim())
-  const shown = items.filter((x) => (!cat || x.category === cat) && (!fiberShown || fiberMatches(x.fiber, fq)) && (!needle || fold([x.name, x.notes, ...x.offers.flatMap((o) => [o.supplier, o.sku, nameOf(o)])].join(" ")).includes(needle)))
+  const shown = items.filter((x) => (!cat || x.category === cat) && (!ptype || x.ptype === ptype) && (!fiberShown || fiberMatches(x.fiber, fq)) && (!needle || fold([x.name, x.notes, ...x.offers.flatMap((o) => [o.supplier, o.sku, nameOf(o)])].join(" ")).includes(needle)))
   const add = (v: Record<string, string>) => {
     const category = (CATEGORIES as readonly string[]).includes(v.category) ? (v.category as Category) : "otros"
     const it = newItem({ name: v.name, unit: v.unit || "pza", category })
@@ -126,8 +131,13 @@ function PriceList({ t, items }: { t: T; items: Item[] }) {
       )}
       <div className="grid items-start gap-4 sm:grid-cols-2">
         <TextField label={t("search")} value={q} onChange={setQ} hint={t("searchHint")} />
-        <PickField label={t("category")} value={cat} onChange={setCat} options={[{ value: "" as const, label: t("allCategories") }, ...CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) }))]} />
+        <PickField label={t("category")} value={cat} onChange={pickCat} options={[{ value: "" as const, label: t("allCategories") }, ...CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) }))]} />
       </div>
+      {cat && typesOf(MATERIAL_SPECS, cat).length > 0 && (
+        <div className="grid items-start gap-4 sm:grid-cols-2">
+          <PickField label={t("specs.type")} value={ptype} onChange={setPtype} options={typeOptions(t, MATERIAL_SPECS, cat, t("specs.anyType"))} />
+        </div>
+      )}
       {fiberShown && <FiberFilters t={t} value={fq} onChange={setFq} />}
       <p className="font-mono text-xs text-zinc-400">{t("count", { n: items.length, priced: items.filter((x) => x.price !== null).length })}</p>
       {!shown.length && <p className="text-sm text-zinc-400">{t("empty")}</p>}
@@ -164,6 +174,7 @@ function ItemRow({ t, item: x, supplierName, open, onToggle }: { t: T; item: Ite
             {t(`categories.${x.category}`)} · {x.unit}
             {x.role ? ` · ${t(`roles.${x.role}`)}` : ""}
             {x.category === "fibra" && hasFiber(x.fiber) ? ` · ${fiberSummary(t, x.fiber)}` : ""}
+            {x.ptype ? ` · ${specSummary(t, MATERIAL_SPECS, x.category, x.ptype, x.traits)}` : ""}
             {supplierName ? ` · ${supplierName}` : ""}
             {x.offers.length > 1 ? ` · ${t("offersCount", { n: x.offers.length })}` : ""}
           </span>
@@ -174,11 +185,12 @@ function ItemRow({ t, item: x, supplierName, open, onToggle }: { t: T; item: Ite
         <div className="grid gap-5 border-t border-white/10 p-3">
           <TextField label={t("name")} value={x.name} onChange={(v) => up({ name: v })} />
           <div className="grid items-start gap-4 sm:grid-cols-2">
-            <PickField label={t("category")} value={x.category} onChange={(v) => up({ category: v })} options={CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) }))} />
+            <PickField label={t("category")} value={x.category} onChange={(v) => up({ category: v, ptype: "", traits: {} })} options={CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) }))} />
             <TextField label={t("unit")} value={x.unit} onChange={(v) => up({ unit: v.slice(0, 20) })} />
             <PickField label={t("role")} value={x.role} onChange={(v) => up({ role: v as Role | "" })} hint={t("roleHint")} options={[{ value: "", label: t("noRole") }, ...ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))]} />
           </div>
           {x.category === "fibra" && <FiberFields t={t} value={x.fiber} onChange={(fiber) => up({ fiber })} />}
+          <SpecFields t={t} cat={MATERIAL_SPECS} category={x.category} ptype={x.ptype} traits={x.traits} onChange={up} />
 
           <fieldset className="grid gap-3">
             <legend className="mb-1 text-sm font-medium text-foreground">{t("offers.title")}</legend>

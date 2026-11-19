@@ -13,6 +13,8 @@
  * throws.
  */
 import { newId } from "../survey/id"
+import { decodeSpecs, decodeType, type Specs } from "../specs/engine"
+import { TOOL_SPECS } from "./specs"
 
 export const TOOL_CATEGORIES = ["empalme", "medicion", "corte", "limpieza", "mano", "electrica", "altura", "seguridad", "otros"] as const
 export type ToolCategory = (typeof TOOL_CATEGORIES)[number]
@@ -56,6 +58,10 @@ export type Tool = {
   /** Spare parts and consumables from the materials list (electrodes, cleaver blades, cleaning sticks…), by item id. */
   parts: string[]
   notes: string
+  /** Tool type within the category (specs.ts), "" = not said. */
+  ptype: string
+  /** Its characteristics: the type's fields with the values picked. */
+  traits: Specs
   updatedAt: string
 }
 
@@ -83,6 +89,8 @@ const blank = (): Omit<Tool, "id" | "name" | "category"> => ({
   counterLimit: null,
   parts: [],
   notes: "",
+  ptype: "",
+  traits: {},
   updatedAt: "",
 })
 
@@ -99,8 +107,57 @@ const slug = (name: string) =>
     .replace(/^-|-$/g, "")
 const starter = (name: string, category: ToolCategory, p: Partial<Tool> = {}): Tool => ({ id: `starter-${slug(name)}`.slice(0, 64), name, category, ...blank(), quantity: 0, ...p })
 
+/** The tool type of each starter tool (specs.ts). */
+const STARTER_TYPES: Record<string, string> = {
+  "Fusionadora de fibra óptica": "fusionadora",
+  "Cortadora de precisión (cleaver)": "cortadora",
+  "Peladora de fibra de 3 orificios": "peladora-fibra",
+  "Peladora de cable drop": "peladora-drop",
+  "Tijeras para kevlar": "tijeras-kevlar",
+  "Cortador de tubo buffer": "cortador-buffer",
+  "Pinzas de corte diagonal": "pinzas-corte",
+  "Pinzas de electricista": "pinzas",
+  "Pinzas de punta": "pinzas",
+  "Pistola de calor": "pistola-calor",
+  "Herramienta para conectores rápidos SC/APC": "herramienta-conectores",
+  "Medidor de potencia óptica": "medidor-potencia",
+  "Medidor de potencia PON (1310/1490/1550)": "medidor-pon",
+  "Fuente de luz láser": "fuente-luz",
+  "Localizador visual de fallas (VFL)": "vfl",
+  OTDR: "otdr",
+  "Microscopio de inspección de conectores": "microscopio",
+  Multímetro: "multimetro",
+  "Probador de cable de red": "probador-red",
+  "Limpiador de conectores one-click": "limpiador-one-click",
+  "Dispensador de alcohol isopropílico": "dispensador-alcohol",
+  "Ponchadora RJ45": "ponchadora",
+  "Guía pasacables": "guia-pasacables",
+  "Juego de desarmadores": "desarmadores",
+  Etiquetadora: "etiquetadora",
+  "Taladro inalámbrico": "taladro",
+  Rotomartillo: "rotomartillo",
+  "Escalera de tijera": "escalera-tijera",
+  "Escalera extensible": "escalera-extensible",
+  "Arnés de seguridad": "arnes",
+  Casco: "casco",
+  "Lentes de seguridad": "lentes",
+  "Lámpara de cabeza": "lampara",
+  "Caja de herramientas": "caja-herramientas",
+}
+/** Characteristics a starter tool's name already states. */
+const STARTER_TRAITS: Record<string, Specs> = {
+  "Peladora de fibra de 3 orificios": { stripperHoles: 3 },
+  "Medidor de potencia PON (1310/1490/1550)": { wavelengths: "1310-1490-1550" },
+  "Herramienta para conectores rápidos SC/APC": { connectorIface: "sc" },
+  "Taladro inalámbrico": { power: "bateria" },
+}
+
 /** The usual FTTH installation tools, quantity 0 and no price until the owner fills them in (fixed ids). */
 export function starterTools(): Tool[] {
+  return starterList().map((t) => ({ ...t, ptype: STARTER_TYPES[t.name] ?? "", traits: STARTER_TRAITS[t.name] ?? {} }))
+}
+
+function starterList(): Tool[] {
   return [
     starter("Fusionadora de fibra óptica", "empalme", { serviceMonths: 12, counterLabel: "Arcos del electrodo" }),
     starter("Cortadora de precisión (cleaver)", "empalme", { counterLabel: "Cortes de la cuchilla" }),
@@ -242,10 +299,12 @@ export function decodeTool(v: unknown): Tool | null {
         .map((s) => ({ id: id(s.id) || newId(), date: date(s.date), what: str(s.what, 500), cost: num(s.cost, 0, 1e7), by: str(s.by, 100) }))
     : []
   const quantity = num(v.quantity, 0, 100000)
+  const category = pick(TOOL_CATEGORIES, v.category, "otros")
+  const ptype = decodeType(TOOL_SPECS, category, v.ptype)
   return {
     id: id(v.id) || newId(),
     name: str(v.name, 200),
-    category: pick(TOOL_CATEGORIES, v.category, "otros"),
+    category,
     brand: str(v.brand, 100),
     model: str(v.model, 100),
     serial: str(v.serial, 100).toUpperCase(),
@@ -267,6 +326,8 @@ export function decodeTool(v: unknown): Tool | null {
     counterLimit: num(v.counterLimit, 1, 1e9),
     parts: Array.isArray(v.parts) ? [...new Set(v.parts.map(id).filter(Boolean))].slice(0, 50) : [],
     notes: str(v.notes, 2000),
+    ptype,
+    traits: decodeSpecs(TOOL_SPECS, category, ptype, v.traits),
     updatedAt: typeof v.updatedAt === "string" ? v.updatedAt.slice(0, 40) : "",
   }
 }

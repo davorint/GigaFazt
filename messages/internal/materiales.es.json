@@ -42,6 +42,8 @@
       "equipo": "Equipo activo",
       "wifi": "Wi-Fi",
       "obra": "Mano de obra",
+      "herrajes": "Herrajes",
+      "consumibles": "Consumibles",
       "otros": "Otros"
     },
     "roles": {
@@ -440,6 +442,242 @@
         "lc-upc": "LC/UPC (preconectorizado)"
       },
       "summarySpan": "vano {n} m"
+    },
+    "specs": {
+      "type": "Tipo de producto",
+      "noType": "Sin especificar",
+      "typeHint": "Las características dependen del tipo. Si falta una opción, anótala en notas y pide que se agregue.",
+      "anyType": "Todos los tipos",
+      "title": "Características",
+      "none": "Sin especificar",
+      "types": {
+        "plc": "Splitter PLC",
+        "fbt": "Splitter FBT (desbalanceado)",
+        "nap": "Caja NAP / de distribución",
+        "cierre-empalme": "Cierre (manga) de empalme",
+        "charola-empalme": "Charola de empalme",
+        "odf": "Distribuidor de fibra (ODF)",
+        "roseta": "Roseta óptica",
+        "gabinete": "Gabinete",
+        "pigtail": "Pigtail",
+        "patch-cord": "Patch cord (jumper)",
+        "acoplador": "Acoplador (adaptador)",
+        "conector-rapido": "Conector rápido (mecánico)",
+        "manguito-empalme": "Manguito protector de empalme",
+        "atenuador": "Atenuador óptico",
+        "ont": "ONT (router)",
+        "onu-bridge": "ONU (bridge)",
+        "olt": "OLT",
+        "sfp-pon": "Módulo SFP PON (para OLT)",
+        "sfp-uplink": "Módulo SFP/SFP+ de enlace",
+        "switch": "Switch",
+        "router": "Router",
+        "ups": "UPS / no-break",
+        "access-point": "Access point",
+        "mesh": "Sistema mesh",
+        "router-wifi": "Router Wi-Fi",
+        "mano-de-obra": "Mano de obra",
+        "ducto": "Ducto",
+        "canaleta": "Canaleta",
+        "registro": "Registro",
+        "remate-drop": "Remate (sujeción) de drop",
+        "tensor-drop": "Tensor de drop",
+        "tensor-adss": "Tensor (remate) para ADSS",
+        "suspension-adss": "Suspensión para ADSS",
+        "fleje": "Fleje",
+        "hebilla": "Hebilla para fleje",
+        "raqueta-reserva": "Raqueta de reserva",
+        "gancho-fachada": "Gancho de fachada",
+        "abrazadera-poste": "Abrazadera para poste",
+        "limpiador-pluma": "Limpiador tipo pluma (un clic)",
+        "limpiador-casete": "Limpiador de casete (cinta)",
+        "toallitas": "Toallitas sin pelusa",
+        "alcohol": "Alcohol isopropílico",
+        "etiqueta": "Etiquetas",
+        "cincho": "Cinchos",
+        "cinta": "Cinta"
+      },
+      "fields": {
+        "connector": "Conector",
+        "fiberMode": "Tipo de fibra",
+        "ratio": "Relación",
+        "tap": "Relación de división",
+        "splitterFormat": "Formato",
+        "ports": "Puertos",
+        "splices": "Capacidad de empalmes",
+        "splitterIncluded": "Splitter incluido",
+        "closureShape": "Forma",
+        "ip": "Protección (IP)",
+        "mount": "Montaje",
+        "lengthM": "Longitud",
+        "sleeveMm": "Largo del manguito",
+        "attenuationDb": "Atenuación",
+        "pon": "Tecnología PON",
+        "opticClass": "Clase óptica",
+        "reachKm": "Alcance",
+        "lanPorts": "Puertos LAN",
+        "ponPorts": "Puertos PON",
+        "uplink": "Velocidad de enlace",
+        "wifi": "Wi-Fi",
+        "potsPort": "Puerto telefónico (POTS)",
+        "catv": "Salida de TV (CATV)",
+        "poe": "PoE",
+        "va": "Capacidad",
+        "material": "Material",
+        "cableShape": "Forma del cable",
+        "maxLoadN": "Carga máxima",
+        "minDiameter": "Diámetro mínimo del cable",
+        "maxDiameter": "Diámetro máximo del cable",
+        "widthMm": "Ancho",
+        "ductDiameter": "Diámetro",
+        "wall": "Pared",
+        "ductMaterial": "Material del ducto",
+        "packQty": "Piezas por paquete"
+      },
+      "options": {
+        "connector": {
+          "sc-apc": "SC/APC (verde)",
+          "sc-upc": "SC/UPC (azul)",
+          "lc-apc": "LC/APC",
+          "lc-upc": "LC/UPC",
+          "fc-upc": "FC/UPC",
+          "sin": "Sin conectores"
+        },
+        "fiberMode": {
+          "sm": "Monomodo",
+          "mm": "Multimodo"
+        },
+        "ratio": {
+          "1x2": "1:2",
+          "1x4": "1:4",
+          "1x8": "1:8",
+          "1x16": "1:16",
+          "1x32": "1:32",
+          "1x64": "1:64",
+          "2x8": "2:8",
+          "2x16": "2:16",
+          "2x32": "2:32"
+        },
+        "tap": {
+          "1-99": "1/99",
+          "2-98": "2/98",
+          "5-95": "5/95",
+          "10-90": "10/90",
+          "15-85": "15/85",
+          "20-80": "20/80",
+          "30-70": "30/70",
+          "40-60": "40/60",
+          "50-50": "50/50"
+        },
+        "splitterFormat": {
+          "tubo": "Tubo / micro (pelado)",
+          "abs": "Caja ABS",
+          "rack": "Rack 19 pulgadas",
+          "lgx": "Módulo LGX",
+          "charola": "Para charola"
+        },
+        "splitterIncluded": {
+          "si": "Sí",
+          "no": "No"
+        },
+        "potsPort": {
+          "si": "Sí",
+          "no": "No"
+        },
+        "catv": {
+          "si": "Sí",
+          "no": "No"
+        },
+        "closureShape": {
+          "domo": "Domo (vertical)",
+          "horizontal": "Horizontal (en línea)"
+        },
+        "ip": {
+          "ip54": "IP54",
+          "ip55": "IP55",
+          "ip65": "IP65",
+          "ip66": "IP66",
+          "ip67": "IP67",
+          "ip68": "IP68"
+        },
+        "mount": {
+          "poste": "Poste",
+          "pared": "Pared",
+          "fachada": "Fachada",
+          "rack": "Rack",
+          "registro": "Registro / subterráneo",
+          "cable": "Sobre el cable (aéreo)",
+          "escritorio": "Escritorio"
+        },
+        "pon": {
+          "gpon": "GPON",
+          "xgs-pon": "XGS-PON",
+          "xg-pon": "XG-PON",
+          "epon": "EPON",
+          "10g-epon": "10G-EPON"
+        },
+        "opticClass": {
+          "b-plus": "B+",
+          "c-plus": "C+",
+          "c-plus-plus": "C++",
+          "c-plus-plus-plus": "C+++"
+        },
+        "uplink": {
+          "1g": "1 Gbps",
+          "2-5g": "2.5 Gbps",
+          "10g": "10 Gbps",
+          "25g": "25 Gbps",
+          "100g": "100 Gbps"
+        },
+        "wifi": {
+          "no": "Sin Wi-Fi",
+          "wifi4": "Wi-Fi 4 (n)",
+          "wifi5": "Wi-Fi 5 (ac)",
+          "wifi6": "Wi-Fi 6 (ax)",
+          "wifi6e": "Wi-Fi 6E",
+          "wifi7": "Wi-Fi 7 (be)"
+        },
+        "poe": {
+          "no": "Sin PoE",
+          "poe": "PoE (802.3af)",
+          "poe-plus": "PoE+ (802.3at)",
+          "poe-plus-plus": "PoE++ (802.3bt)",
+          "pasivo": "PoE pasivo"
+        },
+        "material": {
+          "acero-galvanizado": "Acero galvanizado",
+          "acero-inox": "Acero inoxidable",
+          "aluminio": "Aluminio",
+          "plastico-uv": "Plástico resistente a UV",
+          "abs": "ABS",
+          "nylon": "Nylon"
+        },
+        "cableShape": {
+          "plano": "Plano",
+          "redondo": "Redondo",
+          "figura-8": "Figura 8"
+        },
+        "ductDiameter": {
+          "1-2": "1/2 pulg.",
+          "3-4": "3/4 pulg.",
+          "1": "1 pulg.",
+          "1-1-4": "1 1/4 pulg.",
+          "1-1-2": "1 1/2 pulg.",
+          "2": "2 pulg.",
+          "3": "3 pulg.",
+          "4": "4 pulg."
+        },
+        "wall": {
+          "lisa": "Lisa",
+          "corrugada": "Corrugada"
+        },
+        "ductMaterial": {
+          "pead": "PEAD (polietileno de alta densidad)",
+          "pvc": "PVC",
+          "pad": "PAD",
+          "galvanizado": "Tubo galvanizado"
+        }
+      }
     }
   }
 }

@@ -42,6 +42,8 @@ import { RecordHistory } from "@/components/interno/RecordHistory"
 import { ExportButton } from "@/components/interno/ExportButton"
 import { toCsv } from "@/lib/csv"
 import { deleteTool, saveTool, subscribeTools, toolsServerSnapshot, toolsSnapshot } from "@/lib/tools/store"
+import { SpecFields, specSummary } from "@/components/interno/SpecFields"
+import { TOOL_SPECS } from "@/lib/tools/specs"
 
 type T = ReturnType<typeof useTranslations>
 const SMALL = "inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -288,7 +290,8 @@ function ToolList({ t, list, sites, params, today, persisted }: { t: T; list: To
                   <span className="shrink-0 font-mono text-xs text-zinc-300">{t("list.quantity", { n: x.quantity })}</span>
                 </span>
                 <span className="text-xs text-zinc-300">
-                  {t(`categories.${x.category}`)} · {where(x)}
+                  {t(`categories.${x.category}`)}
+                  {x.ptype ? ` · ${specSummary(t, TOOL_SPECS, x.category, x.ptype, x.traits)}` : ""} · {where(x)}
                   {x.serial ? ` · ${x.serial}` : ""}
                   {v !== null && x.quantity > 0 ? ` · ${mxn(v)}` : ""}
                 </span>
@@ -424,7 +427,7 @@ function ToolEditor({ t, x, sites, all, today }: { t: T; x: Tool; sites: Site[];
       <Fieldset title={t("general.title")}>
         <div className={GRID}>
           <TextField label={t("general.name")} value={x.name} onChange={(v) => up({ name: v })} />
-          <PickField label={t("general.category")} value={x.category} onChange={(category) => up({ category })} options={TOOL_CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) }))} />
+          <PickField label={t("general.category")} value={x.category} onChange={(category) => up({ category, ptype: "", traits: {} })} options={TOOL_CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) }))} />
           <SuggestField
             label={t("general.brand")}
             value={x.brand}
@@ -439,6 +442,8 @@ function ToolEditor({ t, x, sites, all, today }: { t: T; x: Tool; sites: Site[];
         </div>
         <AreaField label={t("general.notes")} value={x.notes} onChange={(v) => up({ notes: v })} rows={2} />
       </Fieldset>
+
+      <SpecFields t={t} cat={TOOL_SPECS} category={x.category} ptype={x.ptype} traits={x.traits} onChange={up} />
 
       <Fieldset title={t("holder.title")}>
         <div className={GRID}>
