@@ -27,7 +27,7 @@ function installLines(items: Item[]): Line[] {
 }
 
 /** Records one stock movement (several materials at once: an installation takes the ONT, the cable and connectors). */
-export function MoveForm({ items, kind: initialKind, itemId, onDone }: { items: Item[]; kind: MoveKind; itemId?: string; onDone: (msg: string) => void }) {
+export function MoveForm({ items, kind: initialKind, itemId, notes: initialNotes = "", onDone }: { items: Item[]; kind: MoveKind; itemId?: string; notes?: string; onDone: (msg: string) => void }) {
   const t = useTranslations("materiales")
   const placeOptions = usePlaceOptions()
   const placeLabel = usePlaceLabel()
@@ -39,7 +39,7 @@ export function MoveForm({ items, kind: initialKind, itemId, onDone }: { items: 
   const [from, setFrom] = useState(BODEGA)
   const [to, setTo] = useState(BODEGA)
   const [clientId, setClientId] = useState("")
-  const [notes, setNotes] = useState("")
+  const [notes, setNotes] = useState(initialNotes)
   const [lines, setLines] = useState<Line[]>(() => (itemId ? [blankLine(itemId)] : initialKind === "instalacion" ? installLines(items) : [blankLine()]))
   const [retired, setRetired] = useState({ serial: "", works: true })
   const [problems, setProblems] = useState<string[]>([])

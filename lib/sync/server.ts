@@ -27,6 +27,7 @@ import { decodeReport } from "../reports/model"
 import { decodePayment } from "../payments/model"
 import { decodeNote } from "../notes/model"
 import { decodeRoll } from "../rolls/model"
+import { buyLabel, decodeToolBuy } from "../toolbuys/model"
 import { getPool } from "../db/client"
 import { MAX_RECORDS, type Change, type Outcome, type Remote, type SyncKind, type SyncResponse } from "./protocol"
 
@@ -176,6 +177,17 @@ export const SPECS: Record<SyncKind, KindSpec> = {
       if (!r) return null
       const d = { ...r, id }
       return { data: d, cols: { code: d.code, cable: d.cable, place: d.place, left_m: d.leftM } }
+    },
+  },
+  toolbuys: {
+    table: "tool_buys",
+    versions: "tool_buy_versions",
+    fk: "tool_buy_id",
+    read: (id, data) => {
+      const b = decodeToolBuy(data)
+      if (!b) return null
+      const d = { ...b, id }
+      return { data: d, cols: { need: d.need.slice(0, 200), label: buyLabel(d).slice(0, 300), status: d.status } }
     },
   },
 }

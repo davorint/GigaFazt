@@ -28,6 +28,8 @@ import { decodeNote, type Note } from "../notes/model"
 import { notesStore } from "../notes/store"
 import { decodeRoll, type Roll } from "../rolls/model"
 import { rollsStore } from "../rolls/store"
+import { decodeToolBuy, type ToolBuy } from "../toolbuys/model"
+import { toolBuysStore } from "../toolbuys/store"
 import { applyRemoteSurveys, surveysSnapshot } from "../survey/store"
 import { MAX_CHANGES, REV_OVERLAP, SYNC_KINDS, type Change, type SyncKind, type SyncResponse } from "./protocol"
 import { markChanged, onSyncChange, pendingCount, readState, updateState } from "./state"
@@ -100,6 +102,11 @@ const ADAPTERS: Record<SyncKind, Adapter> = {
     get: (id) => rollsStore.list().find((x) => x.id === id),
     ids: () => rollsStore.list().map((x) => x.id),
     apply: (u, d) => rollsStore.applyRemote(u.map(decodeRoll).filter((x): x is Roll => x !== null), d),
+  },
+  toolbuys: {
+    get: (id) => toolBuysStore.list().find((x) => x.id === id),
+    ids: () => toolBuysStore.list().map((x) => x.id),
+    apply: (u, d) => toolBuysStore.applyRemote(u.map(decodeToolBuy).filter((x): x is ToolBuy => x !== null), d),
   },
 }
 
@@ -306,4 +313,4 @@ export function startSync(): () => void {
 }
 
 /** The local ids of every kind (for "Subir lo de este navegador"). */
-export const localIds = (): Record<SyncKind, string[]> => ({ surveys: ADAPTERS.surveys.ids(), materials: ADAPTERS.materials.ids(), providers: ADAPTERS.providers.ids(), clients: ADAPTERS.clients.ids(), sites: ADAPTERS.sites.ids(), tools: ADAPTERS.tools.ids(), stock: ADAPTERS.stock.ids(), units: ADAPTERS.units.ids(), reports: ADAPTERS.reports.ids(), payments: ADAPTERS.payments.ids(), notes: ADAPTERS.notes.ids(), rolls: ADAPTERS.rolls.ids() })
+export const localIds = (): Record<SyncKind, string[]> => ({ surveys: ADAPTERS.surveys.ids(), materials: ADAPTERS.materials.ids(), providers: ADAPTERS.providers.ids(), clients: ADAPTERS.clients.ids(), sites: ADAPTERS.sites.ids(), tools: ADAPTERS.tools.ids(), stock: ADAPTERS.stock.ids(), units: ADAPTERS.units.ids(), reports: ADAPTERS.reports.ids(), payments: ADAPTERS.payments.ids(), notes: ADAPTERS.notes.ids(), rolls: ADAPTERS.rolls.ids(), toolbuys: ADAPTERS.toolbuys.ids() })

@@ -5,7 +5,7 @@
     },
     "kicker": "Administración",
     "title": "Materiales",
-    "lead": "Cada material con quién lo vende y a qué precio (con IVA), lo que hay en la bodega y en cada despliegue para instalaciones y reemplazos, y cada ONT por número de serie.",
+    "lead": "Lo que hay en la bodega y en cada despliegue para instalaciones y reemplazos, las bobinas de fibra y cada ONT por número de serie. Los precios y las opciones de compra están en Compras de materiales.",
     "storage": "Se comparte con los demás teléfonos por la base de datos. «Exportar lista» sirve como respaldo en archivo.",
     "back": "Herramientas internas",
     "surveys": "Levantamientos",
@@ -73,7 +73,6 @@
     "noSupplier": "Sin proveedor de la lista",
     "supplierHint": "Agrega proveedores en Administración → Proveedores.",
     "tabs": {
-      "precios": "Precios y proveedores",
       "existencias": "Existencias",
       "bobinas": "Bobinas de fibra",
       "equipos": "ONTs por serie"
@@ -83,7 +82,7 @@
     "offersCount": "{n} proveedores",
     "offers": {
       "title": "Quién lo vende",
-      "hint": "Un proveedor por renglón con su precio con IVA y la fecha de la cotización.",
+      "hint": "Un proveedor o tienda por renglón con su precio con IVA, la fecha y el enlace. Las agotadas o descartadas se guardan pero no cuentan para el precio, salvo que las elijas.",
       "none": "Sin proveedores todavía: el material no tiene precio.",
       "one": "Proveedor",
       "supplier": "Proveedor",
@@ -93,7 +92,19 @@
       "choose": "Comprar a este",
       "useCheapest": "Usar el más barato",
       "remove": "Quitar proveedor",
-      "add": "Agregar proveedor y precio"
+      "add": "Agregar proveedor y precio",
+      "url": "Enlace de la tienda",
+      "urlHint": "La página del producto, para abrirla desde aquí.",
+      "open": "Abrir en la tienda ↗",
+      "status": "Estado",
+      "statuses": {
+        "vigente": "Vigente",
+        "agotada": "Agotada",
+        "descartada": "Descartada"
+      },
+      "buy": "Registrar compra",
+      "buyTitle": "Compra de {name}: cuánto llegó y a dónde.",
+      "buyNote": "Compra a {store}, {price} por {unit}."
     },
     "stockTitle": "Existencias",
     "minStock": "Mínimo en bodega",
@@ -341,6 +352,17 @@
       "brandNone": "Sin indicar",
       "brandOther": "Otra… (escribir)",
       "brandTyped": "Nombre de la marca"
+    },
+    "buyLink": "Precios y opciones de compra →",
+    "stockLink": "Ver existencias de este material →",
+    "web": {
+      "title": "Opciones vistas en la web",
+      "hint": "Publicaciones en tiendas de México como se veían el {date}, no cotizaciones: verifica precio, IVA, vendedor y existencias antes de comprar.",
+      "add": "Agregar como opción",
+      "added": "Ya está como opción",
+      "ivaSin": "La tienda lo muestra sin IVA",
+      "ivaNoDice": "La tienda no dice si incluye IVA",
+      "verify": "Precio visto en la web el {date}; verificar."
     }
   }
 }

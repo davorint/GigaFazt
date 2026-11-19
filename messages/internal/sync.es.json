@@ -55,7 +55,8 @@
         "reports": "Reportes",
         "payments": "Pagos",
         "notes": "Notas",
-        "rolls": "Bobinas de fibra"
+        "rolls": "Bobinas de fibra",
+        "toolbuys": "Compras de herramientas"
       }
     }
   }

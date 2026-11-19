@@ -1,0 +1,99 @@
+{
+  "comprasMateriales": {
+    "meta": {
+      "title": "Compras de materiales · Interno"
+    },
+    "kicker": "Administración",
+    "title": "Compras de materiales",
+    "lead": "Cada material con sus opciones de compra: quién lo vende, a qué precio con IVA, el enlace de la tienda y si sigue vigente. Los levantamientos usan la opción elegida o la más barata vigente. «Registrar compra» suma lo que llegó a las existencias.",
+    "storage": "Se comparte con los demás teléfonos por la base de datos. «Exportar lista» sirve como respaldo en archivo.",
+    "stockLink": "Ver existencias →"
+  },
+  "comprasHerramientas": {
+    "meta": {
+      "title": "Compras de herramientas · Interno"
+    },
+    "kicker": "Administración",
+    "title": "Compras de herramientas",
+    "lead": "Las opciones para comprar herramientas nuevas: cada modelo con sus ofertas (tienda, precio con IVA, enlace y fecha), prioridad y estado, agrupadas por herramienta para comparar. Al marcarla comprada se agrega a Herramientas.",
+    "stockLink": "Ver herramientas →",
+    "noStorage": "Este navegador no deja guardar datos: lo que agregues se pierde al cerrar la página.",
+    "add": "Agregar opción de compra",
+    "addSubmit": "Agregar",
+    "need": "Herramienta que se necesita",
+    "needPlaceholder": "Fusionadora de fibra óptica",
+    "needHint": "El nombre de la herramienta en Herramientas; las opciones de lo mismo se comparan juntas.",
+    "noNeed": "Sin herramienta",
+    "brand": "Marca",
+    "model": "Modelo",
+    "category": "Tipo",
+    "specs": "Características",
+    "quantity": "Cantidad",
+    "pieces": "pzas",
+    "priority": "Prioridad",
+    "priorities": {
+      "alta": "Prioridad alta",
+      "media": "Prioridad media",
+      "baja": "Prioridad baja"
+    },
+    "status": "Estado",
+    "statusHint": "Idea → cotizado → aprobado → comprado, o descartado.",
+    "statuses": {
+      "idea": "Idea",
+      "cotizado": "Cotizado",
+      "aprobado": "Aprobado",
+      "comprado": "Comprado",
+      "descartado": "Descartado"
+    },
+    "search": "Buscar",
+    "show": "Mostrar",
+    "shows": {
+      "abiertas": "Pendientes",
+      "todas": "Todas",
+      "compradas": "Compradas",
+      "descartadas": "Descartadas"
+    },
+    "count": "{open} pendientes · {n} en total",
+    "empty": "No hay opciones con ese filtro.",
+    "groupCount": "{n, plural, one {# opción} other {# opciones}}",
+    "offersCount": "{n} ofertas",
+    "noPrice": "Sin precio",
+    "notes": "Notas",
+    "offers": {
+      "title": "Dónde se vende",
+      "hint": "Una tienda o proveedor por renglón, con el precio por pieza con IVA y la fecha en que lo viste.",
+      "none": "Sin ofertas todavía: agrega dónde se vende.",
+      "one": "Oferta",
+      "supplier": "Proveedor registrado",
+      "noSupplier": "Otro (escribir)",
+      "store": "Tienda o proveedor",
+      "price": "Precio por pieza con IVA",
+      "date": "Fecha del precio",
+      "url": "Enlace de la tienda",
+      "notes": "Notas",
+      "open": "Abrir en la tienda ↗",
+      "chosen": "Se compraría aquí (elegida)",
+      "cheapest": "La más barata",
+      "choose": "Comprar aquí",
+      "useCheapest": "Usar la más barata",
+      "remove": "Quitar oferta",
+      "add": "Agregar oferta"
+    },
+    "markBought": "Marcar comprada y agregar a Herramientas",
+    "confirmBought": "¿Marcar «{name}» como comprada? Se agrega a Herramientas con su marca, modelo y el precio de la oferta elegida (o la más barata).",
+    "boughtDone": "Agregada a Herramientas.",
+    "bought": "Comprada · ver en Herramientas →",
+    "remove": "Eliminar opción",
+    "confirmRemove": "¿Eliminar la opción «{name}»?",
+    "web": {
+      "title": "Opciones vistas en la web",
+      "summary": "{n} modelos de tiendas en México, vistos el {date} · {pending} sin agregar",
+      "hint": "Publicaciones en tiendas de México como se veían el {date}, no cotizaciones: verifica precio, IVA, vendedor y existencias antes de comprar.",
+      "add": "Agregar como opción",
+      "added": "Ya está en la lista · abrir",
+      "ivaSin": "La tienda lo muestra sin IVA.",
+      "ivaNoDice": "La tienda no dice si incluye IVA.",
+      "verify": "Precio visto en la web el {date}; verificar."
+    }
+  }
+}

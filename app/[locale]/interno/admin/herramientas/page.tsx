@@ -38,7 +38,10 @@ export default async function HerramientasPage({ params }: PageProps<"/[locale]/
         <p className="eyebrow">{t.kicker}</p>
         <h1 className="mt-3 text-4xl font-light tracking-tight text-foreground sm:text-5xl">{t.title}</h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-zinc-300">{t.lead}</p>
-        
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (proxy.ts checks the session and rewrites it) */}
+        <a href="/interno/admin/compras-herramientas" className="mt-3 inline-flex min-h-9 w-fit items-center text-sm text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+          {t.buyLink}
+        </a>
         <AdminLinks current="herramientas" />
       </section>
       <NextIntlClientProvider locale="es" messages={messages}>

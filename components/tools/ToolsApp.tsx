@@ -324,7 +324,7 @@ function Parts({ t, x, up }: { t: T; x: Tool; up: (p: Partial<Tool>) => void }) 
             <li key={id} className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2.5 ${low ? "border-amber-400/40" : "border-white/10"}`}>
               <span className="grid gap-0.5">
                 {item ? (
-                  <a href={`/interno/admin/materiales?m=${id}`} className="text-sm text-zinc-100 underline-offset-4 hover:underline">
+                  <a href={`/interno/admin/compras-materiales?m=${id}`} className="text-sm text-zinc-100 underline-offset-4 hover:underline">
                     {item.name}
                   </a>
                 ) : (

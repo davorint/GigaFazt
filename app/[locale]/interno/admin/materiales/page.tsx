@@ -11,8 +11,8 @@ import copy from "@/messages/internal/materiales.es.json"
 import mikrotik from "@/messages/internal/mikrotik.es.json"
 
 /**
- * /interno/admin/materiales (owner, 2026-11-17): the master materials list with prices (IVA included), from which each
- * project in /interno/levantamientos picks what it needs. Behind the /interno password (proxy.ts); Spanish only, not
+ * /interno/admin/materiales (owner, 2026-11-17; split 2026-11-18): materials in stock (each place's stock, fiber rolls,
+ * ONTs by serial). The master list with prices and buying options is /interno/admin/compras-materiales. Behind the /interno password (proxy.ts); Spanish only, not
  * linked from the public site, not in the sitemap, noindex.
  */
 export const metadata: Metadata = {
@@ -39,13 +39,16 @@ export default async function MaterialesPage({ params }: PageProps<"/[locale]/in
         <h1 className="mt-3 text-4xl font-light tracking-tight text-foreground sm:text-5xl">{t.title}</h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-zinc-300">{t.lead}</p>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-400">{t.storage}</p>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (proxy.ts checks the session and rewrites it) */}
+        <a href="/interno/admin/compras-materiales" className="mt-3 inline-flex min-h-9 w-fit items-center text-sm text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+          {t.buyLink}
+        </a>
         <AdminLinks current="materiales" />
       </section>
       <NextIntlClientProvider locale="es" messages={messages}>
         <SyncBar />
         <MaterialsApp />
         <div className="mt-12 grid gap-3">
-          <DeletedList kind="materials" named />
           <DeletedList kind="stock" named />
           <DeletedList kind="rolls" named />
         </div>

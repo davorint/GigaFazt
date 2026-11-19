@@ -70,7 +70,11 @@
         },
         "herramientas": {
           "name": "Herramientas",
-          "desc": "Pinzas, fusionadora, medidores y demás: quién o dónde tiene cada una, su compra, su mantenimiento y lo que necesita atención."
+          "desc": "Pinzas, fusionadora, medidores y demás que ya tenemos: quién o dónde tiene cada una, su compra, su mantenimiento y lo que necesita atención."
+        },
+        "compras-herramientas": {
+          "name": "Compras de herramientas",
+          "desc": "Opciones para comprar herramientas nuevas: modelos con sus ofertas, prioridad y estado; al comprarla pasa a Herramientas."
         },
         "proveedores": {
           "name": "Proveedores",
@@ -78,7 +82,11 @@
         },
         "materiales": {
           "name": "Materiales",
-          "desc": "La lista maestra con unidad, precio con IVA y proveedor. De aquí se escoge lo que lleva cada proyecto."
+          "desc": "Existencias en la bodega y en cada despliegue, bobinas de fibra y ONTs por número de serie."
+        },
+        "compras-materiales": {
+          "name": "Compras de materiales",
+          "desc": "La lista maestra con las opciones de compra de cada material: proveedor, precio con IVA, enlace y estado. De aquí salen los costos de los proyectos."
         }
       }
     },

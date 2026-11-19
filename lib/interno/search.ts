@@ -98,7 +98,7 @@ export function searchAll(d: SearchData, q: string, limitPerKind = 8): Hit[] {
     "materials",
     d.items,
     (x) => [x.name, x.sku, x.notes, ...x.offers.map((o) => o.sku)].join(" "),
-    (x) => ({ id: x.id, label: x.name, detail: x.unit, href: `${A}/materiales?m=${x.id}` })
+    (x) => ({ id: x.id, label: x.name, detail: x.unit, href: `${A}/compras-materiales?m=${x.id}` })
   )
   add(
     "units",

@@ -34,6 +34,10 @@ export const ROLES = [
 export type Role = (typeof ROLES)[number]
 export const CLIENT_ROLES: Role[] = ["drop-m", "ont", "client-connector", "client-labor"]
 
+/** An offer's state (owner, 2026-11-18, Compras de materiales): agotada / descartada ones are kept but never priced. */
+export const OFFER_STATUSES = ["vigente", "agotada", "descartada"] as const
+export type OfferStatus = (typeof OFFER_STATUSES)[number]
+
 /** Who sells an item and at what price (owner, 2026-11-18: several suppliers per material, a price each). */
 export type Offer = {
   id: string
@@ -46,6 +50,9 @@ export type Offer = {
   date: string
   sku: string
   notes: string
+  /** The store's page for it (http/https), "" = none. */
+  url: string
+  status: OfferStatus
 }
 
 export type Item = {
@@ -72,14 +79,29 @@ export type Item = {
   serialized: boolean
 }
 
-export const newOffer = (p: Partial<Offer> = {}): Offer => ({ id: newId(), supplierId: "", supplier: "", price: null, date: "", sku: "", notes: "", ...p })
+export const newOffer = (p: Partial<Offer> = {}): Offer => ({ id: newId(), supplierId: "", supplier: "", price: null, date: "", sku: "", notes: "", url: "", status: "vigente", ...p })
 
-/** The offer an item's price comes from: the chosen one, else the cheapest with a price, else the first. */
+/** A store link worth opening: http(s) only, else "". */
+export function safeUrl(v: unknown): string {
+  if (typeof v !== "string" || v.length > 500) return ""
+  try {
+    const u = new URL(v.trim())
+    return u.protocol === "https:" || u.protocol === "http:" ? u.toString() : ""
+  } catch {
+    return ""
+  }
+}
+
+/**
+ * The offer an item's price comes from: the chosen one, else the cheapest current (vigente) one with a price, else the
+ * first current one. Sold-out and discarded offers only count when chosen on purpose.
+ */
 export function effectiveOffer(it: Pick<Item, "offers" | "offerId">): Offer | null {
   const chosen = it.offerId ? it.offers.find((o) => o.id === it.offerId) : undefined
   if (chosen) return chosen
-  const priced = it.offers.filter((o) => o.price !== null).sort((a, b) => a.price! - b.price!)
-  return priced[0] ?? it.offers[0] ?? null
+  const live = it.offers.filter((o) => o.status === "vigente")
+  const priced = live.filter((o) => o.price !== null).sort((a, b) => a.price! - b.price!)
+  return priced[0] ?? live[0] ?? null
 }
 
 /** The item with its price, supplier and part number taken from its offers (no offers: no price, no supplier). */
@@ -140,6 +162,8 @@ function decodeOffer(v: unknown): Offer | null {
     date: typeof v.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v.date) ? v.date : "",
     sku: str(v.sku, 100),
     notes: str(v.notes, 500),
+    url: safeUrl(v.url),
+    status: (OFFER_STATUSES as readonly unknown[]).includes(v.status) ? (v.status as OfferStatus) : "vigente",
   }
 }
 
@@ -152,7 +176,7 @@ export function decodeItem(v: unknown): Item | null {
   const offers: Offer[] = Array.isArray(v.offers)
     ? v.offers.slice(0, 30).map(decodeOffer).filter((x): x is Offer => x !== null)
     : legacy
-      ? [{ id: id.slice(0, 56) + "-of1", supplierId: okId(v.supplierId) ? (v.supplierId as string) : "", supplier: str(v.supplier, 200), price: money(v.price), date: "", sku: str(v.sku, 100), notes: "" }]
+      ? [{ id: id.slice(0, 56) + "-of1", supplierId: okId(v.supplierId) ? (v.supplierId as string) : "", supplier: str(v.supplier, 200), price: money(v.price), date: "", sku: str(v.sku, 100), notes: "", url: "", status: "vigente" }]
       : []
   const offerId = okId(v.offerId) && offers.some((o) => o.id === v.offerId) ? (v.offerId as string) : ""
   const minStock = typeof v.minStock === "number" && Number.isFinite(v.minStock) && v.minStock >= 0 && v.minStock <= 1e6 ? v.minStock : null

@@ -51,7 +51,7 @@ export function MaterialsSection({ s, set }: SectionProps) {
       <p className="text-sm leading-relaxed text-zinc-300">
         {t("intro")}{" "}
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (proxy.ts checks the session and rewrites it) */}
-        <a href="/interno/admin/materiales" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+        <a href="/interno/admin/compras-materiales" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
           {t("catalogLink")}
         </a>
       </p>

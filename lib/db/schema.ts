@@ -287,6 +287,24 @@ export const rolls = pgTable(
 )
 export const rollVersions = versions("roll_versions", "roll_id")
 
+// ── Tool buying options (/interno/admin/compras-herramientas) ───────────────
+
+export const toolBuys = pgTable(
+  "tool_buys",
+  {
+    id: text("id").primaryKey(),
+    /** What it's for ("Fusionadora de fibra óptica"). */
+    need: text("need").notNull().default(""),
+    /** Brand and model. */
+    label: text("label").notNull().default(""),
+    status: text("status").notNull().default("idea"),
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("tool_buys_rev_idx").on(t.rev)]
+)
+export const toolBuyVersions = versions("tool_buy_versions", "tool_buy_id")
+
 // ── Saved MikroTik deployments ──────────────────────────────────────────────
 
 export const deployments = pgTable(
