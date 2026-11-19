@@ -21,12 +21,13 @@ describe("report alerts and flood control", () => {
     expect(plain).not.toContain("falla general")
     expect(plain).not.toMatch(/\n\n\n/)
   })
-  it("sender address: first forwarded entry, hashed per day, never stored as is", () => {
+  it("sender address: first forwarded entry, hashed (the same all day: the hourly limits don't reset at midnight), never stored as is", () => {
     expect(clientIp(new Headers({ "x-forwarded-for": "201.1.2.3, 10.0.0.1" }))).toBe("201.1.2.3")
     expect(clientIp(new Headers({ "x-real-ip": "201.1.2.4" }))).toBe("201.1.2.4")
-    const h = ipHash("201.1.2.3", "2026-11-18")
+    const h = ipHash("201.1.2.3")
     expect(h).toMatch(/^[0-9a-f]{32}$/)
     expect(h).not.toContain("201")
-    expect(ipHash("201.1.2.3", "2026-11-19")).not.toBe(h)
+    expect(ipHash("201.1.2.3")).toBe(h)
+    expect(ipHash("201.1.2.4")).not.toBe(h)
   })
 })

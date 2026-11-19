@@ -30,14 +30,20 @@ export function hashSalt(): string {
   return process.env.REPORT_HASH_SALT || process.env.INTERNO_SESSION_SECRET || "gigafazt-reportes"
 }
 
-/** Salted, so the stored value can't be turned back into an address by trying them all. Changes every day. */
-export function ipHash(ip: string, day = new Date().toISOString().slice(0, 10)): string {
-  return createHash("sha256").update(`${hashSalt()}|${day}|${ip}`).digest("hex").slice(0, 32)
+/**
+ * Salted, so the stored value can't be turned back into an address by trying them all. The same all day long: a hash
+ * that changed at midnight (UTC, 6 pm in Mexico) gave every sender a fresh count of the hourly limits then. Rows are
+ * deleted after a day (`hit`, `withinLimits`), so the hash can't follow anyone from one day to the next.
+ */
+export function ipHash(ip: string): string {
+  return createHash("sha256").update(`${hashSalt()}|ip|${ip}`).digest("hex").slice(0, 32)
 }
+
+const clearOld = (pool: Pool) => pool.query(`delete from report_hits where at < now() - interval '1 day'`)
 
 /** Whether one more report from this address fits; old rows are cleared on the way. */
 export async function withinLimits(pool: Pool, hash: string): Promise<boolean> {
-  await pool.query(`delete from report_hits where at < now() - interval '1 day'`)
+  await clearOld(pool)
   const r = (
     await pool.query(
       `select count(*) filter (where ip_hash = $1)::int as mine, count(*) filter (where ip_hash !~ ':')::int as everyone from report_hits where at > now() - interval '1 hour'`,
@@ -57,5 +63,6 @@ export async function underLimit(pool: Pool, key: string, max: number): Promise<
 }
 
 export async function hit(pool: Pool, key: string) {
+  await clearOld(pool)
   await pool.query(`insert into report_hits (ip_hash) values ($1)`, [key])
 }

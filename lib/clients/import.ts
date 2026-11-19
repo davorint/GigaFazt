@@ -11,6 +11,7 @@
  * Matching with the clients already there is done by mergeClients (model.ts): known clients only get empty fields
  * filled.
  */
+import { csvCell, unguard, type Cell } from "../csv"
 import { CLIENT_KINDS, PAY_METHODS, clientStatus, newClient, newService, type Client, type ClientKind, type PayMethod, type Service, type ServiceStatus } from "./model"
 
 /** Fields a spreadsheet column can fill. */
@@ -203,7 +204,7 @@ export function rowsToClients(rows: string[][], mapping: (ImportField | "")[], s
     const v: Partial<Record<ImportField, string>> = {}
     mapping.forEach((f, i) => {
       const x = (r[i] ?? "").trim()
-      if (f && x && !v[f]) v[f] = x
+      if (f && x && !v[f]) v[f] = unguard(x)
     })
     const bad = (field: ImportField) => errors.push({ line, field, value: v[field] ?? "" })
     const c = newClient()
@@ -237,8 +238,11 @@ export function rowsToClients(rows: string[][], mapping: (ImportField | "")[], s
       if (st) main.status = st
       else bad("status")
     }
-    const hasNet = NET_ONLY.some((f) => v[f]) || (c.kind !== "tv" && MAIN.some((f) => f !== "status" && v[f]))
     const tvYes = v.tv ? yes(v.tv) : false
+    // A row that only speaks of TV (no internet column, plan or internet price) is an IPTV-only client: its install
+    // date and status are the TV service's.
+    const tvOnly = (tvYes || !!v.tvPackage || !!v.tvMonthly) && !NET_ONLY.some((f) => v[f]) && !v.plan && !v.monthly
+    const hasNet = NET_ONLY.some((f) => v[f]) || (c.kind !== "tv" && !tvOnly && MAIN.some((f) => f !== "status" && v[f]))
     const hasTv = tvYes || !!v.tvPackage || !!v.tvMonthly || c.kind === "tv"
     if (hasNet) {
       const net = newService("internet", { ...main, ontModel: v.ontModel?.slice(0, 60) ?? "" })
@@ -317,10 +321,7 @@ export function pppSecretsToClients(text: string): { clients: Client[]; skipped:
 
 /** The list as CSV (UTF-8 with BOM so Excel shows accents), with Spanish headers: one row per client, its first internet and first IPTV service (the same columns the import reads). */
 export function clientsCsv(list: Client[], headers: Record<ImportField, string>, labels: { kind: Record<ClientKind, string>; status: Record<string, string> }): string {
-  const esc = (v: unknown) => {
-    const s = v === null || v === undefined ? "" : typeof v === "boolean" ? (v ? "sí" : "no") : String(v)
-    return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
-  }
+  const esc = (v: unknown) => csvCell(v as Cell)
   const row = (c: Client) => {
     const net = c.services.find((s) => s.type === "internet")
     const tv = c.services.find((s) => s.type === "iptv")
@@ -336,7 +337,8 @@ export function clientsCsv(list: Client[], headers: Record<ImportField, string>,
       apartment: c.apartment,
       plan: net?.plan ?? "",
       installDate: main?.start ?? "",
-      monthly: net?.monthly ?? (tv && !net ? tv.monthly : null),
+      // A client with only IPTV: its price goes in the TV column (the import then makes no internet service for it).
+      monthly: net ? net.monthly : c.kind === "tv" && tv ? tv.monthly : null,
       status: labels.status[main?.status ?? clientStatus(c)],
       ontModel: net?.ontModel ?? "",
       ontSn: net?.ontSn ?? "",
@@ -346,7 +348,7 @@ export function clientsCsv(list: Client[], headers: Record<ImportField, string>,
       ontId: net?.ontId ?? null,
       tv: !!tv,
       tvPackage: tv?.plan ?? "",
-      tvMonthly: net ? (tv?.monthly ?? null) : null,
+      tvMonthly: tv && (net || c.kind !== "tv") ? tv.monthly : null,
       payDay: c.payDay,
       payMethod: c.payMethod,
       notes: c.notes,

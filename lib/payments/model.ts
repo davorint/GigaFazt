@@ -18,6 +18,7 @@
  */
 import type { Client, Service } from "../clients/model"
 import { newId } from "../survey/id"
+import { csvCell } from "../csv"
 
 export const PAYMENT_METHODS = ["efectivo", "transferencia", "deposito", "tarjeta", "otro"] as const
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number]
@@ -216,10 +217,7 @@ export function morososLines(clients: Client[], payments: Payment[], today: stri
 
 /** Payments as CSV (Spanish headers, BOM so Excel reads accents). */
 export function paymentsCsv(payments: Payment[], nameOf: (clientId: string) => string, methodLabel: (m: PaymentMethod) => string): string {
-  const cell = (v: string | number) => {
-    const s = String(v)
-    return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
-  }
+  const cell = csvCell
   const rows = [["Fecha", "Cliente", "Monto", "Forma de pago", "Referencia", "Notas", "Registró"]]
   for (const p of [...payments].sort((a, b) => b.date.localeCompare(a.date))) rows.push([p.date, nameOf(p.clientId), p.amount.toFixed(2), methodLabel(p.method), p.reference, p.notes, p.by])
   return "﻿" + rows.map((r) => r.map(cell).join(",")).join("\r\n")

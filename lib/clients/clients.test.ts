@@ -141,7 +141,10 @@ describe("from the website", () => {
     const labels = { kind: { residencial: "Residencial", administracion: "Administración", empresa: "Empresa", tv: "TV" }, status: { activo: "Activo", suspendido: "Suspendido", cancelado: "Cancelado", "sin-servicio": "Sin servicio" } }
     const ana = newClient({ name: 'Pérez, "Ana"', services: [newService("internet", { pppoeUser: "ana", plan: "plan-500M", monthly: 496, start: "2025-03-15" }), newService("iptv", { plan: "Básico", monthly: 250 })] })
     const rosa = newClient({ kind: "tv", name: "Rosa", services: [newService("iptv", { plan: "Premium", monthly: 300, status: "suspendido" })] })
-    const csv = clientsCsv([ana, rosa], headers, labels)
+    // A resident with only IPTV, and a name typed like a formula on the public form.
+    const luis = newClient({ name: "=HYPERLINK(1)", phone: "+52 55 1234 5678", services: [newService("iptv", { plan: "Básico", monthly: 250, start: "2026-01-10" })] })
+    const csv = clientsCsv([ana, rosa, luis], headers, labels)
+    expect(csv).toContain("'=HYPERLINK(1),'+52 55 1234 5678")
     expect(csv.startsWith("﻿Tipo,Nombre,")).toBe(true)
     expect(csv).toContain('"Pérez, ""Ana"""')
     const rows = parseTable(csv)
@@ -150,7 +153,9 @@ describe("from the website", () => {
     expect(back.map((c) => [c.kind, c.name, c.services.map((s) => [s.type, s.plan, s.monthly, s.status])])).toEqual([
       ["residencial", 'Pérez, "Ana"', [["internet", "plan-500M", 496, "activo"], ["iptv", "Básico", 250, "activo"]]],
       ["tv", "Rosa", [["iptv", "Premium", 300, "suspendido"]]],
+      ["residencial", "=HYPERLINK(1)", [["iptv", "Básico", 250, "activo"]]],
     ])
+    expect(back[2]).toMatchObject({ phone: "+52 55 1234 5678", services: [{ start: "2026-01-10" }] })
   })
   it("/interno/admin/clientes is an internal page", () => {
     expect(matchInternal("/INTERNO/Admin/Clientes")?.rewriteTo).toBe("/es/interno/admin/clientes")
