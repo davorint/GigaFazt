@@ -54,7 +54,11 @@ export type Service = {
   rxDbm: number | null
   oltRxDbm: number | null
   rxDate: string
+  /** Earlier light readings, one per day, oldest first (the current one is rxDbm/rxDate). */
+  rxHistory: LightReading[]
 }
+
+export type LightReading = { date: string; rx: number; oltRx: number | null }
 
 export type PricePeriod = { until: string; monthly: number | null }
 
@@ -113,6 +117,7 @@ export function newService(type: ServiceType, p: Partial<Service> = {}): Service
     rxDbm: null,
     oltRxDbm: null,
     rxDate: "",
+    rxHistory: [],
     ...p,
   }
 }
@@ -188,6 +193,14 @@ function decodeService(v: unknown): Service | null {
     rxDbm: net ? num(v.rxDbm, -60, 15) : null,
     oltRxDbm: net ? num(v.oltRxDbm, -60, 15) : null,
     rxDate: net ? date(v.rxDate) : "",
+    rxHistory: net && Array.isArray(v.rxHistory)
+      ? v.rxHistory
+          .filter(isObj)
+          .map((x) => ({ date: date(x.date), rx: num(x.rx, -60, 15), oltRx: num(x.oltRx, -60, 15) }))
+          .filter((x): x is LightReading => !!x.date && x.rx !== null)
+          .sort((a, b) => a.date.localeCompare(b.date))
+          .slice(-MAX_LIGHT_HISTORY)
+      : [],
   }
 }
 
@@ -224,6 +237,25 @@ export function decodeClient(v: unknown): Client | null {
     createdAt: iso(v.createdAt),
     updatedAt: iso(v.updatedAt),
   }
+}
+
+/** Light readings kept per service. */
+export const MAX_LIGHT_HISTORY = 24
+
+/**
+ * A new light reading on a service (typed, or from the OLT's optical list): the reading it replaces goes to the history,
+ * so a fiber that slowly loses light shows. Several readings the same day keep only the last one.
+ */
+export function withReading(s: Service, rx: number | null, oltRx: number | null, date: string): Service {
+  let hist = s.rxHistory
+  if (s.rxDbm !== null && s.rxDate && s.rxDate !== date) hist = [...hist.filter((h) => h.date !== s.rxDate), { date: s.rxDate, rx: s.rxDbm, oltRx: s.oltRxDbm }].sort((a, b) => a.date.localeCompare(b.date)).slice(-MAX_LIGHT_HISTORY)
+  return { ...s, rxDbm: rx, oltRxDbm: oltRx, rxDate: rx === null ? "" : date, rxHistory: hist }
+}
+
+/** How much light was lost since the first reading kept (dB, positive = less light now); null without history. */
+export function lightDrop(s: Pick<Service, "rxDbm" | "rxHistory">): number | null {
+  if (s.rxDbm === null || !s.rxHistory.length) return null
+  return Math.round((s.rxHistory[0].rx - s.rxDbm) * 10) / 10
 }
 
 /** Active if any service is active; else suspended if any is; else cancelled; "sin-servicio" without services. */
@@ -294,7 +326,7 @@ export function fillEmpty(base: Client, incoming: Client): { client: Client; cha
       changed = true
       continue
     }
-    const r = fillFields(services[k], s, ["id", "type", "status", "cancelledAt", "priceHistory"])
+    const r = fillFields(services[k], s, ["id", "type", "status", "cancelledAt", "priceHistory", "rxHistory"])
     if (r.changed) {
       services[k] = r.out
       changed = true

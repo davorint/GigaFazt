@@ -1,3 +1,4 @@
+import { withReading } from "./model"
 /**
  * Light at each client's ONT (owner, 2026-11-18): the readings pasted from the OLT go on each client's internet service,
  * matched by OLT port + ONT ID within the location the OLT belongs to.
@@ -134,7 +135,7 @@ export function applyOptics(m: OpticsMatch, date: string): Client[] {
   const out = new Map<string, Client>()
   for (const { reading, client, serviceId } of m.matched) {
     const c = out.get(client.id) ?? client
-    out.set(client.id, { ...c, services: c.services.map((s) => (s.id === serviceId ? { ...s, rxDbm: reading.rx, oltRxDbm: reading.oltRx, rxDate: date } : s)) })
+    out.set(client.id, { ...c, services: c.services.map((s) => (s.id === serviceId ? withReading(s, reading.rx, reading.oltRx, date) : s)) })
   }
   return [...out.values()]
 }

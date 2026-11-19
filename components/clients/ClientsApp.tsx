@@ -21,6 +21,8 @@ import {
   onOurFiber,
   pppoeUsers,
   setPrice,
+  withReading,
+  lightDrop,
   type Client,
   type ClientKind,
   type ClientStatus,
@@ -391,6 +393,19 @@ const nextMonth = (m: string) => {
   return mo === 12 ? `${y + 1}-01` : `${y}-${String(mo + 1).padStart(2, "0")}`
 }
 
+/** Earlier light readings of a service and how much it has lost since the first one. */
+function LightHistory({ t, s }: { t: T; s: Service }) {
+  if (!s.rxHistory.length) return null
+  const drop = lightDrop(s)
+  return (
+    <div className="grid content-start gap-1 sm:col-span-2">
+      <p className="font-mono text-xs text-zinc-300">{t("light.history")}</p>
+      <p className="font-mono text-xs text-zinc-400">{[...s.rxHistory].reverse().slice(0, 8).map((h) => `${h.date}: ${h.rx.toFixed(1)}`).join(" · ")}</p>
+      {drop !== null && drop >= 2 && <p className="text-xs text-amber-200">{t("light.dropping", { db: drop.toFixed(1), since: s.rxHistory[0].date })}</p>}
+    </div>
+  )
+}
+
 function ServiceCard({ t, c, s, n, onChange, onRemove }: { t: T; c: Client; s: Service; n: number; onChange: (s: Service) => void; onRemove: () => void }) {
   const up = (p: Partial<Service>) => onChange({ ...s, ...p })
   const net = s.type === "internet"
@@ -437,8 +452,9 @@ function ServiceCard({ t, c, s, n, onChange, onRemove }: { t: T; c: Client; s: S
             {field("deployment")}
             {field("oltPort")}
             <NumberField label={t("fields.ontId")} unit="#" integer optional max={255} value={s.ontId} onChange={(v) => up({ ontId: v })} />
-            <NumberField label={t("light.rx")} unit="dBm" optional min={-60} max={15} precision={2} value={s.rxDbm} onChange={(v) => up({ rxDbm: v, rxDate: v === null ? "" : s.rxDate || localToday() })} hint={s.rxDbm !== null ? t(`light.status.${lightStatus(s.rxDbm)}`) + (s.rxDate ? ` · ${t("light.readOn", { date: s.rxDate })}` : "") : t("light.rxHint")} />
+            <NumberField label={t("light.rx")} unit="dBm" optional min={-60} max={15} precision={2} value={s.rxDbm} onChange={(v) => onChange(withReading(s, v, s.oltRxDbm, localToday()))} hint={s.rxDbm !== null ? t(`light.status.${lightStatus(s.rxDbm)}`) + (s.rxDate ? ` · ${t("light.readOn", { date: s.rxDate })}` : "") : t("light.rxHint")} />
             <NumberField label={t("light.oltRx")} unit="dBm" optional min={-60} max={15} precision={2} value={s.oltRxDbm} onChange={(v) => up({ oltRxDbm: v })} />
+            <LightHistory t={t} s={s} />
           </>
         )}
       </div>

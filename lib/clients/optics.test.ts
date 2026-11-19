@@ -62,3 +62,20 @@ describe("light at each client's ONT", () => {
     expect(matchOptics(readings, [a, b], "").matched.map((x) => x.client.id)).toEqual([b.id, a.id])
   })
 })
+
+describe("light history (2026-11-19)", () => {
+  it("each new day's reading moves the previous one to the history; the same day only keeps the last; the drop since the first shows", async () => {
+    const { newService, withReading, lightDrop, decodeClient } = await import("./model")
+    let s = newService("internet")
+    s = withReading(s, -19.5, -22, "2026-09-01")
+    s = withReading(s, -20, null, "2026-09-01")
+    expect(s.rxHistory).toEqual([])
+    s = withReading(s, -21.2, null, "2026-10-15")
+    s = withReading(s, -22.4, null, "2026-11-19")
+    expect(s.rxHistory.map((h) => [h.date, h.rx])).toEqual([["2026-09-01", -20], ["2026-10-15", -21.2]])
+    expect(s).toMatchObject({ rxDbm: -22.4, rxDate: "2026-11-19" })
+    expect(lightDrop(s)).toBe(2.4)
+    const back = decodeClient({ services: [{ ...s, type: "internet" }] })!.services[0]
+    expect(back.rxHistory).toHaveLength(2)
+  })
+})

@@ -245,7 +245,9 @@
       "unknown": "{n, plural, one {# lectura sin cliente} other {# lecturas sin cliente}} con ese puerto y ONT ID:",
       "unknownLine": "renglón {line}: {port} ONT {ont} · {rx} dBm",
       "apply": "Guardar lecturas",
-      "done": "{n, plural, one {# lectura guardada} other {# lecturas guardadas}} en {clients, plural, one {# cliente} other {# clientes}}."
+      "done": "{n, plural, one {# lectura guardada} other {# lecturas guardadas}} en {clients, plural, one {# cliente} other {# clientes}}.",
+      "history": "Lecturas anteriores (dBm)",
+      "dropping": "Ha perdido {db} dB desde el {since}: revisa conectores y fibra antes de que falle."
     },
     "pay": {
       "intro": "Cada mes cuesta lo que suman los servicios del cliente, con vencimiento en su día de pago (el 1 si no tiene). El mes de la instalación no se cobra: el primer cobro es el mes siguiente. Un servicio cancelado sigue debiendo los meses con día de pago antes de su fecha de cancelación. Cada mes se cobra al precio que tenía entonces (un cambio de precio cuenta desde el mes siguiente). Los pagos cubren primero el mes más antiguo. Un mes sin pagar {grace} días después de su día de pago cuenta como atrasado. Se cobra desde \"Cobrar desde\" del cliente; si no lo tiene, desde su primer pago registrado o desde este mes.",
