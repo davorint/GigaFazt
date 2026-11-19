@@ -281,6 +281,17 @@ function Fieldset({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
+/** What to tell the client about where their report is (Atención → "Avisar al cliente"). */
+function statusText(t: T, r: Report): string {
+  const code = reportCode(r)
+  if (r.status === "visita" && r.visitDate) {
+    const date = new Date(`${r.visitDate}T12:00:00Z`).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
+    return t("notify.visita", { code, date })
+  }
+  if (r.status === "resuelto") return t("notify.resuelto", { code, how: r.resolution.trim() ? ` ${r.resolution.trim().replace(/\.$/, "")}.` : "" })
+  return t(`notify.${r.status === "visita" ? "en-proceso" : r.status}`, { code })
+}
+
 const waNumber = (phone: string) => {
   const d = phone.replace(/\D/g, "")
   return d.length === 10 ? `52${d}` : d
@@ -392,6 +403,11 @@ function ReportEditor({ t, r, all, clients, sites }: { t: T; r: Report; all: Rep
           <PickField label={t("attention.cause")} value={r.cause} onChange={(cause) => up({ cause })} options={CAUSES.map((c) => ({ value: c, label: t(`causes.${c || "none"}`) }))} />
         </div>
         <AreaField label={t("attention.resolution")} value={r.resolution} onChange={(v) => up({ resolution: v })} hint={t("attention.resolutionHint")} rows={2} />
+        {phone && (
+          <a href={`https://wa.me/${waNumber(phone)}?text=${encodeURIComponent(statusText(t, r))}`} target="_blank" rel="noopener noreferrer" className={`${SMALL} w-fit`}>
+            {t("notify.button", { status: label(r.status) })}
+          </a>
+        )}
         {r.resolvedAt && <p className="text-xs text-zinc-400">{t("attention.closedAt", { date: new Date(r.resolvedAt).toLocaleString("es-MX") })}</p>}
       </Fieldset>
 

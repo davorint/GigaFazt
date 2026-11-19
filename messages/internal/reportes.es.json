@@ -168,6 +168,14 @@
       "source": "Origen",
       "web": "Formulario del sitio",
       "staff": "Equipo"
+    },
+    "notify": {
+      "button": "Avisar al cliente por WhatsApp ({status})",
+      "nuevo": "Hola, recibimos tu reporte {code} de GigaFazt y ya lo estamos revisando. Te escribimos en cuanto tengamos novedades.",
+      "en-proceso": "Hola, tu reporte {code} de GigaFazt ya está en proceso. Te avisamos en cuanto quede resuelto.",
+      "visita": "Hola, programamos la visita de un técnico de GigaFazt para tu reporte {code} el {date}. Si no puedes ese día, respóndenos por aquí.",
+      "resuelto": "Hola, tu reporte {code} de GigaFazt quedó resuelto.{how} Si algo sigue fallando, respóndenos por aquí.",
+      "descartado": "Hola, cerramos tu reporte {code} de GigaFazt. Si el problema sigue, respóndenos por aquí y lo revisamos."
     }
   }
 }
