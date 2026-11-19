@@ -363,6 +363,77 @@
       "ivaSin": "La tienda lo muestra sin IVA",
       "ivaNoDice": "La tienda no dice si incluye IVA",
       "verify": "Precio visto en la web el {date}; verificar."
+    },
+    "fiber": {
+      "title": "Tipo de fibra y cable",
+      "hint": "Opcional. Elige lo que dice la ficha del producto; sirve para comparar opciones y filtrar la lista.",
+      "any": "Todos",
+      "none": "Sin especificar",
+      "summaryStrands": "{n, plural, one {# hilo} other {# hilos}}",
+      "mode": "Tipo de fibra",
+      "grade": "Norma de la fibra",
+      "cable": "Tipo de cable",
+      "place": "Instalación",
+      "strands": "Número de hilos",
+      "build": "Construcción",
+      "jacket": "Cubierta",
+      "strength": "Elemento de tensión",
+      "modes": {
+        "sm": "Monomodo (SM)",
+        "mm": "Multimodo (MM)"
+      },
+      "grades": {
+        "g652d": "G.652.D (monomodo estándar)",
+        "g657a1": "G.657.A1 (resistente a curvas)",
+        "g657a2": "G.657.A2 (curvas cerradas, drop e interior)",
+        "g657b3": "G.657.B3 (curvas muy cerradas)",
+        "g655": "G.655 (larga distancia)",
+        "om1": "OM1 (62.5/125)",
+        "om2": "OM2 (50/125)",
+        "om3": "OM3 (50/125, láser 10G)",
+        "om4": "OM4 (50/125, láser 10–100G)",
+        "om5": "OM5 (banda ancha, SWDM)"
+      },
+      "cables": {
+        "drop-plano": "Drop plano (tipo moño / bow-tie)",
+        "drop-redondo": "Drop redondo",
+        "drop-autosoportado": "Drop autosoportado (con mensajero)",
+        "adss": "ADSS aéreo autosoportado",
+        "figura-8": "Figura 8 (mensajero de acero)",
+        "ducto": "Para ducto o canalización",
+        "armado": "Armado (blindado contra roedores)",
+        "enterrado": "Directamente enterrado",
+        "microcable": "Microcable (soplado en microducto)",
+        "distribucion": "Distribución interior (tight buffer)",
+        "breakout": "Breakout (hilos con cubierta propia)",
+        "riser": "Vertical / riser (ductos de edificio)"
+      },
+      "places": {
+        "exterior": "Exterior",
+        "interior": "Interior",
+        "mixto": "Interior / exterior"
+      },
+      "builds": {
+        "tubo-holgado": "Tubo holgado (loose tube, multitubo)",
+        "tubo-central": "Tubo central",
+        "ajustado": "Buffer ajustado (tight buffer)",
+        "cinta": "Cinta (ribbon)"
+      },
+      "jackets": {
+        "lszh": "LSZH (baja emisión de humo, sin halógenos)",
+        "pvc": "PVC",
+        "pe": "PE / HDPE (exterior, resistente a UV)",
+        "ofnr": "OFNR (riser)",
+        "ofnp": "OFNP (plenum)"
+      },
+      "strengths": {
+        "frp": "FRP (dieléctrico)",
+        "acero": "Alambre de acero",
+        "aramida": "Aramida (kevlar)",
+        "mensajero": "Mensajero de acero",
+        "ninguno": "Ninguno"
+      },
+      "filters": "Filtrar fibra y cable"
     }
   }
 }

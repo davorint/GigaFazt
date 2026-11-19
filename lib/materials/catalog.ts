@@ -11,6 +11,7 @@
  */
 import { newId } from "../survey/id"
 import { SPLIT_RATIOS, TAP_RATIOS } from "../survey/design"
+import { decodeFiber, emptyFiber, type FiberSpec } from "./fiber"
 
 export const CATEGORIES = ["fibra", "splitters", "cajas", "conectores", "ont", "equipo", "wifi", "obra", "otros"] as const
 export type Category = (typeof CATEGORIES)[number]
@@ -77,6 +78,8 @@ export type Item = {
   minStock: number | null
   /** Tracked one by one by serial number (ONTs and other loaned equipment). */
   serialized: boolean
+  /** Fiber and cable items: mode, grade, cable type, indoor or outdoor, strands… (all optional). */
+  fiber: FiberSpec
 }
 
 export const newOffer = (p: Partial<Offer> = {}): Offer => ({ id: newId(), supplierId: "", supplier: "", price: null, date: "", sku: "", notes: "", url: "", status: "vigente", ...p })
@@ -114,12 +117,12 @@ export function withEffective(it: Item): Item {
 export const offerFrom = (it: Item, providerId: string) => it.offers.find((o) => o.supplierId === providerId)
 
 /** A new item. */
-export const newItem = (p: Partial<Item> = {}): Item => ({ id: newId(), name: "", category: "otros", unit: "pza", price: null, role: "", supplierId: "", supplier: "", sku: "", notes: "", offers: [], offerId: "", minStock: null, serialized: false, ...p })
+export const newItem = (p: Partial<Item> = {}): Item => ({ id: newId(), name: "", category: "otros", unit: "pza", price: null, role: "", supplierId: "", supplier: "", sku: "", notes: "", offers: [], offerId: "", minStock: null, serialized: false, fiber: emptyFiber(), ...p })
 
 /** Starter ids are fixed (from the role, or the name), so every browser's starter list has the same ids. */
 const starterId = (name: string, role: Role | "") =>
   `starter-${role || name.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`.slice(0, 64)
-const item = (name: string, category: Category, unit: string, role: Role | "" = ""): Item => ({ id: starterId(name, role), name, category, unit, price: null, role, supplierId: "", supplier: "", sku: "", notes: "", offers: [], offerId: "", minStock: null, serialized: role === "ont" })
+const item = (name: string, category: Category, unit: string, role: Role | "" = ""): Item => ({ id: starterId(name, role), name, category, unit, price: null, role, supplierId: "", supplier: "", sku: "", notes: "", offers: [], offerId: "", minStock: null, serialized: role === "ont", fiber: emptyFiber() })
 
 /** The first list, without prices (fixed ids). */
 export function starterCatalog(): Item[] {
@@ -195,6 +198,7 @@ export function decodeItem(v: unknown): Item | null {
     offerId,
     minStock,
     serialized: typeof v.serialized === "boolean" ? v.serialized : role === "ont",
+    fiber: decodeFiber(v.fiber),
   })
 }
 
