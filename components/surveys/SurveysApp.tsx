@@ -261,6 +261,12 @@ function SurveyNav({ s, section }: { s: Survey; section: Section }) {
             </li>
           )
         })}
+        <li className="shrink-0">
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- the printable proposal: a full load (proxy.ts checks the session) */}
+          <a href={`/interno/levantamientos/propuesta?l=${s.id}`} className="block rounded-md px-2.5 py-1.5 text-cyan-200 hover:text-foreground">
+            {t("nav.proposal")}
+          </a>
+        </li>
       </ul>
     </nav>
   )

@@ -1,0 +1,44 @@
+{
+  "propuesta": {
+    "meta": {
+      "title": "Propuesta para el edificio · GigaFazt interno"
+    },
+    "kind": "Propuesta de internet de fibra óptica",
+    "title": "Internet de fibra óptica para {name}",
+    "building": "el edificio",
+    "print": "Imprimir o guardar como PDF",
+    "printHint": "En el diálogo de impresión elige «Guardar como PDF» para mandarla por correo o WhatsApp. No incluye nuestros costos.",
+    "back": "← Volver al levantamiento",
+    "notFound": "No encontramos ese levantamiento en este teléfono. Ábrelo desde Levantamientos (sincroniza si lo hizo otra persona).",
+    "buildingTitle": "El edificio",
+    "towers": "{n, plural, one {# torre} other {# torres}}",
+    "floors": "{n, plural, one {# nivel} other {# niveles}}",
+    "apartments": "{n, plural, one {# departamento} other {# departamentos}}",
+    "installTitle": "Lo que instalamos",
+    "install": {
+      "feed": "Llevamos fibra óptica desde nuestra red hasta el cuarto de telecomunicaciones del edificio.",
+      "riser": "Subimos la fibra por el ducto de cada torre, con el cableado ordenado y etiquetado.",
+      "boxes": "Instalamos {boxes, plural, one {# caja de distribución} other {# cajas de distribución}} en los pisos, con {ports} puertos para los departamentos.",
+      "boxesTbd": "Instalamos cajas de distribución en los pisos para conectar cada departamento.",
+      "apartments": "Cada residente que contrata recibe la fibra hasta su departamento y su módem, sin obra en su casa.",
+      "noCost": "La red del edificio no tiene costo para el edificio ni para sus residentes."
+    },
+    "plansTitle": "Planes para los residentes",
+    "symmetric": "Misma velocidad de bajada y de subida",
+    "perMonth": "al mes, IVA incluido",
+    "terms": {
+      "install": "Instalación sin costo.",
+      "term": "Sin plazo forzoso.",
+      "tv": "TV opcional: ${price} al mes."
+    },
+    "next": "Siguiente paso: confirmamos los detalles con la administración y agendamos la instalación de la red.",
+    "contact": "WhatsApp: {phone}",
+    "fine": "Las velocidades son las máximas de cada plan. Precios vigentes a la fecha de esta propuesta."
+  },
+  "plans": {
+    "include": {
+      "wifi7Modem": "Módem Wi-Fi 7 sin costo adicional",
+      "wifi6Modem": "Módem Wi-Fi 6, o Wi-Fi 7 si hay disponible, sin costo adicional"
+    }
+  }
+}

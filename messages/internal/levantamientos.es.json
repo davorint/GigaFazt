@@ -383,7 +383,8 @@
     },
     "nav": {
       "label": "Secciones del levantamiento",
-      "list": "Todos"
+      "list": "Todos",
+      "proposal": "Propuesta para el edificio →"
     },
     "materials": {
       "intro": "Lo que lleva este proyecto, con los precios de la lista maestra (con IVA incluido). Las cantidades salen del diseño de fibra; puedes cambiarlas.",
