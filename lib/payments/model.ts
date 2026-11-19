@@ -2,9 +2,13 @@
  * Payments (Clientes → Cobranza, owner 2026-11-18: "do 9"; billing stays manual, no Wisphub).
  *
  * A payment is what a client paid on a date (amount with IVA, method, reference). What each client owes comes from
- * its services: every month from its billing start costs the monthly price of its active and suspended services
- * (cancelled ones stop counting), due on its payment day (1 when not set). Payments are applied to the oldest month
- * first, so paying three months at once leaves the next two covered and a partial payment leaves the rest owed.
+ * its services: every month from its billing start costs the monthly price of the services that apply that month, due
+ * on its payment day (1 when not set). Payments are applied to the oldest month first, so paying three months at once
+ * leaves the next two covered and a partial payment leaves the rest owed.
+ *
+ * Which services apply (owner, 2026-11-19): the installation month is not charged, a service is charged from the month
+ * after its start; a cancelled service keeps owing the months whose payment day came before its cancellation date
+ * (one cancelled without a date, from before dates were kept, no longer counts).
  *
  * Billing start: the month typed on the client ("Cobrar desde"); otherwise the month of its first recorded payment or
  * the current month, whichever is earlier, never before its first service started. So clients with no payments recorded
@@ -12,7 +16,7 @@
  *
  * Synced like the other sections (kind "payments", table `payments`); deleting a payment removes it on every phone.
  */
-import type { Client } from "../clients/model"
+import type { Client, Service } from "../clients/model"
 import { newId } from "../survey/id"
 
 export const PAYMENT_METHODS = ["efectivo", "transferencia", "deposito", "tarjeta", "otro"] as const
@@ -76,6 +80,17 @@ const daysBetween = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00
 /** Monthly charge: active and suspended services with a price (cancelled ones stop counting). */
 export const monthlyDue = (c: Client) => c.services.filter((s) => s.status !== "cancelado").reduce((a, s) => a + (s.monthly ?? 0), 0)
 
+/** Whether a service is charged for a month: from the month after its start, and while not cancelled (or, cancelled, for months due before the cancellation). */
+export function chargedIn(s: Service, month: string, payDay: number | null): boolean {
+  if (!s.monthly) return false
+  if (s.start && month <= monthOf(s.start)) return false
+  if (s.status !== "cancelado") return true
+  return !!s.cancelledAt && dueDate(month, payDay) < s.cancelledAt
+}
+
+/** What a month costs: the services charged that month. */
+export const chargeFor = (c: Client, month: string) => c.services.filter((s) => chargedIn(s, month, c.payDay)).reduce((a, s) => a + (s.monthly ?? 0), 0)
+
 export function billingStart(c: Client, payments: Payment[], today: string): string {
   if (isMonth(c.billingFrom)) return c.billingFrom
   const mine = payments.filter((p) => p.clientId === c.id && p.date).map((p) => monthOf(p.date))
@@ -104,6 +119,8 @@ export type Ledger = {
   /** Paid beyond the current month that doesn't make a whole month. */
   credit: number
   lastPayment: Payment | null
+  /** The next payment day to watch: the oldest unpaid month's, else the first charged month after what's covered ("" = none). */
+  nextDue: string
 }
 
 /**
@@ -119,20 +136,30 @@ export function ledger(c: Client, all: Payment[], today: string): Ledger {
   const paidTotal = payments.reduce((a, p) => a + p.amount, 0)
   let left = paidTotal
   const months: MonthLine[] = monthsBetween(start, current).map((month) => {
-    const paid = Math.min(left, monthly)
+    const charge = chargeFor(c, month)
+    const paid = Math.min(left, charge)
     left -= paid
-    return { month, due: dueDate(month, c.payDay), charge: monthly, paid }
+    return { month, due: dueDate(month, c.payDay), charge, paid }
   })
   let coveredUntil = ""
   for (const m of months) {
-    if (!(monthly > 0 && m.paid >= monthly - 0.005)) break
-    coveredUntil = m.month
+    if (m.charge - m.paid > 0.005) break
+    if (m.charge > 0) coveredUntil = m.month
   }
-  // Whole months paid ahead.
-  if (monthly > 0 && coveredUntil === current)
-    while (left >= monthly - 0.005) {
-      coveredUntil = addMonths(coveredUntil, 1)
-      left -= monthly
+  // Whole months paid ahead (at the charge each of those months will have).
+  const allPaid = months.every((m) => m.charge - m.paid <= 0.005)
+  let ahead = current
+  if (allPaid)
+    for (let i = 0; i < 120; i++) {
+      ahead = addMonths(ahead, 1)
+      const charge = chargeFor(c, ahead)
+      if (charge <= 0) {
+        if (!c.services.some((s) => s.status !== "cancelado" && s.monthly)) break
+        continue
+      }
+      if (left < charge - 0.005) break
+      coveredUntil = ahead
+      left -= charge
     }
   const unpaid = months.filter((m) => m.charge - m.paid > 0.005)
   const owed = unpaid.filter((m) => m.due <= today).reduce((a, m) => a + m.charge - m.paid, 0)
@@ -145,7 +172,14 @@ export function ledger(c: Client, all: Payment[], today: string): Ledger {
       : monthly <= 0 && owed <= 0
         ? "sin-cobro"
         : "al-corriente"
-  return { monthly, start, months, paidTotal, owed, lateMonths, status, coveredUntil, credit: Math.max(0, left), lastPayment: payments.at(-1) ?? null }
+  // The next payment day: the oldest unpaid month's, else the first month after the covered ones that has a charge.
+  let nextDue = unpaid[0]?.due ?? ""
+  if (!nextDue && monthly > 0) {
+    let m = coveredUntil && coveredUntil >= current ? addMonths(coveredUntil, 1) : addMonths(current, 1)
+    for (let i = 0; i < 24 && chargeFor(c, m) <= 0; i++) m = addMonths(m, 1)
+    if (chargeFor(c, m) > 0) nextDue = dueDate(m, c.payDay)
+  }
+  return { monthly, start, months, paidTotal, owed, lateMonths, status, coveredUntil, credit: Math.max(0, left), lastPayment: payments.at(-1) ?? null, nextDue }
 }
 
 export type CollectionStats = { expected: number; collected: number; late: number; lateAmount: number; soon: number; payments: number }
@@ -166,7 +200,7 @@ export function collectionStats(clients: Client[], payments: Payment[], today: s
     }
     if (l.status === "por-vencer") soon++
   }
-  return { expected: clients.reduce((a, c) => a + monthlyDue(c), 0), collected: thisMonth.reduce((a, p) => a + p.amount, 0), late, lateAmount, soon, payments: thisMonth.length }
+  return { expected: clients.reduce((a, c) => a + chargeFor(c, month), 0), collected: thisMonth.reduce((a, p) => a + p.amount, 0), late, lateAmount, soon, payments: thisMonth.length }
 }
 
 /**

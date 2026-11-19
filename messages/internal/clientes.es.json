@@ -193,7 +193,9 @@
       "fiberOurs": "Sobre nuestra fibra",
       "fiberOther": "Por el internet de otro proveedor",
       "total": "Total al mes de los servicios activos: {total}",
-      "totalMissing": "{n, plural, one {# servicio activo sin precio} other {# servicios activos sin precio}}"
+      "totalMissing": "{n, plural, one {# servicio activo sin precio} other {# servicios activos sin precio}}",
+      "cancelledAt": "Cancelado el",
+      "cancelledAtHint": "Los meses con día de pago antes de esta fecha se siguen debiendo en Cobranza."
     },
     "contacts": {
       "title": "Contactos",

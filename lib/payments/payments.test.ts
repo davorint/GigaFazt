@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { newClient, newService, type Client } from "../clients/model"
+import { decodeClient, newClient, newService, type Client } from "../clients/model"
+const decodeClientOf = (v: unknown) => decodeClient(v)!
 import { addMonths, billingStart, collectionStats, decodePayment, dueDate, ledger, monthsBetween, morososLines, newPayment, paymentsCsv } from "./model"
 
 const client = (p: Partial<Client> = {}, monthly = 400): Client =>
@@ -56,5 +57,39 @@ describe("payments", () => {
     expect(decodePayment({ id: "x", clientId: "../c", date: "2026-13-45", amount: 12.345, method: "bitcoin" })).toMatchObject({ clientId: "", date: "", amount: 12.35, method: "otro" })
     expect(decodePayment({ amount: -5 })?.amount).toBe(0)
     expect(decodePayment("x")).toBeNull()
+  })
+})
+
+describe("first month and cancellations (owner, 2026-11-19)", () => {
+  const svc = (p: Parameters<typeof newService>[1]) => newService("internet", { monthly: 396, pppoeUser: "u1", ...p })
+  it("the installation month is not charged: installed today is not late, the first charge is next month's payment day", () => {
+    const c = newClient({ payDay: 5, services: [svc({ start: "2026-11-19" })] })
+    const l = ledger(c, [], "2026-11-19")
+    expect(l).toMatchObject({ status: "al-corriente", owed: 0, lateMonths: [], nextDue: "2026-12-05" })
+    expect(morososLines([c], [], "2026-11-19")).toBe("")
+    // A month later it is owed, and late after the grace days.
+    expect(ledger(c, [], "2026-12-04").status).toBe("por-vencer")
+    expect(ledger(c, [], "2026-12-11")).toMatchObject({ status: "atrasado", owed: 396, lateMonths: ["2026-12"] })
+  })
+  it("paying ahead from the installation month covers the following months", () => {
+    const c = newClient({ id: "cli-first1", payDay: 5, services: [svc({ start: "2026-11-19" })] })
+    const l = ledger(c, [newPayment({ clientId: "cli-first1", date: "2026-11-19", amount: 792 })], "2026-11-19")
+    expect(l).toMatchObject({ coveredUntil: "2027-01", credit: 0, nextDue: "2027-02-05" })
+  })
+  it("a cancelled service keeps owing the months due before its cancellation, and isn't cut again", () => {
+    const c = newClient({ payDay: 5, billingFrom: "2026-09", services: [svc({ start: "2026-08-10", status: "cancelado", cancelledAt: "2026-11-10" })] })
+    const l = ledger(c, [], "2026-11-19")
+    // September, October and November (due the 5th, before the 10th) are owed.
+    expect(l).toMatchObject({ status: "atrasado", owed: 396 * 3, lateMonths: ["2026-09", "2026-10", "2026-11"] })
+    expect(morososLines([c], [], "2026-11-19")).toBe("")
+    // Cancelled before the payment day: that month isn't owed.
+    const early = newClient({ payDay: 15, billingFrom: "2026-11", services: [svc({ start: "2026-08-10", status: "cancelado", cancelledAt: "2026-11-10" })] })
+    expect(ledger(early, [], "2026-11-19")).toMatchObject({ owed: 0, status: "sin-cobro" })
+    // Cancelled without a date (before dates were kept): nothing owed, as before.
+    expect(ledger(newClient({ payDay: 5, billingFrom: "2026-09", services: [svc({ status: "cancelado" })] }), [], "2026-11-19").owed).toBe(0)
+  })
+  it("the cancellation date only stays on cancelled services", () => {
+    const c = decodeClientOf({ services: [{ type: "internet", status: "activo", cancelledAt: "2026-11-10" }, { type: "internet", status: "cancelado", cancelledAt: "2026-11-10" }] })
+    expect(c.services.map((s) => s.cancelledAt)).toEqual(["", "2026-11-10"])
   })
 })

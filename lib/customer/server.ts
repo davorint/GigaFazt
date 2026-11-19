@@ -16,7 +16,7 @@ import { createHash } from "node:crypto"
 import { decodeClient } from "../clients/model"
 import { getPool, hasDatabase } from "../db/client"
 import { todayInMexico } from "../lead"
-import { decodePayment, dueDate, ledger, monthOf, addMonths, type PayStatus, type Payment } from "../payments/model"
+import { decodePayment, ledger, type PayStatus, type Payment } from "../payments/model"
 import { hashSalt, hit, underLimit } from "../reports/limits"
 import { phoneKey, reportCode, type ReportCategory, type ReportStatus } from "../reports/model"
 
@@ -114,10 +114,8 @@ export async function lookupBalance(phone: string, pppoe: string, sender: string
     .map((p) => ({ ...p, clientId: client.id }))
   const today = todayInMexico()
   const l = ledger(client, payments, today)
-  const unpaid = l.months.find((m) => m.charge - m.paid > 0.005)
-  const nextDue = unpaid ? unpaid.due : dueDate(l.coveredUntil ? addMonths(l.coveredUntil, 1) : monthOf(today), client.payDay)
   return {
     kind: "ok",
-    balance: { firstName: client.name.trim().split(/\s+/)[0] ?? "", status: l.status, monthly: l.monthly, owed: Math.round(l.owed * 100) / 100, lateMonths: l.lateMonths, coveredUntil: l.coveredUntil, nextDue },
+    balance: { firstName: client.name.trim().split(/\s+/)[0] ?? "", status: l.status, monthly: l.monthly, owed: Math.round(l.owed * 100) / 100, lateMonths: l.lateMonths, coveredUntil: l.coveredUntil, nextDue: l.nextDue },
   }
 }

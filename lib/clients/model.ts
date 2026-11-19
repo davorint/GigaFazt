@@ -37,6 +37,8 @@ export type Service = {
   monthly: number | null
   /** YYYY-MM-DD or "". */
   start: string
+  /** When it was cancelled (YYYY-MM-DD, "" = not cancelled or not known): months due before it are still owed. */
+  cancelledAt: string
   notes: string
   // Internet only (empty on the others)
   ontModel: string
@@ -90,6 +92,7 @@ export function newService(type: ServiceType, p: Partial<Service> = {}): Service
     plan: "",
     monthly: null,
     start: "",
+    cancelledAt: "",
     notes: "",
     ontModel: type === "internet" ? DEFAULT_ONT : "",
     ontSn: "",
@@ -153,6 +156,7 @@ function decodeService(v: unknown): Service | null {
     plan: str(v.plan, 120),
     monthly: num(v.monthly, 0, 1e7),
     start: date(v.start),
+    cancelledAt: oneOf(SERVICE_STATUSES, v.status, "activo") === "cancelado" ? date(v.cancelledAt) : "",
     notes: str(v.notes, 2000),
     ontModel: net ? str(v.ontModel, 60) : "",
     ontSn: net ? str(v.ontSn, 40).toUpperCase() : "",
@@ -266,7 +270,7 @@ export function fillEmpty(base: Client, incoming: Client): { client: Client; cha
       changed = true
       continue
     }
-    const r = fillFields(services[k], s, ["id", "type", "status"])
+    const r = fillFields(services[k], s, ["id", "type", "status", "cancelledAt"])
     if (r.changed) {
       services[k] = r.out
       changed = true

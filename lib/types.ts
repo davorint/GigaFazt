@@ -44,14 +44,6 @@ export interface CoverageArea {
   eta?: string
 }
 
-export interface CoverageResult {
-  status: "available" | "planned" | "unavailable"
-  area?: CoverageArea
-  eta?: string
-  planIds?: string[]
-  estLatencyMs?: number
-}
-
 /** Opening and closing hour, 24 h clock (e.g. 8 and 18). */
 export interface OfficeHours {
   open: number

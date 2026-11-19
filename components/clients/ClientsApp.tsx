@@ -399,9 +399,15 @@ function ServiceCard({ t, c, s, n, onChange, onRemove }: { t: T; c: Client; s: S
         <PickField
           label={t("services.status")}
           value={s.status}
-          onChange={(status) => up({ status })}
+          onChange={(status) => up({ status, cancelledAt: status === "cancelado" ? s.cancelledAt || localToday() : "" })}
           options={SERVICE_STATUSES.map((x) => ({ value: x, label: t(`statuses.${x}`) }))}
         />
+        {s.status === "cancelado" && (
+          <div className="grid gap-1">
+            <DateField label={t("services.cancelledAt")} value={s.cancelledAt} onChange={(v) => up({ cancelledAt: v })} />
+            <p className="text-xs text-zinc-400">{t("services.cancelledAtHint")}</p>
+          </div>
+        )}
         <TextField label={t(`services.plan.${s.type}`)} value={s.plan} onChange={(v) => up({ plan: v })} hint={t(`services.planHint.${s.type}`)} />
         <DateField label={t("services.start")} value={s.start} onChange={(v) => up({ start: v })} />
         <NumberField label={t("services.monthly")} unit={t("list.perMonth")} optional max={1e7} value={s.monthly} onChange={(v) => up({ monthly: v })} hint={s.monthly !== null ? mxn(s.monthly) : undefined} />
