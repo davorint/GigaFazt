@@ -25,6 +25,14 @@ const nextConfig: NextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=(), usb=(), browsing-topics=()" },
         ],
       },
+      // API responses are never search results, including the ones Next itself answers (405s on /api/interno/*), which
+      // proxy.ts doesn't see.
+      {
+        source: "/api/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive, nosnippet" },
+        ],
+      },
       // Internal tools: never indexed (proxy.ts also sets this).
       {
         source: "/:locale/mikrotik/:path*",
