@@ -459,7 +459,7 @@ export const WEB_SELLERS: WebSeller[] = [
     name: "Fibramarket",
     website: "https://www.fibramarket.com/",
     where: "",
-    sells: "Herramientas (Miller CFS-3, tijeras KS-2) y cajas NAP.",
+    sells: "Cable de fibra (p. ej. 12 FO monomodo interior monotubo LSZH), herramientas (Miller CFS-3, tijeras KS-2) y cajas NAP.",
     notes: "Muestra precios + IVA.",
     source: "https://www.fibramarket.com/c/cajas-y-ftth/nap-fibra-optica/",
   },
