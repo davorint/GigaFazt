@@ -395,7 +395,6 @@ export function PaymentsPanel({ onClient }: { onClient: (id: string) => void }) 
               </span>
               <span className="text-xs text-zinc-300">
                 {ledgerLine(t, l)}
-                {c.payDay ? ` · ${t("pay.day", { n: c.payDay })}` : ""}
               </span>
               <FollowUp t={t} c={c} today={today} />
               {form === c.id ? (

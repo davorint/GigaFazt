@@ -12,8 +12,8 @@ describe("business numbers", () => {
     const pays = [newPayment({ clientId: ana.id, date: "2026-10-05", amount: 396 }), newPayment({ clientId: beto.id, date: "2026-10-06", amount: 496 })]
     const reps = [newReport({ createdAt: "2026-10-02T10:00:00Z", status: "resuelto", resolvedAt: "2026-10-02T14:00:00Z" }), newReport({ createdAt: "2026-10-09T10:00:00Z" })]
     const [sep, oct, nov] = monthNumbers([ana, beto], pays, reps, ["2026-09", "2026-10", "2026-11"])
-    // September: Ana installed (not charged), Beto charged.
-    expect(sep).toMatchObject({ expected: 496, newServices: 1, activeClients: 2 })
+    // September: Ana installed on the 10th (by the 15th: charged), Beto charged.
+    expect(sep).toMatchObject({ expected: 892, newServices: 1, activeClients: 2 })
     // October: both charged (Beto's due day, the 1st, is before his cancellation), both paid.
     expect(oct).toMatchObject({ expected: 892, collected: 892, rate: 1, cancelled: 1, activeClients: 1, reportsOpened: 2, reportsResolved: 1, avgHours: 4 })
     expect(oct.arpu).toBe(892)

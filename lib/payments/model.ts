@@ -2,20 +2,18 @@
  * Payments (Clientes → Cobranza, owner 2026-11-18: "do 9"; billing stays manual, no Wisphub).
  *
  * A payment is what a client paid on a date (amount with IVA, method, reference). What each client owes comes from
- * its services: every month from its billing start costs the monthly price of the services that apply that month, due
- * on its payment day (1 when not set). Payments are applied to the oldest month first, so paying three months at once
- * leaves the next two covered and a partial payment leaves the rest owed.
+ * its services; payments are applied to the oldest month first, so paying three months at once leaves the next two
+ * covered and a partial payment leaves the rest owed.
  *
- * Which services apply (owner, 2026-11-19): the installation month is not charged, a service is charged from the month
- * after its start; a cancelled service keeps owing the months whose payment day came before its cancellation date
- * (one cancelled without a date, from before dates were kept, no longer counts). Each month is charged at the price
- * the service had then (its price history), so a price change doesn't rewrite past months.
- *
- * Billing start: the month typed on the client ("Cobrar desde"); otherwise the month of its first recorded payment or
- * the current month, whichever is earlier, never before its first service started. So clients with no payments recorded
- * start owing from this month, not from years back. Past months use today's prices (a price change is not dated).
- *
- * Synced like the other sections (kind "payments", table `payments`); deleting a payment removes it on every phone.
+ * The rules (owner, 2026-11-19):
+ * - Service is paid in advance: every month's invoice is cut on day 1 and is due that day, for everyone.
+ * - The client has GRACE_DAYS (10) to pay it; after that the month is late and the service is cut (the MikroTik
+ *   "Morosos" list).
+ * - The installation month: installed on or before day FREE_AFTER_DAY (15), it is charged, due on the installation
+ *   day; installed after the 15th, it's free and the first invoice is the next month's.
+ * - A cancelled service keeps owing the months whose invoice (day 1) came before its cancellation date (one cancelled
+ *   without a date, from before dates were kept, no longer counts). Each month is charged at the price the service had
+ *   then (its price history), so a price change doesn't rewrite past months.
  */
 import { priceAt, type Client, type Service } from "../clients/model"
 import { newId } from "../survey/id"
@@ -40,8 +38,10 @@ export type Payment = {
   updatedAt: string
 }
 
-/** Days after the payment day before a month counts as late. */
-export const GRACE_DAYS = 5
+/** Days after the invoice is due before a month counts as late (and the service is cut). */
+export const GRACE_DAYS = 10
+/** Installed after this day of the month: that month is free. */
+export const FREE_AFTER_DAY = 15
 /** Days before the payment day when a month shows as coming due. */
 export const SOON_DAYS = 5
 
@@ -68,12 +68,11 @@ export function monthsBetween(from: string, to: string): string[] {
   return out
 }
 
-/** The payment day of that month (31 in a 30-day month is the 30th). */
-export function dueDate(month: string, payDay: number | null): string {
-  const [y, mo] = month.split("-").map(Number)
-  const last = new Date(Date.UTC(y, mo, 0)).getUTCDate()
-  return `${month}-${String(Math.min(Math.max(payDay ?? 1, 1), last)).padStart(2, "0")}`
-}
+/** The invoice of a month is cut on day 1 and due that day (prepaid service). */
+export const dueDate = (month: string) => `${month}-01`
+
+/** A service's installation month is charged: installed on or before day FREE_AFTER_DAY. */
+export const installMonthCharged = (start: string) => Number(start.slice(8, 10)) <= FREE_AFTER_DAY
 
 const daysBetween = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 864e5)
 
@@ -82,16 +81,32 @@ const daysBetween = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00
 /** Monthly charge: active and suspended services with a price (cancelled ones stop counting). */
 export const monthlyDue = (c: Client) => c.services.filter((s) => s.status !== "cancelado").reduce((a, s) => a + (s.monthly ?? 0), 0)
 
-/** Whether a service is charged for a month: from the month after its start, and while not cancelled (or, cancelled, for months due before the cancellation). */
-export function chargedIn(s: Service, month: string, payDay: number | null): boolean {
+/**
+ * Whether a service is charged for a month: from its installation month when installed by the 15th (else from the next
+ * month), and while not cancelled (or, cancelled, for months whose invoice came before the cancellation).
+ */
+export function chargedIn(s: Service, month: string): boolean {
   if (!priceAt(s, month)) return false
-  if (s.start && month <= monthOf(s.start)) return false
+  if (s.start) {
+    const first = monthOf(s.start)
+    if (month < first || (month === first && !installMonthCharged(s.start))) return false
+  }
   if (s.status !== "cancelado") return true
-  return !!s.cancelledAt && dueDate(month, payDay) < s.cancelledAt
+  return !!s.cancelledAt && dueDate(month) < s.cancelledAt
 }
 
 /** What a month costs: the services charged that month. */
-export const chargeFor = (c: Client, month: string) => c.services.filter((s) => chargedIn(s, month, c.payDay)).reduce((a, s) => a + (priceAt(s, month) ?? 0), 0)
+export const chargeFor = (c: Client, month: string) => c.services.filter((s) => chargedIn(s, month)).reduce((a, s) => a + (priceAt(s, month) ?? 0), 0)
+
+/**
+ * When a month's invoice is due for a client: day 1, except a month whose only charges are services installed in it
+ * (by the 15th): then the installation day (the client pays when it's installed, not before).
+ */
+export function monthDue(c: Client, month: string): string {
+  const charged = c.services.filter((s) => chargedIn(s, month))
+  const installs = charged.filter((s) => s.start && monthOf(s.start) === month).map((s) => s.start)
+  return installs.length && installs.length === charged.length ? installs.sort()[0] : dueDate(month)
+}
 
 export function billingStart(c: Client, payments: Payment[], today: string): string {
   if (isMonth(c.billingFrom)) return c.billingFrom
@@ -141,7 +156,7 @@ export function ledger(c: Client, all: Payment[], today: string): Ledger {
     const charge = chargeFor(c, month)
     const paid = Math.min(left, charge)
     left -= paid
-    return { month, due: dueDate(month, c.payDay), charge, paid }
+    return { month, due: monthDue(c, month), charge, paid }
   })
   let coveredUntil = ""
   for (const m of months) {
@@ -165,7 +180,8 @@ export function ledger(c: Client, all: Payment[], today: string): Ledger {
     }
   const unpaid = months.filter((m) => m.charge - m.paid > 0.005)
   const owed = unpaid.filter((m) => m.due <= today).reduce((a, m) => a + m.charge - m.paid, 0)
-  const lateMonths = unpaid.filter((m) => daysBetween(m.due, today) > GRACE_DAYS).map((m) => m.month)
+  // Due on day 1: the 10th is the last day to pay, the 11th it's late (10 days after the due date).
+  const lateMonths = unpaid.filter((m) => daysBetween(m.due, today) >= GRACE_DAYS).map((m) => m.month)
   const thisMonth = unpaid.find((m) => m.month === current)
   const status: PayStatus = lateMonths.length
     ? "atrasado"
@@ -179,7 +195,7 @@ export function ledger(c: Client, all: Payment[], today: string): Ledger {
   if (!nextDue && monthly > 0) {
     let m = coveredUntil && coveredUntil >= current ? addMonths(coveredUntil, 1) : addMonths(current, 1)
     for (let i = 0; i < 24 && chargeFor(c, m) <= 0; i++) m = addMonths(m, 1)
-    if (chargeFor(c, m) > 0) nextDue = dueDate(m, c.payDay)
+    if (chargeFor(c, m) > 0) nextDue = monthDue(c, m)
   }
   return { monthly, start, months, paidTotal, owed, lateMonths, status, coveredUntil, credit: Math.max(0, left), lastPayment: payments.at(-1) ?? null, nextDue }
 }

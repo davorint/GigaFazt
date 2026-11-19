@@ -1,6 +1,8 @@
 {
   "numeros": {
-    "meta": { "title": "Números del negocio · GigaFazt interno" },
+    "meta": {
+      "title": "Números del negocio · GigaFazt interno"
+    },
     "kicker": "Interno · Administración",
     "title": "Números del negocio",
     "lead": "Mes a mes, de los clientes, pagos y reportes que tiene este teléfono (sincroniza para ver los de todos).",
@@ -10,7 +12,7 @@
     "movesHint": "Servicios dados de alta / cancelados.",
     "arpuHint": "Lo que cobran los servicios ÷ clientes activos.",
     "monthly": "Últimos 12 meses",
-    "monthlyHint": "Por cobrar: lo que cobran los servicios ese mes (el mes de instalación no se cobra; cada mes a su precio). Cobrado: pagos registrados con fecha de ese mes. Reportes: abiertos / resueltos; horas: promedio para resolver.",
+    "monthlyHint": "Por cobrar: lo que facturan los servicios ese mes (el día 1; el mes de instalación solo si se instaló a más tardar el 15; cada mes a su precio). Cobrado: pagos registrados con fecha de ese mes. Reportes: abiertos / resueltos; horas: promedio para resolver.",
     "sites": "Ganancia por despliegue (al mes)",
     "sitesHint": "Servicios activos de sus clientes − edificio (renta y luz si la pagamos) − enlaces. Total: {total}. Sin equipo ni mano de obra.",
     "noSites": "Todavía no hay despliegues.",

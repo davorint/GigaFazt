@@ -397,7 +397,8 @@ export function setPrice(s: Service, monthly: number | null, currentMonth: strin
   const hist = s.priceHistory.filter((p) => p.until < currentMonth)
   const thisMonth = s.priceHistory.find((p) => p.until === currentMonth)
   const before = thisMonth ? thisMonth.monthly : s.monthly
-  const charged = before !== null && (!s.start || s.start.slice(0, 7) < currentMonth)
+  // Months already charged: any before this one, and this one when the service was installed in it by the 15th.
+  const charged = before !== null && (!s.start || s.start.slice(0, 7) < currentMonth || (s.start.slice(0, 7) === currentMonth && Number(s.start.slice(8, 10)) <= 15))
   if (!charged || before === monthly) return { ...s, monthly, priceHistory: hist }
   return { ...s, monthly, priceHistory: [...hist, { until: currentMonth, monthly: before }] }
 }

@@ -391,7 +391,6 @@ function Editor({ t, c }: { t: T; c: Client }) {
       <fieldset className="grid gap-3">
         <legend className="mb-1 text-sm font-medium text-foreground">{t("list.groups.billing")}</legend>
         <div className={GRID}>
-          <NumberField label={t("fields.payDay")} unit="1–31" integer optional min={1} max={31} value={c.payDay} onChange={(v) => up({ payDay: v })} />
           <PickField label={t("fields.payMethod")} value={c.payMethod} onChange={(payMethod) => up({ payMethod })} options={PAY_METHODS.map((m) => ({ value: m, label: t(`methods.${m || "none"}`) }))} />
         </div>
         <ClientBilling t={t} c={c} onChange={up} />
