@@ -8,7 +8,8 @@
  *
  * Which services apply (owner, 2026-11-19): the installation month is not charged, a service is charged from the month
  * after its start; a cancelled service keeps owing the months whose payment day came before its cancellation date
- * (one cancelled without a date, from before dates were kept, no longer counts).
+ * (one cancelled without a date, from before dates were kept, no longer counts). Each month is charged at the price
+ * the service had then (its price history), so a price change doesn't rewrite past months.
  *
  * Billing start: the month typed on the client ("Cobrar desde"); otherwise the month of its first recorded payment or
  * the current month, whichever is earlier, never before its first service started. So clients with no payments recorded
@@ -16,7 +17,7 @@
  *
  * Synced like the other sections (kind "payments", table `payments`); deleting a payment removes it on every phone.
  */
-import type { Client, Service } from "../clients/model"
+import { priceAt, type Client, type Service } from "../clients/model"
 import { newId } from "../survey/id"
 import { csvCell } from "../csv"
 
@@ -83,14 +84,14 @@ export const monthlyDue = (c: Client) => c.services.filter((s) => s.status !== "
 
 /** Whether a service is charged for a month: from the month after its start, and while not cancelled (or, cancelled, for months due before the cancellation). */
 export function chargedIn(s: Service, month: string, payDay: number | null): boolean {
-  if (!s.monthly) return false
+  if (!priceAt(s, month)) return false
   if (s.start && month <= monthOf(s.start)) return false
   if (s.status !== "cancelado") return true
   return !!s.cancelledAt && dueDate(month, payDay) < s.cancelledAt
 }
 
 /** What a month costs: the services charged that month. */
-export const chargeFor = (c: Client, month: string) => c.services.filter((s) => chargedIn(s, month, c.payDay)).reduce((a, s) => a + (s.monthly ?? 0), 0)
+export const chargeFor = (c: Client, month: string) => c.services.filter((s) => chargedIn(s, month, c.payDay)).reduce((a, s) => a + (priceAt(s, month) ?? 0), 0)
 
 export function billingStart(c: Client, payments: Payment[], today: string): string {
   if (isMonth(c.billingFrom)) return c.billingFrom

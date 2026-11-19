@@ -195,7 +195,9 @@
       "total": "Total al mes de los servicios activos: {total}",
       "totalMissing": "{n, plural, one {# servicio activo sin precio} other {# servicios activos sin precio}}",
       "cancelledAt": "Cancelado el",
-      "cancelledAtHint": "Los meses con día de pago antes de esta fecha se siguen debiendo en Cobranza."
+      "cancelledAtHint": "Los meses con día de pago antes de esta fecha se siguen debiendo en Cobranza.",
+      "priceUntil": "Antes: {price} hasta {month}",
+      "priceFrom": "El precio actual aplica desde {month}. Un cambio de precio cuenta a partir del mes siguiente."
     },
     "contacts": {
       "title": "Contactos",
@@ -245,7 +247,7 @@
       "done": "{n, plural, one {# lectura guardada} other {# lecturas guardadas}} en {clients, plural, one {# cliente} other {# clientes}}."
     },
     "pay": {
-      "intro": "Cada mes cuesta lo que suman los servicios activos y suspendidos del cliente (los cancelados ya no cuentan), con vencimiento en su día de pago (el 1 si no tiene). Los pagos cubren primero el mes más antiguo. Un mes sin pagar {grace} días después de su día de pago cuenta como atrasado. Se cobra desde \"Cobrar desde\" del cliente; si no lo tiene, desde su primer pago registrado o desde este mes. Los meses pasados usan el precio de hoy.",
+      "intro": "Cada mes cuesta lo que suman los servicios del cliente, con vencimiento en su día de pago (el 1 si no tiene). El mes de la instalación no se cobra: el primer cobro es el mes siguiente. Un servicio cancelado sigue debiendo los meses con día de pago antes de su fecha de cancelación. Cada mes se cobra al precio que tenía entonces (un cambio de precio cuenta desde el mes siguiente). Los pagos cubren primero el mes más antiguo. Un mes sin pagar {grace} días después de su día de pago cuenta como atrasado. Se cobra desde \"Cobrar desde\" del cliente; si no lo tiene, desde su primer pago registrado o desde este mes.",
       "tiles": {
         "expected": "Por cobrar cada mes",
         "collected": "Cobrado este mes",
@@ -312,7 +314,10 @@
         "remove": "Borrar pago",
         "confirmRemove": "¿Borrar el pago de {amount} del {date}? Se borra en todos los teléfonos.",
         "more": "Y {n} más (en el archivo CSV).",
-        "csv": "Descargar pagos (CSV)"
+        "csv": "Descargar pagos (CSV)",
+        "receiptWa": "Enviar recibo",
+        "receiptCopy": "Copiar recibo",
+        "receiptCopied": "Recibo copiado."
       },
       "morosos": {
         "title": "Usuarios para cortar en el MikroTik",
@@ -321,6 +326,18 @@
         "copied": "{n, plural, one {# usuario copiado} other {# usuarios copiados}}.",
         "copyFailed": "No se pudo copiar: selecciona el texto y cópialo.",
         "none": "Ningún cliente atrasado con usuario PPPoE."
+      },
+      "receipt": {
+        "title": "GigaFazt · Recibo de pago",
+        "folio": "Folio: {folio}",
+        "client": "Cliente: {name}",
+        "date": "Fecha: {date}",
+        "amount": "Monto: {amount} (IVA incluido)",
+        "method": "Forma de pago: {method}",
+        "reference": "Referencia: {ref}",
+        "covered": "Tu servicio queda pagado hasta {month}.",
+        "owed": "Saldo pendiente: {amount}.",
+        "thanks": "¡Gracias por tu pago!"
       }
     }
   }

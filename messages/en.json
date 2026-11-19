@@ -1150,10 +1150,14 @@
           [
             "Technical data",
             "our server logs data such as your IP address, browser type and the pages requested, to run and protect the site. We use your connection's approximate country only to show you the site in Spanish."
+          ],
+          [
+            "Visit statistics",
+            "we use Vercel Web Analytics to count visits and see which pages and buttons are used (for example, how many people choose a plan). It uses no cookies and keeps no data that identifies you: it doesn't receive what you type in forms, and pages are counted without their parameters."
           ]
         ],
         "after": [
-          "We currently use no third-party advertising or analytics cookies. If we add them, we will update this notice and let you reject them. You can delete or block cookies in your browser settings; the site will keep working."
+          "We use no advertising or analytics cookies. If we add them, we will update this notice and let you reject them. You can delete or block cookies in your browser settings; the site will keep working."
         ]
       },
       {

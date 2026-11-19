@@ -10,7 +10,7 @@ import { clientLabel, type Client } from "@/lib/clients/model"
 import { clientsServerSnapshot, clientsSnapshot, subscribeClients } from "@/lib/clients/store"
 import { whatsappHref } from "@/lib/contact"
 import { mxn } from "@/lib/materials/catalog"
-import { GRACE_DAYS, PAYMENT_METHODS, collectionStats, ledger, monthlyDue, morososLines, newPayment, paymentsCsv, type Ledger, type PaymentMethod, type PayStatus } from "@/lib/payments/model"
+import { GRACE_DAYS, PAYMENT_METHODS, collectionStats, ledger, monthlyDue, morososLines, newPayment, paymentsCsv, type Ledger, type Payment, type PaymentMethod, type PayStatus } from "@/lib/payments/model"
 import { paymentsStore } from "@/lib/payments/store"
 import { siteLabel } from "@/lib/sites/model"
 import { sitesServerSnapshot, sitesSnapshot, subscribeSites } from "@/lib/sites/store"
@@ -102,10 +102,35 @@ export function PaymentForm({ t, client, l, onDone }: { t: T; client: Client; l:
   )
 }
 
+/** The client's WhatsApp (or phone) as wa.me digits: 10 digits get Mexico's 52. "" without one. */
+const waDigits = (c: Client | undefined) => {
+  const d = (c?.whatsapp || c?.phone || "").replace(/\D/g, "")
+  return d.length === 10 ? `52${d}` : d
+}
+
+/** The receipt of a payment as text (WhatsApp or copied): folio, client, date, amount with IVA, method, reference, where the client stands now. */
+export function receiptText(t: T, p: Payment, c: Client | undefined, l: Ledger | null) {
+  return [
+    t("pay.receipt.title"),
+    t("pay.receipt.folio", { folio: p.id.replace(/[^a-z0-9]/gi, "").slice(0, 8).toUpperCase() }),
+    c && t("pay.receipt.client", { name: clientLabel(c) }),
+    t("pay.receipt.date", { date: p.date }),
+    t("pay.receipt.amount", { amount: mxn(p.amount) }),
+    t("pay.receipt.method", { method: t(`pay.methods.${p.method}`) }),
+    p.reference && t("pay.receipt.reference", { ref: p.reference }),
+    l?.coveredUntil && t("pay.receipt.covered", { month: monthName(l.coveredUntil) }),
+    l && l.owed > 0 && t("pay.receipt.owed", { amount: mxn(l.owed) }),
+    t("pay.receipt.thanks"),
+  ]
+    .filter(Boolean)
+    .join("\n")
+}
+
 /** The payments of one client, newest first, each removable. */
 function PaymentList({ t, clientId, limit = 12 }: { t: T; clientId?: string; limit?: number }) {
   const payments = useSyncExternalStore(paymentsStore.subscribe, paymentsStore.snapshot, paymentsStore.serverSnapshot).list
   const clients = useSyncExternalStore(subscribeClients, clientsSnapshot, clientsServerSnapshot).list
+  const [copied, setCopied] = useState("")
   const mine = payments.filter((p) => !clientId || p.clientId === clientId).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt))
   if (!mine.length) return <p className="text-sm text-zinc-400">{t("pay.history.none")}</p>
   return (
@@ -122,9 +147,27 @@ function PaymentList({ t, clientId, limit = 12 }: { t: T; clientId?: string; lim
               <span className="font-mono text-xs text-zinc-400">{p.date}</span>
             </span>
             {(p.reference || p.notes || p.by) && <span className="text-xs text-zinc-300">{[p.reference && t("pay.history.ref", { ref: p.reference }), p.notes, p.by && t("pay.history.by", { by: p.by })].filter(Boolean).join(" · ")}</span>}
-            <button type="button" onClick={() => window.confirm(t("pay.history.confirmRemove", { amount: mxn(p.amount), date: p.date })) && paymentsStore.remove(p.id)} className={DANGER}>
-              {t("pay.history.remove")}
-            </button>
+            <span className="flex flex-wrap gap-2">
+              {(() => {
+                const text = () => receiptText(t, p, c, c ? ledger(c, payments, localToday()) : null)
+                const wa = waDigits(c)
+                return (
+                  <>
+                    {wa && (
+                      <a href={whatsappHref(wa, text())} target="_blank" rel="noopener noreferrer" className={SMALL}>
+                        {t("pay.history.receiptWa")}
+                      </a>
+                    )}
+                    <button type="button" onClick={() => void navigator.clipboard?.writeText(text()).then(() => setCopied(p.id)).catch(() => undefined)} className={SMALL}>
+                      {copied === p.id ? t("pay.history.receiptCopied") : t("pay.history.receiptCopy")}
+                    </button>
+                  </>
+                )
+              })()}
+              <button type="button" onClick={() => window.confirm(t("pay.history.confirmRemove", { amount: mxn(p.amount), date: p.date })) && paymentsStore.remove(p.id)} className={DANGER}>
+                {t("pay.history.remove")}
+              </button>
+            </span>
           </li>
         )
       })}

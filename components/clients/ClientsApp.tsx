@@ -20,6 +20,7 @@ import {
   newService,
   onOurFiber,
   pppoeUsers,
+  setPrice,
   type Client,
   type ClientKind,
   type ClientStatus,
@@ -383,6 +384,11 @@ function Editor({ t, c }: { t: T; c: Client }) {
   )
 }
 
+const nextMonth = (m: string) => {
+  const [y, mo] = m.split("-").map(Number)
+  return mo === 12 ? `${y + 1}-01` : `${y}-${String(mo + 1).padStart(2, "0")}`
+}
+
 function ServiceCard({ t, c, s, n, onChange, onRemove }: { t: T; c: Client; s: Service; n: number; onChange: (s: Service) => void; onRemove: () => void }) {
   const up = (p: Partial<Service>) => onChange({ ...s, ...p })
   const net = s.type === "internet"
@@ -410,7 +416,17 @@ function ServiceCard({ t, c, s, n, onChange, onRemove }: { t: T; c: Client; s: S
         )}
         <TextField label={t(`services.plan.${s.type}`)} value={s.plan} onChange={(v) => up({ plan: v })} hint={t(`services.planHint.${s.type}`)} />
         <DateField label={t("services.start")} value={s.start} onChange={(v) => up({ start: v })} />
-        <NumberField label={t("services.monthly")} unit={t("list.perMonth")} optional max={1e7} value={s.monthly} onChange={(v) => up({ monthly: v })} hint={s.monthly !== null ? mxn(s.monthly) : undefined} />
+        <div className="grid gap-1">
+          <NumberField label={t("services.monthly")} unit={t("list.perMonth")} optional max={1e7} value={s.monthly} onChange={(v) => onChange(setPrice(s, v, localToday().slice(0, 7)))} hint={s.monthly !== null ? mxn(s.monthly) : undefined} />
+          {s.priceHistory.length > 0 && (
+            <ul className="grid gap-0.5 text-xs text-zinc-400">
+              {s.priceHistory.map((p) => (
+                <li key={p.until}>{t("services.priceUntil", { price: p.monthly === null ? "—" : mxn(p.monthly), month: p.until })}</li>
+              ))}
+              <li>{t("services.priceFrom", { month: nextMonth(s.priceHistory[s.priceHistory.length - 1].until) })}</li>
+            </ul>
+          )}
+        </div>
         {net && (
           <>
             {field("ontModel")}

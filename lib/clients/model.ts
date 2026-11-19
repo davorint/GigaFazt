@@ -35,6 +35,8 @@ export type Service = {
   plan: string
   /** MXN with IVA, per month; null = not set. */
   monthly: number | null
+  /** Earlier prices: each applied up to and including `until` (YYYY-MM), oldest first; `monthly` applies after the last. */
+  priceHistory: PricePeriod[]
   /** YYYY-MM-DD or "". */
   start: string
   /** When it was cancelled (YYYY-MM-DD, "" = not cancelled or not known): months due before it are still owed. */
@@ -53,6 +55,8 @@ export type Service = {
   oltRxDbm: number | null
   rxDate: string
 }
+
+export type PricePeriod = { until: string; monthly: number | null }
 
 export type Client = {
   id: string
@@ -91,6 +95,7 @@ export function newService(type: ServiceType, p: Partial<Service> = {}): Service
     status: "activo",
     plan: "",
     monthly: null,
+    priceHistory: [],
     start: "",
     cancelledAt: "",
     notes: "",
@@ -155,6 +160,14 @@ function decodeService(v: unknown): Service | null {
     status: oneOf(SERVICE_STATUSES, v.status, "activo"),
     plan: str(v.plan, 120),
     monthly: num(v.monthly, 0, 1e7),
+    priceHistory: Array.isArray(v.priceHistory)
+      ? v.priceHistory
+          .filter(isObj)
+          .map((p) => ({ until: typeof p.until === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(p.until) ? p.until : "", monthly: num(p.monthly, 0, 1e7) }))
+          .filter((p) => p.until)
+          .sort((a, b) => a.until.localeCompare(b.until))
+          .slice(-50)
+      : [],
     start: date(v.start),
     cancelledAt: oneOf(SERVICE_STATUSES, v.status, "activo") === "cancelado" ? date(v.cancelledAt) : "",
     notes: str(v.notes, 2000),
@@ -270,7 +283,7 @@ export function fillEmpty(base: Client, incoming: Client): { client: Client; cha
       changed = true
       continue
     }
-    const r = fillFields(services[k], s, ["id", "type", "status", "cancelledAt"])
+    const r = fillFields(services[k], s, ["id", "type", "status", "cancelledAt", "priceHistory"])
     if (r.changed) {
       services[k] = r.out
       changed = true
@@ -305,3 +318,24 @@ export function mergeClients(saved: Client[], incoming: Client[]): { list: Clien
 }
 
 export const clientLabel = (c: Client) => c.name.trim() || pppoeUsers(c)[0] || [c.building, c.tower, c.apartment].filter(Boolean).join(" ") || "—"
+
+/** The service's price for a month: the earlier price whose period covers it, else the current one. */
+export function priceAt(s: Pick<Service, "monthly" | "priceHistory">, month: string): number | null {
+  for (const p of s.priceHistory) if (month <= p.until) return p.monthly
+  return s.monthly
+}
+
+/**
+ * A new price typed on a service (owner, 2026-11-19: price changes are dated): the price it had keeps applying up to
+ * and including the current month, the new one from next month, so months already charged don't change. Several edits
+ * in the same month are one change; going back to the earlier price undoes it. Nothing is kept when the service had
+ * no price yet or starts this month or later (no month has been charged).
+ */
+export function setPrice(s: Service, monthly: number | null, currentMonth: string): Service {
+  const hist = s.priceHistory.filter((p) => p.until < currentMonth)
+  const thisMonth = s.priceHistory.find((p) => p.until === currentMonth)
+  const before = thisMonth ? thisMonth.monthly : s.monthly
+  const charged = before !== null && (!s.start || s.start.slice(0, 7) < currentMonth)
+  if (!charged || before === monthly) return { ...s, monthly, priceHistory: hist }
+  return { ...s, monthly, priceHistory: [...hist, { until: currentMonth, monthly: before }] }
+}

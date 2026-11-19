@@ -11,6 +11,7 @@ import { speedRange } from "@/lib/plans"
 import "../globals.css"
 import { SurfaceLight } from "@/components/layout/SurfaceLight"
 import { SmoothScroll } from "@/components/layout/SmoothScroll"
+import { SiteAnalytics } from "@/components/layout/SiteAnalytics"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -63,6 +64,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={clientMessages(await getMessages())}>{children}</NextIntlClientProvider>
         <SurfaceLight />
         <SmoothScroll />
+        <SiteAnalytics />
       </body>
     </html>
   )

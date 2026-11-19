@@ -93,3 +93,25 @@ describe("first month and cancellations (owner, 2026-11-19)", () => {
     expect(c.services.map((s) => s.cancelledAt)).toEqual(["", "2026-11-10"])
   })
 })
+
+describe("dated prices (owner, 2026-11-19)", () => {
+  it("a price change applies from next month; past unpaid months keep the price they had", async () => {
+    const { setPrice } = await import("../clients/model")
+    let s = newService("internet", { monthly: 396, start: "2026-08-10", pppoeUser: "u1" })
+    // Typed digit by digit in November: one change, the old price kept through November.
+    for (const v of [4, 49, 496]) s = setPrice(s, v, "2026-11")
+    expect(s.priceHistory).toEqual([{ until: "2026-11", monthly: 396 }])
+    const c = newClient({ payDay: 5, billingFrom: "2026-10", services: [s] })
+    expect(ledger(c, [], "2026-11-19").months.map((m) => m.charge)).toEqual([396, 396])
+    expect(ledger(c, [], "2026-12-19")).toMatchObject({ owed: 396 + 396 + 496 })
+    // Back to the earlier price in the same month: nothing changed.
+    expect(setPrice(s, 396, "2026-11").priceHistory).toEqual([])
+    // A service that hasn't been charged yet keeps no history.
+    expect(setPrice(newService("internet", { monthly: 396, start: "2026-11-02" }), 496, "2026-11").priceHistory).toEqual([])
+    expect(setPrice(newService("internet", { monthly: null }), 496, "2026-11").priceHistory).toEqual([])
+  })
+  it("the history survives a save and is read oldest first", () => {
+    const c = decodeClientOf({ services: [{ type: "internet", monthly: 596, priceHistory: [{ until: "2026-11", monthly: 496 }, { until: "2026-06", monthly: 396 }, { until: "bad", monthly: 1 }] }] })
+    expect(c.services[0].priceHistory).toEqual([{ until: "2026-06", monthly: 396 }, { until: "2026-11", monthly: 496 }])
+  })
+})

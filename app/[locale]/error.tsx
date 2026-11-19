@@ -1,5 +1,6 @@
 "use client"
 
+import { sendClientError } from "@/lib/errors/client"
 import { useEffect } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { ERROR_PRIMARY, ERROR_SECONDARY, ErrorScreen } from "@/components/layout/ErrorScreen"
@@ -15,6 +16,7 @@ export default function LocaleError({ error, retry }: { error: Error & { digest?
   const locale = useLocale()
   useEffect(() => {
     console.error(error)
+    sendClientError(error)
   }, [error])
   return (
     <main>

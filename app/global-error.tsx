@@ -1,5 +1,6 @@
 "use client"
 
+import { sendClientError } from "@/lib/errors/client"
 import { useEffect, useSyncExternalStore } from "react"
 import "./globals.css"
 import { ERROR_PRIMARY, ERROR_SECONDARY, ErrorScreen } from "@/components/layout/ErrorScreen"
@@ -19,6 +20,7 @@ export default function GlobalError({ error, retry }: { error: Error & { digest?
   const t = en ? copy.en : copy.es
   useEffect(() => {
     console.error(error)
+    sendClientError(error)
   }, [error])
   return (
     <html lang={en ? "en" : "es-MX"} className="dark h-full antialiased">

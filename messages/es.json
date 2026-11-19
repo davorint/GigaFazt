@@ -1150,10 +1150,14 @@
           [
             "Datos técnicos",
             "nuestro servidor registra datos como la dirección IP, el tipo de navegador y las páginas solicitadas, para operar y proteger el sitio. Usamos el país aproximado de tu conexión solo para mostrarte el sitio en español."
+          ],
+          [
+            "Estadísticas de visitas",
+            "usamos Vercel Web Analytics para contar visitas y saber qué páginas y botones se usan (por ejemplo, cuántas personas eligen un plan). No usa cookies ni guarda datos que te identifiquen: no recibe lo que escribes en los formularios, y las páginas se cuentan sin sus parámetros."
           ]
         ],
         "after": [
-          "Hoy no usamos cookies de publicidad ni de analítica de terceros. Si las incorporamos, actualizaremos este aviso y te daremos la opción de rechazarlas. Puedes borrar o bloquear las cookies desde la configuración de tu navegador; el sitio seguirá funcionando."
+          "No usamos cookies de publicidad ni de analítica. Si las incorporamos, actualizaremos este aviso y te daremos la opción de rechazarlas. Puedes borrar o bloquear las cookies desde la configuración de tu navegador; el sitio seguirá funcionando."
         ]
       },
       {

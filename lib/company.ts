@@ -61,7 +61,7 @@ export const company: Company = {
     entityName: placeholder("RAZON_SOCIAL"),
     address: placeholder("DOMICILIO_RESPONSABLE"),
     privacyEmail: placeholder("PRIVACY_EMAIL"),
-    privacyUpdated: "2026-11-07",
+    privacyUpdated: "2026-11-19", // Vercel Web Analytics named (owner, 2026-11-19)
   },
   policies: {
     cancellation: placeholder("CANCELLATION_POLICY"),
