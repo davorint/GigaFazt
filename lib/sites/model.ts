@@ -47,6 +47,8 @@ export type RoomCarrier = {
   /** Public IP, or how it arrives (NAT / CGNAT / DHCP). */
   ip: string
   account: string
+  /** What we pay for this link each month, MXN with IVA (null = not set). */
+  monthly: number | null
   notes: string
 }
 
@@ -103,7 +105,7 @@ export type Site = {
 
 export const newTower = (p: Partial<Tower> = {}): Tower => ({ id: newId(), name: "", floors: null, apartments: null, roomId: "", notes: "", ...p })
 export const newEquipment = (kind: EquipmentKind, p: Partial<Equipment> = {}): Equipment => ({ id: newId(), kind, model: "", serial: "", ip: "", firmware: "", notes: "", ...p })
-export const newRoomCarrier = (p: Partial<RoomCarrier> = {}): RoomCarrier => ({ id: newId(), providerId: "", name: "", downMbps: null, upMbps: null, ip: "", account: "", notes: "", ...p })
+export const newRoomCarrier = (p: Partial<RoomCarrier> = {}): RoomCarrier => ({ id: newId(), providerId: "", name: "", downMbps: null, upMbps: null, ip: "", account: "", monthly: null, notes: "", ...p })
 export const newPort = (p: Partial<PonPort> = {}): PonPort => ({ id: newId(), port: "", oltId: "", towerId: "", splitters: "", notes: "", ...p })
 export const newSiteContact = (p: Partial<SiteContact> = {}): SiteContact => ({ id: newId(), name: "", role: "", phone: "", email: "", ...p })
 export const newRoom = (p: Partial<Room> = {}): Room => ({
@@ -178,6 +180,7 @@ const decodeCarrier = (v: Obj): RoomCarrier => ({
   upMbps: num(v.upMbps, 0, 1e6),
   ip: str(v.ip, 60),
   account: str(v.account, 80),
+  monthly: num(v.monthly, 0, 1e7),
   notes: str(v.notes, 2000),
 })
 const decodePort = (v: Obj): PonPort => ({ id: idOf(v.id), port: str(v.port, 20), oltId: ref(v.oltId), towerId: ref(v.towerId), splitters: str(v.splitters, 200), notes: str(v.notes, 2000) })
@@ -237,6 +240,15 @@ export const normPort = (p: string) => p.replace(/\s+/g, "").replace(/[-.]/g, "/
 
 /** What a location costs per month (rent + electricity when we pay it). */
 export const siteCost = (s: Site) => (s.rentMonthly ?? 0) + (s.powerPayer === "nosotros" ? (s.powerMonthly ?? 0) : 0)
+
+/** What the location's internet links cost each month (every carrier of every room with a price). */
+export const linksCost = (s: Site) => s.rooms.reduce((a, r) => a + r.carriers.reduce((b, c) => b + (c.monthly ?? 0), 0), 0)
+
+/** Carriers in the location without a monthly price (the profit then counts them as 0). */
+export const unpricedLinks = (s: Site) => s.rooms.reduce((a, r) => a + r.carriers.filter((c) => c.monthly === null).length, 0)
+
+/** Monthly profit of a location: its clients' active services − the building (rent, power) − its internet links. */
+export const siteProfit = (s: Site, income: number) => income - siteCost(s) - linksCost(s)
 
 /** The capacity of the room's carriers (sum of their download speeds), null when none has one. */
 export function roomCapacity(r: Room): number | null {

@@ -44,7 +44,9 @@
         "active": "Activos",
         "monthly": "Ingreso al mes",
         "cost": "Costo del edificio al mes",
-        "capacity": "Capacidad de carriers"
+        "capacity": "Capacidad de carriers",
+        "links": "Enlaces al mes",
+        "profit": "Ganancia al mes"
       },
       "monthlyHint": "Servicios activos de sus clientes.",
       "costHint": "Renta, más la luz cuando la pagamos nosotros.",
@@ -59,7 +61,10 @@
       "leftClients": "{n, plural, one {# cliente} other {# clientes}}",
       "leftTools": "{n, plural, one {# herramienta} other {# herramientas}}",
       "leftStock": "existencias de {n, plural, one {# material} other {# materiales}}",
-      "leftHint": "Mueve el inventario a la bodega antes (Materiales → Existencias); si lo borras, lo que quede ahí aparece como «Despliegue borrado» y se puede sacar desde ahí."
+      "leftHint": "Mueve el inventario a la bodega antes (Materiales → Existencias); si lo borras, lo que quede ahí aparece como «Despliegue borrado» y se puede sacar desde ahí.",
+      "linksHint": "Lo que pagamos por los carriers de sus cuartos.",
+      "linksMissing": "{n, plural, one {# carrier sin precio (cuenta como 0)} other {# carriers sin precio (cuentan como 0)}}.",
+      "profitHint": "Ingreso − edificio − enlaces. No incluye equipo ni mano de obra."
     },
     "towers": {
       "intro": "Las torres de la ubicación y qué cuarto de telecom atiende a cada una.",
@@ -133,7 +138,9 @@
         "account": "Número de cuenta o servicio",
         "notes": "Notas",
         "capacity": "Capacidad total de bajada: {mbps} Mbps",
-        "remove": "Quitar carrier"
+        "remove": "Quitar carrier",
+        "monthly": "Pago mensual",
+        "monthlyHint": "Lo que pagamos por este enlace, con IVA."
       },
       "ports": {
         "title": "Puertos PON",

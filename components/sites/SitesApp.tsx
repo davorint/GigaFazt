@@ -26,6 +26,9 @@ import {
   roomCapacity,
   roomLabel,
   siteCost,
+  linksCost,
+  siteProfit,
+  unpricedLinks,
   siteLabel,
   towerLabel,
   type Equipment,
@@ -291,6 +294,8 @@ function General({ t, s, up, stats }: { t: T; s: Site; up: Up; stats: SiteStats 
         <Tile label={t("general.tiles.active")} value={String(stats.active)} />
         <Tile label={t("general.tiles.monthly")} value={mxn(stats.monthly)} hint={t("general.monthlyHint")} />
         <Tile label={t("general.tiles.cost")} value={mxn(siteCost(s))} hint={t("general.costHint")} />
+        <Tile label={t("general.tiles.links")} value={mxn(linksCost(s))} hint={unpricedLinks(s) ? t("general.linksMissing", { n: unpricedLinks(s) }) : t("general.linksHint")} />
+        <Tile label={t("general.tiles.profit")} value={mxn(siteProfit(s, stats.monthly))} hint={t("general.profitHint")} />
       </div>
       <div className={GRID}>
         <TextField label={t("general.name")} value={s.name} onChange={(v) => up({ name: v })} hint={t("general.nameHint")} />
@@ -468,6 +473,7 @@ function RoomCard({ t, s, r, i, carriers, counts, set, remove }: { t: T; s: Site
                 {!c.providerId && <TextField label={t("rooms.carriers.name")} value={c.name} onChange={(v) => setCa({ ...c, name: v })} />}
                 <NumberField label={t("rooms.carriers.down")} unit="Mbps" optional max={1e6} value={c.downMbps} onChange={(v) => setCa({ ...c, downMbps: v })} />
                 <NumberField label={t("rooms.carriers.up")} unit="Mbps" optional max={1e6} value={c.upMbps} onChange={(v) => setCa({ ...c, upMbps: v })} />
+                <NumberField label={t("rooms.carriers.monthly")} unit="MXN" optional max={1e7} precision={2} value={c.monthly} onChange={(v) => setCa({ ...c, monthly: v })} hint={t("rooms.carriers.monthlyHint")} />
                 <TextField label={t("rooms.carriers.ip")} value={c.ip} onChange={(v) => setCa({ ...c, ip: v })} hint={t("rooms.carriers.ipHint")} />
                 <TextField label={t("rooms.carriers.account")} value={c.account} onChange={(v) => setCa({ ...c, account: v })} />
               </div>

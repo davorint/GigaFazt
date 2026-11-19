@@ -1,0 +1,38 @@
+{
+  "numeros": {
+    "meta": { "title": "Números del negocio · GigaFazt interno" },
+    "kicker": "Interno · Administración",
+    "title": "Números del negocio",
+    "lead": "Mes a mes, de los clientes, pagos y reportes que tiene este teléfono (sincroniza para ver los de todos).",
+    "thisMonth": "Este mes",
+    "ofExpected": "de {amount} por cobrar ({pct})",
+    "change": "{n, plural, =0 {igual que el mes pasado} one {# más que el mes pasado} other {{n} contra el mes pasado}}",
+    "movesHint": "Servicios dados de alta / cancelados.",
+    "arpuHint": "Lo que cobran los servicios ÷ clientes activos.",
+    "monthly": "Últimos 12 meses",
+    "monthlyHint": "Por cobrar: lo que cobran los servicios ese mes (el mes de instalación no se cobra; cada mes a su precio). Cobrado: pagos registrados con fecha de ese mes. Reportes: abiertos / resueltos; horas: promedio para resolver.",
+    "sites": "Ganancia por despliegue (al mes)",
+    "sitesHint": "Servicios activos de sus clientes − edificio (renta y luz si la pagamos) − enlaces. Total: {total}. Sin equipo ni mano de obra.",
+    "noSites": "Todavía no hay despliegues.",
+    "unpriced": "{n, plural, one {# carrier sin precio} other {# carriers sin precio}}",
+    "cols": {
+      "month": "Mes",
+      "expected": "Por cobrar",
+      "collected": "Cobrado",
+      "rate": "Cobranza",
+      "new": "Altas",
+      "cancelled": "Bajas",
+      "moves": "Altas / bajas",
+      "active": "Clientes activos",
+      "arpu": "Ingreso por cliente",
+      "reports": "Reportes",
+      "hours": "Horas",
+      "site": "Despliegue",
+      "clients": "Clientes",
+      "income": "Ingreso",
+      "building": "Edificio",
+      "links": "Enlaces",
+      "profit": "Ganancia"
+    }
+  }
+}

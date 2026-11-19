@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { decodeClient, newClient, newService } from "../clients/model"
 import { matchInternal } from "../internal-pages"
-import { decodeSite, newEquipment, newPort, newRoom, newSite, newTower, normPort, removeRoom, removeTower, roomCapacity, siteCost } from "./model"
+import { decodeSite, newEquipment, newPort, newRoom, newSite, newTower, normPort, removeRoom, removeTower, roomCapacity, siteCost, linksCost, unpricedLinks, siteProfit, newRoomCarrier } from "./model"
 import { portClients, siteStats } from "./stats"
 
 /** A location with two telecom rooms: room A serves towers 1–2, room B serves tower 3; both have a port 0/1/0. */
@@ -51,7 +51,13 @@ describe("locations", () => {
     expect(siteCost(newSite({ rentMonthly: 3000, powerMonthly: 800, powerPayer: "nosotros" }))).toBe(3800)
     expect(siteCost(newSite({ rentMonthly: 3000, powerMonthly: 800, powerPayer: "edificio" }))).toBe(3000)
     expect(roomCapacity(newRoom())).toBeNull()
-    expect(roomCapacity(newRoom({ carriers: [{ id: "c1-aaaaa", providerId: "", name: "A", downMbps: 1000, upMbps: 1000, ip: "", account: "", notes: "" }, { id: "c2-aaaaa", providerId: "", name: "B", downMbps: 500, upMbps: null, ip: "", account: "", notes: "" }] }))).toBe(1500)
+    const room = newRoom({ carriers: [newRoomCarrier({ name: "A", downMbps: 1000, upMbps: 1000, monthly: 2500 }), newRoomCarrier({ name: "B", downMbps: 500 })] })
+    expect(roomCapacity(room)).toBe(1500)
+    // Profit: income − building − links (an unpriced link counts as 0 and is reported).
+    const site = newSite({ rentMonthly: 3000, powerMonthly: 800, powerPayer: "nosotros", rooms: [room] })
+    expect(linksCost(site)).toBe(2500)
+    expect(unpricedLinks(site)).toBe(1)
+    expect(siteProfit(site, 20000)).toBe(20000 - 3800 - 2500)
   })
   it("reads stored values leniently; references to removed towers, rooms or OLTs read as not set", () => {
     const olt = newEquipment("olt", { serial: "abc" })
