@@ -7,7 +7,7 @@ import { TextField } from "@/components/mikrotik/TextField"
 import { DateField, GRID, PickField } from "@/components/surveys/SurveyFields"
 import { localToday } from "@/lib/clients/from-lead"
 import { clientLabel, type Client } from "@/lib/clients/model"
-import { clientsServerSnapshot, clientsSnapshot, subscribeClients } from "@/lib/clients/store"
+import { clientsServerSnapshot, clientsSnapshot, saveClient, subscribeClients } from "@/lib/clients/store"
 import { whatsappHref } from "@/lib/contact"
 import { mxn } from "@/lib/materials/catalog"
 import { GRACE_DAYS, PAYMENT_METHODS, collectionStats, ledger, monthlyDue, morososLines, newPayment, paymentsCsv, type Ledger, type Payment, type PaymentMethod, type PayStatus } from "@/lib/payments/model"
@@ -58,6 +58,28 @@ export function ledgerLine(t: T, l: Ledger) {
   parts.push(l.coveredUntil ? t("pay.covered", { month: monthName(l.coveredUntil) }) : t("pay.notCovered", { month: monthName(l.start) }))
   return parts.join(" · ")
 }
+
+/** The client's WhatsApp as wa.me digits (10 digits get Mexico's 52), "" without a phone. */
+const waOf = (c: Client) => {
+  const d = (c.whatsapp || c.phone).replace(/\D/g, "")
+  return d.length === 10 ? `52${d}` : d
+}
+
+/** A promise to pay still ahead (or today). */
+export const promiseActive = (c: Pick<Client, "promiseDate">, today: string) => !!c.promiseDate && c.promiseDate >= today
+
+/** "Promete pagar el …" / "Promesa vencida (…)" / "Recordado el …", for the list. */
+function followUp(t: T, c: Client, today: string): { text: string; tone: string } | null {
+  if (c.promiseDate) return promiseActive(c, today) ? { text: t("pay.promise.active", { date: c.promiseDate }), tone: "text-amber-200" } : { text: t("pay.promise.broken", { date: c.promiseDate }), tone: "text-red-300" }
+  if (c.remindedAt) return { text: t("pay.reminded", { date: c.remindedAt }), tone: "text-zinc-400" }
+  return null
+}
+
+/** Marks a reminder as sent today (so the walk-through and the list say so). */
+const markReminded = (c: Client) => saveClient({ ...c, remindedAt: localToday(), updatedAt: new Date().toISOString() })
+
+/** Any active or suspended service without a monthly price (it isn't charged until it has one). */
+const hasUnpriced = (c: Client) => c.services.some((s) => s.status !== "cancelado" && s.monthly === null)
 
 /** Records a payment for one client: amount (what it owes, or a month), date, method, reference. */
 export function PaymentForm({ t, client, l, onDone }: { t: T; client: Client; l: Ledger; onDone: (msg: string) => void }) {
@@ -202,6 +224,10 @@ export function ClientBilling({ t, c, onChange }: { t: T; c: Client; onChange: (
         />
         <p className="text-xs text-zinc-400">{t("pay.fromHint")}</p>
       </div>
+      <div className={GRID}>
+        <DateField label={t("pay.promise.date")} value={c.promiseDate} onChange={(promiseDate) => onChange({ promiseDate })} />
+        <TextField label={t("pay.promise.note")} value={c.promiseNote} onChange={(v) => onChange({ promiseNote: v.slice(0, 300) })} hint={c.remindedAt ? t("pay.reminded", { date: c.remindedAt }) : t("pay.promise.hint")} />
+      </div>
       {msg && (
         <p role="status" className="text-sm text-emerald-300">
           {msg}
@@ -227,28 +253,77 @@ export function ClientBilling({ t, c, onChange }: { t: T; c: Client; onChange: (
   )
 }
 
+/** The promise or the last reminder under a client in the list. */
+function FollowUp({ t, c, today }: { t: T; c: Client; today: string }) {
+  const f = followUp(t, c, today)
+  if (!f) return null
+  return <span className={`text-xs ${f.tone}`}>{f.text + (c.promiseNote ? ` · ${c.promiseNote}` : "")}</span>
+}
+
+/**
+ * "Recordar a los atrasados": one late client at a time, with the WhatsApp reminder ready; opening it marks the client
+ * as reminded today and moves on. The list is fixed when it starts, so it never jumps.
+ */
+function ReminderWalk({ t, ids, rows, onClose }: { t: T; ids: string[]; rows: { c: Client; l: Ledger }[]; onClose: () => void }) {
+  const [i, setI] = useState(0)
+  const cur = rows.find((r) => r.c.id === ids[i])
+  const next = () => (i + 1 < ids.length ? setI(i + 1) : onClose())
+  if (!cur) return null
+  const { c, l } = cur
+  return (
+    <section aria-label={t("pay.walk.title")} className="grid gap-3 rounded-xl border border-red-400/30 p-4">
+      <p className="font-mono text-xs text-zinc-400">{t("pay.walk.progress", { i: i + 1, n: ids.length })}</p>
+      <p className="text-base text-zinc-100">{clientLabel(c)}</p>
+      <p className="text-sm text-zinc-300">{ledgerLine(t, l)}</p>
+      <div className="flex flex-wrap gap-2">
+        <a
+          href={whatsappHref(waOf(c), t("pay.waText", { name: c.name.trim() || "", amount: mxn(l.owed) }))}
+          onClick={() => {
+            markReminded(c)
+            next()
+          }}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex h-10 w-fit items-center rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        >
+          {t("pay.walk.send")}
+        </a>
+        <button type="button" onClick={next} className={SMALL}>
+          {t("pay.walk.skip")}
+        </button>
+        <button type="button" onClick={onClose} className={SMALL}>
+          {t("pay.walk.stop")}
+        </button>
+      </div>
+    </section>
+  )
+}
+
 /** Clientes → Cobranza: this month's totals, who is late, recording payments, and the list for the MikroTik. */
 export function PaymentsPanel({ onClient }: { onClient: (id: string) => void }) {
   const t = useTranslations("clientes")
   const clients = useSyncExternalStore(subscribeClients, clientsSnapshot, clientsServerSnapshot)
   const payments = useSyncExternalStore(paymentsStore.subscribe, paymentsStore.snapshot, paymentsStore.serverSnapshot).list
   const sites = useSyncExternalStore(subscribeSites, sitesSnapshot, sitesServerSnapshot).list
-  const [filter, setFilter] = useState<PayStatus | "" | "cobro">("cobro")
+  const [filter, setFilter] = useState<PayStatus | "" | "cobro" | "sinprecio">("cobro")
   const [site, setSite] = useState("")
   const [q, setQ] = useState("")
   const [form, setForm] = useState<string | null>(null)
   const [msg, setMsg] = useState("")
   const [copied, setCopied] = useState("")
+  const [walk, setWalk] = useState<string[] | null>(null)
   if (!clients.loaded) return null
   const today = localToday()
   const list = clients.list
   const st = collectionStats(list, payments, today)
   const rows = list
     .map((c) => ({ c, l: ledger(c, payments, today) }))
-    .filter(({ c, l }) => (filter === "" ? true : filter === "cobro" ? l.status !== "sin-cobro" : l.status === filter) && (!site || c.siteId === site))
+    .filter(({ c, l }) => (filter === "" ? true : filter === "cobro" ? l.status !== "sin-cobro" : filter === "sinprecio" ? hasUnpriced(c) : l.status === filter) && (!site || c.siteId === site))
     .filter(({ c }) => !q.trim() || fold([c.name, c.phone, c.whatsapp, c.building, c.tower, c.apartment, ...c.services.map((s) => s.pppoeUser)].join(" ")).includes(fold(q.trim())))
     .sort((a, b) => RANK[a.l.status] - RANK[b.l.status] || b.l.owed - a.l.owed || clientLabel(a.c).localeCompare(clientLabel(b.c), "es"))
-  const unpriced = list.filter((c) => c.services.some((s) => s.status !== "cancelado" && s.monthly === null)).length
+  const unpriced = list.filter(hasUnpriced).length
+  // The reminders to send today: late clients with a phone, not reminded today and without a promise still ahead.
+  const toRemind = rows.filter(({ c, l }) => l.status === "atrasado" && waOf(c) && c.remindedAt !== today && !promiseActive(c, today)).map(({ c }) => c.id)
   const morosos = morososLines(list, payments, today)
   const copyMorosos = async () => {
     try {
@@ -289,6 +364,7 @@ export function PaymentsPanel({ onClient }: { onClient: (id: string) => void }) 
             { value: "por-vencer", label: t("pay.statuses.por-vencer") },
             { value: "al-corriente", label: t("pay.statuses.al-corriente") },
             { value: "sin-cobro", label: t("pay.statuses.sin-cobro") },
+            { value: "sinprecio", label: t("pay.filters.unpriced") },
             { value: "", label: t("pay.filters.all") },
           ]}
         />
@@ -296,6 +372,15 @@ export function PaymentsPanel({ onClient }: { onClient: (id: string) => void }) 
         <TextField label={t("pay.search")} value={q} onChange={setQ} />
       </div>
 
+      {walk ? (
+        <ReminderWalk t={t} ids={walk} rows={rows} onClose={() => setWalk(null)} />
+      ) : (
+        toRemind.length > 0 && (
+          <button type="button" onClick={() => setWalk(toRemind)} className={SMALL}>
+            {t("pay.walk.start", { n: toRemind.length })}
+          </button>
+        )
+      )}
       <p className="text-sm text-zinc-400" aria-live="polite">
         {t("pay.count", { n: rows.length })}
       </p>
@@ -312,6 +397,7 @@ export function PaymentsPanel({ onClient }: { onClient: (id: string) => void }) 
                 {ledgerLine(t, l)}
                 {c.payDay ? ` · ${t("pay.day", { n: c.payDay })}` : ""}
               </span>
+              <FollowUp t={t} c={c} today={today} />
               {form === c.id ? (
                 <PaymentForm
                   t={t}
@@ -330,7 +416,7 @@ export function PaymentsPanel({ onClient }: { onClient: (id: string) => void }) 
                     </button>
                   )}
                   {phone && l.owed > 0 && (
-                    <a href={whatsappHref(phone.replace(/\D/g, "").length === 10 ? `52${phone.replace(/\D/g, "")}` : phone.replace(/\D/g, ""), t("pay.waText", { name: c.name.trim() || "", amount: mxn(l.owed) }))} target="_blank" rel="noopener noreferrer" className={SMALL}>
+                    <a href={whatsappHref(waOf(c), t("pay.waText", { name: c.name.trim() || "", amount: mxn(l.owed) }))} onClick={() => markReminded(c)} target="_blank" rel="noopener noreferrer" className={SMALL}>
                       {t("pay.remind")}
                     </a>
                   )}

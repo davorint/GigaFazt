@@ -79,6 +79,11 @@ export type Client = {
   payMethod: PayMethod
   /** YYYY-MM: the first month charged in Cobranza ("" = from the first payment recorded or this month; lib/payments). */
   billingFrom: string
+  /** The client promised to pay by this day (YYYY-MM-DD, "" = none) and what they said. */
+  promiseDate: string
+  promiseNote: string
+  /** When a payment reminder was last sent (YYYY-MM-DD, "" = never). */
+  remindedAt: string
   notes: string
   /** The website request it came from, if any. */
   leadId: string
@@ -133,6 +138,9 @@ export function newClient(p: Partial<Client> = {}): Client {
     payDay: null,
     payMethod: "",
     billingFrom: "",
+    promiseDate: "",
+    promiseNote: "",
+    remindedAt: "",
     notes: "",
     leadId: "",
     createdAt: now,
@@ -208,6 +216,9 @@ export function decodeClient(v: unknown): Client | null {
     payDay: num(v.payDay, 1, 31),
     payMethod: oneOf(PAY_METHODS, v.payMethod, ""),
     billingFrom: typeof v.billingFrom === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(v.billingFrom) ? v.billingFrom : "",
+    promiseDate: date(v.promiseDate),
+    promiseNote: str(v.promiseNote, 300),
+    remindedAt: date(v.remindedAt),
     notes: str(v.notes, 4000),
     leadId: str(v.leadId, 64),
     createdAt: iso(v.createdAt),
@@ -273,7 +284,7 @@ function matchService(base: Service[], s: Service): number {
 
 /** Fills only the empty fields of `base` from `incoming` and adds the services it lacks (an import never overwrites what was typed). */
 export function fillEmpty(base: Client, incoming: Client): { client: Client; changed: boolean } {
-  const f = fillFields(base, incoming, ["id", "kind", "createdAt", "updatedAt", "contacts", "services"])
+  const f = fillFields(base, incoming, ["id", "kind", "createdAt", "updatedAt", "contacts", "services", "promiseDate", "promiseNote", "remindedAt"])
   let changed = f.changed
   const services = [...base.services]
   for (const s of incoming.services) {

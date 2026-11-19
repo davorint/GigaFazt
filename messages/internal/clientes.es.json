@@ -260,7 +260,8 @@
       "filter": "Mostrar",
       "filters": {
         "cobro": "Con cobro (todos menos sin cobro)",
-        "all": "Todos"
+        "all": "Todos",
+        "unpriced": "Con servicios sin precio"
       },
       "site": "Despliegue",
       "allSites": "Todos",
@@ -339,6 +340,22 @@
         "covered": "Tu servicio queda pagado hasta {month}.",
         "owed": "Saldo pendiente: {amount}.",
         "thanks": "¡Gracias por tu pago!"
+      },
+      "reminded": "Recordado el {date}",
+      "promise": {
+        "date": "Promete pagar el",
+        "note": "Qué dijo",
+        "hint": "Si el cliente promete una fecha, anótala: no se le recuerda hasta que pase.",
+        "active": "Promete pagar el {date}",
+        "broken": "Promesa vencida ({date})"
+      },
+      "walk": {
+        "start": "Recordar a los atrasados ({n})",
+        "title": "Recordatorios de pago",
+        "progress": "{i} de {n}",
+        "send": "Mandar recordatorio por WhatsApp",
+        "skip": "Saltar",
+        "stop": "Terminar"
       }
     },
     "history": {
