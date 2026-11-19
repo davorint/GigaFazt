@@ -108,7 +108,8 @@
     "free": "Gratis",
     "upTo": "Hasta",
     "upToSpeed": "Hasta {speed}",
-    "metaDescription": "Compara los planes de internet de fibra óptica simétrica de {min} a {max}: precio mensual con IVA y módem incluido{perks}."
+    "metaDescription": "Compara los planes de internet de fibra óptica simétrica de {min} a {max}: precio mensual con IVA y módem incluido{perks}.",
+    "prepaid": "Servicio de prepago"
   },
   "addons": {
     "title": "Arma tu paquete",
@@ -1357,7 +1358,8 @@
       "reference": "Concepto o referencia",
       "receipt": "Después de pagar, mándanos tu comprobante por WhatsApp para registrarlo.",
       "sendReceipt": "Mandar mi comprobante por WhatsApp",
-      "waText": "Hola, les mando el comprobante de pago de mi servicio de internet."
+      "waText": "Hola, les mando el comprobante de pago de mi servicio de internet.",
+      "prepaid": "El servicio es de prepago: pagas cada mes por adelantado."
     },
     "contact": {
       "title": "Contacto",

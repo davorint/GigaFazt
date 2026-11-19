@@ -43,6 +43,7 @@ export function PriceTerms({
       )}
     >
       <li>{t("ivaIncluded")}</li>
+      <li>{t("prepaid")}</li>
       <li className="flex items-center gap-1.5">
         <span>{t("installFee")}:</span>
         {isPlaceholder(fee) ? (

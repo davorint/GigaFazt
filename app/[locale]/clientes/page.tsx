@@ -129,6 +129,7 @@ export default async function ClientesPage({ params }: PageProps<"/[locale]/clie
                 <p className="text-muted-foreground">{t("balance.lead")}</p>
                 <div id="como-pagar" className={CARD}>
                   <h3 className="text-base font-medium text-foreground">{t("pay.title")}</h3>
+                  <p className="text-sm text-muted-foreground">{t("pay.prepaid")}</p>
                   <dl className="grid gap-2 text-sm">
                     {payRows.map(([k, v]) => (
                       <div key={k} className="grid gap-0.5">

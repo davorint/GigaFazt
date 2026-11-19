@@ -108,7 +108,8 @@
     "free": "Free",
     "upTo": "Up to",
     "upToSpeed": "Up to {speed}",
-    "metaDescription": "Compare symmetrical fiber internet plans from {min} to {max}: monthly price with VAT and modem included{perks}."
+    "metaDescription": "Compare symmetrical fiber internet plans from {min} to {max}: monthly price with VAT and modem included{perks}.",
+    "prepaid": "Prepaid service"
   },
   "addons": {
     "title": "Build your bundle",
@@ -1357,7 +1358,8 @@
       "reference": "Payment reference",
       "receipt": "After paying, send us your receipt on WhatsApp so we can record it.",
       "sendReceipt": "Send my receipt on WhatsApp",
-      "waText": "Hi, here is the payment receipt for my internet service."
+      "waText": "Hi, here is the payment receipt for my internet service.",
+      "prepaid": "It's a prepaid service: you pay each month in advance."
     },
     "contact": {
       "title": "Contact",
