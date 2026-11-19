@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, useSyncExternalStore } from "react"
+import { localToday } from "@/lib/clients/from-lead"
 import { useTranslations } from "next-intl"
 import { NumberField } from "@/components/mikrotik/NumberField"
 import { TextField } from "@/components/mikrotik/TextField"
@@ -81,7 +82,7 @@ export function ProvidersApp() {
       />
       <div className="flex flex-wrap gap-2">
         {list.length > 0 && (
-          <button type="button" onClick={() => download(`proveedores-${new Date().toISOString().slice(0, 10)}.json`, providersFile(list))} className={BTN}>
+          <button type="button" onClick={() => download(`proveedores-${localToday()}.json`, providersFile(list))} className={BTN}>
             {t("export")}
           </button>
         )}

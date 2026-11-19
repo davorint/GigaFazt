@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState, type ReactNode } from "react"
+import { localToday } from "@/lib/clients/from-lead"
 import { AlertTriangle, Download, Plus, Save, X } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
@@ -149,7 +150,7 @@ export function GuidePanel({ state, boundId, saved, actions, onWans, onBalance, 
   const stepBefore = (group: string, id: string) => (group === "guide" ? t(`steps.${id}.before`) : ta.has(`steps.${group}.${id}.before`) ? ta(`steps.${group}.${id}.before`) : undefined)
   const routerFile = () =>
     [
-      `# GigaFazt · ${name} · ${new Date().toISOString().slice(0, 10)}`,
+      `# GigaFazt · ${name} · ${localToday()}`,
       ...(t.raw("file.header") as string[]).map((x) => `# ${x}`),
       `# ${t("file.syntax", { n: syntax.commands, version: ROS_VERSION })}`,
       "",

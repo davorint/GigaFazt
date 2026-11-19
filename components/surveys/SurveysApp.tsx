@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from "react"
+import { localToday } from "@/lib/clients/from-lead"
 import { useTranslations } from "next-intl"
 import { SECTIONS, completeness, newSurvey, readSurveyFile, surveyFile, surveyFileItems, type Section, type Survey } from "@/lib/survey/model"
 import { useDropUntouched } from "@/components/interno/useDropUntouched"
@@ -152,7 +153,7 @@ function List({ list, catalog }: { list: Survey[]; catalog: Item[] }) {
   }
   const exportAll = () => {
     const items = [...new Map(list.flatMap((s) => usedItems(s, catalog)).map((x) => [x.id, x])).values()]
-    download(`levantamientos-${new Date().toISOString().slice(0, 10)}.json`, surveyFile(list.map((s) => withPicks(s, catalog)), items))
+    download(`levantamientos-${localToday()}.json`, surveyFile(list.map((s) => withPicks(s, catalog)), items))
   }
   return (
     <div className="mt-8 grid gap-4">

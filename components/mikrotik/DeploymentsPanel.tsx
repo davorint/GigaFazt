@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useRef, useState } from "react"
+import { localToday } from "@/lib/clients/from-lead"
 import { AlertTriangle, Copy, Download, Plus, Save, Trash2, Upload } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
@@ -49,7 +50,7 @@ export function DeploymentsPanel({ state, saved, boundId, actions, onName }: Pro
     const url = URL.createObjectURL(new Blob([exportFile(saved.list)], { type: "application/json" }))
     const a = document.createElement("a")
     a.href = url
-    a.download = `despliegues-${new Date().toISOString().slice(0, 10)}.json`
+    a.download = `despliegues-${localToday()}.json`
     a.click()
     window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
