@@ -324,3 +324,179 @@ export const WEB_MATERIALS: WebMaterial[] = [
     offer: { store: "Mercado Libre", price: 6.85, url: "https://articulo.mercadolibre.com.mx/MLM-665922800-manga-termocontractil-para-empalme-de-fibra-60-mm-100-pzas-_JM", notes: "Paquete de 100 a $685 (distribuidor en CDMX); precio por pieza calculado." },
   },
 ]
+
+/**
+ * Sellers in Mexico found on the web (owner, 2026-11-18: "check /proveedores… if you can't find them, search the web
+ * for sellers in mexico"). Only what their own pages or the cited source said on WEB_SEEN; "autorizado" claims are the
+ * seller's own. Proveedores shows them as suggestions and adds one as a provider only on request.
+ */
+export type WebSeller = {
+  key: string
+  name: string
+  /** Their site ("" when not verified). */
+  website: string
+  /** Where they are, as the source says ("" = not stated). */
+  where: string
+  sells: string
+  notes: string
+  /** Where this came from. */
+  source: string
+  email?: string
+}
+
+export const WEB_SELLERS: WebSeller[] = [
+  {
+    key: "seller-syscom",
+    name: "SYSCOM",
+    website: "https://www.syscom.mx/",
+    where: "Sucursales en CDMX (Norte, Azcapotzalco; Sureste, Iztapalapa; Sur)",
+    sells: "Mayorista: categoría Redes FTTH/PON (OLT, cajas de distribución), fibra, equipo Huawei; cursos FTTx.",
+    notes: "Dice tener 24 centros en México y entrega el mismo día. Confirmar direcciones de sucursal en su sitio.",
+    source: "https://www.syscom.mx/categories/66097",
+  },
+  {
+    key: "seller-fibremex",
+    name: "Fibremex",
+    website: "https://www.fibremex.com/",
+    where: "Querétaro, venta nacional",
+    sells: "Fibra óptica, telecom y cableado; marca Optronics: fusionadoras, cortadoras, OTDR. Renta OTDR y fusionadoras. Mayorista de GPON TP-Link (OLT y ONT Aginet) desde octubre de 2026.",
+    notes: "Fundada en 2000 según su LinkedIn.",
+    source: "https://ayacnet.com/tp-link-fibremex-mayorista-mercado-isp-mexico/",
+    email: "ventas@fibremex.com.mx",
+  },
+  {
+    key: "seller-sily",
+    name: "Sily",
+    website: "https://sily.mx/",
+    where: "Naucalpan, Estado de México; envío nacional",
+    sells: "Mayorista con soluciones FTTH/GPON para ISP: splitters PLC TEMPO, VFL, cajas.",
+    notes: "Factura CFDI 4.0. Splitter 1x8 SC/APC a $404 con IVA el " + WEB_SEEN + ".",
+    source: "https://sily.mx/pages/quienes-somos",
+  },
+  {
+    key: "seller-radiomex",
+    name: "RadioMex",
+    website: "https://www.radiomex.mx/",
+    where: "",
+    sells: "LinkedPro by FiberHome (se presenta como distribuidor oficial): cable drop G.657A2 1 hilo.",
+    notes: "Bobina drop IC-DROPA2-1C de 1 km a $3,104.46 con IVA el " + WEB_SEEN + ".",
+    source: "https://www.radiomex.mx/ic-dropa2-1c/",
+  },
+  {
+    key: "seller-compustar",
+    name: "Compustar",
+    website: "https://www.compustar.mx/",
+    where: "",
+    sells: "Splitters PLC FiberHome SC/APC.",
+    notes: "PLC-116-SCAPC a $339 con IVA y con existencias el " + WEB_SEEN + ".",
+    source: "https://www.compustar.mx/producto/PLC-116-SCAPC/",
+  },
+  {
+    key: "seller-relematic",
+    name: "Relematic",
+    website: "https://relematic.mx/",
+    where: "Cobertura nacional",
+    sells: "FiberHome (se dice distribuidor autorizado desde 2008): drop preconectorizado EASYCONN SC/APC, splitters FBT y PLC.",
+    notes: "La autorización la afirma el propio sitio; confirmar con FiberHome.",
+    source: "https://relematic.mx/marca/fiberhome/",
+  },
+  {
+    key: "seller-wirelessshop",
+    name: "Wireless Shop",
+    website: "https://www.wirelessshop.mx/",
+    where: "",
+    sells: "Splitters FiberHome PLC (1x2 a 1x16) y FBT (5/95 a 20/80), con y sin conectores SC/APC.",
+    notes: "",
+    source: "https://www.wirelessshop.mx/cat.asp?id=95",
+  },
+  {
+    key: "seller-satbyte",
+    name: "SATBYTE",
+    website: "https://www.satbyte.mx/",
+    where: "",
+    sells: "Tienda en línea: splitters PLC TEMPO, herramientas de fibra (LinkedPro by Epcom).",
+    notes: "Precios con IVA; envío $99 en el splitter consultado el " + WEB_SEEN + ".",
+    source: "https://www.satbyte.mx/redes-e-it/redes-ftth-pon/splitters-y-cajas-de-empalme/tm-plc-1x8apc-tempo/",
+  },
+  {
+    key: "seller-bsai",
+    name: "BSAI",
+    website: "https://bsai.com.mx/",
+    where: "",
+    sells: "LinkedPro/Epcom: cajas NAP con splitter, mini OTDR.",
+    notes: "",
+    source: "https://bsai.com.mx/products/mini-otdr-para-fibra-optica-monomodo-longitud-de-onda-1310nm-y-1550nm-funcion-vfl-10mw-funcion-opm-mapeo-de-cables-de-red-rj45-recargable-distancia-de-prueba-hasta-64-km",
+  },
+  {
+    key: "seller-redder",
+    name: "REDDER",
+    website: "https://www.redder.com.mx/",
+    where: "",
+    sells: "Mayorista de fibra óptica y telecom: pasivos y activos GPON; marcas Fibrain, Sumitomo, Viavi, Ideal, entre otras.",
+    notes: "",
+    source: "https://www.redder.com.mx/",
+  },
+  {
+    key: "seller-eroberer",
+    name: "Grupo Eroberer",
+    website: "https://tiendaeroberer.com.mx/",
+    where: "",
+    sells: "Fibra óptica, cajas FTTx, fusionadoras, OTDR y GPON.",
+    notes: "Empresa mexicana de 2019 según su sitio.",
+    source: "https://eroberer.com.mx/",
+  },
+  {
+    key: "seller-landamex",
+    name: "Landamex",
+    website: "https://www.landamex.com/",
+    where: "",
+    sells: "Mayorista Ubiquiti y BDCOM: OLT, ONT y splitters GPON, precios para WISP e integradores.",
+    notes: "",
+    source: "https://www.landamex.com/shop/category/landamex-soluciones-ftth-gpon-24",
+  },
+  {
+    key: "seller-fibramarket",
+    name: "Fibramarket",
+    website: "https://www.fibramarket.com/",
+    where: "",
+    sells: "Herramientas (Miller CFS-3, tijeras KS-2) y cajas NAP.",
+    notes: "Muestra precios + IVA.",
+    source: "https://www.fibramarket.com/c/cajas-y-ftth/nap-fibra-optica/",
+  },
+  {
+    key: "seller-micom",
+    name: "Mi Com",
+    website: "https://micom.mx/",
+    where: "",
+    sells: "Herramientas TEMPO para fibra (cleaver 920CL).",
+    notes: "",
+    source: "https://micom.mx/producto/cleaver-cortadora-de-precision-tempo-para-fibra-optica-920cl-238145",
+  },
+  {
+    key: "seller-ct",
+    name: "CT Internacional",
+    website: "",
+    where: "Cobertura nacional",
+    sells: "Mayorista autorizado de Huawei México (según una nota de hace unos dos años).",
+    notes: "Para ONT Huawei; confirmar si maneja la línea GPON y el sitio.",
+    source: "https://infochannel.info/huawei-mexico-nombra-a-ct-internacional-como-mayorista-autorizado/",
+  },
+  {
+    key: "seller-xweb",
+    name: "Xweb",
+    website: "",
+    where: "",
+    sells: "Distribución de redes GPON Huawei para ISP y WISP (programa de 2021, incentivos por volumen de ONT).",
+    notes: "Información antigua; confirmar que siga vigente.",
+    source: "https://infochannel.info/xweb-y-huawei-presentan-su-nuevo-programa-gpon-2021-para-socios-isp-wisp-y-canales/",
+  },
+  {
+    key: "seller-alcione-cuernavaca",
+    name: "Alcione (Cuernavaca)",
+    website: "",
+    where: "Cuernavaca, Lomas de la Selva",
+    sells: "Material eléctrico con cableado estructurado y fibra óptica en su catálogo.",
+    notes: "Opción local en Morelos según un directorio; no es especialista FTTH, preguntar existencias.",
+    source: "https://morelos.guiaempresas.com.mx/morelos-cuernavaca/informatica-internet/redes/cableado-estructurado-fibra-optica/",
+  },
+]

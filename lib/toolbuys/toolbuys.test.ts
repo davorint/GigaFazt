@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { matchInternal } from "../internal-pages"
 import { decodeItem, effectiveOffer, newItem, newOffer, starterCatalog } from "../materials/catalog"
-import { WEB_MATERIALS, WEB_SEEN, WEB_TOOLS } from "../purchasing/web"
+import { WEB_MATERIALS, WEB_SEEN, WEB_SELLERS, WEB_TOOLS } from "../purchasing/web"
 import { starterTools } from "../tools/model"
 import { bestOffer, buyIntoTools, buyTotal, decodeToolBuy, isOpen, newBuyOffer, newToolBuy } from "./model"
 
@@ -89,5 +89,22 @@ describe("routes", () => {
     expect(matchInternal("/interno/admin/materiales-compras")?.rewriteTo).toBe("/es/interno/admin/compras-materiales")
     expect(matchInternal("/interno/admin/opciones-herramientas")?.rewriteTo).toBe("/es/interno/admin/compras-herramientas")
     expect(matchInternal("/interno/admin/precios")?.rewriteTo).toBe("/es/interno/admin/compras-materiales")
+  })
+})
+
+describe("sellers seen on the web", () => {
+  it("unique names and keys, https links only, every one with its source and what it sells", () => {
+    expect(new Set(WEB_SELLERS.map((w) => w.key)).size).toBe(WEB_SELLERS.length)
+    expect(new Set(WEB_SELLERS.map((w) => w.name.toLowerCase())).size).toBe(WEB_SELLERS.length)
+    for (const w of WEB_SELLERS) {
+      expect(w.source).toMatch(/^https:\/\//)
+      if (w.website) expect(w.website).toMatch(/^https:\/\/[^/]+\/$/)
+      expect(w.sells.length).toBeGreaterThan(10)
+      if (w.email) expect(w.email).toMatch(/^[^@\s]+@[^@\s]+\.[a-z.]+$/)
+    }
+  })
+  it("the stores behind the web offers are among the sellers", () => {
+    const names = new Set(WEB_SELLERS.map((w) => w.name))
+    for (const store of ["RadioMex", "SATBYTE", "Sily", "Compustar", "BSAI", "Fibramarket", "Mi Com"]) expect(names.has(store), store).toBe(true)
   })
 })

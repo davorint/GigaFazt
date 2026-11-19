@@ -14,6 +14,7 @@ import { QuickAdd } from "@/components/interno/QuickAdd"
 import { RecordHistory } from "@/components/interno/RecordHistory"
 import { deleteProvider, importProviders, providersServerSnapshot, providersSnapshot, saveProvider, subscribeProviders } from "@/lib/providers/store"
 import { newId } from "@/lib/survey/id"
+import { WEB_SEEN, WEB_SELLERS, type WebSeller } from "@/lib/purchasing/web"
 
 type T = ReturnType<typeof useTranslations>
 const BTN = "h-11 rounded-full border border-white/15 px-5 text-sm text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -79,6 +80,7 @@ export function ProvidersApp() {
         ]}
         onAdd={add}
       />
+      <WebSellers t={t} list={list} onOpen={setOpenId} />
       <div className="flex flex-wrap gap-2">
         {list.length > 0 && (
           <button type="button" onClick={() => download(`proveedores-${new Date().toISOString().slice(0, 10)}.json`, providersFile(list))} className={BTN}>
@@ -258,5 +260,79 @@ function Editor({ t, p }: { t: T; p: Provider }) {
         {t("remove")}
       </button>
     </div>
+  )
+}
+
+/** Host of a site without "www.", to notice a seller already in the list ("" when not a URL). */
+function host(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "")
+  } catch {
+    return ""
+  }
+}
+
+/** Sellers in Mexico found on the web (lib/purchasing/web.ts): each one becomes a material provider on request. */
+function WebSellers({ t, list, onOpen }: { t: T; list: Provider[]; onOpen: (id: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const existing = (w: WebSeller) => list.find((p) => fold(providerName(p)) === fold(w.name) || (!!w.website && !!p.website && host(p.website) === host(w.website)))
+  const pending = WEB_SELLERS.filter((w) => !existing(w)).length
+  const add = (w: WebSeller) => {
+    const p = newProvider("material", w.name)
+    p.website = w.website
+    p.notes = [w.where && `${t("web.where")}: ${w.where}.`, w.sells, w.notes, t("web.seenNote", { date: WEB_SEEN, source: w.source })].filter(Boolean).join("\n").slice(0, 2000)
+    if (w.email) p.contacts = [{ id: newId(), name: t("web.salesContact"), role: "", phone: "", whatsapp: "", email: w.email }]
+    saveProvider(p)
+    onOpen(p.id)
+  }
+  return (
+    <section aria-label={t("web.title")} className="grid gap-3 rounded-xl border border-dashed border-white/15 p-3">
+      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between gap-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+        <span className="grid gap-0.5">
+          <span className="text-sm font-medium text-foreground">{t("web.title")}</span>
+          <span className="text-xs text-zinc-400">{t("web.summary", { n: WEB_SELLERS.length, pending, date: WEB_SEEN })}</span>
+        </span>
+        <span aria-hidden className="text-zinc-400">
+          {open ? "−" : "+"}
+        </span>
+      </button>
+      {open && (
+        <div className="grid gap-3">
+          <p className="text-xs text-zinc-400">{t("web.hint")}</p>
+          <ul className="grid gap-2">
+            {WEB_SELLERS.map((w) => {
+              const have = existing(w)
+              return (
+                <li key={w.key} className="grid gap-1.5 rounded-lg border border-white/10 p-3">
+                  <span className="text-sm text-zinc-100">{w.name}</span>
+                  {w.where && <span className="font-mono text-xs text-zinc-400">{w.where}</span>}
+                  <span className="text-xs text-zinc-300">{w.sells}</span>
+                  {w.notes && <span className="text-xs text-zinc-400">{w.notes}</span>}
+                  <span className="flex flex-wrap items-center gap-3">
+                    {w.website && (
+                      <a href={w.website} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center text-xs text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+                        {t("web.site")}
+                      </a>
+                    )}
+                    <a href={w.source} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center text-xs text-zinc-400 underline decoration-white/20 underline-offset-4 hover:decoration-white">
+                      {t("web.source")}
+                    </a>
+                    {have ? (
+                      <button type="button" onClick={() => onOpen(have.id)} className="inline-flex min-h-9 items-center text-xs text-emerald-300 underline-offset-4 hover:underline">
+                        {t("web.added")}
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => add(w)} className="inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+                        {t("web.add")}
+                      </button>
+                    )}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+    </section>
   )
 }

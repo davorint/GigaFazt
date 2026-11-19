@@ -98,7 +98,19 @@
     "confirmRemove": "¿Quitar «{name}»? Los materiales, levantamientos y enlaces que lo usaban se quedan sin proveedor.",
     "removeContact": "Quitar",
     "usedBy": "Lo usan",
-    "addSubmit": "Agregar"
+    "addSubmit": "Agregar",
+    "web": {
+      "title": "Proveedores vistos en la web",
+      "summary": "{n} vendedores de material y herramienta para fibra en México, vistos el {date} · {pending} sin agregar",
+      "hint": "Encontrados en la web: lo que dice cada uno sobre sí mismo (incluido «autorizado»), sin verificar. Pide cotización y confirma existencias antes de comprar.",
+      "where": "Dónde",
+      "site": "Sitio ↗",
+      "source": "Fuente ↗",
+      "add": "Agregar como proveedor",
+      "added": "Ya está en la lista · abrir",
+      "salesContact": "Ventas",
+      "seenNote": "Visto en la web el {date}; verificar. Fuente: {source}"
+    }
   },
   "links": {
     "interno": "Inicio",
