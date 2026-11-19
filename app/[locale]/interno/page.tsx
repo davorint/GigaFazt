@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl"
 import { setRequestLocale } from "next-intl/server"
 import { notFound } from "next/navigation"
 import { AdminLinks } from "@/components/interno/AdminLinks"
+import { SignOutButton } from "@/components/interno/SignOutButton"
 import { SyncBar } from "@/components/interno/SyncBar"
 import { SessionActions, TodayBoard } from "@/components/interno/TodayBoard"
 import { INTERNAL_PAGES } from "@/lib/internal-pages"
@@ -37,11 +38,7 @@ export default async function InternoPage({ params }: PageProps<"/[locale]/inter
       <section data-section="interno" className="pt-10 pb-4 sm:pt-16">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="eyebrow">{t.kicker}</p>
-          <form action="/api/interno/salir" method="post">
-            <button type="submit" className="rounded-full border border-white/15 px-4 py-1.5 text-sm text-zinc-200 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
-              {t.logout}
-            </button>
-          </form>
+          <SignOutButton label={t.logout} />
         </div>
         <h1 className="mt-4 text-4xl font-light tracking-tight text-foreground sm:text-6xl">{t.title}</h1>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300 sm:text-lg">{t.lead}</p>

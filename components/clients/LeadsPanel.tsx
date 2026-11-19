@@ -4,7 +4,7 @@ import { LEADS_LIMIT } from "@/lib/leads/limits"
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import { PickField } from "@/components/surveys/SurveyFields"
-import { clientFromLead } from "@/lib/clients/from-lead"
+import { clientFromLead, localToday } from "@/lib/clients/from-lead"
 import { clientsServerSnapshot, clientsSnapshot, saveClient, subscribeClients } from "@/lib/clients/store"
 import { getPlan } from "@/lib/plans"
 import { speedLabel } from "@/lib/format"
@@ -56,8 +56,13 @@ export function LeadsPanel({ onClient }: { onClient: (clientId: string) => void 
     return true
   }
   const convert = async (l: Lead) => {
-    const c = clientFromLead(l)
+    // The installation appointment's day (not today) starts the service: it decides whether that month is charged.
+    const appts = agendaStore.list().filter((a) => a.leadId === l.id && a.status !== "cancelada")
+    const install = appts.filter((a) => a.kind === "instalacion" && a.date && a.date <= localToday()).sort((a, b) => b.date.localeCompare(a.date))[0]
+    const c = clientFromLead(l, install?.date || localToday())
     saveClient(c)
+    // Its appointments now belong to the client (they show on the client's page).
+    agendaStore.save(...appts.map((a) => ({ ...a, clientId: c.id, updatedAt: new Date().toISOString() })))
     await patch(l.id, { status: "instalado" })
     onClient(c.id)
   }

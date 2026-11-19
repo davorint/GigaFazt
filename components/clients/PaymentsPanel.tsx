@@ -95,6 +95,8 @@ export function PaymentForm({ t, client, l, onDone }: { t: T; client: Client; l:
     const p = newPayment({ clientId: client.id, amount, date, method, reference: reference.trim(), notes: notes.trim(), by: readState().name })
     paymentsStore.save(p)
     const after = ledger(client, [...paymentsStore.list()], localToday())
+    // Paid up: the promise (and its note) is done.
+    if (after.owed <= 0.005 && (client.promiseDate || client.promiseNote)) saveClient({ ...client, promiseDate: "", promiseNote: "", updatedAt: new Date().toISOString() })
     onDone(t("pay.form.saved", { amount: mxn(amount), name: clientLabel(client), covered: after.coveredUntil ? monthName(after.coveredUntil) : "—" }))
   }
   return (
@@ -396,7 +398,7 @@ export function PaymentsPanel({ onClient }: { onClient: (id: string) => void }) 
               <span className="text-xs text-zinc-300">
                 {ledgerLine(t, l)}
               </span>
-              <FollowUp t={t} c={c} today={today} />
+              {l.owed > 0 && <FollowUp t={t} c={c} today={today} />}
               {form === c.id ? (
                 <PaymentForm
                   t={t}
