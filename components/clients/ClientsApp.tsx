@@ -21,6 +21,7 @@ import {
   onOurFiber,
   pppoeUsers,
   setPrice,
+  possibleDuplicates,
   withReading,
   lightDrop,
   type Client,
@@ -296,6 +297,25 @@ function SitePick({ t, c, up }: { t: T; c: Client; up: (p: Partial<Client>) => v
   )
 }
 
+/** A warning when another client has the same phone or PPPoE user (to avoid two records for one person). */
+function Duplicates({ t, c }: { t: T; c: Client }) {
+  const all = useSyncExternalStore(subscribeClients, clientsSnapshot, clientsServerSnapshot).list
+  const dups = possibleDuplicates(c, all)
+  if (!dups.length) return null
+  return (
+    <div role="note" className="grid gap-1 rounded-lg border border-amber-400/30 p-3">
+      {dups.map(({ client, why }) => (
+        <p key={client.id} className="text-sm text-amber-100">
+          {t(`dup.${why}`, { name: clientLabel(client) })}{" "}
+          <a href={`?c=${client.id}`} className="underline underline-offset-4">
+            {t("dup.open")}
+          </a>
+        </p>
+      ))}
+    </div>
+  )
+}
+
 function Editor({ t, c }: { t: T; c: Client }) {
   const up = (p: Partial<Client>) => saveClient({ ...c, ...p })
   const text = (f: "phone" | "whatsapp" | "email" | "tower" | "apartment") => <TextField label={t(`fields.${f}`)} value={c[f]} onChange={(v) => up({ [f]: v })} />
@@ -307,6 +327,7 @@ function Editor({ t, c }: { t: T; c: Client }) {
   return (
     <div className="grid gap-6 border-t border-white/10 p-3">
       {c.leadId && <p className="text-xs text-cyan-200">{t("list.fromLead")}</p>}
+      <Duplicates t={t} c={c} />
       <fieldset className="grid gap-3">
         <legend className="mb-1 text-sm font-medium text-foreground">{t("list.groups.contact")}</legend>
         <div className={GRID}>

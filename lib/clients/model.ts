@@ -282,6 +282,25 @@ const norm = (s: string) =>
     .replace(/\s+/g, " ")
     .trim()
 
+/** Last 10 digits of a phone (Mexico, without the country code). */
+const phone10 = (s: string) => s.replace(/\D/g, "").slice(-10)
+
+/**
+ * Other clients that look like this one while it's being typed (owner, 2026-11-19): the same phone or WhatsApp (last 10
+ * digits) or the same PPPoE user. Says why, so the person can open the other one or keep both on purpose.
+ */
+export function possibleDuplicates(c: Client, list: Client[]): { client: Client; why: "phone" | "pppoe" }[] {
+  const phones = new Set([c.phone, c.whatsapp].map(phone10).filter((x) => x.length === 10))
+  const users = new Set(pppoeUsers(c).map((u) => u.toLowerCase()))
+  const out: { client: Client; why: "phone" | "pppoe" }[] = []
+  for (const o of list) {
+    if (o.id === c.id) continue
+    if (pppoeUsers(o).some((u) => users.has(u.toLowerCase()))) out.push({ client: o, why: "pppoe" })
+    else if ([o.phone, o.whatsapp].map(phone10).some((x) => phones.has(x))) out.push({ client: o, why: "phone" })
+  }
+  return out.slice(0, 5)
+}
+
 /** The same client: a PPPoE user in common, or (when either has none) the same name, building and apartment. */
 export function sameClient(a: Client, b: Client): boolean {
   const ua = pppoeUsers(a).map((x) => x.toLowerCase())

@@ -161,3 +161,15 @@ describe("from the website", () => {
     expect(matchInternal("/INTERNO/Admin/Clientes")?.rewriteTo).toBe("/es/interno/admin/clientes")
   })
 })
+
+describe("possible duplicates while typing (2026-11-19)", () => {
+  it("same PPPoE user or the same phone (last 10 digits, any format); never the client itself", async () => {
+    const { possibleDuplicates } = await import("./model")
+    const a = newClient({ id: "cli-aaaa01", name: "Ana", phone: "+52 55 1234 5678", services: [newService("internet", { pppoeUser: "Ana.Perez" })] })
+    const b = newClient({ id: "cli-bbbb01", name: "Beto", whatsapp: "5512345678" })
+    const c = newClient({ id: "cli-cccc01", name: "Caro", services: [newService("internet", { pppoeUser: "ana.perez" })] })
+    const d = newClient({ id: "cli-dddd01", name: "Dani", phone: "5599998888" })
+    expect(possibleDuplicates(a, [a, b, c, d]).map((x) => [x.client.name, x.why])).toEqual([["Beto", "phone"], ["Caro", "pppoe"]])
+    expect(possibleDuplicates(d, [a, b, c, d])).toEqual([])
+  })
+})

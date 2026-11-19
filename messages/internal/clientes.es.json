@@ -374,6 +374,11 @@
       "unknownItem": "Material borrado",
       "noteOpen": "Pendiente",
       "noteDone": "Hecha"
+    },
+    "dup": {
+      "phone": "{name} tiene el mismo teléfono: ¿es el mismo cliente?",
+      "pppoe": "{name} tiene el mismo usuario PPPoE: dos clientes no pueden compartirlo.",
+      "open": "Abrir"
     }
   }
 }
