@@ -39,6 +39,7 @@ import { mxn } from "@/lib/materials/catalog"
 import { ImportPanel } from "./ImportPanel"
 import { LeadsPanel } from "./LeadsPanel"
 import { ClientBilling, PaymentsPanel } from "./PaymentsPanel"
+import { ClientHistory } from "./ClientHistory"
 
 type T = ReturnType<typeof useTranslations>
 const TABS = ["clients", "payments", "leads", "import"] as const
@@ -373,6 +374,7 @@ function Editor({ t, c }: { t: T; c: Client }) {
         <ClientBilling t={t} c={c} onChange={up} />
         <AreaField label={t("fields.notes")} value={c.notes} onChange={(v) => up({ notes: v })} />
       </fieldset>
+      <ClientHistory c={c} />
       <a href={`/interno/admin/reportes_clientes?nuevo=${c.id}`} className="inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
         {t("list.newReport")}
       </a>

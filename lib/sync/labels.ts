@@ -5,6 +5,7 @@ import { decodeNote } from "../notes/model"
 import { decodePayment } from "../payments/model"
 import { decodeRoll } from "../rolls/model"
 import { buyLabel, decodeToolBuy } from "../toolbuys/model"
+import { decodeAppointment } from "../agenda/model"
 import { decodeProvider, providerName } from "../providers/model"
 import { decodeReport, reportCode } from "../reports/model"
 import { decodeSite, siteLabel } from "../sites/model"
@@ -58,6 +59,10 @@ export function recordLabel(kind: SyncKind, data: unknown): string {
     case "toolbuys": {
       const b = decodeToolBuy(data)
       return b ? `${b.need || "—"} · ${buyLabel(b)} · ${b.status}` : "—"
+    }
+    case "agenda": {
+      const a = decodeAppointment(data)
+      return a ? `${a.date} ${a.time} · ${a.kind} · ${a.name || "—"}` : "—"
     }
     case "units":
       return decodeUnit(data)?.serial || "—"

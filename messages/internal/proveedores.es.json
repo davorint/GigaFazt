@@ -119,6 +119,9 @@
     "calculadora": "Calculadoras",
     "olt": "OLT Huawei",
     "adminGroup": "Administración",
-    "techGroup": "Herramientas técnicas"
+    "techGroup": "Herramientas técnicas",
+    "agenda": "Agenda",
+    "numeros": "Números",
+    "equipo": "Equipo"
   }
 }

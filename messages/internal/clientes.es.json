@@ -96,6 +96,7 @@
       "statuses": {
         "nuevo": "Nueva",
         "contactado": "Contactada",
+        "agendado": "Instalación agendada",
         "instalado": "Instalada",
         "descartado": "Descartada"
       },
@@ -339,6 +340,21 @@
         "owed": "Saldo pendiente: {amount}.",
         "thanks": "¡Gracias por tu pago!"
       }
+    },
+    "history": {
+      "title": "Historial del cliente",
+      "agenda": "Próximas citas",
+      "reports": "Reportes",
+      "reportsCount": "{n, plural, =0 {Reportes} one {# reporte} other {# reportes}}",
+      "equipment": "Equipos que tiene",
+      "noEquipment": "Ningún equipo por número de serie.",
+      "moves": "Instalaciones, reemplazos y devoluciones",
+      "notes": "Notas sobre este cliente",
+      "none": "Nada todavía.",
+      "more": "Y {n} más.",
+      "unknownItem": "Material borrado",
+      "noteOpen": "Pendiente",
+      "noteDone": "Hecha"
     }
   }
 }

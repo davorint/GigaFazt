@@ -83,7 +83,8 @@
         "payments": "Pago",
         "notes": "Nota",
         "rolls": "Bobina",
-        "toolbuys": "Opción de compra"
+        "toolbuys": "Opción de compra",
+        "agenda": "Cita de la agenda"
       }
     }
   }

@@ -9,13 +9,17 @@ import { clientsServerSnapshot, clientsSnapshot, saveClient, subscribeClients } 
 import { getPlan } from "@/lib/plans"
 import { speedLabel } from "@/lib/format"
 import { readState } from "@/lib/sync/state"
+import { ScheduleForm } from "@/components/agenda/ScheduleForm"
+import { agendaStore } from "@/lib/agenda/store"
+import { isOpenAppt } from "@/lib/agenda/model"
 
-type Status = "nuevo" | "contactado" | "instalado" | "descartado"
+type Status = "nuevo" | "contactado" | "agendado" | "instalado" | "descartado"
 type Lead = { id: string; createdAt: string; name: string; phone: string; email: string; address: string; planId: string; addOnIds: string[]; preferredDate: string; status: Status; notes: string; updatedBy: string }
-const STATUSES: Status[] = ["nuevo", "contactado", "instalado", "descartado"]
+const STATUSES: Status[] = ["nuevo", "contactado", "agendado", "instalado", "descartado"]
 const TONE: Record<Status, string> = {
   nuevo: "border-cyan-400/40 text-cyan-200",
   contactado: "border-amber-400/40 text-amber-200",
+  agendado: "border-violet-400/40 text-violet-200",
   instalado: "border-emerald-400/40 text-emerald-300",
   descartado: "border-white/15 text-zinc-400",
 }
@@ -81,7 +85,7 @@ export function LeadsPanel({ onClient }: { onClient: (clientId: string) => void 
       <ul className="grid gap-3">
         {shown.map((l) => (
           <li key={l.id}>
-            <LeadCard t={t} l={l} client={clients.list.find((c) => c.leadId === l.id)?.id} onStatus={(s) => void patch(l.id, { status: s })} onNotes={(n) => patch(l.id, { notes: n })} onConvert={() => void convert(l)} onShow={onClient} />
+            <LeadCard t={t} l={l} client={clients.list.find((c) => c.leadId === l.id)?.id} onStatus={(s) => void patch(l.id, { status: s })} onNotes={(n) => patch(l.id, { notes: n })} onConvert={() => void convert(l)} onShow={onClient} onScheduled={() => l.status === "nuevo" || l.status === "contactado" ? void patch(l.id, { status: "agendado" }) : undefined} />
           </li>
         ))}
       </ul>
@@ -97,6 +101,7 @@ function LeadCard({
   onNotes,
   onConvert,
   onShow,
+  onScheduled,
 }: {
   t: ReturnType<typeof useTranslations>
   l: Lead
@@ -105,7 +110,12 @@ function LeadCard({
   onNotes: (n: string) => Promise<boolean>
   onConvert: () => void
   onShow: (id: string) => void
+  onScheduled: () => void
 }) {
+  const ta = useTranslations("agenda")
+  const agenda = useSyncExternalStore(agendaStore.subscribe, agendaStore.snapshot, agendaStore.serverSnapshot).list
+  const appt = agenda.filter((a) => a.leadId === l.id && isOpenAppt(a)).sort((a, b) => a.date.localeCompare(b.date))[0]
+  const [scheduling, setScheduling] = useState(false)
   const [notes, setNotes] = useState(l.notes)
   const [saved, setSaved] = useState(false)
   const plan = getPlan(l.planId)
@@ -139,6 +149,28 @@ function LeadCard({
           </a>
         )}
       </div>
+      {appt ? (
+        // eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (proxy.ts checks the session)
+        <a href="/interno/admin/agenda" className="w-fit text-xs text-violet-200 underline decoration-white/30 underline-offset-4">
+          {ta("scheduled", { date: appt.date, time: appt.time ? ` ${appt.time}` : "", who: appt.who || ta("unassigned") })}
+        </a>
+      ) : scheduling ? (
+        <ScheduleForm
+          fixedKind
+          base={{ leadId: l.id, clientId: client ?? "", name: l.name, phone: l.phone, address: l.address, date: l.preferredDate || undefined, notes: [plan ? speedLabel(plan.downMbps) : l.planId, l.addOnIds.includes("tv") ? "TV" : ""].filter(Boolean).join(" + ") }}
+          onDone={(a) => {
+            setScheduling(false)
+            if (a) onScheduled()
+          }}
+        />
+      ) : (
+        l.status !== "instalado" &&
+        l.status !== "descartado" && (
+          <button type="button" onClick={() => setScheduling(true)} className={`${SMALL} w-fit`}>
+            {ta("scheduleInstall")}
+          </button>
+        )
+      )}
       <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,14rem)_1fr]">
         <PickField label={t("filter")} value={l.status} onChange={onStatus} options={STATUSES.map((s) => ({ value: s, label: t(`statuses.${s}`) }))} />
         {client ? (

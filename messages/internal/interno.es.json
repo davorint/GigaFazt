@@ -87,6 +87,18 @@
         "compras-materiales": {
           "name": "Compras de materiales",
           "desc": "La lista maestra con las opciones de compra de cada material: proveedor, precio con IVA, enlace y estado. De aquí salen los costos de los proyectos."
+        },
+        "agenda": {
+          "name": "Agenda",
+          "desc": "Instalaciones y visitas por día y por técnico: las de las solicitudes, las de los clientes y las visitas de los reportes."
+        },
+        "numeros": {
+          "name": "Números del negocio",
+          "desc": "Mes a mes: cobrado y por cobrar, altas y bajas, ingreso por cliente, cobranza, reportes y la ganancia de cada despliegue."
+        },
+        "equipo": {
+          "name": "Equipo",
+          "desc": "Las cuentas del equipo: cada persona entra con su nombre y su contraseña, y su nombre queda en cada cambio."
         }
       }
     },

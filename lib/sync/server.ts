@@ -29,6 +29,7 @@ import { decodePayment } from "../payments/model"
 import { decodeNote } from "../notes/model"
 import { decodeRoll } from "../rolls/model"
 import { buyLabel, decodeToolBuy } from "../toolbuys/model"
+import { decodeAppointment } from "../agenda/model"
 import { getPool } from "../db/client"
 import { MAX_RECORDS, type Change, type Outcome, type Remote, type SyncKind, type SyncResponse } from "./protocol"
 
@@ -189,6 +190,17 @@ export const SPECS: Record<SyncKind, KindSpec> = {
       if (!b) return null
       const d = { ...b, id }
       return { data: d, cols: { need: d.need.slice(0, 200), label: buyLabel(d).slice(0, 300), status: d.status } }
+    },
+  },
+  agenda: {
+    table: "appointments",
+    versions: "appointment_versions",
+    fk: "appointment_id",
+    read: (id, data) => {
+      const a = decodeAppointment(data)
+      if (!a) return null
+      const d = { ...a, id }
+      return { data: d, cols: { date: d.date, kind: d.kind, who: d.who.slice(0, 60), status: d.status } }
     },
   },
 }

@@ -1,0 +1,53 @@
+{
+  "agenda": {
+    "meta": { "title": "Agenda · GigaFazt interno" },
+    "kicker": "Interno · Administración",
+    "title": "Agenda",
+    "lead": "Instalaciones y visitas de la semana, por día y por técnico. Las visitas de los reportes aparecen aquí también; se editan en Reportes.",
+    "prev": "← Semana anterior",
+    "next": "Semana siguiente →",
+    "thisWeek": "Esta semana",
+    "who": "Técnico",
+    "everyone": "Todos",
+    "unassigned": "Sin asignar",
+    "add": "Nueva cita",
+    "weekOf": "Del {from} al {to}",
+    "today": "hoy",
+    "free": "Sin citas.",
+    "anyTime": "Sin hora",
+    "late": "Atrasadas",
+    "lateTitle": "{n, plural, one {# cita pasada sigue pendiente} other {# citas pasadas siguen pendientes}}: márcalas como hechas, cámbialas de día o cancélalas.",
+    "reportVisit": "Visita del reporte {code}",
+    "confirmWa": "Confirmar por WhatsApp",
+    "call": "Llamar",
+    "openClient": "Ver cliente",
+    "openReport": "Ver reporte",
+    "openLead": "Ver solicitud",
+    "remove": "Borrar cita",
+    "confirmRemove": "¿Borrar esta cita? Se borra en todos los teléfonos.",
+    "scheduled": "Agendada: {date}{time} · {who}",
+    "scheduleInstall": "Agendar instalación",
+    "scheduleVisit": "Agendar visita",
+    "kinds": { "instalacion": "Instalación", "visita": "Visita", "otro": "Otro" },
+    "statuses": { "pendiente": "Pendiente", "confirmada": "Confirmada", "hecha": "Hecha", "cancelada": "Cancelada" },
+    "wa": {
+      "confirm": "Hola {name}, te confirmamos tu {kind} de GigaFazt el {date}{time}. Si necesitas cambiarla, respóndenos por aquí.",
+      "at": " a las {time}"
+    },
+    "form": {
+      "kind": "Tipo",
+      "date": "Día",
+      "time": "Hora (opcional)",
+      "who": "Técnico",
+      "notes": "Notas",
+      "status": "Estado",
+      "client": "Cliente (opcional)",
+      "clientSearch": "Buscar cliente",
+      "clientHint": "Nombre, teléfono, usuario PPPoE o departamento.",
+      "noClient": "Sin cliente (escribe los datos en notas)",
+      "needDate": "Elige el día.",
+      "save": "Guardar cita",
+      "cancel": "Cancelar"
+    }
+  }
+}

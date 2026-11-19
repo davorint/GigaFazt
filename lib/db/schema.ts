@@ -322,7 +322,7 @@ export const deploymentVersions = versions("deployment_versions", "deployment_id
 
 // ── Website leads ───────────────────────────────────────────────────────────
 
-export const LEAD_STATUSES = ["nuevo", "contactado", "instalado", "descartado"] as const
+export const LEAD_STATUSES = ["nuevo", "contactado", "agendado", "instalado", "descartado"] as const
 
 export const leads = pgTable(
   "leads",
@@ -346,3 +346,38 @@ export const leads = pgTable(
   },
   (t) => [index("leads_created_idx").on(t.createdAt), index("leads_status_idx").on(t.status)]
 )
+
+// ── Agenda: installations and visits (/interno/admin/agenda) ────────────────
+
+export const appointments = pgTable(
+  "appointments",
+  {
+    id: text("id").primaryKey(),
+    /** yyyy-mm-dd. */
+    date: text("date").notNull().default(""),
+    kind: text("kind").notNull().default("instalacion"),
+    /** The technician ("" = not assigned). */
+    who: text("who").notNull().default(""),
+    status: text("status").notNull().default("pendiente"),
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("appointments_rev_idx").on(t.rev), index("appointments_date_idx").on(t.date)]
+)
+export const appointmentVersions = versions("appointment_versions", "appointment_id")
+
+// ── Team accounts (/interno/admin/equipo) ───────────────────────────────────
+
+/**
+ * One account per person (owner, 2026-11-19): name + their own password (PBKDF2 hash, lib/team), same access for
+ * everyone; admins add and remove people. Once an active admin exists, the shared team password stops working.
+ */
+export const teamMembers = pgTable("team_members", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  passHash: text("pass_hash").notNull(),
+  admin: boolean("admin").notNull().default(false),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
