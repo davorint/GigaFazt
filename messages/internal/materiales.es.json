@@ -355,15 +355,6 @@
     },
     "buyLink": "Precios y opciones de compra →",
     "stockLink": "Ver existencias de este material →",
-    "web": {
-      "title": "Opciones vistas en la web",
-      "hint": "Publicaciones en tiendas de México como se veían el {date}, no cotizaciones: verifica precio, IVA, vendedor y existencias antes de comprar.",
-      "add": "Agregar como opción",
-      "added": "Ya está como opción",
-      "ivaSin": "La tienda lo muestra sin IVA",
-      "ivaNoDice": "La tienda no dice si incluye IVA",
-      "verify": "Precio visto en la web el {date}; verificar."
-    },
     "fiber": {
       "title": "Tipo de fibra y cable",
       "hint": "Opcional. Elige lo que dice la ficha del producto; sirve para comparar opciones y filtrar la lista.",

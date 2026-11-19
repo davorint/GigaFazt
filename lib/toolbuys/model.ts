@@ -44,7 +44,7 @@ export type ToolBuy = {
   offers: BuyOffer[]
   /** The offer to buy from ("" = the cheapest). */
   offerId: string
-  /** The suggestion from the web it came from (lib/purchasing/web.ts), "" = typed by hand. */
+  /** The web listing it was loaded from (kept so a reload skips it), "" = typed by hand. */
   webKey: string
   /** The tool in Herramientas it filled or created when bought. */
   toolId: string

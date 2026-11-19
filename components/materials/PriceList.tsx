@@ -11,7 +11,6 @@ import { QuickAdd } from "@/components/interno/QuickAdd"
 import { RecordHistory } from "@/components/interno/RecordHistory"
 import { CATEGORIES, OFFER_STATUSES, ROLES, catalogFile, effectiveOffer, mxn, newItem, newOffer, readCatalogFile, type Category, type Item, type Offer, type OfferStatus, type Role } from "@/lib/materials/catalog"
 import { catalogServerSnapshot, catalogSnapshot, deleteItem, importItems, saveItem, subscribeCatalog } from "@/lib/materials/store"
-import { WEB_MATERIALS, WEB_SEEN, type WebMaterial } from "@/lib/purchasing/web"
 import { isKind, providerName, type Provider } from "@/lib/providers/model"
 import { providersServerSnapshot, providersSnapshot, subscribeProviders } from "@/lib/providers/store"
 import { countAt, placesUsed } from "@/lib/stock/model"
@@ -66,50 +65,6 @@ export function MaterialBuysApp() {
       )}
       <PriceList t={t} items={store.items} />
     </div>
-  )
-}
-
-/** A web listing as an offer of the item (clearly marked as seen on the web, to verify). */
-function webOffer(t: T, w: WebMaterial): Offer {
-  const iva = w.offer.ivaNote ? ` ${t(w.offer.ivaNote === "sin-iva" ? "web.ivaSin" : "web.ivaNoDice")}.` : ""
-  const what = [w.brand, w.product].filter(Boolean).join(" · ")
-  return newOffer({ supplier: w.offer.store, price: w.offer.price, url: w.offer.url, date: WEB_SEEN, notes: `${what}. ${w.offer.notes}${iva} ${t("web.verify", { date: WEB_SEEN })}`.slice(0, 500) })
-}
-
-/** The listings seen on the web for this material (by its role in a design), each one added as an offer on request. */
-function WebOptions({ t, item }: { t: T; item: Item }) {
-  const list = WEB_MATERIALS.filter((w) => item.role && w.role === item.role)
-  if (!list.length) return null
-  const has = (w: WebMaterial) => item.offers.some((o) => o.url === w.offer.url && o.price === w.offer.price)
-  return (
-    <fieldset className="grid gap-3">
-      <legend className="mb-1 text-sm font-medium text-foreground">{t("web.title")}</legend>
-      <p className="text-xs text-zinc-400">{t("web.hint", { date: WEB_SEEN })}</p>
-      <ul className="grid gap-2">
-        {list.map((w) => (
-          <li key={w.key} className="grid gap-1.5 rounded-lg border border-dashed border-white/15 p-3">
-            <span className="text-sm text-zinc-100">{[w.brand, w.product].filter(Boolean).join(" · ")}</span>
-            <span className="font-mono text-xs text-zinc-300">
-              {w.offer.store} · {mxn(w.offer.price)}/{item.unit}
-              {w.offer.ivaNote ? ` · ${t(w.offer.ivaNote === "sin-iva" ? "web.ivaSin" : "web.ivaNoDice")}` : ""}
-            </span>
-            {w.offer.notes && <span className="text-xs text-zinc-400">{w.offer.notes}</span>}
-            <span className="flex flex-wrap items-center gap-3">
-              <a href={w.offer.url} target="_blank" rel="noopener noreferrer" className={LINK}>
-                {t("offers.open")}
-              </a>
-              {has(w) ? (
-                <span className="text-xs text-emerald-300">{t("web.added")}</span>
-              ) : (
-                <button type="button" onClick={() => saveItem({ ...item, offers: [...item.offers, webOffer(t, w)] })} className={SMALL}>
-                  {t("web.add")}
-                </button>
-              )}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </fieldset>
   )
 }
 
@@ -302,8 +257,6 @@ function ItemRow({ t, item: x, supplierName, open, onToggle }: { t: T; item: Ite
               </div>
             )}
           </fieldset>
-
-          <WebOptions t={t} item={x} />
 
           <fieldset className="grid gap-3">
             <legend className="mb-1 text-sm font-medium text-foreground">{t("stockTitle")}</legend>

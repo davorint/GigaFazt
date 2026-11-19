@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { matchInternal } from "../internal-pages"
-import { decodeItem, effectiveOffer, newItem, newOffer, starterCatalog } from "../materials/catalog"
-import { WEB_MATERIALS, WEB_SEEN, WEB_SELLERS, WEB_TOOLS } from "../purchasing/web"
+import { decodeItem, effectiveOffer, newItem, newOffer } from "../materials/catalog"
 import { starterTools } from "../tools/model"
 import { bestOffer, buyIntoTools, buyTotal, decodeToolBuy, isOpen, newBuyOffer, newToolBuy } from "./model"
 
@@ -58,30 +57,6 @@ describe("material offers: link and status", () => {
   })
 })
 
-describe("options seen on the web", () => {
-  const roles = new Set(starterCatalog().map((x) => x.role))
-  const needs = new Set(starterTools().map((x) => x.name))
-  const all = [...WEB_TOOLS.flatMap((w) => w.offers), ...WEB_MATERIALS.map((w) => w.offer)]
-  it("every listing has a store, a positive MXN price and an https link, seen on the stated date", () => {
-    expect(WEB_SEEN).toMatch(/^\d{4}-\d{2}-\d{2}$/)
-    for (const o of all) {
-      expect(o.store).not.toBe("")
-      expect(o.price).toBeGreaterThan(0)
-      expect(o.url).toMatch(/^https:\/\/[^/]+\.(mx|com)\//)
-    }
-  })
-  it("keys are unique; tools match a starter tool, materials a role in the master list", () => {
-    const keys = [...WEB_TOOLS, ...WEB_MATERIALS].map((w) => w.key)
-    expect(new Set(keys).size).toBe(keys.length)
-    for (const w of WEB_TOOLS) expect(needs.has(w.need), w.need).toBe(true)
-    for (const w of WEB_MATERIALS) expect(roles.has(w.role), w.role).toBe(true)
-  })
-  it("preferred brands come first: Signal Fire for the splicer, FiberHome for the drop cable", () => {
-    expect(WEB_TOOLS.find((w) => w.need === "Fusionadora de fibra óptica")?.brand).toBe("Signal Fire")
-    expect(WEB_MATERIALS.find((w) => w.role === "drop-m")?.brand).toMatch(/FiberHome/)
-  })
-})
-
 describe("routes", () => {
   it("the two buying pages and their other spellings", () => {
     expect(matchInternal("/interno/admin/compras-materiales")?.rewriteTo).toBe("/es/interno/admin/compras-materiales")
@@ -89,22 +64,5 @@ describe("routes", () => {
     expect(matchInternal("/interno/admin/materiales-compras")?.rewriteTo).toBe("/es/interno/admin/compras-materiales")
     expect(matchInternal("/interno/admin/opciones-herramientas")?.rewriteTo).toBe("/es/interno/admin/compras-herramientas")
     expect(matchInternal("/interno/admin/precios")?.rewriteTo).toBe("/es/interno/admin/compras-materiales")
-  })
-})
-
-describe("sellers seen on the web", () => {
-  it("unique names and keys, https links only, every one with its source and what it sells", () => {
-    expect(new Set(WEB_SELLERS.map((w) => w.key)).size).toBe(WEB_SELLERS.length)
-    expect(new Set(WEB_SELLERS.map((w) => w.name.toLowerCase())).size).toBe(WEB_SELLERS.length)
-    for (const w of WEB_SELLERS) {
-      expect(w.source).toMatch(/^https:\/\//)
-      if (w.website) expect(w.website).toMatch(/^https:\/\/[^/]+\/$/)
-      expect(w.sells.length).toBeGreaterThan(10)
-      if (w.email) expect(w.email).toMatch(/^[^@\s]+@[^@\s]+\.[a-z.]+$/)
-    }
-  })
-  it("the stores behind the web offers are among the sellers", () => {
-    const names = new Set(WEB_SELLERS.map((w) => w.name))
-    for (const store of ["RadioMex", "SATBYTE", "Sily", "Compustar", "BSAI", "Fibramarket", "Mi Com"]) expect(names.has(store), store).toBe(true)
   })
 })

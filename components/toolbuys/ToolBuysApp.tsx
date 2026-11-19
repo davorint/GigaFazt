@@ -12,7 +12,6 @@ import { useSellers } from "@/components/materials/PriceList"
 import { localToday } from "@/lib/clients/from-lead"
 import { mxn } from "@/lib/materials/catalog"
 import { providerName } from "@/lib/providers/model"
-import { WEB_SEEN, WEB_TOOLS, type WebTool } from "@/lib/purchasing/web"
 import { readState } from "@/lib/sync/state"
 import { BUY_STATUSES, PRIORITIES, bestOffer, buyIntoTools, buyLabel, buyTotal, isOpen, newBuyOffer, newToolBuy, type BuyOffer, type BuyStatus, type Priority, type ToolBuy } from "@/lib/toolbuys/model"
 import { toolBuysStore } from "@/lib/toolbuys/store"
@@ -89,8 +88,6 @@ export function ToolBuysApp() {
         onAdd={add}
       />
 
-      <WebTools t={t} tc={tc} list={list} onAdded={setOpenId} />
-
       <div className="grid items-start gap-4 sm:grid-cols-2">
         <TextField label={t("search")} value={q} onChange={setQ} />
         <PickField label={t("show")} value={show} onChange={setShow} options={SHOW.map((s) => ({ value: s, label: t(`shows.${s}`) }))} />
@@ -115,83 +112,6 @@ export function ToolBuysApp() {
         </section>
       ))}
     </div>
-  )
-}
-
-/** The options seen on the web, grouped by need; each one becomes an option (status cotizado) on request. */
-function WebTools({ t, tc, list, onAdded }: { t: T; tc: T; list: ToolBuy[]; onAdded: (id: string) => void }) {
-  const [open, setOpen] = useState(false)
-  const pending = WEB_TOOLS.filter((w) => !list.some((x) => x.webKey === w.key))
-  const add = (w: WebTool) => {
-    const x = newToolBuy({
-      need: w.need,
-      category: w.category,
-      brand: w.brand,
-      model: w.model,
-      specs: w.specs,
-      status: "cotizado",
-      webKey: w.key,
-      by: readState().name,
-      offers: w.offers.map((o) => newBuyOffer({ store: o.store, price: o.price, url: o.url, date: WEB_SEEN, notes: [o.notes, o.ivaNote === "sin-iva" ? t("web.ivaSin") : o.ivaNote ? t("web.ivaNoDice") : "", t("web.verify", { date: WEB_SEEN })].filter(Boolean).join(" ").slice(0, 500) })),
-    })
-    toolBuysStore.save(x)
-    onAdded(x.id)
-  }
-  const byNeed = new Map<string, WebTool[]>()
-  for (const w of WEB_TOOLS) byNeed.set(w.need, [...(byNeed.get(w.need) ?? []), w])
-  return (
-    <section aria-label={t("web.title")} className="grid gap-3 rounded-xl border border-dashed border-white/15 p-3">
-      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between gap-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-        <span className="grid gap-0.5">
-          <span className="text-sm font-medium text-foreground">{t("web.title")}</span>
-          <span className="text-xs text-zinc-400">{t("web.summary", { n: WEB_TOOLS.length, pending: pending.length, date: WEB_SEEN })}</span>
-        </span>
-        <span aria-hidden className="text-zinc-400">
-          {open ? "−" : "+"}
-        </span>
-      </button>
-      {open && (
-        <div className="grid gap-4">
-          <p className="text-xs text-zinc-400">{t("web.hint", { date: WEB_SEEN })}</p>
-          {[...byNeed].map(([need, ws]) => (
-            <div key={need} className="grid gap-2">
-              <h3 className="text-sm text-zinc-200">
-                {need} <span className="font-mono text-xs text-zinc-500">· {tc(`categories.${ws[0].category}`)}</span>
-              </h3>
-              <ul className="grid gap-2">
-                {ws.map((w) => {
-                  const added = list.find((x) => x.webKey === w.key)
-                  return (
-                    <li key={w.key} className="grid gap-1.5 rounded-lg border border-white/10 p-3">
-                      <span className="text-sm text-zinc-100">{[w.brand, w.model].filter(Boolean).join(" ")}</span>
-                      <span className="text-xs text-zinc-400">{w.specs}</span>
-                      {w.offers.map((o) => (
-                        <span key={o.url} className="flex flex-wrap items-center gap-x-3 font-mono text-xs text-zinc-300">
-                          {o.store} · {mxn(o.price)}
-                          {o.ivaNote ? ` · ${o.ivaNote === "sin-iva" ? t("web.ivaSin") : t("web.ivaNoDice")}` : ""}
-                          <a href={o.url} target="_blank" rel="noopener noreferrer" className={LINK}>
-                            {t("offers.open")}
-                          </a>
-                        </span>
-                      ))}
-                      {added ? (
-                        <button type="button" onClick={() => onAdded(added.id)} className={`${LINK} text-emerald-300`}>
-                          {t("web.added")}
-                        </button>
-                      ) : (
-                        <button type="button" onClick={() => add(w)} className={SMALL}>
-                          {t("web.add")}
-                        </button>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
   )
 }
 

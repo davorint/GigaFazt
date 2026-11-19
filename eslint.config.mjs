@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // Vendor MapLibre worker copied from node_modules (scripts/copy-maplibre-worker.mjs).
     "public/maplibre-gl-worker-*.mjs",
     "public/capacity-worker.js",
+    // Screenshots and local one-off scripts (git-ignored).
+    ".screenshots/**",
   ]),
 ]);
 

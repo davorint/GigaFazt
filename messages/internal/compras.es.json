@@ -84,16 +84,6 @@
     "boughtDone": "Agregada a Herramientas.",
     "bought": "Comprada · ver en Herramientas →",
     "remove": "Eliminar opción",
-    "confirmRemove": "¿Eliminar la opción «{name}»?",
-    "web": {
-      "title": "Opciones vistas en la web",
-      "summary": "{n} modelos de tiendas en México, vistos el {date} · {pending} sin agregar",
-      "hint": "Publicaciones en tiendas de México como se veían el {date}, no cotizaciones: verifica precio, IVA, vendedor y existencias antes de comprar.",
-      "add": "Agregar como opción",
-      "added": "Ya está en la lista · abrir",
-      "ivaSin": "La tienda lo muestra sin IVA.",
-      "ivaNoDice": "La tienda no dice si incluye IVA.",
-      "verify": "Precio visto en la web el {date}; verificar."
-    }
+    "confirmRemove": "¿Eliminar la opción «{name}»?"
   }
 }
