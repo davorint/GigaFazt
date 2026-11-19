@@ -103,3 +103,29 @@ describe("reading stored designs", () => {
     expect(decodeOptics({ taps: [{ pct: 10, small: 12, large: 0.5 }] }).taps.find((x) => x.pct === 10)).toEqual({ pct: 10, small: 12, large: 0.5 })
   })
 })
+
+describe("small buildings and overload (2026-11-19)", () => {
+  /** PB + 1 floor, 4 apartments each, 10 m to the farthest door. */
+  const small = (): Tower => {
+    const t = syncFloors({ ...emptyTower("B"), floorsAbove: 2, floorsBelow: 0, floorHeightM: 3 })
+    return { ...t, floors: t.floors.map((f) => ({ ...f, units: 4, farthestM: 10 })) }
+  }
+  it("one box per feed: no base splitter on auto (a 1:2 would only add loss)", () => {
+    const d = balancedDesign(small(), { feeds: 1, perBox: 2, base: "auto", floor: "auto" })
+    expect(d.feeds[0].base).toBe(1)
+    expect(d.feeds[0].branches).toHaveLength(1)
+  })
+  it("overload is judged at the class's strongest transmitter unless the port power was measured", async () => {
+    const { overloadTx, CLASS_TX, CLASS_TX_MAX } = await import("./design")
+    expect(CLASS_TX_MAX["C+"]).toBe(7)
+    expect(overloadTx({ cls: "C+", txDbm: CLASS_TX["C+"] })).toBe(7)
+    expect(overloadTx({ cls: "C+", txDbm: 4.2 })).toBe(4.2)
+    // One 1:8 floor splitter and no base splitter on C+: fine at +3 dBm, but a +7 dBm module saturates the ONT.
+    const t = small()
+    const d = balancedDesign(t, { feeds: 1, perBox: 2, base: "auto", floor: 8 })
+    const r = designResults(t, d, room, DEFAULT_OPTICS)[0]
+    expect(r.rxDbm).toBeLessThan(DEFAULT_OPTICS.ontOverload)
+    expect(r.status).toBe("overload")
+    expect(designResults(t, d, room, { ...DEFAULT_OPTICS, txDbm: 3.5 })[0].status).not.toBe("overload")
+  })
+})

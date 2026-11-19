@@ -79,6 +79,17 @@ export type Optics = {
 
 /** Minimum transmit power per GPON class (the low end of each published range; C+++/C++++ from lib/olt-kb). */
 export const CLASS_TX: Record<string, number> = { "B+": 1.5, "C+": 3, "C++": 6, "C+++": 6, "C++++": 9 }
+/** Maximum transmit power per GPON class (the high end of each published range, lib/olt-kb BUDGETS). */
+export const CLASS_TX_MAX: Record<string, number> = Object.fromEntries(BUDGETS.filter((b) => b.tech === "gpon" && b.txMax).map((b) => [b.id, b.txMax!.v]))
+
+/**
+ * The power to check ONT overload with: a measured port power as it is; the class's minimum (not measured) means the
+ * real module can be up to its class maximum, so the overload check uses that (as the /olt calculator does).
+ */
+export function overloadTx(o: Pick<Optics, "cls" | "txDbm">): number {
+  const max = CLASS_TX_MAX[o.cls]
+  return o.txDbm === CLASS_TX[o.cls] && max !== undefined ? Math.max(o.txDbm, max) : o.txDbm
+}
 export const GPON_CLASSES = BUDGETS.filter((b) => b.tech === "gpon").map((b) => b.id)
 
 export const DEFAULT_OPTICS: Optics = {
@@ -131,7 +142,8 @@ export function balancedDesign(t: Tower, o: BalancedTemplate): Design {
   const gs = groups(t, Math.max(1, o.perBox))
   const feeds = Math.max(1, Math.min(4, o.feeds))
   const per = Math.ceil(gs.length / feeds) || 1
-  const base = o.base === "auto" ? ratioFor(per) : o.base
+  // One box per feed needs no base splitter (a 1:2 there would only add ~4 dB).
+  const base = o.base === "auto" ? (per <= 1 ? 1 : ratioFor(per)) : o.base
   return {
     baseLevel: baseLevelOf(t),
     feeds: Array.from({ length: feeds }, (_, k) => ({
@@ -245,7 +257,8 @@ export function designResults(t: Tower, d: Design, s: { room: Pick<Survey["room"
         const units = levels.reduce((sum, l) => sum + (t.floors.find((x) => x.level === l)?.units ?? 0), 0)
         const rxDbm = o.txDbm - lossDb
         const spareDb = rxDbm - o.ontSensitivity - o.marginDb
-        const status: StopResult["status"] = st.split < 2 ? "noSplit" : rxDbm > o.ontOverload ? "overload" : spareDb >= 0 ? "ok" : rxDbm >= o.ontSensitivity ? "tight" : "no"
+        // Too little light is judged at the weakest transmitter; too much at the strongest.
+        const status: StopResult["status"] = st.split < 2 ? "noSplit" : overloadTx(o) - lossDb > o.ontOverload ? "overload" : spareDb >= 0 ? "ok" : rxDbm >= o.ontSensitivity ? "tight" : "no"
         if (tap) riser += tap.large + jointDb(o)
         const last = si === b.stops.length - 1
         out.push({ feed: f.name, branch: bi + 1, stop: st, levels, units, ports: st.split > 1 ? st.split : 0, lossDb: round1(lossDb), rxDbm: round1(rxDbm), spareDb: round1(spareDb), status, throughDbm: tap && !last ? round1(o.txDbm - riser) : null })

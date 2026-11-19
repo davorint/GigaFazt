@@ -286,7 +286,7 @@
       "sens": "Sensibilidad del ONT",
       "sensHint": "EG8145B7-50: −27 dBm (Huawei).",
       "overload": "Saturación del ONT",
-      "overloadHint": "Valor típico de un ONT clase B+; arriba de esto el ONT se satura.",
+      "overloadHint": "Valor típico de un ONT clase B+; arriba de esto el ONT se satura. Se revisa con la potencia máxima de la clase del módulo (o con la que midas en el puerto).",
       "margin": "Margen",
       "marginHint": "Reserva para envejecimiento, reparaciones y curvas.",
       "lossesTitle": "Pérdidas y medidas (valores de planeación, editables)",
@@ -368,7 +368,7 @@
         "ok": "Bien",
         "tight": "Justo (sin margen)",
         "no": "No llega",
-        "overload": "Satura el ONT",
+        "overload": "Puede saturar el ONT: pon un atenuador",
         "noSplit": "Sin splitter"
       },
       "summary": "{ports} puertos para {units} departamentos · {feeds, plural, one {# fibra} other {# fibras}} de la OLT",
