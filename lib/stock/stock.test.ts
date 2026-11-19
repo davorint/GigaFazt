@@ -126,3 +126,18 @@ describe("baja reasons, monthly use and what a place still holds (2026-11-19)", 
     expect(placesStockItems(moves, units, "s:site-0001", items).sort()).toEqual(["item-cable", "item-ont01"])
   })
 })
+
+describe("inventory value (2026-11-19)", () => {
+  it("pieces × price per place; items in stock without a price are counted apart", async () => {
+    const { newMove, newUnit, stockValue } = await import("./model")
+    const moves = [newMove({ kind: "compra", itemId: "item-drop1", qty: 300, to: "bodega" }), newMove({ kind: "compra", itemId: "item-nap01", qty: 4, to: "bodega" })]
+    const units = [newUnit({ itemId: "item-ont01", serial: "S1", place: "bodega" }), newUnit({ itemId: "item-ont01", serial: "S2", place: "bodega" })]
+    const items = [
+      { id: "item-drop1", serialized: false, price: 4.5 },
+      { id: "item-nap01", serialized: false, price: null },
+      { id: "item-ont01", serialized: true, price: 1200 },
+    ]
+    expect(stockValue(items, moves, units, "bodega")).toEqual({ value: 300 * 4.5 + 2 * 1200, unpriced: 1 })
+    expect(stockValue(items, moves, units, "s:site-0001")).toEqual({ value: 0, unpriced: 0 })
+  })
+})

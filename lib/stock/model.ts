@@ -106,6 +106,22 @@ export function placesUsed(moves: Move[], units: Unit[]): string[] {
   return [...set]
 }
 
+/**
+ * What the stock of a place is worth: pieces (or meters) × each item's price (MXN with IVA). Items with stock but
+ * without a price are counted apart, so the total says it's incomplete.
+ */
+export function stockValue(items: { id: string; serialized: boolean; price: number | null }[], moves: Move[], units: Unit[], place: string): { value: number; unpriced: number } {
+  let value = 0
+  let unpriced = 0
+  for (const it of items) {
+    const n = countAt(it, moves, units, place)
+    if (n <= 0) continue
+    if (it.price === null) unpriced++
+    else value += n * it.price
+  }
+  return { value: Math.round(value * 100) / 100, unpriced }
+}
+
 /** Movements that use stock up (to a client, or out for good). */
 const USE_KINDS: MoveKind[] = ["instalacion", "reemplazo", "baja"]
 

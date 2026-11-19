@@ -134,7 +134,9 @@
       "confirmUndo": "¿Deshacer este movimiento? Las existencias vuelven a como estaban.",
       "serialUndo": "Con números de serie: para corregirlo, cambia el equipo en «ONTs por serie».",
       "exportCsv": "Exportar movimientos (CSV)",
-      "csvBy": "Quién lo registró"
+      "csvBy": "Quién lo registró",
+      "value": "Valor del inventario: {total}",
+      "valueUnpriced": "{n, plural, one {# material con existencias no tiene precio y no cuenta} other {# materiales con existencias no tienen precio y no cuentan}}."
     },
     "move": {
       "title": "Registrar movimiento",

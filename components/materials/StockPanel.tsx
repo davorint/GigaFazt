@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl"
 import { PickField } from "@/components/surveys/SurveyFields"
 import { clientsServerSnapshot, clientsSnapshot, subscribeClients } from "@/lib/clients/store"
 import { CLIENT_ROLES, type Item } from "@/lib/materials/catalog"
-import { BODEGA, countAt, placesUsed, type MoveKind } from "@/lib/stock/model"
+import { BODEGA, countAt, placesUsed, stockValue, type Move, type MoveKind, type Unit } from "@/lib/stock/model"
+import { mxn } from "@/lib/materials/catalog"
 import { movesStore, unitsStore } from "@/lib/stock/store"
 import { MoveForm } from "./MoveForm"
 import { ExportButton } from "@/components/interno/ExportButton"
@@ -86,6 +87,7 @@ export function StockPanel({ items }: { items: Item[] }) {
         </div>
       )}
 
+      <StockValue t={t} places={places} items={items} moves={moves} units={units} label={placeLabel} />
       <div className="grid items-start gap-4 sm:grid-cols-2">
         <PickField label={t("stock.place")} value={place} onChange={setPlace} options={[{ value: "", label: t("stock.allPlaces") }, ...placeOptions]} />
         <label className="flex min-h-10 items-center gap-2 self-end text-sm text-zinc-200">
@@ -159,6 +161,21 @@ export function StockPanel({ items }: { items: Item[] }) {
           ))}
         </ul>
       </section>
+    </div>
+  )
+}
+
+/** What the stock is worth in each place shown (pieces × price), and the total. */
+function StockValue({ t, places, items, moves, units, label }: { t: ReturnType<typeof useTranslations>; places: string[]; items: Item[]; moves: Move[]; units: Unit[]; label: (p: string) => string }) {
+  const rows = places.map((p) => ({ p, ...stockValue(items, moves, units, p) })).filter((r) => r.value > 0 || r.unpriced > 0)
+  if (!rows.length) return null
+  const total = rows.reduce((a, r) => a + r.value, 0)
+  const unpriced = rows.reduce((a, r) => a + r.unpriced, 0)
+  return (
+    <div className="grid gap-1 rounded-xl border border-white/10 p-3">
+      <p className="text-sm text-zinc-100">{t("stock.value", { total: mxn(total) })}</p>
+      <p className="font-mono text-xs text-zinc-400">{rows.map((r) => `${label(r.p)}: ${mxn(r.value)}`).join(" · ")}</p>
+      {unpriced > 0 && <p className="text-xs text-amber-200">{t("stock.valueUnpriced", { n: unpriced })}</p>}
     </div>
   )
 }

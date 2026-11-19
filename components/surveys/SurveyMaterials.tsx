@@ -2,12 +2,13 @@
 
 import { useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
+import { whatsappHref } from "@/lib/contact"
 import { NumberField } from "@/components/mikrotik/NumberField"
 import { mxn, type Item, type Role } from "@/lib/materials/catalog"
 import { catalogServerSnapshot, catalogSnapshot, subscribeCatalog } from "@/lib/materials/store"
 import { newId } from "@/lib/survey/id"
 import { designNeeds, purchaseList, surveyCosts, type Costs, type CostLine, type SurveyMaterials } from "@/lib/survey/materials"
-import { providerName } from "@/lib/providers/model"
+import { providerName, type Provider } from "@/lib/providers/model"
 import { providersServerSnapshot, providersSnapshot, subscribeProviders } from "@/lib/providers/store"
 import { BODEGA, countAt } from "@/lib/stock/model"
 import { movesStore, unitsStore } from "@/lib/stock/store"
@@ -166,6 +167,7 @@ function Purchase({ t, c }: { t: T; c: Costs }) {
               <span className={g.key ? "font-medium text-zinc-100" : "font-medium text-amber-200"}>{who}</span>
               <span className="font-mono text-zinc-100">{mxn(g.total)}</span>
             </p>
+            <OrderLink t={t} provider={named} lines={g.lines.map((l) => ({ name: l.item.name, sku: l.item.sku, unit: l.item.unit, qty: Math.max(0, Math.ceil(l.qty - Math.max(0, countAt(l.item, moves, units, BODEGA)))) }))} />
             <ul className="grid gap-1">
               {g.lines.map((l) => {
                 const has = countAt(l.item, moves, units, BODEGA)
@@ -187,5 +189,22 @@ function Purchase({ t, c }: { t: T; c: Costs }) {
         )
       })}
     </section>
+  )
+}
+
+/**
+ * "Pedir por WhatsApp": the provider's WhatsApp (its first contact with one) with the order written (what's missing
+ * after the warehouse stock, with each part number). Nothing when the provider has no WhatsApp or nothing is missing.
+ */
+function OrderLink({ t, provider, lines }: { t: T; provider: Provider | undefined; lines: { name: string; sku: string; unit: string; qty: number }[] }) {
+  const contact = provider?.contacts.find((c) => (c.whatsapp || c.phone).replace(/\D/g, "").length >= 10)
+  const need = lines.filter((l) => l.qty > 0)
+  if (!contact || !need.length) return null
+  const d = (contact.whatsapp || contact.phone).replace(/\D/g, "")
+  const text = [t("purchase.waHello", { name: contact.name.split(" ")[0] || "" }), ...need.map((l) => `• ${l.name}${l.sku ? ` (${l.sku})` : ""}: ${l.qty} ${l.unit}`), t("purchase.waEnd")].join("\n")
+  return (
+    <a href={whatsappHref(d.length === 10 ? `52${d}` : d, text)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5">
+      {t("purchase.order", { name: contact.name || providerName(provider!) })}
+    </a>
   )
 }

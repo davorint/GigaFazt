@@ -418,7 +418,10 @@
         "hint": "Lo del despliegue (diseño y otros materiales) agrupado por quién lo vende: el proveedor elegido en Materiales, o el más barato. Se descuenta lo que ya hay en la bodega.",
         "noSupplier": "Sin proveedor: agrégalo en Materiales",
         "partial": "En bodega {has} {unit}: comprar {buy} {unit}",
-        "covered": "En bodega {has} {unit}: alcanza"
+        "covered": "En bodega {has} {unit}: alcanza",
+        "order": "Pedir por WhatsApp a {name}",
+        "waHello": "Hola {name}, quiero pedirte lo siguiente:",
+        "waEnd": "¿Me confirmas precio con IVA y tiempo de entrega? Gracias."
       }
     }
   }
