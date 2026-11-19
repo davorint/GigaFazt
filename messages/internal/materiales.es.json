@@ -145,7 +145,7 @@
         "instalacion": "Instalación a cliente",
         "reemplazo": "Reemplazo a cliente",
         "devolucion": "Devolución de cliente",
-        "baja": "Baja (dañado o perdido)",
+        "baja": "Baja (dañado, perdido o devuelto)",
         "ajuste": "Ajuste de inventario"
       },
       "hints": {
@@ -154,7 +154,7 @@
         "instalacion": "Lo que se usó en la instalación de un departamento: ONT, acometida y conectores. El número de serie del ONT queda en el servicio del cliente.",
         "reemplazo": "Una pieza nueva para un cliente que ya tiene servicio. Indica el ONT que se retira y si todavía funciona.",
         "devolucion": "Algo que regresa de un cliente, como el ONT de una cancelación.",
-        "baja": "Sale para siempre: dañado o perdido.",
+        "baja": "Sale para siempre: dañado, perdido o devuelto al proveedor.",
         "ajuste": "Corrige lo que hay después de contar: escribe cuánto sobra (+) o falta (−)."
       },
       "date": "Fecha",
@@ -205,13 +205,19 @@
         "serials": "{name}: faltan los números de serie.",
         "repeated": "{name}: hay un número de serie repetido.",
         "qty": "{name}: escribe la cantidad.",
-        "serialAjuste": "{name} se lleva por serie: corrígelo en «ONTs por serie»."
+        "serialAjuste": "{name} se lleva por serie: para sacarlo usa «Baja» con su motivo, o corrige el equipo en «ONTs por serie»."
       },
       "warnings": {
         "short": "{name}: solo hay {n} registrados en ese lugar.",
         "exists": "El número de serie {serial} ya está registrado.",
         "notThere": "El número de serie {serial} no aparece disponible en ese lugar.",
         "noRetired": "No indicaste qué se retira."
+      },
+      "reason": "Motivo",
+      "reasons": {
+        "danado": "Dañado (se queda ahí para reparar o tirar)",
+        "perdido": "Perdido o robado",
+        "proveedor": "Regresado al proveedor (garantía)"
       }
     },
     "units": {
@@ -678,6 +684,11 @@
           "galvanizado": "Tubo galvanizado"
         }
       }
+    },
+    "use": {
+      "line": "Uso: {n} {unit} al mes (últimos 90 días) · mínimo sugerido: {min} (un mes de uso)",
+      "apply": "Usar {min} como mínimo",
+      "none": "Sin uso registrado en los últimos 90 días (instalaciones, reemplazos o bajas): el mínimo sugerido aparece cuando haya."
     }
   }
 }

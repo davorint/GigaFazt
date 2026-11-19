@@ -23,6 +23,9 @@ export const MOVE_KINDS = ["compra", "traspaso", "instalacion", "reemplazo", "de
 export type MoveKind = (typeof MOVE_KINDS)[number]
 export const UNIT_STATES = ["almacen", "cliente", "danado", "perdido", "proveedor"] as const
 export type UnitState = (typeof UNIT_STATES)[number]
+/** Why something leaves for good (a baja): damaged, lost, or sent back to the supplier. */
+export const BAJA_REASONS = ["danado", "perdido", "proveedor"] as const
+export type BajaReason = (typeof BAJA_REASONS)[number]
 
 export type Move = {
   id: string
@@ -40,6 +43,8 @@ export type Move = {
   serials: string[]
   /** Movements recorded together (one installation with its ONT, drop cable and connectors). */
   batch: string
+  /** A baja's reason (its units take that state); "" for the other kinds. */
+  reason: BajaReason | ""
   notes: string
   by: string
   updatedAt: string
@@ -58,7 +63,7 @@ export type Unit = {
   updatedAt: string
 }
 
-export const newMove = (p: Partial<Move> = {}): Move => ({ id: newId(), kind: "compra", date: "", itemId: "", qty: 0, from: "", to: "", clientId: "", serials: [], batch: "", notes: "", by: "", updatedAt: "", ...p })
+export const newMove = (p: Partial<Move> = {}): Move => ({ id: newId(), kind: "compra", date: "", itemId: "", qty: 0, from: "", to: "", clientId: "", serials: [], batch: "", reason: "", notes: "", by: "", updatedAt: "", ...p })
 export const newUnit = (p: Partial<Unit> = {}): Unit => ({ id: newId(), itemId: "", serial: "", state: "almacen", place: BODEGA, clientId: "", notes: "", updatedAt: "", ...p })
 
 export const sitePlace = (siteId: string) => `s:${siteId}`
@@ -101,6 +106,38 @@ export function placesUsed(moves: Move[], units: Unit[]): string[] {
   return [...set]
 }
 
+/** Movements that use stock up (to a client, or out for good). */
+const USE_KINDS: MoveKind[] = ["instalacion", "reemplazo", "baja"]
+
+/** Days between two yyyy-mm-dd dates. */
+const dayDiff = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 864e5)
+
+/**
+ * What an item uses per month: the pieces (or meters) that went to clients or out for good in the last `days` days,
+ * as a 30-day average. Null when nothing went out in that time.
+ */
+export function monthlyUse(moves: Move[], itemId: string, today: string, days = 90): number | null {
+  let n = 0
+  for (const m of moves) {
+    if (m.itemId !== itemId || !USE_KINDS.includes(m.kind) || !m.date) continue
+    const ago = dayDiff(m.date, today)
+    if (ago >= 0 && ago < days) n += Math.abs(m.qty)
+  }
+  return n > 0 ? Math.round((n / days) * 30 * 10) / 10 : null
+}
+
+/** A suggested minimum for the warehouse: one month of use, rounded up (null without use to go by). */
+export const suggestedMin = (monthly: number | null) => (monthly === null ? null : Math.ceil(monthly))
+
+/** Ids of the items a place still has (count above 0): what would be stranded if the place went away. */
+export function placesStockItems(moves: Move[], units: Unit[], place: string, items: Map<string, { id: string; serialized: boolean }>): string[] {
+  const ids = new Set([...moves.filter((m) => m.to === place || m.from === place).map((m) => m.itemId), ...units.filter((u) => u.place === place).map((u) => u.itemId)])
+  return [...ids].filter((id) => {
+    const it = items.get(id) ?? { id, serialized: false }
+    return countAt(it, moves, units, place) > 0
+  })
+}
+
 /**
  * What a movement does to the serialized units it names: units that don't exist yet are created (a purchase, or a
  * unit first seen being returned). Returns the units to save (new or changed).
@@ -114,7 +151,11 @@ export function applyToUnits(units: Unit[], m: Move): Unit[] {
     const u = cur ? { ...cur } : newUnit({ itemId: m.itemId, serial })
     if (m.kind === "compra" || m.kind === "devolucion" || m.kind === "traspaso" || m.kind === "ajuste") Object.assign(u, { state: "almacen", place: m.to, clientId: "" })
     else if (m.kind === "instalacion" || m.kind === "reemplazo") Object.assign(u, { state: "cliente", place: "", clientId: m.clientId })
-    else if (m.kind === "baja") Object.assign(u, { state: "danado", place: m.from, clientId: "" })
+    else if (m.kind === "baja") {
+      const state: UnitState = m.reason || "danado"
+      // A damaged unit stays where it is (to be sent for repair); a lost one or one back with the supplier has no place.
+      Object.assign(u, { state, place: state === "danado" ? m.from : "", clientId: "" })
+    }
     const k = out.findIndex((x) => x.id === u.id)
     if (k >= 0) out[k] = u
     else out.push(u)
@@ -191,6 +232,7 @@ export function decodeMove(v: unknown): Move | null {
     clientId: id(v.clientId),
     serials: Array.isArray(v.serials) ? v.serials.filter((x): x is string => typeof x === "string").map((x) => normSerial(x).slice(0, 64)).filter(Boolean).slice(0, 500) : [],
     batch: id(v.batch),
+    reason: kind === "baja" ? pick(BAJA_REASONS, v.reason, "danado") : "",
     notes: str(v.notes, 1000),
     by: str(v.by, 60),
     updatedAt: typeof v.updatedAt === "string" ? v.updatedAt.slice(0, 40) : "",

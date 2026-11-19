@@ -97,3 +97,32 @@ describe("installation stock", () => {
     expect(decodeUnit({ itemId: "ont-123456", serial: "  " })).toBeNull()
   })
 })
+
+describe("baja reasons, monthly use and what a place still holds (2026-11-19)", () => {
+  it("a baja's units take its reason: damaged stays in the place, lost or back to the supplier has none", async () => {
+    const { applyToUnits, newMove, newUnit, decodeMove } = await import("./model")
+    const u = newUnit({ itemId: "item-ont01", serial: "ABC123", place: "bodega" })
+    const out = (reason: "danado" | "perdido" | "proveedor") => applyToUnits([u], newMove({ kind: "baja", itemId: "item-ont01", from: "bodega", serials: ["ABC123"], qty: 1, reason }))[0]
+    expect(out("danado")).toMatchObject({ state: "danado", place: "bodega" })
+    expect(out("perdido")).toMatchObject({ state: "perdido", place: "" })
+    expect(out("proveedor")).toMatchObject({ state: "proveedor", place: "" })
+    expect(decodeMove({ kind: "baja", itemId: "item-ont01" })?.reason).toBe("danado")
+    expect(decodeMove({ kind: "compra", itemId: "item-ont01", reason: "perdido" })?.reason).toBe("")
+  })
+  it("monthly use counts what went to clients or out for good in the last 90 days; the suggested minimum is a month of it", async () => {
+    const { monthlyUse, newMove, suggestedMin } = await import("./model")
+    const m = (kind: "instalacion" | "baja" | "compra" | "traspaso", qty: number, date: string) => newMove({ kind, itemId: "item-drop1", qty, date })
+    const moves = [m("instalacion", 60, "2026-11-01"), m("instalacion", 30, "2026-10-01"), m("baja", 30, "2026-09-15"), m("compra", 500, "2026-11-01"), m("traspaso", 100, "2026-11-01"), m("instalacion", 999, "2026-05-01")]
+    expect(monthlyUse(moves, "item-drop1", "2026-11-19")).toBe(40)
+    expect(suggestedMin(40)).toBe(40)
+    expect(monthlyUse(moves, "other-item", "2026-11-19")).toBeNull()
+    expect(suggestedMin(null)).toBeNull()
+  })
+  it("what a place still has, for the warning before deleting a location", async () => {
+    const { newMove, newUnit, placesStockItems } = await import("./model")
+    const moves = [newMove({ kind: "compra", itemId: "item-cable", qty: 10, to: "s:site-0001" }), newMove({ kind: "compra", itemId: "item-gone1", qty: 5, to: "s:site-0001" }), newMove({ kind: "traspaso", itemId: "item-gone1", qty: 5, from: "s:site-0001", to: "bodega" })]
+    const units = [newUnit({ itemId: "item-ont01", serial: "X1", place: "s:site-0001" })]
+    const items = new Map([["item-ont01", { id: "item-ont01", serialized: true }]])
+    expect(placesStockItems(moves, units, "s:site-0001", items).sort()).toEqual(["item-cable", "item-ont01"])
+  })
+})

@@ -121,8 +121,11 @@ export type SyncStatus = {
   adopted: boolean
   lastOk: string | null
   error: string
+  /** Records the server refused in the last sync, with why (they stay pending until fixed or discarded). */
+  rejected: Rejected[]
 }
-let status: SyncStatus = { phase: "idle", pending: 0, unsent: 0, name: "", adopted: false, lastOk: null, error: "" }
+export type Rejected = { kind: SyncKind; id: string; reason: string; label: string }
+let status: SyncStatus = { phase: "idle", pending: 0, unsent: 0, name: "", adopted: false, lastOk: null, error: "", rejected: [] }
 const statusListeners = new Set<() => void>()
 const setStatus = (p: Partial<SyncStatus>) => {
   status = { ...status, ...p }
@@ -219,7 +222,11 @@ async function syncKind(kind: SyncKind, name: string): Promise<void> {
     })
     a.apply(upserts, deletes)
     const rejected = body.results.filter((r) => r.outcome === "rejected")
-    if (rejected.length) setStatus({ error: `${rejected.length} rechazados` })
+    if (rejected.length) {
+      const seen = new Set(rejected.map((r) => r.id))
+      const now = rejected.map((r) => ({ kind, id: r.id, reason: r.outcome === "rejected" ? r.reason : "", label: labelOf(a.get(r.id)) }))
+      setStatus({ rejected: [...status.rejected.filter((x) => x.kind !== kind || !seen.has(x.id)), ...now] })
+    }
     const left = Object.values(readState().meta[kind]).filter((m) => m.dirty > 0).length
     if (!body.more && (left === 0 || dirty.length < MAX_CHANGES || rejected.length)) return
   }
@@ -227,6 +234,28 @@ async function syncKind(kind: SyncKind, name: string): Promise<void> {
 
 let running = false
 let again = false
+
+/** A short name for a record in the list of refused ones. */
+function labelOf(x: unknown): string {
+  if (!x || typeof x !== "object") return ""
+  const o = x as Record<string, unknown>
+  for (const k of ["name", "title", "need", "code", "serial", "model"]) if (typeof o[k] === "string" && (o[k] as string).trim()) return (o[k] as string).trim().slice(0, 60)
+  return ""
+}
+
+/**
+ * "Descartar mi cambio" on a refused record: this phone's copy is removed and the kind is pulled again from the start,
+ * so the database's copy (if it has one) comes back. What was typed here in that record is lost.
+ */
+export function discardLocal(kind: SyncKind, id: string) {
+  ADAPTERS[kind].apply([], [id])
+  updateState((st) => {
+    delete st.meta[kind][id]
+    st.rev[kind] = 0
+  })
+  setStatus({ rejected: status.rejected.filter((x) => !(x.kind === kind && x.id === id)) })
+  void syncNow()
+}
 
 /** Syncs every kind now (or right after the one in progress). */
 /**
@@ -259,7 +288,7 @@ export async function syncNow(): Promise<void> {
     return
   }
   running = true
-  setStatus({ phase: "syncing", error: "" })
+  setStatus({ phase: "syncing", error: "", rejected: [] })
   const work = async () => {
     for (const k of SYNC_KINDS) await syncKind(k, s.name)
   }

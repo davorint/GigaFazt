@@ -58,6 +58,33 @@
         "rolls": "Bobinas de fibra",
         "toolbuys": "Compras de herramientas"
       }
+    },
+    "rejected": {
+      "title": "{n, plural, one {# registro no se pudo guardar} other {# registros no se pudieron guardar}} en la base de datos",
+      "hint": "Se siguen intentando mandar. Si el error no se quita, descarta el cambio de este teléfono: se borra su copia y se vuelve a bajar la de la base de datos (lo que escribiste en ese registro aquí se pierde).",
+      "discard": "Descartar mi cambio",
+      "confirm": "¿Descartar lo de este teléfono en «{name}»? Se vuelve a bajar la copia de la base de datos y lo que escribiste aquí se pierde.",
+      "noName": "Sin nombre",
+      "reasons": {
+        "bad-id": "identificador inválido",
+        "bad-data": "datos incompletos o inválidos",
+        "other": "error del servidor: {detail}"
+      },
+      "kinds": {
+        "surveys": "Levantamiento",
+        "materials": "Material",
+        "providers": "Proveedor",
+        "clients": "Cliente",
+        "sites": "Despliegue",
+        "tools": "Herramienta",
+        "stock": "Movimiento de inventario",
+        "units": "Equipo por número de serie",
+        "reports": "Reporte",
+        "payments": "Pago",
+        "notes": "Nota",
+        "rolls": "Bobina",
+        "toolbuys": "Opción de compra"
+      }
     }
   }
 }

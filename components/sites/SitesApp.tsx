@@ -46,6 +46,9 @@ import { RecordHistory } from "@/components/interno/RecordHistory"
 import { ExportButton } from "@/components/interno/ExportButton"
 import { toCsv } from "@/lib/csv"
 import { deleteSite, saveSite, sitesServerSnapshot, sitesSnapshot, subscribeSites } from "@/lib/sites/store"
+import { catalogSnapshot } from "@/lib/materials/store"
+import { placesStockItems, sitePlace } from "@/lib/stock/model"
+import { movesStore, unitsStore } from "@/lib/stock/store"
 
 type T = ReturnType<typeof useTranslations>
 const SECTIONS = ["general", "torres", "cuartos", "acceso", "acuerdo", "clientes"] as const
@@ -300,7 +303,17 @@ function General({ t, s, up, stats }: { t: T; s: Site; up: Up; stats: SiteStats 
       <button
         type="button"
         onClick={() => {
-          if (!window.confirm(t("general.confirmRemove", { name: siteLabel(s) }))) return
+          // What still points to this location: said in the question, so nothing is left behind by surprise.
+          const place = sitePlace(s.id)
+          const items = new Map(catalogSnapshot().items.map((x) => [x.id, x]))
+          const stock = placesStockItems(movesStore.list(), unitsStore.list(), place, items).length
+          const nClients = clientsSnapshot().list.filter((c) => c.siteId === s.id).length
+          const nTools = toolsSnapshot().list.filter((x) => x.holderKind === "despliegue" && x.siteId === s.id && x.quantity > 0).length
+          const left = [nClients && t("general.leftClients", { n: nClients }), nTools && t("general.leftTools", { n: nTools }), stock && t("general.leftStock", { n: stock })].filter(Boolean)
+          const ask = t("general.confirmRemove", { name: siteLabel(s) }) + (left.length ? `
+
+${t("general.leftTitle")} ${left.join(", ")}. ${t("general.leftHint")}` : "")
+          if (!window.confirm(ask)) return
           deleteSite(s.id)
           go("?")
         }}

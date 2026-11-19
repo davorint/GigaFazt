@@ -54,7 +54,12 @@
       "noTools": "Ninguna. En Herramientas, «Está en» → En despliegue, y esta ubicación.",
       "siteNotes": "Notas de este despliegue ({n})",
       "noSiteNotes": "Ninguna pendiente. Al pegar una nota, elige este despliegue en «Relacionada con».",
-      "toNotes": "Ir a Notas"
+      "toNotes": "Ir a Notas",
+      "leftTitle": "Aún tiene:",
+      "leftClients": "{n, plural, one {# cliente} other {# clientes}}",
+      "leftTools": "{n, plural, one {# herramienta} other {# herramientas}}",
+      "leftStock": "existencias de {n, plural, one {# material} other {# materiales}}",
+      "leftHint": "Mueve el inventario a la bodega antes (Materiales → Existencias); si lo borras, lo que quede ahí aparece como «Despliegue borrado» y se puede sacar desde ahí."
     },
     "towers": {
       "intro": "Las torres de la ubicación y qué cuarto de telecom atiende a cada una.",

@@ -14,7 +14,7 @@ import { CATEGORIES, OFFER_STATUSES, ROLES, catalogFile, effectiveOffer, mxn, ne
 import { catalogServerSnapshot, catalogSnapshot, deleteItem, importItems, saveItem, subscribeCatalog } from "@/lib/materials/store"
 import { isKind, providerName, type Provider } from "@/lib/providers/model"
 import { providersServerSnapshot, providersSnapshot, subscribeProviders } from "@/lib/providers/store"
-import { countAt, placesUsed } from "@/lib/stock/model"
+import { countAt, monthlyUse, placesUsed, suggestedMin } from "@/lib/stock/model"
 import { movesStore, unitsStore } from "@/lib/stock/store"
 import { usePlaceLabel } from "./places"
 import { MoveForm } from "./MoveForm"
@@ -163,6 +163,8 @@ function ItemRow({ t, item: x, supplierName, open, onToggle }: { t: T; item: Ite
   const placeLabel = usePlaceLabel()
   const eff = effectiveOffer(x)
   const setOffer = (o: Offer) => up({ offers: x.offers.map((y) => (y.id === o.id ? o : y)) })
+  const use = monthlyUse(moves, x.id, localToday())
+  const suggested = suggestedMin(use)
   const stock = placesUsed(moves, units)
     .map((p) => ({ p, n: countAt(x, moves, units, p) }))
     .filter((r) => r.n !== 0)
@@ -281,6 +283,18 @@ function ItemRow({ t, item: x, supplierName, open, onToggle }: { t: T; item: Ite
               </label>
             </div>
             <p className="text-sm text-zinc-300">{stock.length ? stock.map((r) => `${placeLabel(r.p)}: ${r.n}`).join(" · ") : t("noStock")}</p>
+            {use !== null ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs text-zinc-300">{t("use.line", { n: use, unit: x.unit, min: suggested ?? 0 })}</p>
+                {suggested !== null && suggested !== x.minStock && (
+                  <button type="button" onClick={() => up({ minStock: suggested })} className={SMALL}>
+                    {t("use.apply", { min: suggested })}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-zinc-400">{t("use.none")}</p>
+            )}
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (proxy.ts checks the session) */}
             <a href="/interno/admin/materiales?t=existencias" className={LINK}>
               {t("stockLink")}

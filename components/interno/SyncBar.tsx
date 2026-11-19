@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
-import { localIds, startSync, subscribeSync, syncNow, syncServerSnapshot, syncSnapshot } from "@/lib/sync/engine"
+import { discardLocal, localIds, startSync, subscribeSync, syncNow, syncServerSnapshot, syncSnapshot } from "@/lib/sync/engine"
 import { adoptLocal, setName } from "@/lib/sync/state"
 
 const TONE: Record<string, string> = {
@@ -85,6 +85,28 @@ export function SyncBar() {
               {t("now")}
             </button>
           </span>
+        </div>
+      )}
+      {!askName && s.rejected.length > 0 && (
+        <div role="alert" className="grid gap-2 rounded-lg border border-red-400/30 p-3">
+          <p className="text-sm text-red-200">{t("rejected.title", { n: s.rejected.length })}</p>
+          <p className="text-xs leading-snug text-zinc-300">{t("rejected.hint")}</p>
+          <ul className="grid gap-2">
+            {s.rejected.map((r) => {
+              const name = r.label || t("rejected.noName")
+              const why = r.reason === "bad-id" || r.reason === "bad-data" ? t(`rejected.reasons.${r.reason}`) : t("rejected.reasons.other", { detail: r.reason || "—" })
+              return (
+                <li key={`${r.kind}:${r.id}`} className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <span className="text-zinc-200">
+                    {t(`rejected.kinds.${r.kind}`)} · {name} <span className="text-zinc-400">· {why}</span>
+                  </span>
+                  <button type="button" className={BTN} onClick={() => window.confirm(t("rejected.confirm", { name })) && discardLocal(r.kind, r.id)}>
+                    {t("rejected.discard")}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
         </div>
       )}
       {!askName && !s.adopted && s.unsent > 0 && (

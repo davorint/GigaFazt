@@ -10,7 +10,7 @@ import { clientsServerSnapshot, clientsSnapshot, saveClient, subscribeClients } 
 import type { Item } from "@/lib/materials/catalog"
 import { newId } from "@/lib/survey/id"
 import { readState } from "@/lib/sync/state"
-import { BODEGA, ENDS, MOVE_KINDS, applyToUnits, checkMove, newMove, normSerial, placeSite, stockAt, unitsAt, type Move, type MoveKind, type Unit } from "@/lib/stock/model"
+import { BAJA_REASONS, BODEGA, ENDS, MOVE_KINDS, applyToUnits, checkMove, newMove, normSerial, placeSite, stockAt, unitsAt, type BajaReason, type Move, type MoveKind, type Unit } from "@/lib/stock/model"
 import { movesStore, unitsStore } from "@/lib/stock/store"
 import { ClientPick } from "@/components/clients/ClientPick"
 import { usePlaceLabel, usePlaceOptions } from "./places"
@@ -42,6 +42,7 @@ export function MoveForm({ items, kind: initialKind, itemId, notes: initialNotes
   const [notes, setNotes] = useState(initialNotes)
   const [lines, setLines] = useState<Line[]>(() => (itemId ? [blankLine(itemId)] : initialKind === "instalacion" ? installLines(items) : [blankLine()]))
   const [retired, setRetired] = useState({ serial: "", works: true })
+  const [reason, setReason] = useState<BajaReason>("danado")
   const [problems, setProblems] = useState<string[]>([])
   const ends = ENDS[kind]
   const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name, "es"))
@@ -74,6 +75,7 @@ export function MoveForm({ items, kind: initialKind, itemId, notes: initialNotes
         clientId: ends.client ? clientId : "",
         serials,
         batch,
+        reason: kind === "baja" ? reason : "",
         notes,
         by,
       })
@@ -126,6 +128,7 @@ export function MoveForm({ items, kind: initialKind, itemId, notes: initialNotes
         <DateField label={t("move.date")} value={date} onChange={setDate} />
         {ends.from && <PickField label={t("move.from")} value={from} onChange={setFrom} options={placeOptions} />}
         {ends.to && <PickField label={kind === "ajuste" ? t("move.place") : t("move.to")} value={to} onChange={setTo} options={placeOptions} />}
+        {kind === "baja" && <PickField label={t("move.reason")} value={reason} onChange={setReason} options={BAJA_REASONS.map((r) => ({ value: r, label: t(`move.reasons.${r}`) }))} />}
       </div>
       {ends.client && <ClientPick label={t("move.client")} searchLabel={t("move.clientSearch")} searchHint={t("move.clientSearchHint")} noneLabel={t("move.noClient")} value={clientId} onChange={setClientId} siteId={placeSite(ends.from ? from : to)} />}
 
