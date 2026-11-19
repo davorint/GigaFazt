@@ -4,7 +4,8 @@
  * pago rule. Each section keeps its own records (lib/finance/payables.ts, receivables.ts); only these rules are shared.
  *
  * CFDI (SAT): an invoice can be PUE (paid in one go when issued) or PPD (paid later or in parts). Every payment of a PPD
- * invoice needs its complemento de pago (REP), issued by the 5th of the month after the payment.
+ * invoice needs its own complemento de pago (REP), issued by the 5th of the month after that payment, so it is tracked
+ * per payment.
  */
 import { newId } from "../survey/id"
 
@@ -13,20 +14,26 @@ export type FinMethod = (typeof FIN_METHODS)[number]
 export const CFDI_METHODS = ["", "PUE", "PPD"] as const
 export type CfdiMethod = (typeof CFDI_METHODS)[number]
 
-export type FinPayment = { id: string; date: string; amount: number; method: FinMethod; reference: string }
+export type FinPayment = {
+  id: string
+  date: string
+  amount: number
+  method: FinMethod
+  reference: string
+  /** PPD: this payment's complemento de pago was issued (receivables) or received (payables), and its folio. */
+  repDone: boolean
+  rep: string
+}
 
 /** The invoice behind a document ("" when there is none yet). */
 export type Cfdi = {
   /** Folio fiscal (UUID), "" = not recorded. */
   uuid: string
   method: CfdiMethod
-  /** PPD: the complemento de pago was issued (receivables) or received (payables). */
-  complement: boolean
-  complementUuid: string
 }
 
-export const newFinPayment = (p: Partial<FinPayment> = {}): FinPayment => ({ id: newId(), date: "", amount: 0, method: "transferencia", reference: "", ...p })
-export const emptyCfdi = (): Cfdi => ({ uuid: "", method: "", complement: false, complementUuid: "" })
+export const newFinPayment = (p: Partial<FinPayment> = {}): FinPayment => ({ id: newId(), date: "", amount: 0, method: "transferencia", reference: "", repDone: false, rep: "", ...p })
+export const emptyCfdi = (): Cfdi => ({ uuid: "", method: "" })
 
 const round2 = (x: number) => Math.round(x * 100) / 100
 export const paidOf = (d: { payments: FinPayment[] }) => round2(d.payments.reduce((a, p) => a + p.amount, 0))
@@ -34,9 +41,17 @@ export const balanceOf = (d: { amount: number; payments: FinPayment[] }) => Math
 
 export type FinStatus = "pagado" | "parcial" | "vencido" | "pendiente" | "cancelado"
 
+/** Still to settle: not cancelled, and with a balance or still without an amount (just added, being filled in). */
+export const isOpenDoc = (d: { amount: number; payments: FinPayment[]; cancelled: boolean }) => !d.cancelled && (d.amount <= 0 || balanceOf(d) > 0.005)
+
+/** Paid more than the amount (a typo, or a credit to apply later). */
+export const overpaid = (d: { amount: number; payments: FinPayment[] }) => d.amount > 0 && paidOf(d) > d.amount + 0.005
+
 /** Where a document stands today: cancelled, paid, overdue (past its due date with a balance), partly paid or pending. */
 export function finStatus(d: { amount: number; payments: FinPayment[]; dueDate: string; cancelled: boolean }, today: string): FinStatus {
   if (d.cancelled) return "cancelado"
+  // Without an amount yet it isn't paid: it's pending until the amount is typed.
+  if (d.amount <= 0) return "pendiente"
   const bal = balanceOf(d)
   if (bal <= 0.005) return "pagado"
   if (d.dueDate && d.dueDate < today) return "vencido"
@@ -71,13 +86,15 @@ export function complementDeadline(paymentDate: string): string {
   return `${ny}-${String(nm).padStart(2, "0")}-05`
 }
 
+/** The payments of a PPD invoice still without their complemento de pago. */
+export const paymentsWithoutRep = (d: { cfdi: Cfdi; payments: FinPayment[] }) => (d.cfdi.method === "PPD" ? d.payments.filter((p) => !p.repDone && p.date) : [])
+
 /**
- * A PPD invoice with payments and no complemento yet: the deadline (day 5 after its first payment without one), else
- * null. Late when the deadline has passed.
+ * A PPD invoice with payments still without their complemento: the earliest deadline (day 5 of the month after the
+ * oldest such payment), else null. Late when the deadline has passed.
  */
 export function complementPending(d: { cfdi: Cfdi; payments: FinPayment[] }): string | null {
-  if (d.cfdi.method !== "PPD" || d.cfdi.complement || !d.payments.length) return null
-  const first = [...d.payments].map((p) => p.date).filter(Boolean).sort()[0]
+  const first = paymentsWithoutRep(d).map((p) => p.date).sort()[0]
   return first ? complementDeadline(first) : null
 }
 
@@ -98,17 +115,21 @@ export const folio = (v: unknown) => {
   return UUID.test(s) ? s : ""
 }
 
-export function decodePayments(v: unknown): FinPayment[] {
+/** Payments as stored; `allRep` marks every one with its complemento (documents saved when it was a single box). */
+export function decodePayments(v: unknown, allRep = false): FinPayment[] {
   return Array.isArray(v)
     ? v
         .filter(isObj)
         .slice(0, 200)
-        .map((p) => ({ id: idOf(p.id) || newId(), date: day(p.date), amount: money(p.amount), method: pick(FIN_METHODS, p.method, "otro"), reference: str(p.reference, 120) }))
+        .map((p) => ({ id: idOf(p.id) || newId(), date: day(p.date), amount: money(p.amount), method: pick(FIN_METHODS, p.method, "otro"), reference: str(p.reference, 120), repDone: allRep || p.repDone === true, rep: folio(p.rep) }))
         .filter((p) => p.amount > 0)
     : []
 }
 
 export function decodeCfdi(v: unknown): Cfdi {
   if (!isObj(v)) return emptyCfdi()
-  return { uuid: folio(v.uuid), method: pick(CFDI_METHODS, v.method, ""), complement: v.complement === true, complementUuid: folio(v.complementUuid) }
+  return { uuid: folio(v.uuid), method: pick(CFDI_METHODS, v.method, "") }
 }
+
+/** A document saved when the complemento was one box for the whole invoice (2026-11-19): it counts for every payment. */
+export const legacyRep = (v: unknown) => isObj(v) && v.complement === true

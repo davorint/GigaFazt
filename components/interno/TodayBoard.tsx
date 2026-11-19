@@ -10,6 +10,7 @@ import { SERIOUS, allClear, todaySummary } from "@/lib/interno/today"
 import { mxn } from "@/lib/materials/catalog"
 import { catalogServerSnapshot, catalogSnapshot, subscribeCatalog } from "@/lib/materials/store"
 import { notesStore } from "@/lib/notes/store"
+import { payablesStore, receivablesStore } from "@/lib/finance/store"
 import { paymentsStore } from "@/lib/payments/store"
 import { providersServerSnapshot, providersSnapshot, subscribeProviders } from "@/lib/providers/store"
 import { reportsStore } from "@/lib/reports/store"
@@ -36,7 +37,9 @@ function useData() {
   const moves = useSyncExternalStore(movesStore.subscribe, movesStore.snapshot, movesStore.serverSnapshot).list
   const units = useSyncExternalStore(unitsStore.subscribe, unitsStore.snapshot, unitsStore.serverSnapshot).list
   const notes = useSyncExternalStore(notesStore.subscribe, notesStore.snapshot, notesStore.serverSnapshot).list
-  return { loaded: clients.loaded, clients: clients.list, sites, tools, providers, items, surveys, reports, payments, moves, units, notes }
+  const payables = useSyncExternalStore(payablesStore.subscribe, payablesStore.snapshot, payablesStore.serverSnapshot).list
+  const receivables = useSyncExternalStore(receivablesStore.subscribe, receivablesStore.snapshot, receivablesStore.serverSnapshot).list
+  return { loaded: clients.loaded, clients: clients.list, sites, tools, providers, items, surveys, reports, payments, moves, units, notes, payables, receivables }
 }
 
 /** One card per thing that needs attention; nothing when its count is 0 (those go in the "En orden" line). */
@@ -118,6 +121,9 @@ export function TodayBoard() {
     [t("tools.title"), s.tools.length],
     [t("stock.title"), s.lowStock.length],
     [t("notes.title"), s.pinned.length],
+    [t("bills.title"), s.bills.length],
+    [t("charges.title"), s.charges.length],
+    [t("complements.title"), s.complements.length],
   ]
     .filter(([, n]) => !n)
     .map(([label]) => String(label))
@@ -195,6 +201,24 @@ export function TodayBoard() {
               {list(
                 s.lowStock.slice(0, 4).map((x) => ({ key: x.id, text: t("stock.line", { name: x.name, has: x.has, min: x.min, unit: x.unit }) })),
                 s.lowStock.length - 4
+              )}
+            </Card>
+            <Card title={t("bills.title")} href={`${A}/cuentas-por-pagar`} open={t("open")} count={s.bills.length} tone={s.bills.some((b) => b.late) ? "red" : s.bills.length ? "amber" : "ok"}>
+              {list(
+                s.bills.slice(0, 4).map((b) => ({ key: b.id, text: t(b.late ? "bills.late" : "bills.soon", { label: b.label, amount: mxn(b.balance), date: b.due }), href: `${A}/cuentas-por-pagar?p=${b.id}` })),
+                s.bills.length - 4
+              )}
+            </Card>
+            <Card title={t("charges.title")} href={`${A}/cuentas-por-cobrar`} open={t("open")} count={s.charges.length} tone={s.charges.length ? "amber" : "ok"}>
+              {list(
+                s.charges.slice(0, 4).map((c) => ({ key: c.id, text: t("charges.line", { label: c.label, amount: mxn(c.balance), date: c.due }), href: `${A}/cuentas-por-cobrar?c=${c.id}` })),
+                s.charges.length - 4
+              )}
+            </Card>
+            <Card title={t("complements.title")} href={`${A}/cuentas-por-cobrar`} open={t("open")} count={s.complements.length} tone={s.complements.some((c) => c.deadline < today) ? "red" : s.complements.length ? "amber" : "ok"}>
+              {list(
+                s.complements.slice(0, 4).map((c) => ({ key: `${c.side}-${c.id}`, text: t(`complements.${c.side}`, { label: c.label, date: c.deadline }), href: `${A}/${c.side === "cobrar" ? "cuentas-por-cobrar?c=" : "cuentas-por-pagar?p="}${c.id}` })),
+                s.complements.length - 4
               )}
             </Card>
             <Card title={t("notes.title")} href={`${A}/notas`} open={t("open")} count={s.pinned.length} tone={s.pinned.length ? "amber" : "ok"}>

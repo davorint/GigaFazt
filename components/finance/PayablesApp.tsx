@@ -9,7 +9,7 @@ import { QuickAdd } from "@/components/interno/QuickAdd"
 import { RecordHistory } from "@/components/interno/RecordHistory"
 import { useOpenParam } from "@/components/interno/useOpenParam"
 import { PAY_CATEGORIES, newPayable, recurringBills, type PayCategory, type Payable } from "@/lib/finance/payables"
-import { agingTotals, balanceOf, complementPending, finStatus, type FinStatus } from "@/lib/finance/common"
+import { agingTotals, balanceOf, complementPending, finStatus, isOpenDoc, type FinStatus } from "@/lib/finance/common"
 import { payablesStore } from "@/lib/finance/store"
 import { providerName } from "@/lib/providers/model"
 import { providersServerSnapshot, providersSnapshot, subscribeProviders } from "@/lib/providers/store"
@@ -44,13 +44,13 @@ export function PayablesApp() {
   const month = today.slice(0, 7)
   const list = store.list
   const st = (x: Payable): FinStatus => finStatus(x, today)
-  const open = list.filter((x) => !x.cancelled && balanceOf(x) > 0.005)
+  const open = list.filter(isOpenDoc)
   const missing = recurringBills(month, sites.list, providers).filter((b) => !list.some((x) => x.id === b.id))
   const fold = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase()
   const shown = list
-    .filter((x) => (show === "todas" ? true : show === "abiertas" ? !x.cancelled && balanceOf(x) > 0.005 : show === "vencidas" ? st(x) === "vencido" : st(x) === "pagado"))
+    .filter((x) => (show === "todas" ? true : show === "abiertas" ? isOpenDoc(x) : show === "vencidas" ? st(x) === "vencido" : st(x) === "pagado"))
     .filter((x) => !cat || x.category === cat)
-    .filter((x) => !q.trim() || fold([x.concept, x.payee, x.notes, x.cfdi.uuid].join(" ")).includes(fold(q.trim())))
+    .filter((x) => !q.trim() || fold([x.concept, x.payee, providerName(providers.find((p) => p.id === x.providerId) ?? { tradeName: "", legalName: "" } as never), x.notes, x.cfdi.uuid].join(" ")).includes(fold(q.trim())))
     .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999") || a.concept.localeCompare(b.concept, "es"))
   const sum = (xs: Payable[]) => xs.reduce((a, x) => a + balanceOf(x), 0)
   const paidThisMonth = list.reduce((a, x) => a + x.payments.filter((p) => p.date.slice(0, 7) === month).reduce((b, p) => b + p.amount, 0), 0)
@@ -142,7 +142,7 @@ function PayableRow({ t, x, status, today, open, onToggle, providers, sites }: {
             <DateField label={t("issueDate")} value={x.issueDate} onChange={(issueDate) => up({ issueDate })} />
             <DateField label={t("dueDate")} value={x.dueDate} onChange={(dueDate) => up({ dueDate })} />
           </div>
-          <PaymentsEditor t={t} doc={x} onChange={(payments) => up({ payments })} />
+          <PaymentsEditor t={t} doc={x} side="pagar" today={today} onChange={(payments) => up({ payments })} />
           <CfdiEditor t={t} doc={x} side="pagar" today={today} onChange={(cfdi) => up({ cfdi })} />
           <AreaField label={t("notes")} value={x.notes} onChange={(notes) => up({ notes })} rows={2} />
           <label className="flex min-h-10 items-center gap-2 text-sm text-zinc-200">

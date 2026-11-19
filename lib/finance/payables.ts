@@ -13,7 +13,7 @@ import { newId } from "../survey/id"
 import type { Provider } from "../providers/model"
 import { providerName } from "../providers/model"
 import { siteLabel, type Site } from "../sites/model"
-import { decodeCfdi, decodePayments, day, emptyCfdi, idOf, isObj, money, pick, str, type Cfdi, type FinPayment } from "./common"
+import { decodeCfdi, decodePayments, day, emptyCfdi, idOf, isObj, legacyRep, money, pick, str, type Cfdi, type FinPayment } from "./common"
 
 export const PAY_CATEGORIES = ["enlace", "renta", "luz", "materiales", "herramientas", "servicios", "impuestos", "nomina", "otro"] as const
 export type PayCategory = (typeof PAY_CATEGORIES)[number]
@@ -88,7 +88,7 @@ export function decodePayable(v: unknown): Payable | null {
     amount: money(v.amount),
     issueDate: day(v.issueDate),
     dueDate: day(v.dueDate),
-    payments: decodePayments(v.payments),
+    payments: decodePayments(v.payments, legacyRep(v.cfdi)),
     cfdi: decodeCfdi(v.cfdi),
     cancelled: v.cancelled === true,
     recurKey: str(v.recurKey, 120),

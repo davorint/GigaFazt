@@ -171,7 +171,21 @@
         "off": "Falta configurar Telegram o el webhook en el hosting (los mismos avisos de reportes).",
         "error": "No se pudo enviar. Inténtalo otra vez."
       },
-      "quiet": "En orden: {list}"
+      "quiet": "En orden: {list}",
+      "bills": {
+        "title": "Pagos a proveedores",
+        "late": "{label} · {amount} · venció {date}",
+        "soon": "{label} · {amount} · vence {date}"
+      },
+      "charges": {
+        "title": "Cargos vencidos por cobrar",
+        "line": "{label} · {amount} · venció {date}"
+      },
+      "complements": {
+        "title": "Complementos de pago pendientes",
+        "cobrar": "Emitir: {label} · a más tardar {date}",
+        "pagar": "Pedir al proveedor: {label} · a más tardar {date}"
+      }
     },
     "session": {
       "title": "Este teléfono",

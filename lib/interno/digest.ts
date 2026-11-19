@@ -39,6 +39,19 @@ export function digestText(s: Today, today: string, link: string): string | null
     out.push("", `📦 Existencias bajas en bodega: ${s.lowStock.length}`)
     out.push(...list(s.lowStock, (x) => `${x.name}: ${x.has} de ${x.min} ${x.unit}`))
   }
+  if (s.bills.length) {
+    const late = s.bills.filter((b) => b.late)
+    out.push("", `🧾 Por pagar: ${late.length} vencidas, ${s.bills.length - late.length} por vencer en 3 días`)
+    out.push(...list(s.bills, (b) => `${b.label} · ${mxn(b.balance)} · ${b.late ? "venció" : "vence"} ${b.due}`))
+  }
+  if (s.charges.length) {
+    out.push("", `📄 Cargos vencidos por cobrar: ${s.charges.length}`)
+    out.push(...list(s.charges, (c) => `${c.label} · ${mxn(c.balance)} · venció ${c.due}`))
+  }
+  if (s.complements.length) {
+    out.push("", `🧾 Complementos de pago pendientes: ${s.complements.length}`)
+    out.push(...list(s.complements, (c) => `${c.side === "cobrar" ? "emitir" : "pedir al proveedor"}: ${c.label} · a más tardar ${c.deadline}`))
+  }
   if (s.pinned.length) {
     out.push("", `📌 Notas fijadas: ${s.pinned.length}`)
     out.push(...list(s.pinned, (n) => n.title))

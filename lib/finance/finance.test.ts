@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { agingOf, agingTotals, balanceOf, complementDeadline, complementPending, decodeCfdi, finStatus, newFinPayment } from "./common"
+import { agingOf, agingTotals, balanceOf, complementDeadline, complementPending, decodeCfdi, finStatus, isOpenDoc, newFinPayment, overpaid } from "./common"
 import { decodePayable, newPayable, recurringBills } from "./payables"
 import { decodeReceivable, newReceivable, serviceReceivables } from "./receivables"
 import { newSite, newRoom, newRoomCarrier } from "../sites/model"
@@ -27,14 +27,28 @@ describe("accounts payable and receivable (2026-11-19)", () => {
     expect(agingOf("2026-01-01", "2026-11-19")).toBe("d90")
     expect(agingTotals([{ due: "2026-11-01", amount: 100 }, { due: "2026-11-05", amount: 50.5 }, { due: "2027-01-01", amount: 10 }], "2026-11-19")).toMatchObject({ d0_30: 150.5, porVencer: 10 })
   })
-  it("PPD with a payment and no complemento: due the 5th of the next month; PUE never", () => {
+  it("PPD: every payment needs its own complemento, due the 5th of the month after it; PUE never", () => {
     expect(complementDeadline("2026-12-15")).toBe("2027-01-05")
-    const ppd = { cfdi: { uuid: UUID, method: "PPD" as const, complement: false, complementUuid: "" }, payments: [newFinPayment({ date: "2026-11-18", amount: 100 })] }
-    expect(complementPending(ppd)).toBe("2026-12-05")
-    expect(complementPending({ ...ppd, cfdi: { ...ppd.cfdi, complement: true } })).toBeNull()
+    const p1 = newFinPayment({ date: "2026-10-18", amount: 100 })
+    const p2 = newFinPayment({ date: "2026-11-18", amount: 100 })
+    const ppd = { cfdi: { uuid: UUID, method: "PPD" as const }, payments: [p1, p2] }
+    expect(complementPending(ppd)).toBe("2026-11-05")
+    // The first payment's complemento done: the second one is still pending.
+    expect(complementPending({ ...ppd, payments: [{ ...p1, repDone: true }, p2] })).toBe("2026-12-05")
+    expect(complementPending({ ...ppd, payments: [{ ...p1, repDone: true }, { ...p2, repDone: true }] })).toBeNull()
     expect(complementPending({ ...ppd, cfdi: { ...ppd.cfdi, method: "PUE" } })).toBeNull()
     expect(decodeCfdi({ uuid: UUID.toLowerCase(), method: "PPD" })).toMatchObject({ uuid: UUID, method: "PPD" })
     expect(decodeCfdi({ uuid: "123", method: "X" })).toMatchObject({ uuid: "", method: "" })
+    // Saved when the complemento was one box for the invoice: every payment counts as done.
+    const old = decodePayable({ amount: 200, cfdi: { method: "PPD", complement: true }, payments: [{ date: "2026-11-01", amount: 100 }] })!
+    expect(old.payments[0].repDone).toBe(true)
+  })
+  it("a document without an amount stays open (pending), and paying more than the amount is flagged", () => {
+    const blank = newPayable({ concept: "Recién agregada" })
+    expect(finStatus(blank, "2026-11-19")).toBe("pendiente")
+    expect(isOpenDoc(blank)).toBe(true)
+    expect(overpaid({ amount: 100, payments: [newFinPayment({ amount: 150 })] })).toBe(true)
+    expect(overpaid({ amount: 100, payments: [newFinPayment({ amount: 100 })] })).toBe(false)
   })
   it("the month's fixed bills come from the deployments with one id per month (no duplicates between phones)", () => {
     const prov = { ...newProvider("carrier", "Totalplay"), terms: { ...newProvider().terms, creditDays: 15 } }
@@ -48,6 +62,26 @@ describe("accounts payable and receivable (2026-11-19)", () => {
   it("receivables: one-off charges decode; monthly service comes from Cobranza's ledger", () => {
     expect(decodeReceivable({ ...newReceivable({ concept: "Red de fibra", amount: 45000 }), category: "rara" })).toMatchObject({ concept: "Red de fibra", amount: 45000, category: "otro" })
     const c = newClient({ name: "Ana", billingFrom: "2026-10", services: [newService("internet", { monthly: 396, start: "2026-01-10" })] })
-    expect(serviceReceivables([c], [], "2026-11-19").map((s) => [s.month, s.due, s.amount])).toEqual([["2026-10", "2026-10-01", 396], ["2026-11", "2026-11-01", 396]])
+    expect(serviceReceivables([c], [], "2026-11-19").map((s) => [s.month, s.due, s.lastDay, s.amount])).toEqual([["2026-10", "2026-10-01", "2026-10-10", 396], ["2026-11", "2026-11-01", "2026-11-10", 396]])
+    // In the aging, a month due the 1st isn't overdue until the 11th (as in Cobranza).
+    expect(agingOf("2026-11-10", "2026-11-10")).toBe("porVencer")
+    expect(agingOf("2026-11-10", "2026-11-11")).toBe("d0_30")
+  })
+})
+
+describe("Hoy shows bills, overdue charges and pending complementos (2026-11-19)", () => {
+  it("bills overdue or due within 3 days; charges past due; PPD payments without complemento, both ways", async () => {
+    const { todaySummary, allClear } = await import("../interno/today")
+    const base = { reports: [], clients: [], payments: [], tools: [], items: [], moves: [], units: [], notes: [] }
+    const late = newPayable({ concept: "Renta", amount: 3000, dueDate: "2026-11-15" })
+    const soon = newPayable({ concept: "Enlace", amount: 2500, dueDate: "2026-11-22" })
+    const later = newPayable({ concept: "Luz", amount: 800, dueDate: "2026-11-30" })
+    const paid = newPayable({ concept: "Pagada", amount: 100, dueDate: "2026-11-10", payments: [newFinPayment({ date: "2026-11-09", amount: 100 })] })
+    const charge = newReceivable({ concept: "Proyecto", amount: 10000, dueDate: "2026-11-01", cfdi: { uuid: "", method: "PPD" }, payments: [newFinPayment({ date: "2026-11-05", amount: 4000 })] })
+    const s = todaySummary({ ...base, payables: [late, soon, later, paid], receivables: [charge] }, "2026-11-19")
+    expect(s.bills.map((b) => [b.label, b.late])).toEqual([["Renta", true], ["Enlace", false]])
+    expect(s.charges.map((c) => [c.label, c.balance])).toEqual([["Proyecto", 6000]])
+    expect(s.complements).toEqual([{ id: charge.id, side: "cobrar", label: "Proyecto", deadline: "2026-12-05" }])
+    expect(allClear(todaySummary(base, "2026-11-19"))).toBe(true)
   })
 })

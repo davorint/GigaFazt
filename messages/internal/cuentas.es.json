@@ -1,6 +1,9 @@
 {
   "cuentas": {
-    "meta": { "pagar": "Cuentas por pagar · GigaFazt interno", "cobrar": "Cuentas por cobrar · GigaFazt interno" },
+    "meta": {
+      "pagar": "Cuentas por pagar · GigaFazt interno",
+      "cobrar": "Cuentas por cobrar · GigaFazt interno"
+    },
     "kicker": "Interno · Administración",
     "count": "{n, plural, one {# cuenta} other {# cuentas}}",
     "concept": "Concepto",
@@ -16,16 +19,42 @@
     "notes": "Notas",
     "search": "Buscar",
     "show": "Mostrar",
-    "shows": { "abiertas": "Pendientes", "vencidas": "Vencidas", "pagadas": "Pagadas", "todas": "Todas" },
-    "statuses": { "pendiente": "Pendiente", "parcial": "Pago parcial", "vencido": "Vencida", "pagado": "Pagada", "cancelado": "Cancelada" },
+    "shows": {
+      "abiertas": "Pendientes",
+      "vencidas": "Vencidas",
+      "pagadas": "Pagadas",
+      "todas": "Todas"
+    },
+    "statuses": {
+      "pendiente": "Pendiente",
+      "parcial": "Pago parcial",
+      "vencido": "Vencida",
+      "pagado": "Pagada",
+      "cancelado": "Cancelada"
+    },
     "empty": "Nada que mostrar con estos filtros.",
     "cancelled": "Cancelada (no se cuenta)",
     "remove": "Borrar",
     "confirmRemove": "¿Borrar esta cuenta? Se borra en todos los teléfonos (queda en el historial).",
     "cancel": "Cancelar",
-    "tiles": { "cfdi": "Complementos pendientes" },
-    "aging": { "title": "Antigüedad de saldos", "porVencer": "Por vencer", "d0_30": "1 a 30 días", "d31_60": "31 a 60 días", "d61_90": "61 a 90 días", "d90": "Más de 90 días" },
-    "methods": { "transferencia": "Transferencia", "efectivo": "Efectivo", "deposito": "Depósito", "tarjeta": "Tarjeta", "otro": "Otro" },
+    "tiles": {
+      "cfdi": "Complementos pendientes"
+    },
+    "aging": {
+      "title": "Antigüedad de saldos",
+      "porVencer": "Por vencer",
+      "d0_30": "1 a 30 días",
+      "d31_60": "31 a 60 días",
+      "d61_90": "61 a 90 días",
+      "d90": "Más de 90 días"
+    },
+    "methods": {
+      "transferencia": "Transferencia",
+      "efectivo": "Efectivo",
+      "deposito": "Depósito",
+      "tarjeta": "Tarjeta",
+      "otro": "Otro"
+    },
     "payments": {
       "title": "Pagos",
       "summary": "Pagado {paid} · saldo {balance}",
@@ -36,7 +65,8 @@
       "reference": "Referencia",
       "save": "Guardar pago",
       "remove": "Quitar",
-      "confirmRemove": "¿Quitar este pago?"
+      "confirmRemove": "¿Quitar este pago?",
+      "overpaid": "Los pagos suman {extra} más que el monto: revisa el monto o los pagos."
     },
     "cfdi": {
       "title": "Factura (CFDI)",
@@ -45,15 +75,36 @@
       "badUuid": "No parece un folio fiscal: son 36 caracteres con guiones (8-4-4-4-12).",
       "method": "Método de pago",
       "methodHint": "PUE: se paga en una sola exhibición. PPD: en parcialidades o después; cada pago lleva complemento.",
-      "methods": { "none": "Sin factura todavía", "PUE": "PUE (una sola exhibición)", "PPD": "PPD (parcialidades o diferido)" },
-      "complementDone": { "pagar": "Ya recibimos el complemento de pago del proveedor", "cobrar": "Ya emitimos el complemento de pago" },
+      "methods": {
+        "none": "Sin factura todavía",
+        "PUE": "PUE (una sola exhibición)",
+        "PPD": "PPD (parcialidades o diferido)"
+      },
+      "complementDone": {
+        "pagar": "Recibimos el complemento de este pago",
+        "cobrar": "Emitimos el complemento de este pago"
+      },
       "complementUuid": "Folio del complemento",
-      "pending": { "pagar": "Factura PPD pagada: pide al proveedor su complemento de pago (debe emitirlo a más tardar el {date}).", "cobrar": "Factura PPD cobrada: emite el complemento de pago a más tardar el {date}." }
+      "pending": {
+        "pagar": "Hay pagos sin complemento del proveedor: el más antiguo debe llegar a más tardar el {date}.",
+        "cobrar": "Hay pagos sin complemento: el más antiguo vence el {date}."
+      },
+      "perPayment": "En PPD cada pago lleva su propio complemento de pago: márcalo en cada pago.",
+      "payDeadline": {
+        "pagar": "Pide al proveedor el complemento de este pago (a más tardar el {date}).",
+        "cobrar": "Emite el complemento de este pago a más tardar el {date}."
+      }
     },
     "pagar": {
       "title": "Cuentas por pagar",
       "lead": "Lo que le debemos a proveedores, carriers, el edificio y servicios: cuánto, cuándo vence y qué ya pagamos. Los pagos fijos de cada mes (renta, luz y enlaces de los despliegues) se agregan con un botón.",
-      "tiles": { "open": "Por pagar", "late": "Vencido", "week": "Vence en 7 días", "paid": "Pagado este mes", "cfdiHint": "Facturas PPD pagadas sin complemento del proveedor." },
+      "tiles": {
+        "open": "Por pagar",
+        "late": "Vencido",
+        "week": "Vence en 7 días",
+        "paid": "Pagado este mes",
+        "cfdiHint": "Facturas PPD pagadas sin complemento del proveedor."
+      },
       "recurring": "Faltan {n, plural, one {# pago fijo} other {# pagos fijos}} de este mes ({total}): renta, luz y enlaces de los despliegues.",
       "recurringAdd": "Agregar los pagos fijos del mes",
       "add": "Agregar una cuenta por pagar",
@@ -65,12 +116,30 @@
       "noProvider": "Otro (escribe el nombre)",
       "site": "Despliegue",
       "noSite": "Ninguno",
-      "categories": { "enlace": "Enlace (carrier)", "renta": "Renta", "luz": "Luz", "materiales": "Materiales", "herramientas": "Herramientas", "servicios": "Servicios", "impuestos": "Impuestos", "nomina": "Nómina", "otro": "Otro" }
+      "categories": {
+        "enlace": "Enlace (carrier)",
+        "renta": "Renta",
+        "luz": "Luz",
+        "materiales": "Materiales",
+        "herramientas": "Herramientas",
+        "servicios": "Servicios",
+        "impuestos": "Impuestos",
+        "nomina": "Nómina",
+        "otro": "Otro"
+      }
     },
     "cobrar": {
       "title": "Cuentas por cobrar",
       "lead": "Todo lo que nos deben: los cargos únicos (proyectos, equipo vendido, instalaciones especiales) y las mensualidades pendientes que calcula Cobranza.",
-      "tiles": { "open": "Por cobrar", "split": "Cargos {charges} · mensualidades {service}", "late": "Vencido", "collected": "Cobrado este mes", "clients": "Clientes con mensualidad pendiente", "clientsHint": "Detalle en Clientes → Cobranza.", "cfdiHint": "Facturas PPD cobradas sin complemento." },
+      "tiles": {
+        "open": "Por cobrar",
+        "split": "Cargos {charges} · mensualidades {service}",
+        "late": "Vencido",
+        "collected": "Cobrado este mes",
+        "clients": "Clientes con mensualidad pendiente",
+        "clientsHint": "Detalle en Clientes → Cobranza.",
+        "cfdiHint": "Facturas PPD cobradas sin complemento."
+      },
       "chargesTitle": "Cargos",
       "chargesHint": "Proyectos de empresas, equipo vendido, instalaciones especiales: lo que no es la mensualidad del servicio.",
       "add": "Agregar un cargo",
@@ -82,10 +151,16 @@
       "clientHint": "Nombre, teléfono, usuario PPPoE o departamento.",
       "noClient": "No es cliente (escribe quién paga)",
       "serviceTitle": "Mensualidades pendientes",
-      "serviceHint": "Calculadas por Cobranza con sus reglas (prepago, vence el día 1, corte el día 11). Se cobran y registran en Clientes → Cobranza.",
+      "serviceHint": "Calculadas por Cobranza con sus reglas (prepago, vence el día 1, se corta el día 11; en la antigüedad cuentan como vencidas desde el día 11). Se cobran y registran en Clientes → Cobranza.",
       "serviceNone": "Nadie debe mensualidades.",
       "serviceLine": "{amount} · {n, plural, one {# mes} other {# meses}} · desde {since}",
-      "categories": { "proyecto": "Proyecto", "equipo": "Equipo", "instalacion": "Instalación especial", "servicio": "Servicio", "otro": "Otro" }
+      "categories": {
+        "proyecto": "Proyecto",
+        "equipo": "Equipo",
+        "instalacion": "Instalación especial",
+        "servicio": "Servicio",
+        "otro": "Otro"
+      }
     }
   }
 }

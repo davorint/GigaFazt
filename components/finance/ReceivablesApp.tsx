@@ -10,7 +10,7 @@ import { RecordHistory } from "@/components/interno/RecordHistory"
 import { useOpenParam } from "@/components/interno/useOpenParam"
 import { ClientPick } from "@/components/clients/ClientPick"
 import { CHARGE_CATEGORIES, newReceivable, serviceReceivables, type ChargeCategory, type Receivable } from "@/lib/finance/receivables"
-import { agingTotals, balanceOf, complementPending, finStatus, type FinStatus } from "@/lib/finance/common"
+import { agingTotals, balanceOf, complementPending, finStatus, isOpenDoc, type FinStatus } from "@/lib/finance/common"
 import { receivablesStore } from "@/lib/finance/store"
 import { clientsServerSnapshot, clientsSnapshot, subscribeClients } from "@/lib/clients/store"
 import { clientLabel } from "@/lib/clients/model"
@@ -38,11 +38,12 @@ export function ReceivablesApp() {
   const month = today.slice(0, 7)
   const list = store.list
   const st = (x: Receivable): FinStatus => finStatus(x, today)
-  const open = list.filter((x) => !x.cancelled && balanceOf(x) > 0.005)
+  const open = list.filter(isOpenDoc)
   const service = serviceReceivables(clients.list, payments.list, today)
   const serviceTotal = service.reduce((a, s) => a + s.amount, 0)
   const chargesTotal = open.reduce((a, x) => a + balanceOf(x), 0)
-  const items = [...open.map((x) => ({ due: x.dueDate, amount: balanceOf(x) })), ...service.map((s) => ({ due: s.due, amount: s.amount }))]
+  // Service months count as overdue only after Cobranza's grace (the 10th for a month due the 1st), like "atrasado".
+  const items = [...open.map((x) => ({ due: x.dueDate, amount: balanceOf(x) })), ...service.map((s) => ({ due: s.lastDay, amount: s.amount }))]
   const aging = agingTotals(items, today)
   const overdue = aging.d0_30 + aging.d31_60 + aging.d61_90 + aging.d90
   const collected = list.reduce((a, x) => a + x.payments.filter((p) => p.date.slice(0, 7) === month).reduce((b, p) => b + p.amount, 0), 0) + payments.list.filter((p) => p.date.slice(0, 7) === month).reduce((a, p) => a + p.amount, 0)
@@ -53,7 +54,7 @@ export function ReceivablesApp() {
     return c ? clientLabel(c) : x.payer
   }
   const shown = list
-    .filter((x) => (show === "todas" ? true : show === "abiertas" ? !x.cancelled && balanceOf(x) > 0.005 : show === "vencidas" ? st(x) === "vencido" : st(x) === "pagado"))
+    .filter((x) => (show === "todas" ? true : show === "abiertas" ? isOpenDoc(x) : show === "vencidas" ? st(x) === "vencido" : st(x) === "pagado"))
     .filter((x) => !q.trim() || fold([x.concept, nameOf(x), x.notes, x.cfdi.uuid].join(" ")).includes(fold(q.trim())))
     .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
   // Monthly service per client: total owed and the oldest month due.
@@ -155,7 +156,7 @@ function ReceivableRow({ t, x, who, status, today, open, onToggle }: { t: T; x: 
             <DateField label={t("issueDate")} value={x.issueDate} onChange={(issueDate) => up({ issueDate })} />
             <DateField label={t("dueDate")} value={x.dueDate} onChange={(dueDate) => up({ dueDate })} />
           </div>
-          <PaymentsEditor t={t} doc={x} onChange={(payments) => up({ payments })} />
+          <PaymentsEditor t={t} doc={x} side="cobrar" today={today} onChange={(payments) => up({ payments })} />
           <CfdiEditor t={t} doc={x} side="cobrar" today={today} onChange={(cfdi) => up({ cfdi })} />
           <AreaField label={t("notes")} value={x.notes} onChange={(notes) => up({ notes })} rows={2} />
           <label className="flex min-h-10 items-center gap-2 text-sm text-zinc-200">

@@ -2,6 +2,8 @@ import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
 import { json, requireInterno } from "@/lib/internal-api"
 import { digestText } from "@/lib/interno/digest"
+import { decodePayable, type Payable } from "@/lib/finance/payables"
+import { decodeReceivable, type Receivable } from "@/lib/finance/receivables"
 import { todaySummary } from "@/lib/interno/today"
 import { decodeClient, type Client } from "@/lib/clients/model"
 import { decodeItem, type Item } from "@/lib/materials/catalog"
@@ -41,6 +43,8 @@ async function run() {
       moves: await rows<Move>("stock_moves", decodeMove),
       units: await rows<Unit>("units", decodeUnit),
       notes: await rows<Note>("notes", decodeNote),
+      payables: await rows<Payable>("payables", decodePayable),
+      receivables: await rows<Receivable>("receivables", decodeReceivable),
     },
     day
   )

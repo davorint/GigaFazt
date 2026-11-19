@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl"
 import { NumberField } from "@/components/mikrotik/NumberField"
 import { TextField } from "@/components/mikrotik/TextField"
 import { DateField, GRID, PickField } from "@/components/surveys/SurveyFields"
-import { AGING, CFDI_METHODS, FIN_METHODS, balanceOf, complementPending, folio, newFinPayment, paidOf, type AgingBucket, type Cfdi, type FinMethod, type FinPayment, type FinStatus } from "@/lib/finance/common"
+import { AGING, CFDI_METHODS, FIN_METHODS, balanceOf, complementDeadline, complementPending, folio, newFinPayment, overpaid, paidOf, type AgingBucket, type Cfdi, type FinMethod, type FinPayment, type FinStatus } from "@/lib/finance/common"
 import { mxn } from "@/lib/materials/catalog"
 import { localToday } from "@/lib/clients/from-lead"
 
@@ -43,25 +43,45 @@ export function AgingTiles({ t, totals }: { t: T; totals: Record<AgingBucket, nu
   )
 }
 
-/** The payments of a document: each one with date, amount, method and reference; add one (the balance by default). */
-export function PaymentsEditor({ t, doc, onChange }: { t: T; doc: { amount: number; payments: FinPayment[] }; onChange: (payments: FinPayment[]) => void }) {
+/**
+ * The payments of a document: each one with date, amount, method and reference; add one (the balance by default). On a
+ * PPD invoice each payment also carries its own complemento de pago (SAT: one per payment, by day 5 of the next month).
+ */
+export function PaymentsEditor({ t, doc, onChange, side, today }: { t: T; doc: { amount: number; payments: FinPayment[]; cfdi: Cfdi }; onChange: (payments: FinPayment[]) => void; side: "pagar" | "cobrar"; today: string }) {
   const [adding, setAdding] = useState<FinPayment | null>(null)
   const bal = balanceOf(doc)
+  const ppd = doc.cfdi.method === "PPD"
+  const setPayment = (p: FinPayment) => onChange(doc.payments.map((x) => (x.id === p.id ? p : x)))
   return (
     <fieldset className="grid gap-3">
       <legend className="mb-1 text-sm font-medium text-foreground">{t("payments.title")}</legend>
       <p className="text-xs text-zinc-300">{t("payments.summary", { paid: mxn(paidOf(doc)), balance: mxn(bal) })}</p>
+      {overpaid(doc) && <p className="text-xs text-amber-200">{t("payments.overpaid", { extra: mxn(paidOf(doc) - doc.amount) })}</p>}
       {doc.payments.length > 0 && (
         <ul className="grid gap-1">
           {doc.payments.map((p) => (
-            <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm">
-              <span className="text-zinc-100">
-                {p.date || "—"} · {mxn(p.amount)} · {t(`methods.${p.method}`)}
-                {p.reference ? ` · ${p.reference}` : ""}
+            <li key={p.id} className="grid gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm">
+              <span className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-zinc-100">
+                  {p.date || "—"} · {mxn(p.amount)} · {t(`methods.${p.method}`)}
+                  {p.reference ? ` · ${p.reference}` : ""}
+                </span>
+                <button type="button" onClick={() => window.confirm(t("payments.confirmRemove")) && onChange(doc.payments.filter((x) => x.id !== p.id))} className={DANGER}>
+                  {t("payments.remove")}
+                </button>
               </span>
-              <button type="button" onClick={() => window.confirm(t("payments.confirmRemove")) && onChange(doc.payments.filter((x) => x.id !== p.id))} className={DANGER}>
-                {t("payments.remove")}
-              </button>
+              {ppd && (
+                <span className="grid items-start gap-2 sm:grid-cols-2">
+                  <label className="flex min-h-10 items-center gap-2 text-xs text-zinc-200">
+                    <input type="checkbox" checked={p.repDone} onChange={(e) => setPayment({ ...p, repDone: e.target.checked })} className="size-5 accent-white" />
+                    {t(`cfdi.complementDone.${side}`)}
+                  </label>
+                  <TextField label={t("cfdi.complementUuid")} value={p.rep} onChange={(v) => setPayment({ ...p, rep: v.trim().toUpperCase().slice(0, 36) })} />
+                  {!p.repDone && p.date && (
+                    <span className={`text-xs sm:col-span-2 ${complementDeadline(p.date) < today ? "text-red-300" : "text-amber-200"}`}>{t(`cfdi.payDeadline.${side}`, { date: complementDeadline(p.date) })}</span>
+                  )}
+                </span>
+              )}
             </li>
           ))}
         </ul>
@@ -114,15 +134,7 @@ export function CfdiEditor({ t, doc, onChange, side, today }: { t: T; doc: { cfd
         <TextField label={t("cfdi.uuid")} value={c.uuid} onChange={(v) => onChange({ ...c, uuid: v.trim().toUpperCase().slice(0, 36) })} hint={badUuid(c.uuid) ? t("cfdi.badUuid") : t("cfdi.uuidHint")} />
         <PickField label={t("cfdi.method")} value={c.method} onChange={(method) => onChange({ ...c, method })} hint={t("cfdi.methodHint")} options={CFDI_METHODS.map((m) => ({ value: m, label: t(`cfdi.methods.${m || "none"}`) }))} />
       </div>
-      {c.method === "PPD" && (
-        <div className={GRID}>
-          <label className="flex min-h-10 items-center gap-2 text-sm text-zinc-200">
-            <input type="checkbox" checked={c.complement} onChange={(e) => onChange({ ...c, complement: e.target.checked })} className="size-5 accent-white" />
-            {t(`cfdi.complementDone.${side}`)}
-          </label>
-          <TextField label={t("cfdi.complementUuid")} value={c.complementUuid} onChange={(v) => onChange({ ...c, complementUuid: v.trim().toUpperCase().slice(0, 36) })} />
-        </div>
-      )}
+      {c.method === "PPD" && <p className="text-xs text-zinc-400">{t("cfdi.perPayment")}</p>}
       {deadline && <p className={`text-xs ${deadline < today ? "text-red-300" : "text-amber-200"}`}>{t(`cfdi.pending.${side}`, { date: deadline })}</p>}
     </fieldset>
   )

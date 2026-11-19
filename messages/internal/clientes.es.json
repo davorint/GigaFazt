@@ -373,7 +373,9 @@
       "more": "Y {n} más.",
       "unknownItem": "Material borrado",
       "noteOpen": "Pendiente",
-      "noteDone": "Hecha"
+      "noteDone": "Hecha",
+      "charges": "Cargos pendientes (cuentas por cobrar)",
+      "chargeLine": "saldo {balance} · vence {date}"
     },
     "dup": {
       "phone": "{name} tiene el mismo teléfono: ¿es el mismo cliente?",

@@ -12,6 +12,9 @@ import { movesStore, unitsStore } from "@/lib/stock/store"
 import { notesStore } from "@/lib/notes/store"
 import { catalogServerSnapshot, catalogSnapshot, subscribeCatalog } from "@/lib/materials/store"
 import { ScheduleForm } from "@/components/agenda/ScheduleForm"
+import { receivablesStore } from "@/lib/finance/store"
+import { balanceOf, isOpenDoc } from "@/lib/finance/common"
+import { mxn } from "@/lib/materials/catalog"
 import { dayLabel } from "@/components/agenda/AgendaApp"
 
 const SMALL = "inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -33,6 +36,7 @@ export function ClientHistory({ c }: { c: Client }) {
   const moves = useSyncExternalStore(movesStore.subscribe, movesStore.snapshot, movesStore.serverSnapshot).list
   const units = useSyncExternalStore(unitsStore.subscribe, unitsStore.snapshot, unitsStore.serverSnapshot).list
   const notes = useSyncExternalStore(notesStore.subscribe, notesStore.snapshot, notesStore.serverSnapshot).list
+  const charges = useSyncExternalStore(receivablesStore.subscribe, receivablesStore.snapshot, receivablesStore.serverSnapshot).list
   const items = useSyncExternalStore(subscribeCatalog, catalogSnapshot, catalogServerSnapshot).items
   const [scheduling, setScheduling] = useState(false)
   const itemName = (id: string) => items.find((x) => x.id === id)?.name ?? t("unknownItem")
@@ -42,6 +46,8 @@ export function ClientHistory({ c }: { c: Client }) {
   const held = units.filter((u) => u.state === "cliente" && u.clientId === c.id)
   const mineMoves = moves.filter((m) => m.clientId === c.id).sort((a, b) => b.date.localeCompare(a.date))
   const mineNotes = notes.filter((n) => n.linkKind === "client" && n.linkId === c.id)
+  // One-off charges (Cuentas por cobrar) still open for this client.
+  const mineCharges = charges.filter((x) => x.clientId === c.id && isOpenDoc(x)).sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
 
   return (
     <fieldset className="grid gap-4">
@@ -73,6 +79,18 @@ export function ClientHistory({ c }: { c: Client }) {
           </button>
         )}
       </section>
+
+      {mineCharges.length > 0 && (
+        <section aria-label={t("charges")} className="grid gap-2">
+          <h3 className="font-mono text-xs uppercase tracking-wide text-zinc-400">{t("charges")}</h3>
+          {mineCharges.map((x) => (
+            <a key={x.id} href={`/interno/admin/cuentas-por-cobrar?c=${x.id}`} className={ROW}>
+              <span className="text-zinc-100">{x.concept || "—"}</span>
+              <span className="font-mono text-xs text-zinc-400">{t("chargeLine", { balance: mxn(balanceOf(x)), date: x.dueDate || "—" })}</span>
+            </a>
+          ))}
+        </section>
+      )}
 
       <section aria-label={t("reports")} className="grid gap-2">
         <h3 className="font-mono text-xs uppercase tracking-wide text-zinc-400">{t("reportsCount", { n: mineReports.length })}</h3>

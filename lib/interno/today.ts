@@ -7,6 +7,8 @@
  * - Herramientas: tools in use (quantity > 0) with an alert (service overdue, counter at its limit, damaged, lost…).
  * - Materiales: items below their minimum in the warehouse.
  * - Notas: open pinned notes.
+ * - Cuentas: bills overdue or due within BILLS_SOON_DAYS, one-off charges overdue, and PPD payments still without their
+ *   complemento de pago (both ways).
  */
 import type { Client } from "../clients/model"
 import { clientLabel } from "../clients/model"
@@ -16,6 +18,9 @@ import { collectionStats, ledger, type Payment } from "../payments/model"
 import { isOpen, reportCode, type Report } from "../reports/model"
 import { BODEGA, countAt, type Move, type Unit } from "../stock/model"
 import { toolAlerts, toolLabel, type Alert, type Tool } from "../tools/model"
+import type { Payable } from "../finance/payables"
+import type { Receivable } from "../finance/receivables"
+import { balanceOf, complementPending, isOpenDoc } from "../finance/common"
 
 export type TodayInput = {
   reports: Report[]
@@ -26,6 +31,8 @@ export type TodayInput = {
   moves: Move[]
   units: Unit[]
   notes: Note[]
+  payables?: Payable[]
+  receivables?: Receivable[]
 }
 
 export type Today = {
@@ -34,7 +41,16 @@ export type Today = {
   tools: { id: string; label: string; alerts: Alert[] }[]
   lowStock: { id: string; name: string; has: number; min: number; unit: string }[]
   pinned: { id: string; title: string }[]
+  /** Bills (cuentas por pagar) overdue or due within BILLS_SOON_DAYS, soonest first. */
+  bills: { id: string; label: string; balance: number; due: string; late: boolean }[]
+  /** One-off charges (cuentas por cobrar) past their due date. */
+  charges: { id: string; label: string; balance: number; due: string }[]
+  /** PPD documents with payments still without their complemento: "cobrar" ones we issue, "pagar" ones we ask for. */
+  complements: { id: string; side: "pagar" | "cobrar"; label: string; deadline: string }[]
 }
+
+/** Days ahead a bill shows on "Hoy" before it's due. */
+export const BILLS_SOON_DAYS = 3
 
 /** Alerts that mean the tool can't be used as it is (the rest are reminders). */
 export const SERIOUS: Alert[] = ["service-overdue", "counter-limit", "condition"]
@@ -69,14 +85,39 @@ export function todaySummary(d: TodayInput, today: string, now = Date.now()): To
 
   const pinned = d.notes.filter((n) => n.pinned && !n.doneAt).map((n) => ({ id: n.id, title: n.title || n.body.slice(0, 80) }))
 
+  const soon = (() => {
+    const x = new Date(`${today}T12:00:00Z`)
+    x.setUTCDate(x.getUTCDate() + BILLS_SOON_DAYS)
+    return x.toISOString().slice(0, 10)
+  })()
+  const pays = d.payables ?? []
+  const recs = d.receivables ?? []
+  const bills = pays
+    .filter((x) => isOpenDoc(x) && x.amount > 0 && x.dueDate && x.dueDate <= soon)
+    .map((x) => ({ id: x.id, label: [x.concept, x.payee].filter(Boolean).join(" · ") || "—", balance: balanceOf(x), due: x.dueDate, late: x.dueDate < today }))
+    .sort((a, b) => a.due.localeCompare(b.due))
+  const charges = recs
+    .filter((x) => isOpenDoc(x) && x.amount > 0 && x.dueDate && x.dueDate < today)
+    .map((x) => ({ id: x.id, label: [x.concept, x.payer].filter(Boolean).join(" · ") || "—", balance: balanceOf(x), due: x.dueDate }))
+    .sort((a, b) => a.due.localeCompare(b.due))
+  const complements = [
+    ...recs.filter((x) => !x.cancelled).map((x) => ({ id: x.id, side: "cobrar" as const, label: x.concept || x.payer || "—", deadline: complementPending(x) ?? "" })),
+    ...pays.filter((x) => !x.cancelled).map((x) => ({ id: x.id, side: "pagar" as const, label: x.concept || x.payee || "—", deadline: complementPending(x) ?? "" })),
+  ]
+    .filter((x) => x.deadline)
+    .sort((a, b) => a.deadline.localeCompare(b.deadline))
+
   return {
     reports: { fresh, urgent, stale, open: open.length },
     payments: { late, lateAmount: collectionStats(d.clients, d.payments, today).lateAmount },
     tools,
     lowStock,
     pinned,
+    bills,
+    charges,
+    complements,
   }
 }
 
 /** Nothing to look at today. */
-export const allClear = (t: Today) => !t.reports.open && !t.payments.late.length && !t.tools.length && !t.lowStock.length && !t.pinned.length
+export const allClear = (t: Today) => !t.reports.open && !t.payments.late.length && !t.tools.length && !t.lowStock.length && !t.pinned.length && !t.bills.length && !t.charges.length && !t.complements.length
