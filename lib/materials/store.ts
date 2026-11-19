@@ -2,8 +2,8 @@
  * The master materials list in this browser (localStorage), like the surveys: the first time, the starting list is
  * saved so its ids stay put (surveys point to items by id). Other tabs follow through the storage event.
  */
-import { decodeItem, mergeItems, starterCatalog, withEffective, type Item } from "./catalog"
-import { markChanged } from "../sync/state"
+import { typeOldStarter, decodeItem, mergeItems, starterCatalog, withEffective, type Item } from "./catalog"
+import { markChanged, readState } from "../sync/state"
 import { remapMaterialRefs } from "../survey/store"
 
 const KEY = "gigafazt-materiales"
@@ -19,11 +19,21 @@ function load(): CatalogStore {
     const raw = window.localStorage.getItem(KEY)
     if (raw === null) {
       const items = starterCatalog()
-      window.localStorage.setItem(KEY, JSON.stringify({ v: 1, items }))
+      window.localStorage.setItem(KEY, JSON.stringify({ v: 2, items }))
       return { loaded: true, persisted: true, items }
     }
-    const v = JSON.parse(raw) as { items?: unknown }
-    const items = Array.isArray(v?.items) ? v.items.map(decodeItem).filter((x): x is Item => x !== null) : []
+    const v = JSON.parse(raw) as { v?: unknown; items?: unknown }
+    let items = Array.isArray(v?.items) ? v.items.map(decodeItem).filter((x): x is Item => x !== null) : []
+    // Saved before materials had types (v 1): the starters get theirs, once.
+    if (v?.v === 1) {
+      const before = items
+      items = items.map(typeOldStarter)
+      window.localStorage.setItem(KEY, JSON.stringify({ v: 2, items }))
+      // The ones the database already has are sent with their type (after this read, not during it).
+      const meta = readState().meta.materials
+      const typed = items.filter((x, i) => x !== before[i] && meta[x.id]).map((x) => x.id)
+      if (typed.length) setTimeout(() => markChanged("materials", typed), 0)
+    }
     return { loaded: true, persisted: true, items }
   } catch {
     return { loaded: true, persisted: false, items: current?.items ?? starterCatalog() }
@@ -33,7 +43,7 @@ function load(): CatalogStore {
 function write(items: Item[]) {
   let persisted = true
   try {
-    window.localStorage.setItem(KEY, JSON.stringify({ v: 1, items }))
+    window.localStorage.setItem(KEY, JSON.stringify({ v: 2, items }))
   } catch {
     persisted = false
   }

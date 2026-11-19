@@ -18,7 +18,7 @@ import { movesStore, unitsStore } from "@/lib/stock/store"
 import { usePlaceLabel } from "./places"
 import { MoveForm } from "./MoveForm"
 import { FiberFields, FiberFilters, NO_FIBER_FILTER, fiberMatches, fiberSummary, type FiberFilter } from "./FiberFields"
-import { hasFiber } from "@/lib/materials/fiber"
+import { emptyFiber, hasFiber } from "@/lib/materials/fiber"
 import { MATERIAL_SPECS } from "@/lib/materials/specs"
 import { typesOf } from "@/lib/specs/engine"
 import { SpecFields, specSummary, typeOptions } from "@/components/interno/SpecFields"
@@ -86,7 +86,7 @@ function PriceList({ t, items }: { t: T; items: Item[] }) {
   const providers = useSyncExternalStore(subscribeProviders, providersSnapshot, providersServerSnapshot).list
   const nameOf = (o: Offer | null) => (o ? (o.supplierId ? providerName(providers.find((p) => p.id === o.supplierId) ?? ({ tradeName: "", legalName: "" } as Provider)) : o.supplier) : "")
   const needle = fold(q.trim())
-  const shown = items.filter((x) => (!cat || x.category === cat) && (!ptype || x.ptype === ptype) && (!fiberShown || fiberMatches(x.fiber, fq)) && (!needle || fold([x.name, x.notes, ...x.offers.flatMap((o) => [o.supplier, o.sku, nameOf(o)])].join(" ")).includes(needle)))
+  const shown = items.filter((x) => (!cat || x.category === cat) && (!ptype || x.ptype === ptype) && (!fiberShown || fiberMatches(x.category === "fibra" ? x.fiber : emptyFiber(), fq)) && (!needle || fold([x.name, x.notes, ...x.offers.flatMap((o) => [o.supplier, o.sku, nameOf(o)])].join(" ")).includes(needle)))
   const add = (v: Record<string, string>) => {
     const category = (CATEGORIES as readonly string[]).includes(v.category) ? (v.category as Category) : "otros"
     const it = newItem({ name: v.name, unit: v.unit || "pza", category })
@@ -185,7 +185,7 @@ function ItemRow({ t, item: x, supplierName, open, onToggle }: { t: T; item: Ite
         <div className="grid gap-5 border-t border-white/10 p-3">
           <TextField label={t("name")} value={x.name} onChange={(v) => up({ name: v })} />
           <div className="grid items-start gap-4 sm:grid-cols-2">
-            <PickField label={t("category")} value={x.category} onChange={(v) => up({ category: v, ptype: "", traits: {} })} options={CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) }))} />
+            <PickField label={t("category")} value={x.category} onChange={(v) => up({ category: v, ptype: "", traits: {}, ...(v === "fibra" ? {} : { fiber: emptyFiber() }) })} options={CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) }))} />
             <TextField label={t("unit")} value={x.unit} onChange={(v) => up({ unit: v.slice(0, 20) })} />
             <PickField label={t("role")} value={x.role} onChange={(v) => up({ role: v as Role | "" })} hint={t("roleHint")} options={[{ value: "", label: t("noRole") }, ...ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))]} />
           </div>

@@ -205,6 +205,16 @@ export function untouchedStarter(x: Tool) {
   return keys.every((k) => JSON.stringify(s[k as keyof Tool]) === JSON.stringify(x[k as keyof Tool]))
 }
 
+/**
+ * A starter saved before tools had types (2026-11-19) gets its type and the traits its name states, when its name and
+ * category are still the starter's (the stores do this once, on the first load after the change).
+ */
+export function typeOldStarter(x: Tool): Tool {
+  const s = STARTERS.get(x.id)
+  if (!s || !s.ptype || x.ptype || Object.keys(x.traits).length || x.name !== s.name || x.category !== s.category) return x
+  return { ...x, ptype: s.ptype, traits: { ...s.traits } }
+}
+
 // ── Derived values ──────────────────────────────────────────────────────────
 
 /** The date of the latest service in the log ("" = none). */

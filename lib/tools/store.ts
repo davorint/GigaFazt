@@ -2,8 +2,8 @@
  * Tools saved in this browser (localStorage) and synced through the database (lib/sync), like the materials list: the
  * first time, the starter list is saved so its fixed ids stay put. Other tabs follow through the storage event.
  */
-import { decodeTool, starterTools, type Tool } from "./model"
-import { markChanged } from "../sync/state"
+import { typeOldStarter, decodeTool, starterTools, type Tool } from "./model"
+import { markChanged, readState } from "../sync/state"
 
 const KEY = "gigafazt-herramientas"
 
@@ -18,11 +18,21 @@ function load(): ToolStore {
     const raw = window.localStorage.getItem(KEY)
     if (raw === null) {
       const list = starterTools()
-      window.localStorage.setItem(KEY, JSON.stringify({ v: 1, list }))
+      window.localStorage.setItem(KEY, JSON.stringify({ v: 2, list }))
       return { loaded: true, persisted: true, list }
     }
-    const v = JSON.parse(raw) as { list?: unknown }
-    const list = Array.isArray(v?.list) ? v.list.map(decodeTool).filter((x): x is Tool => x !== null) : []
+    const v = JSON.parse(raw) as { v?: unknown; list?: unknown }
+    let list = Array.isArray(v?.list) ? v.list.map(decodeTool).filter((x): x is Tool => x !== null) : []
+    // Saved before tools had types (v 1): the starters get theirs, once.
+    if (v?.v === 1) {
+      const before = list
+      list = list.map(typeOldStarter)
+      window.localStorage.setItem(KEY, JSON.stringify({ v: 2, list }))
+      // The ones the database already has are sent with their type (after this read, not during it).
+      const meta = readState().meta.tools
+      const typed = list.filter((x, i) => x !== before[i] && meta[x.id]).map((x) => x.id)
+      if (typed.length) setTimeout(() => markChanged("tools", typed), 0)
+    }
     return { loaded: true, persisted: true, list }
   } catch {
     return { loaded: true, persisted: false, list: current?.list ?? starterTools() }
@@ -32,7 +42,7 @@ function load(): ToolStore {
 function write(list: Tool[]) {
   let persisted = true
   try {
-    window.localStorage.setItem(KEY, JSON.stringify({ v: 1, list }))
+    window.localStorage.setItem(KEY, JSON.stringify({ v: 2, list }))
   } catch {
     persisted = false
   }

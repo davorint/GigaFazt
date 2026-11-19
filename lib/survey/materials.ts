@@ -93,7 +93,10 @@ export function surveyCosts(s: Survey, catalog: Item[]): Costs {
   const byId = new Map(catalog.map((x) => [x.id, x]))
   const itemFor = (r: Role) => {
     const chosen = m.pick[r] ? byId.get(m.pick[r]!) : undefined
-    return chosen ?? catalog.find((x) => x.role === r) ?? null
+    if (chosen) return chosen
+    // Several items for the same need: the cheapest priced one, else the first.
+    const all = catalog.filter((x) => x.role === r)
+    return all.filter((x) => x.price !== null).sort((a, b) => a.price! - b.price!)[0] ?? all[0] ?? null
   }
   const need = designNeeds(s)
   let missing = 0

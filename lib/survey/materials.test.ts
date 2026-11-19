@@ -72,6 +72,13 @@ describe("costs (IVA included)", () => {
     expect(c.build.find((x) => x.role === "riser-m")).toMatchObject({ qty: 66, total: 330 })
     expect(c.build.find((x) => x.role === "floor-box")).toMatchObject({ qty: 6, total: 60 })
   })
+  it("without a pick, several items for one need: the cheapest priced one, not the first in the list", () => {
+    const cat = priced()
+    const unpriced: Item = { ...cat.find((x) => x.role === "riser-m")!, id: "riser-unpriced", name: "Riser sin precio", price: null }
+    const cheaper: Item = { ...cat.find((x) => x.role === "riser-m")!, id: "riser-cheap", name: "Riser barato", price: 5 }
+    const c = surveyCosts(survey(), [unpriced, ...cat, cheaper])
+    expect(c.build.find((x) => x.role === "riser-m")?.item?.id).toBe("riser-cheap")
+  })
   it("items without a price, roles without an item: counted as 0 and reported", () => {
     const cat = starterCatalog().filter((x) => x.role !== "ont")
     const c = surveyCosts(survey(), cat)

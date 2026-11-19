@@ -8,7 +8,7 @@
  * - same version the phone started from → saved (version + 1);
  * - someone else saved in between → the most recent edit wins; the losing copy goes to the history with
  *   `conflict = true`;
- * - an untouched starter material (no price, no supplier) whose name, role and unit the database already has →
+ * - an untouched starter material (no offers, notes, type or fiber data) whose name, role and unit the database already has →
  *   not inserted: the phone is told to use the existing id (each browser made its own copy of the 27 starters);
  * - a starter (fixed id: materials, tools) deleted before anyone saved it → a deleted row is stored, so every other
  *   phone removes its own copy.
@@ -16,7 +16,8 @@
  */
 import "server-only"
 import type { PoolClient } from "pg"
-import { decodeItem } from "../materials/catalog"
+import { decodeItem, type Item } from "../materials/catalog"
+import { hasFiber } from "../materials/fiber"
 import { decodeProvider, providerName } from "../providers/model"
 import { decodeSurvey } from "../survey/model"
 import { clientStatus, decodeClient, pppoeUsers } from "../clients/model"
@@ -223,8 +224,9 @@ async function applyOne(c: PoolClient, kind: SyncKind, ch: Change, editor: strin
     // Deleted before it ever reached the database: nothing to store.
     if (ch.deleted || !read) return { id: ch.id, outcome: "saved", version: 0 }
     if (kind === "materials") {
-      const d = read.data as { price: number | null; supplierId: string; name: string; role: string; unit: string }
-      if (d.price === null && !d.supplierId) {
+      const d = read.data as Item
+      // Only a blank copy (nothing but name, role and unit): one with offers, notes, a type or fiber data is new work.
+      if (!d.offers.length && !d.notes && d.minStock === null && !d.ptype && !hasFiber(d.fiber)) {
         const same = (await c.query(`select id from materials where deleted_at is null and name = $1 and role = $2 and unit = $3 order by created_at limit 1`, [d.name, d.role, d.unit])).rows[0] as { id: string } | undefined
         if (same) return { id: ch.id, outcome: "merged", into: same.id }
       }

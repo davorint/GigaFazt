@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest"
 import mat from "../../messages/internal/materiales.es.json"
 import tools from "../../messages/internal/herramientas.es.json"
-import { CATEGORIES, decodeItem, newItem, starterCatalog } from "../materials/catalog"
+import { CATEGORIES, decodeItem, newItem, starterCatalog, typeOldStarter as typeOldItem } from "../materials/catalog"
 import { MATERIAL_SPECS } from "../materials/specs"
-import { TOOL_CATEGORIES, decodeTool, starterTools } from "../tools/model"
+import { TOOL_CATEGORIES, decodeTool, starterTools, typeOldStarter as typeOldTool } from "../tools/model"
 import { TOOL_SPECS } from "../tools/specs"
 import { buyIntoTools, decodeToolBuy, newToolBuy } from "../toolbuys/model"
 import { decodeSpecs, decodeType, typesOf, type SpecCatalog } from "./engine"
@@ -68,5 +68,21 @@ describe("starter lists come typed", () => {
       expect(decodeType(MATERIAL_SPECS, it.category, it.ptype), it.name).toBe(it.ptype)
       expect(decodeSpecs(MATERIAL_SPECS, it.category, it.ptype, it.traits), it.name).toEqual(it.traits)
     }
+  })
+})
+
+describe("starters saved before types existed", () => {
+  it("get the starter's type when their name and category are unchanged; renamed or already typed ones stay as they are", () => {
+    const tool = starterTools().find((x) => x.ptype === "fusionadora")!
+    const old = { ...tool, ptype: "", traits: {}, quantity: 2, brand: "Signal Fire" }
+    expect(typeOldTool(old)).toMatchObject({ ptype: "fusionadora", quantity: 2, brand: "Signal Fire" })
+    expect(typeOldTool({ ...old, name: "Mi fusionadora" }).ptype).toBe("")
+    expect(typeOldTool({ ...old, ptype: "cortadora" }).ptype).toBe("cortadora")
+    const peladora = starterTools().find((x) => x.ptype === "peladora-fibra")!
+    expect(typeOldTool({ ...peladora, ptype: "", traits: {} }).traits).toEqual({ stripperHoles: 3 })
+    const plc = starterCatalog().find((x) => x.ptype === "plc")!
+    expect(typeOldItem({ ...plc, ptype: "", traits: {} })).toMatchObject({ ptype: "plc", traits: plc.traits })
+    expect(typeOldItem({ ...plc, ptype: "", traits: {}, category: "otros" }).ptype).toBe("")
+    expect(typeOldItem(newItem({ name: plc.name, category: "splitters" })).ptype).toBe("")
   })
 })

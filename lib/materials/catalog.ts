@@ -155,6 +155,17 @@ export function starterCatalog(): Item[] {
   ]
 }
 
+const STARTERS = new Map(starterCatalog().map((x) => [x.id, x]))
+/**
+ * A starter saved before materials had types (2026-11-19) gets its type and the traits its name states, when its name
+ * and category are still the starter's (the store does this once, on the first load after the change).
+ */
+export function typeOldStarter(x: Item): Item {
+  const s = STARTERS.get(x.id)
+  if (!s || !s.ptype || x.ptype || Object.keys(x.traits).length || x.name !== s.name || x.category !== s.category) return x
+  return { ...x, ptype: s.ptype, traits: { ...s.traits } }
+}
+
 // ── Reading stored or imported values ───────────────────────────────────────
 
 type Obj = Record<string, unknown>
