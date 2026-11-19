@@ -26,6 +26,7 @@ import { decodeMove, decodeUnit } from "../stock/model"
 import { decodeReport } from "../reports/model"
 import { decodePayment } from "../payments/model"
 import { decodeNote } from "../notes/model"
+import { decodeRoll } from "../rolls/model"
 import { getPool } from "../db/client"
 import { MAX_RECORDS, type Change, type Outcome, type Remote, type SyncKind, type SyncResponse } from "./protocol"
 
@@ -164,6 +165,17 @@ export const SPECS: Record<SyncKind, KindSpec> = {
       if (!n) return null
       const d = { ...n, id }
       return { data: d, cols: { title: d.title, done: Boolean(d.doneAt) } }
+    },
+  },
+  rolls: {
+    table: "rolls",
+    versions: "roll_versions",
+    fk: "roll_id",
+    read: (id, data) => {
+      const r = decodeRoll(data)
+      if (!r) return null
+      const d = { ...r, id }
+      return { data: d, cols: { code: d.code, cable: d.cable, place: d.place, left_m: d.leftM } }
     },
   },
 }

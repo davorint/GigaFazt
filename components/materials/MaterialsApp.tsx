@@ -17,13 +17,14 @@ import { countAt, placesUsed } from "@/lib/stock/model"
 import { movesStore, unitsStore } from "@/lib/stock/store"
 import { usePlaceLabel } from "./places"
 import { StockPanel } from "./StockPanel"
+import { RollsPanel } from "./RollsPanel"
 import { UnitsPanel } from "./UnitsPanel"
 
 type T = ReturnType<typeof useTranslations>
 const BTN = "h-11 rounded-full border border-white/15 px-5 text-sm text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const SMALL = "inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const DANGER = "inline-flex min-h-9 w-fit items-center rounded-full border border-red-400/30 px-3 text-xs text-red-200 hover:bg-red-400/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-const TABS = ["precios", "existencias", "equipos"] as const
+const TABS = ["precios", "existencias", "bobinas", "equipos"] as const
 type Tab = (typeof TABS)[number]
 
 function download(name: string, text: string) {
@@ -91,6 +92,7 @@ export function MaterialsApp() {
       <div role="tabpanel" aria-label={t(`tabs.${tab}`)}>
         {tab === "precios" && <PriceList t={t} items={store.items} />}
         {tab === "existencias" && <StockPanel items={store.items} />}
+        {tab === "bobinas" && <RollsPanel />}
         {tab === "equipos" && <UnitsPanel items={store.items} />}
       </div>
     </div>

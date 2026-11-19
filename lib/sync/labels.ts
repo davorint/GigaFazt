@@ -3,6 +3,7 @@ import { clientLabel, decodeClient } from "../clients/model"
 import { decodeItem } from "../materials/catalog"
 import { decodeNote } from "../notes/model"
 import { decodePayment } from "../payments/model"
+import { decodeRoll } from "../rolls/model"
 import { decodeProvider, providerName } from "../providers/model"
 import { decodeReport, reportCode } from "../reports/model"
 import { decodeSite, siteLabel } from "../sites/model"
@@ -48,6 +49,10 @@ export function recordLabel(kind: SyncKind, data: unknown): string {
     case "stock": {
       const m = decodeMove(data)
       return m ? `${m.date} · ${m.kind} · ${m.qty}` : "—"
+    }
+    case "rolls": {
+      const r = decodeRoll(data)
+      return r ? `${r.code || "—"} · ${r.leftM}/${r.lengthM} m` : "—"
     }
     case "units":
       return decodeUnit(data)?.serial || "—"

@@ -75,6 +75,7 @@
     "tabs": {
       "precios": "Precios y proveedores",
       "existencias": "Existencias",
+      "bobinas": "Bobinas de fibra",
       "equipos": "ONTs por serie"
     },
     "pricesIntro": "Cada material puede tener varios proveedores con su precio. Los levantamientos usan el que marques, o el más barato.",
@@ -223,6 +224,120 @@
       "openClient": "Abrir el cliente",
       "history": "Historial"
     },
-    "addSubmit": "Agregar"
+    "addSubmit": "Agregar",
+    "rolls": {
+      "intro": "Cada bobina por separado: el tipo de cable, los hilos, monomodo o multimodo, el estándar de la fibra, si es de interior o exterior, cuántos metros traía y cuántos le quedan. Todo se elige de los menús.",
+      "add": "Agregar bobinas",
+      "count": "Cuántas bobinas",
+      "countN": "{n, plural, one {# bobina} other {# bobinas}}",
+      "cable": "Cable",
+      "strands": "Hilos",
+      "strandsN": "{n, plural, one {# hilo} other {# hilos}}",
+      "fiber": "Estándar de la fibra",
+      "length": "Largo de la bobina",
+      "otherLength": "Otro largo…",
+      "lengthTyped": "Largo (metros)",
+      "place": "Dónde está",
+      "allPlaces": "Todos los lugares",
+      "addSubmit": "{n, plural, one {Agregar # bobina} other {Agregar # bobinas}}",
+      "addHint": "Las bobinas entran llenas y con su número (B-1, B-2…) para escribirlo en el carrete. Hasta {max} a la vez.",
+      "added": "{n, plural, one {Se agregó # bobina.} other {Se agregaron # bobinas.}}",
+      "totals": "Fibra disponible",
+      "metersLeft": "{m} m",
+      "groupLine": "{rolls, plural, one {# bobina} other {# bobinas}} · {full, plural, one {# llena} other {# llenas}}{empty, plural, =0 {} one { · # vacía} other { · # vacías}}",
+      "empty": "Todavía no hay bobinas.",
+      "list": "Bobinas ({n})",
+      "showEmpty": "Mostrar las vacías ({n})",
+      "leftOf": "{left} / {length} m",
+      "used": "Usé",
+      "usedPick": "Elige cuántos metros…",
+      "usedN": "{n} m",
+      "usedHint": "Se restan de lo que queda.",
+      "left": "Quedan",
+      "leftOption": "{m} m ({p} %)",
+      "leftTyped": "Quedan (metros exactos)",
+      "states": {
+        "llena": "Llena",
+        "en-uso": "En uso",
+        "vacia": "Vacía"
+      },
+      "cables": {
+        "drop-plano": "Drop plano (acometida)",
+        "drop-redondo": "Drop redondo",
+        "drop-autosoportado": "Drop autosoportado (con mensajero)",
+        "interior": "Interior / riser",
+        "distribucion": "Distribución interior (buffer ajustado)",
+        "breakout": "Breakout (fan-out)",
+        "simplex-duplex": "Simplex / dúplex (para jumpers)",
+        "adss": "ADSS (aéreo autosoportado)",
+        "figura-8": "Figura 8 (con mensajero de acero)",
+        "armado": "Armado (subterráneo / roedores)",
+        "canalizado": "Canalizado (para ducto)",
+        "microcable": "Microcable (para soplado)",
+        "otro": "Otro"
+      },
+      "fibers": {
+        "g657a2": "G.657A2 (curvas cerradas)",
+        "g657a1": "G.657A1",
+        "g652d": "G.652D",
+        "g655": "G.655",
+        "g654e": "G.654E",
+        "om1": "OM1 (62.5 µm)",
+        "om2": "OM2 (50 µm)",
+        "om3": "OM3 (50 µm, láser)",
+        "om4": "OM4",
+        "om5": "OM5",
+        "otra": "Otro / no sé"
+      },
+      "notes": "Notas",
+      "addedBy": "Agregada por {name}",
+      "markEmpty": "Marcar vacía",
+      "delete": "Borrar bobina",
+      "confirmDelete": "¿Borrar esta bobina?",
+      "exportCsv": "Descargar bobinas (Excel)",
+      "code": "Número",
+      "percent": "% que queda",
+      "state": "Estado",
+      "by": "Agregada por",
+      "mode": "Modo",
+      "modes": {
+        "sm": "Monomodo",
+        "mm": "Multimodo"
+      },
+      "env": "Uso",
+      "envs": {
+        "exterior": "Exterior",
+        "interior": "Interior",
+        "int-ext": "Interior / exterior"
+      },
+      "jacket": "Cubierta",
+      "jackets": {
+        "none": "Sin indicar",
+        "lszh": "LSZH (libre de halógenos)",
+        "pvc": "PVC",
+        "pe": "Polietileno (PE)",
+        "ofnr": "Riser (OFNR)",
+        "ofnp": "Plenum (OFNP)",
+        "otra": "Otra"
+      },
+      "buffer": "Construcción",
+      "buffers": {
+        "none": "Sin indicar",
+        "holgado": "Tubo holgado (loose tube)",
+        "ajustado": "Buffer ajustado (900 µm)",
+        "ribbon": "Cinta (ribbon)",
+        "otro": "Otra"
+      },
+      "ends": {
+        "ninguno": "Sin conectores",
+        "sc-apc-1": "SC/APC en un extremo",
+        "sc-apc-2": "SC/APC en ambos extremos (preconectorizado)",
+        "sc-upc-2": "SC/UPC en ambos extremos",
+        "lc-upc-2": "LC/UPC en ambos extremos",
+        "otro": "Otros"
+      },
+      "endsLabel": "Conectores de fábrica",
+      "brand": "Marca o línea (opcional)"
+    }
   }
 }

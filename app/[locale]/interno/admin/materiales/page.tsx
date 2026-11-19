@@ -47,6 +47,7 @@ export default async function MaterialesPage({ params }: PageProps<"/[locale]/in
         <div className="mt-12 grid gap-3">
           <DeletedList kind="materials" named />
           <DeletedList kind="stock" named />
+          <DeletedList kind="rolls" named />
         </div>
       </NextIntlClientProvider>
     </main>

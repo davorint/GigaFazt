@@ -26,6 +26,8 @@ import { decodePayment, type Payment } from "../payments/model"
 import { paymentsStore } from "../payments/store"
 import { decodeNote, type Note } from "../notes/model"
 import { notesStore } from "../notes/store"
+import { decodeRoll, type Roll } from "../rolls/model"
+import { rollsStore } from "../rolls/store"
 import { applyRemoteSurveys, surveysSnapshot } from "../survey/store"
 import { MAX_CHANGES, REV_OVERLAP, SYNC_KINDS, type Change, type SyncKind, type SyncResponse } from "./protocol"
 import { markChanged, onSyncChange, pendingCount, readState, updateState } from "./state"
@@ -93,6 +95,11 @@ const ADAPTERS: Record<SyncKind, Adapter> = {
     get: (id) => notesStore.list().find((x) => x.id === id),
     ids: () => notesStore.list().map((x) => x.id),
     apply: (u, d) => notesStore.applyRemote(u.map(decodeNote).filter((x): x is Note => x !== null), d),
+  },
+  rolls: {
+    get: (id) => rollsStore.list().find((x) => x.id === id),
+    ids: () => rollsStore.list().map((x) => x.id),
+    apply: (u, d) => rollsStore.applyRemote(u.map(decodeRoll).filter((x): x is Roll => x !== null), d),
   },
 }
 
@@ -299,4 +306,4 @@ export function startSync(): () => void {
 }
 
 /** The local ids of every kind (for "Subir lo de este navegador"). */
-export const localIds = (): Record<SyncKind, string[]> => ({ surveys: ADAPTERS.surveys.ids(), materials: ADAPTERS.materials.ids(), providers: ADAPTERS.providers.ids(), clients: ADAPTERS.clients.ids(), sites: ADAPTERS.sites.ids(), tools: ADAPTERS.tools.ids(), stock: ADAPTERS.stock.ids(), units: ADAPTERS.units.ids(), reports: ADAPTERS.reports.ids(), payments: ADAPTERS.payments.ids(), notes: ADAPTERS.notes.ids() })
+export const localIds = (): Record<SyncKind, string[]> => ({ surveys: ADAPTERS.surveys.ids(), materials: ADAPTERS.materials.ids(), providers: ADAPTERS.providers.ids(), clients: ADAPTERS.clients.ids(), sites: ADAPTERS.sites.ids(), tools: ADAPTERS.tools.ids(), stock: ADAPTERS.stock.ids(), units: ADAPTERS.units.ids(), reports: ADAPTERS.reports.ids(), payments: ADAPTERS.payments.ids(), notes: ADAPTERS.notes.ids(), rolls: ADAPTERS.rolls.ids() })

@@ -54,7 +54,8 @@
         "units": "Piezas con número de serie",
         "reports": "Reportes",
         "payments": "Pagos",
-        "notes": "Notas"
+        "notes": "Notas",
+        "rolls": "Bobinas de fibra"
       }
     }
   }

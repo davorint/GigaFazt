@@ -269,6 +269,24 @@ export const notes = pgTable(
 )
 export const noteVersions = versions("note_versions", "note_id")
 
+// ── Fiber rolls (/interno/admin/materiales?t=bobinas) ───────────────────────
+
+export const rolls = pgTable(
+  "rolls",
+  {
+    id: text("id").primaryKey(),
+    /** The number on the reel ("B-12"). */
+    code: text("code").notNull().default(""),
+    cable: text("cable").notNull().default(""),
+    place: text("place").notNull().default(""),
+    leftM: doublePrecision("left_m").notNull().default(0),
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("rolls_rev_idx").on(t.rev)]
+)
+export const rollVersions = versions("roll_versions", "roll_id")
+
 // ── Saved MikroTik deployments ──────────────────────────────────────────────
 
 export const deployments = pgTable(
