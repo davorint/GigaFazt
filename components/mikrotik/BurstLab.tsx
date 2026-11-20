@@ -85,7 +85,7 @@ const readHash = () => window.location.hash
 type Jump = "params" | "sim" | "compare" | "shared" | "deployments" | "guide" | "installed" | "capacity" | "links" | "setup" | "advanced" | "solver" | "export" | "bulk" | "how"
 
 /**
- * The internal pages: /interno/routers/guia-mikrotik is the ideal guide for a deployment (owner, 2026-11-16), /interno/routers/scripts-mikrotik the expert
+ * The internal pages: /interno/equipos-telecom/guia-mikrotik is the ideal guide for a deployment (owner, 2026-11-16), /interno/equipos-telecom/scripts-mikrotik the expert
  * scripts and full editors, /calculadora the calculators and simulators (owner, 2026-11-15).
  */
 export type LabPage = "guide" | "scripts" | "calculators"
@@ -95,7 +95,7 @@ const PAGE_SECTIONS: Record<LabPage, Jump[]> = {
   calculators: ["params", "sim", "compare", "shared", "deployments", "capacity", "solver", "how"],
 }
 /** Each page's entry in the internal menu (components/interno/AdminLinks.tsx). */
-const PAGE_KEY = { guide: "routers", scripts: "routers", calculators: "calculadora" } as const satisfies Record<LabPage, string>
+const PAGE_KEY = { guide: "equipos-telecom", scripts: "equipos-telecom", calculators: "calculadora" } as const satisfies Record<LabPage, string>
 const ANCHORS: Record<Jump, string> = {
   params: "parametros",
   sim: "simulacion",

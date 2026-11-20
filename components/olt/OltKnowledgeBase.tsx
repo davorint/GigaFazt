@@ -289,7 +289,7 @@ export function OltKnowledgeBase() {
             standard: () => <span className="rounded border border-violet-400/40 px-1 font-mono text-[11px] text-violet-300">{t("intro.standard")}</span>,
           })}
         </p>
-        <AdminLinks current="olt" />
+        <AdminLinks current="equipos-telecom" />
       </section>
 
       <SectionNav label={t("intro.navLabel")} items={nav} />

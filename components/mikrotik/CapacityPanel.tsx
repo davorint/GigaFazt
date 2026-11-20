@@ -341,7 +341,7 @@ export function CapacityPanel({ state, onCapacity, onStatus, measuredAverages }:
             {c.oltBuild && oltTech && (
               <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-zinc-300">
                 <span>{t("capacity.deployment.built", { ports: fmtNum(c.oltBuild.ports[oltTech], 0), tech: techName })}</span>
-                <a href={`/interno/olt?arma=${encodeURIComponent(c.oltBuild.code)}#armar`} className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+                <a href={`/interno/equipos-telecom/olt-huawei?arma=${encodeURIComponent(c.oltBuild.code)}#armar`} className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
                   {t("capacity.deployment.builtOpen")}
                 </a>
                 <button type="button" onClick={() => set({ oltBuild: null })} className="text-zinc-400 underline decoration-white/20 underline-offset-4 hover:text-zinc-100">
@@ -353,7 +353,7 @@ export function CapacityPanel({ state, onCapacity, onStatus, measuredAverages }:
               <p className="text-xs text-zinc-400">
                 {t("capacity.deployment.buildHint")}{" "}
                 {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-                <a href="/interno/olt#armar" className="text-zinc-200 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+                <a href="/interno/equipos-telecom/olt-huawei#armar" className="text-zinc-200 underline decoration-white/30 underline-offset-4 hover:decoration-white">
                   {t("capacity.deployment.buildLink")}
                 </a>
               </p>
@@ -399,7 +399,7 @@ export function CapacityPanel({ state, onCapacity, onStatus, measuredAverages }:
               <p className="text-sm text-zinc-300">
                 {t("capacity.deployment.linksSummary", { total: fmtRate(netCap), count: state.wans.length, mode: modeName })}{" "}
                 {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- the other internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-                <a href="/interno/routers/scripts-mikrotik#enlaces" className={LINK}>
+                <a href="/interno/equipos-telecom/scripts-mikrotik#enlaces" className={LINK}>
                   {t("capacity.deployment.linksEdit")}
                 </a>
               </p>

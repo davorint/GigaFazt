@@ -28,9 +28,8 @@ const GROUPS = [
   {
     key: "techGroup",
     links: [
-      ["/interno/routers", "routers"],
+      ["/interno/equipos-telecom", "equipos-telecom"],
       ["/interno/calculadora", "calculadora"],
-      ["/interno/olt", "olt"],
     ],
   },
 ] as const

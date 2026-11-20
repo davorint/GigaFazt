@@ -593,8 +593,8 @@
             "Pega la base conectado por la VLAN de gestión (al final limita Winbox, SSH y el acceso por MAC a esa red).",
             "Antes de comprar: confirma que cada contrato permita revender (los residenciales casi nunca) y elige el colector IPFIX y cuánto tiempo guardarlo según la ley.",
             "Protecciones de MikroTik (en el script base): descubrimiento de vecinos solo en gestión, sin btest server, proxy, SOCKS, UPnP ni DDNS de la nube.",
-            "Acceso remoto antes de irte del sitio: Back To Home funciona sin IP pública (/interno/routers/scripts-mikrotik → Scripts de experto → Acceso remoto).",
-            "Energía: router y OLT con respaldo (UPS, o −48 V con baterías; ver /interno/olt → Energía) y el watchdog de hardware del router (/interno/routers/scripts-mikrotik → Scripts de experto → Monitoreo)."
+            "Acceso remoto antes de irte del sitio: Back To Home funciona sin IP pública (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Acceso remoto).",
+            "Energía: router y OLT con respaldo (UPS, o −48 V con baterías; ver /interno/equipos-telecom/olt-huawei → Energía) y el watchdog de hardware del router (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Monitoreo)."
           ]
         },
         "p1": {
@@ -607,8 +607,8 @@
             "Netwatch por enlace: aviso en el log y limpieza de sus conexiones al caer y al volver (Varios enlaces → Colas y avisos).",
             "No des las IPs vigiladas a los clientes como DNS: cada una sale por un solo enlace.",
             "Prueba: desconecta un enlace. Su ruta se apaga en unos 20–30 s, aparece la línea en el log y las sesiones PPPoE siguen; solo cambia su IP pública.",
-            "Servicios que deben salir siempre por un carrier (la TV de tu proveedor, un banco): /interno/routers/scripts-mikrotik → Scripts de experto → Salida fija por destino.",
-            "Failover por calidad: dos IPs vigiladas por enlace, umbrales de pérdida y latencia y espera antes de regresar; LTE de último recurso si el edificio lo amerita (/interno/routers/scripts-mikrotik → Scripts de experto → Failover por calidad)."
+            "Servicios que deben salir siempre por un carrier (la TV de tu proveedor, un banco): /interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Salida fija por destino.",
+            "Failover por calidad: dos IPs vigiladas por enlace, umbrales de pérdida y latencia y espera antes de regresar; LTE de último recurso si el edificio lo amerita (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Failover por calidad)."
           ]
         },
         "p2": {
@@ -646,8 +646,8 @@
             "Seguridad en la OLT: anti-macspoofing (máximo 1 MAC por service-port), anti-ipspoofing, anti-macduplicate, anti-dos, anti-ipattack y control de tormentas del lado de los ONT.",
             "La gestión de la OLT, en su VLAN y solo desde la red de gestión.",
             "Instalación del ONT: WAN de ruta PPPoE en la VLAN de internet con la cuenta del cliente, contraseña de administrador de la empresa (no la de fábrica) y Wi-Fi propio del cliente (lista en «Alta de un ONT»).",
-            "Morosos: perfiles DSX-reducido y DSX-suspendido con página de aviso, y los comandos para suspender y reactivar (/interno/routers/scripts-mikrotik → Scripts de experto → Morosos).",
-            "Dos cables entre la OLT y el router en LACP, de preferencia en dos tarjetas de control (/interno/routers/scripts-mikrotik → Scripts de experto → Dos cables a la OLT)."
+            "Morosos: perfiles DSX-reducido y DSX-suspendido con página de aviso, y los comandos para suspender y reactivar (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Morosos).",
+            "Dos cables entre la OLT y el router en LACP, de preferencia en dos tarjetas de control (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Dos cables a la OLT)."
           ]
         },
         "p5": {
@@ -662,9 +662,9 @@
             "Abuso: sin SMTP directo y tope de {limit} conexiones por cliente.",
             "DNS: caché del router dimensionada para el despliegue, o los clientes directo a los resolutores.",
             "Avisos al celular (Telegram o correo), respaldo diario fuera del router y SNMP para graficar enlaces, CPU y sesiones.",
-            "Clientes infectados: marca y avisa a quien abre conexiones a ritmo de bot o escanea puertos (/interno/routers/scripts-mikrotik → Scripts de experto → Clientes infectados y DDoS).",
-            "DNS: listas de bloqueo, todo el DNS de los clientes por el router y planes familia (/interno/routers/scripts-mikrotik → Scripts de experto → Filtro DNS).",
-            "Filtros del lado de los clientes: anti-spoofing (BCP 38), Windows/NetBIOS, SSDP y telnet hacia internet, topes de UDP y de DNS (/interno/routers/scripts-mikrotik → Scripts de experto → Filtros TCP/UDP)."
+            "Clientes infectados: marca y avisa a quien abre conexiones a ritmo de bot o escanea puertos (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Clientes infectados y DDoS).",
+            "DNS: listas de bloqueo, todo el DNS de los clientes por el router y planes familia (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Filtro DNS).",
+            "Filtros del lado de los clientes: anti-spoofing (BCP 38), Windows/NetBIOS, SSDP y telnet hacia internet, topes de UDP y de DNS (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Filtros TCP/UDP)."
           ]
         },
         "p6": {
@@ -676,12 +676,12 @@
             "Monitoreo por SNMP (Zabbix, LibreNMS o The Dude): CPU, connection tracking, tráfico por enlace y sesiones PPPoE, con alertas de Netwatch y de connection tracking arriba del 60 %.",
             "Paquete legal: este procedimiento, la política de retención de IPFIX, dónde quedan los logs de PPPoE y cómo contestar un requerimiento (IP pública + puerto + hora → 100.64 → usuario PPPoE).",
             "Restaura un respaldo en un router de prueba al menos una vez: un respaldo que nunca se probó no cuenta.",
-            "Uso por cliente en el comentario de cada cuenta, aviso de caída masiva de sesiones y resumen diario (/interno/routers/scripts-mikrotik → Scripts de experto → Uso por cliente y Monitoreo).",
-            "Edificios grandes: router de respaldo en caliente (/interno/routers/scripts-mikrotik → Scripts de experto → Router de respaldo).",
-            "Alertas de cambios de configuración, versión nueva de RouterOS y entradas fallidas (/interno/routers/scripts-mikrotik → Scripts de experto → Alertas de operación).",
-            "Copia completa semanal con contraseñas a tu servidor y el procedimiento para cargarla en otro modelo (/interno/routers/scripts-mikrotik → Scripts de experto → Router de repuesto).",
-            "Soporte: la ficha del cliente para revisar a uno en segundos, y quitar sesiones colgadas con el reporte de clientes que se reconectan mucho (/interno/routers/scripts-mikrotik → Scripts de experto → Ficha del cliente y Sesiones colgadas y reconexiones).",
-            "Avisos antes de que falle: pool de clientes casi lleno, tabla de conexiones casi llena y puertos u ópticas SFP con menos luz, otra velocidad o calientes (/interno/routers/scripts-mikrotik → Scripts de experto → Pool de clientes, Tabla de conexiones y Puertos y ópticas SFP)."
+            "Uso por cliente en el comentario de cada cuenta, aviso de caída masiva de sesiones y resumen diario (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Uso por cliente y Monitoreo).",
+            "Edificios grandes: router de respaldo en caliente (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Router de respaldo).",
+            "Alertas de cambios de configuración, versión nueva de RouterOS y entradas fallidas (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Alertas de operación).",
+            "Copia completa semanal con contraseñas a tu servidor y el procedimiento para cargarla en otro modelo (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Router de repuesto).",
+            "Soporte: la ficha del cliente para revisar a uno en segundos, y quitar sesiones colgadas con el reporte de clientes que se reconectan mucho (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Ficha del cliente y Sesiones colgadas y reconexiones).",
+            "Avisos antes de que falle: pool de clientes casi lleno, tabla de conexiones casi llena y puertos u ópticas SFP con menos luz, otra velocidad o calientes (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Pool de clientes, Tabla de conexiones y Puertos y ópticas SFP)."
           ]
         }
       },
@@ -1005,7 +1005,7 @@
           "tooManyHomes": "Más de {max} clientes por puerto: el divisor más grande que se toma en cuenta es 1:{max}.",
           "tooManyUsers": "Más de {max} clientes: lo más que admite la {model}.",
           "noUplink": "Sin límite en el enlace de la OLT: el cálculo no lo toma en cuenta.",
-          "buildPorts": "La OLT armada en /interno/olt tiene {max} puertos {tech} y se necesitan {need}: agrega tarjetas o cámbiala."
+          "buildPorts": "La OLT armada en /interno/equipos-telecom/olt-huawei tiene {max} puertos {tech} y se necesitan {need}: agrega tarjetas o cámbiala."
         },
         "portsInUse": "Puertos PON en uso",
         "unitPorts": "puertos",
@@ -1015,11 +1015,11 @@
         "measuredUp": "Subida total medida",
         "measuredHint": "Suma lo que reciben (rx, bajada) y envían (tx, subida) las interfaces de tus carriers cerca de las 9 p. m.; mejor el promedio de 5 minutos de las gráficas del router que una sola lectura. Con esto, el promedio por cliente sale de lo medido ÷ los clientes. Vacío = se usa el promedio de abajo.",
         "measureCmd": "Lectura rápida en el router:",
-        "built": "OLT armada en /interno/olt: {ports} puertos {tech}.",
-        "builtOpen": "Abrir en /interno/olt",
+        "built": "OLT armada en /interno/equipos-telecom/olt-huawei: {ports} puertos {tech}.",
+        "builtOpen": "Abrir en /interno/equipos-telecom/olt-huawei",
         "builtRemove": "Quitar",
         "buildHint": "¿Ya sabes qué tarjetas lleva?",
-        "buildLink": "Ármala en /interno/olt y guárdala en este despliegue"
+        "buildLink": "Ármala en /interno/equipos-telecom/olt-huawei y guárdala en este despliegue"
       },
       "overLinks": "{n, plural, one {# de tus {count} enlaces recibe} other {# de tus {count} enlaces reciben}} en promedio más de lo que da (el más cargado: {offered} en {cap}): sus descargas se acumulan sin parar y los resultados de abajo no se estabilizan.",
       "overPooled": "La demanda promedio ({offered}) pasa de lo que suman los enlaces ({cap}): las descargas se acumulan sin parar y los resultados de abajo no se estabilizan.",

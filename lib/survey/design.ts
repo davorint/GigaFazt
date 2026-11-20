@@ -11,7 +11,7 @@
  * stops along the branch, in order from the base. A stop sits on a floor and has an optional tap and an optional floor
  * splitter that serves that floor and the next ones up.
  *
- * Losses: balanced PLC splitters from /interno/olt (lib/olt-kb SPLITTERS, a reseller table); unbalanced FBT taps from
+ * Losses: balanced PLC splitters from /interno/equipos-telecom/olt-huawei (lib/olt-kb SPLITTERS, a reseller table); unbalanced FBT taps from
  * the Bazis Telecom datasheet (P grade, maximum: 5/95 14.2/0.4, 10/90 11.0/0.65, 20/80 7.6/1.2, 30/70 5.7/1.9, 50/50
  * 3.4 dB) and Agiltron's (40/60 4.7/2.7), editable; fiber, connectors and splices are the same planning values as the
  * /olt calculator. The module classes and the ONT's sensitivity come from lib/olt-kb.

@@ -222,7 +222,7 @@ export function collectionStats(clients: Client[], payments: Payment[], today: s
 }
 
 /**
- * Lines for the MikroTik "Morosos" script (/interno/routers/scripts-mikrotik → Scripts de experto): "usuario,plan" for each internet
+ * Lines for the MikroTik "Morosos" script (/interno/equipos-telecom/scripts-mikrotik → Scripts de experto): "usuario,plan" for each internet
  * service with a PPPoE user of the late clients (the plan lets the script put the account back when it's paid).
  */
 export function morososLines(clients: Client[], payments: Payment[], today: string): string {

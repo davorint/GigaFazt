@@ -16,12 +16,12 @@
         "name": "Administración",
         "desc": "Despliegues con sus cuartos de telecom, clientes y solicitudes, proveedores y la lista maestra de materiales con precios."
       },
-      "routers": {
-        "name": "Routers",
-        "desc": "MikroTik: la guía paso a paso de cada despliegue y los scripts de experto (colas, varios enlaces, configuración).",
-        "kicker": "Uso interno · Routers",
-        "lead": "Todo lo de los routers MikroTik de los despliegues.",
-        "metaTitle": "Routers · GigaFazt interno",
+      "equipos-telecom": {
+        "name": "Equipos de Telecom",
+        "desc": "Routers MikroTik y OLT Huawei: la guía de cada despliegue, los scripts de experto y la base de conocimiento de la OLT.",
+        "kicker": "Uso interno · Equipos de Telecom",
+        "lead": "Todo lo de los equipos de red de los despliegues: los routers MikroTik y las OLT Huawei.",
+        "metaTitle": "Equipos de Telecom · GigaFazt interno",
         "pages": {
           "guia-mikrotik": {
             "name": "Guía MikroTik",
@@ -30,16 +30,16 @@
           "scripts-mikrotik": {
             "name": "Scripts MikroTik",
             "desc": "Parámetros, despliegues, varios enlaces, configuración, scripts de experto, exportar y varios clientes."
+          },
+          "olt-huawei": {
+            "name": "OLT Huawei",
+            "desc": "Chasis, tarjetas, energía, ventiladores, ópticas, ONTs, compatibilidad y comandos de la MA5600T y la MA5800."
           }
         }
       },
       "calculadora": {
         "name": "Calculadoras y simuladores",
         "desc": "Ráfagas, comparar planes, cola compartida, hora pico y la calculadora de ráfaga."
-      },
-      "olt": {
-        "name": "Base de conocimiento OLT Huawei",
-        "desc": "Chasis, tarjetas, energía, ventiladores, ópticas, ONTs, compatibilidad y comandos de la MA5600T y la MA5800."
       }
     },
     "open": "Abrir",

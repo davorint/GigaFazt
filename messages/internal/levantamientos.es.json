@@ -149,7 +149,7 @@
       "carrierEntry": "Por dónde entran los carriers",
       "toDuct": "Distancia al ducto de servicio",
       "notes": "Notas del cuarto",
-      "energyLink": "Para elegir UPS o −48 V con baterías: /interno/olt → Energía."
+      "energyLink": "Para elegir UPS o −48 V con baterías: /interno/equipos-telecom/olt-huawei → Energía."
     },
     "towers": {
       "add": "Agregar torre",

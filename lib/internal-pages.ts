@@ -1,21 +1,28 @@
 /**
- * Internal pages, all under /interno (owner, 2026-11-17): /interno lists the tools; /interno/routers holds the MikroTik
- * guide of a deployment (guia-mikrotik) and the expert scripts (scripts-mikrotik) (owner, 2026-11-20; the old
- * /interno/mikrotik-optimo and /interno/mikrotik redirect there), /interno/admin the providers and the master materials list, /interno/calculadora the calculators
- * and simulators, /interno/olt the Huawei OLT knowledge base. Behind a password (lib/internal-auth.ts; the sign-in
+ * Internal pages, all under /interno (owner, 2026-11-17): /interno lists the tools; /interno/equipos-telecom holds the
+ * MikroTik guide of a deployment (guia-mikrotik), the expert scripts (scripts-mikrotik) and the Huawei OLT knowledge base
+ * (olt-huawei) (owner, 2026-11-20; the old /interno/mikrotik-optimo, /interno/mikrotik, /interno/olt and /interno/routers
+ * redirect there), /interno/admin the providers and the master materials list, /interno/calculadora the calculators
+ * and simulators. Behind a password (lib/internal-auth.ts; the sign-in
  * page /interno/entrar is the only one open), never linked from the public site, not in the sitemap and noindex. The
  * old addresses (/mikrotik, /olt…) no longer exist. Served from the Spanish route; any capitalization
  * (/INTERNO/MikroTik, /ES/interno/OLT) maps to the lowercase route.
  */
 
 export const INTERNAL_ROOT = "interno"
-export const INTERNAL_PAGES = ["levantamientos", "admin", "routers", "calculadora", "olt"] as const
-/** The router pages (/interno/routers/<page>). */
-export const ROUTER_PAGES = ["guia-mikrotik", "scripts-mikrotik"] as const
-/** Other spellings of a router page. */
-const ROUTER_ALIASES: Record<string, (typeof ROUTER_PAGES)[number]> = { guia: "guia-mikrotik", guide: "guia-mikrotik", scripts: "scripts-mikrotik", mikrotik: "scripts-mikrotik" }
-/** Addresses that moved: they redirect to the new one (bookmarks, old links). */
-const MOVED: Record<string, string> = { "mikrotik-optimo": "routers/guia-mikrotik", "mikrotik-optimal": "routers/guia-mikrotik", mikrotik: "routers/scripts-mikrotik" }
+export const INTERNAL_PAGES = ["levantamientos", "admin", "equipos-telecom", "calculadora"] as const
+/** The network equipment pages (/interno/equipos-telecom/<page>). */
+export const TELECOM_PAGES = ["guia-mikrotik", "scripts-mikrotik", "olt-huawei"] as const
+/** Other spellings of a network equipment page. */
+const TELECOM_ALIASES: Record<string, (typeof TELECOM_PAGES)[number]> = { guia: "guia-mikrotik", guide: "guia-mikrotik", scripts: "scripts-mikrotik", mikrotik: "scripts-mikrotik", olt: "olt-huawei", huawei: "olt-huawei" }
+/** Addresses that moved: they redirect to the new one, keeping what follows (bookmarks, old links, shared OLT builds). */
+const MOVED: Record<string, string> = {
+  "mikrotik-optimo": "equipos-telecom/guia-mikrotik",
+  "mikrotik-optimal": "equipos-telecom/guia-mikrotik",
+  mikrotik: "equipos-telecom/scripts-mikrotik",
+  olt: "equipos-telecom/olt-huawei",
+  routers: "equipos-telecom",
+}
 /** The admin area's pages (/interno/admin/<page>). */
 export const ADMIN_PAGES = ["notas", "despliegues", "clientes", "reportes_clientes", "herramientas", "compras-herramientas", "proveedores", "materiales", "compras-materiales", "agenda", "numeros", "equipo", "cuentas-por-pagar", "cuentas-por-cobrar", "acuerdos"] as const
 /** Other spellings of an admin page. */
@@ -24,7 +31,7 @@ const ADMIN_ALIASES: Record<string, (typeof ADMIN_PAGES)[number]> = { notes: "no
 export const LOGIN_PAGE = "entrar"
 export const LOGIN_PATH = `/${INTERNAL_ROOT}/${LOGIN_PAGE}`
 /** Other spellings that open an internal page. */
-const ALIASES: Record<string, (typeof INTERNAL_PAGES)[number]> = { router: "routers", mikrotiks: "routers" }
+const ALIASES: Record<string, (typeof INTERNAL_PAGES)[number]> = { equipos: "equipos-telecom", telecom: "equipos-telecom", "equipos-de-telecom": "equipos-telecom" }
 const KNOWN = new Map<string, string>([...INTERNAL_PAGES.map((p): [string, string] => [p, p]), [LOGIN_PAGE, LOGIN_PAGE], ...Object.entries(ALIASES)])
 
 export type InternalMatch = {
@@ -37,8 +44,8 @@ export type InternalMatch = {
 }
 
 /**
- * Matches /interno and everything under it, its RSC/segment variants (/interno.rsc, /interno/olt.rsc…) and the
- * locale-prefixed route it is served from (/es/interno/olt), in any case.
+ * Matches /interno and everything under it, its RSC/segment variants (/interno.rsc, /interno/calculadora.rsc…) and the
+ * locale-prefixed route it is served from (/es/interno/calculadora), in any case.
  */
 export function matchInternal(pathname: string): InternalMatch | null {
   const root = new RegExp(`^/${INTERNAL_ROOT}(?=$|[/.])(.*)$`, "i").exec(pathname)
@@ -59,10 +66,10 @@ export function matchInternal(pathname: string): InternalMatch | null {
     const known = sub2 && ((ADMIN_PAGES as readonly string[]).find((p) => p === name) ?? ADMIN_ALIASES[name])
     if (sub2 && known) after = `/${known}${sub2[2]}`
   }
-  if (page === "routers") {
+  if (page === "equipos-telecom") {
     const sub2 = /^\/([^/.]+)(.*)$/.exec(after)
     const name = sub2?.[1].toLowerCase() ?? ""
-    const known = sub2 && ((ROUTER_PAGES as readonly string[]).find((p) => p === name) ?? ROUTER_ALIASES[name])
+    const known = sub2 && ((TELECOM_PAGES as readonly string[]).find((p) => p === name) ?? TELECOM_ALIASES[name])
     if (sub2 && known) after = `/${known}${sub2[2]}`
   }
   const tail = sub ? (page ? `/${page}${after}` : rest) : rest

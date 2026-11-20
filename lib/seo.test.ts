@@ -20,7 +20,7 @@ describe("indexing: public pages in, /interno out", () => {
   })
   it("every /interno URL, in any spelling, gets the noindex header", () => {
     expect(INTERNAL_HEADERS["X-Robots-Tag"]).toMatch(/noindex/)
-    for (const p of ["/interno", "/en/interno", "/INTERNO/Admin/Proveedores", "/es/interno/entrar", "/interno/olt"]) {
+    for (const p of ["/interno", "/en/interno", "/INTERNO/Admin/Proveedores", "/es/interno/entrar", "/interno/equipos-telecom/olt-huawei"]) {
       expect(matchInternal(p), p).not.toBeNull()
     }
   })

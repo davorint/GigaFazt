@@ -338,7 +338,7 @@
       },
       "morosos": {
         "title": "Usuarios para cortar en el MikroTik",
-        "hint": "Los usuarios PPPoE de los clientes atrasados, en el formato que pide /interno/routers/scripts-mikrotik → Scripts de experto → Morosos (usuario,plan por línea). Cortar sigue siendo a mano: revisa la lista antes de pegarla.",
+        "hint": "Los usuarios PPPoE de los clientes atrasados, en el formato que pide /interno/equipos-telecom/scripts-mikrotik → Scripts de experto → Morosos (usuario,plan por línea). Cortar sigue siendo a mano: revisa la lista antes de pegarla.",
         "copy": "Copiar la lista",
         "copied": "{n, plural, one {# usuario copiado} other {# usuarios copiados}}.",
         "copyFailed": "No se pudo copiar: selecciona el texto y cópialo.",

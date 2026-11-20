@@ -17,7 +17,7 @@ const handleI18n = createMiddleware(routing)
 async function handleInternal(request: NextRequest, match: InternalMatch): Promise<NextResponse> {
   let res: NextResponse
   if (match.redirectTo) {
-    // A page that moved (/interno/mikrotik → /interno/routers/scripts-mikrotik): the sign-in check runs on the new address.
+    // A page that moved (/interno/olt → /interno/equipos-telecom/olt-huawei): the sign-in check runs on the new address.
     res = NextResponse.redirect(new URL(`${match.redirectTo}${request.nextUrl.search}`, request.url), 308)
   } else if (!match.open && !(await cookieOk(request.cookies.get(AUTH_COOKIE)?.value))) {
     const to = new URL(LOGIN_PATH, request.url)
