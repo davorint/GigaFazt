@@ -74,13 +74,14 @@ function Users({ name }: { name: string }) {
   const [text, setText] = useState("")
   const parsed = useMemo(() => parseBulk(text, "pppoe", d.plans.map((p) => ({ id: p.name, mbps: p.mbps }))), [text, d.plans])
   const rows = parsed.rows.filter((r) => r.password).map((r) => ({ user: r.id, password: r.password ?? "", mbps: r.planMbps }))
-  const { block, unplaced } = usersBlock(d, rows)
+  const { block, unplaced, badPassword } = usersBlock(d, rows)
   return (
     <div className="grid gap-3">
       <p className="text-sm text-zinc-300">{t("usersWhat")}</p>
       <AreaField label={t("usersList")} value={text} onChange={setText} rows={6} hint={t("usersHint")} />
       {parsed.errors.length > 0 && <p className="text-sm text-amber-200">{t("usersErrors", { n: parsed.errors.length, lines: parsed.errors.slice(0, 8).map((e) => e.line).join(", ") })}</p>}
       {unplaced.length > 0 && <p className="text-sm text-amber-200">{t("usersUnplaced", { users: unplaced.slice(0, 10).join(", ") })}</p>}
+      {badPassword.length > 0 && <p className="text-sm text-amber-200">{t("usersBadPassword", { users: badPassword.slice(0, 10).join(", ") })}</p>}
       {rows.length > 0 && <AsterCode block={block} title={t("tabs.users")} file={`asternos-${name}-usuarios.txt`} />}
     </div>
   )

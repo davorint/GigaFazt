@@ -110,8 +110,20 @@ export function poolHosts(cidr: string): { gateway: string; first: string; last:
   return { gateway: str(net + 1), first: hosts[0], last: hosts[hosts.length - 1], hosts, prefix, mask: str(maskN) }
 }
 
-/** ACL rule ids go 0–500 per table (AsterNOS ACL reference): a plan's pool can't have more clients than that. */
+/** ACL rule ids go 0–500 per table (AsterNOS ACL reference); a higher id is a higher priority. */
 export const MAX_RULES = 500
+/** The client filters (Windows file sharing, NetBIOS): denied at the top of each plan's upload table. */
+const FILTERS: [number, number][] = [
+  [6, 135],
+  [6, 139],
+  [6, 445],
+  [17, 137],
+  [17, 138],
+]
+/** Rules left for addresses below the filters: a plan's pool can't have more clients than this. */
+export const MAX_HOSTS = MAX_RULES - FILTERS.length
+/** A PPPoE password the AsterNOS command line takes as one word (no spaces or quotes). */
+export const okPassword = (p: string) => p.length > 0 && !/[\s"']/.test(p)
 
 export type DeploymentIssue =
   | { code: "plans" }
@@ -122,6 +134,8 @@ export type DeploymentIssue =
   | { code: "carriers" }
   | { code: "carrierStatic"; carrier: string }
   | { code: "balanceGateway"; carrier: string }
+  | { code: "dhcpNat"; carrier: string }
+  | { code: "sameSpeed"; plan: string }
   | { code: "olt" }
 
 /** What would make the generated configuration wrong or incomplete. */
@@ -133,7 +147,9 @@ export function deploymentIssues(d: AsterDeployment): DeploymentIssue[] {
   for (const p of d.plans) {
     const h = poolHosts(p.pool)
     if (!h) out.push({ code: "pool", plan: p.name })
-    else if (h.hosts.length > MAX_RULES) out.push({ code: "poolSize", plan: p.name, n: h.hosts.length })
+    else if (h.hosts.length > MAX_HOSTS) out.push({ code: "poolSize", plan: p.name, n: h.hosts.length })
+    // PPPoE users are placed by plan speed: a second plan at the same speed would never get any.
+    if (d.plans.find((x) => x.mbps === p.mbps) !== p) out.push({ code: "sameSpeed", plan: p.name })
     if (!(p.vlan >= 2 && p.vlan <= 4094) || vlans.has(p.vlan)) out.push({ code: "vlan", plan: p.name })
     vlans.add(p.vlan)
   }
@@ -142,6 +158,8 @@ export function deploymentIssues(d: AsterDeployment): DeploymentIssue[] {
     if (c.mode === "static" && (!c.address || !c.gateway)) out.push({ code: "carrierStatic", carrier: c.name })
     // Balancing and failover checks send traffic to each carrier's gateway: a DHCP carrier's isn't known in advance.
     if (c.mode === "dhcp" && d.carriers.length > 1) out.push({ code: "balanceGateway", carrier: c.name })
+    // NAT is a pool with the carrier's address: by DHCP it isn't known when the configuration is written.
+    if (c.mode === "dhcp") out.push({ code: "dhcpNat", carrier: c.name })
   }
   if (!d.oltPorts.length) out.push({ code: "olt" })
   return out
@@ -210,11 +228,9 @@ export function carriersBlock(d: AsterDeployment): Block {
     }
   })
   const gws = d.carriers.filter((c) => c.mode === "static" && c.gateway)
-  if (gws.length === 1 || d.wanMode === "failover") {
-    // Failover: one default route per carrier, the first preferred (lower distance).
-    // With several, the first preferred (distance; its exact position in the command is to verify).
-    gws.forEach((c, i) => lines.push(gws.length > 1 ? `ip route 0.0.0.0/0 ${c.gateway} ${(i + 1) * 10}` : `ip route 0.0.0.0/0 ${c.gateway}`))
-  }
+  // A default route per carrier in both modes: the device's own traffic (NTP, DNS, management) and the failover checks
+  // need them. With several, the first preferred (distance; its exact position in the command is to verify).
+  gws.forEach((c, i) => lines.push(gws.length > 1 ? `ip route 0.0.0.0/0 ${c.gateway} ${(i + 1) * 10}` : `ip route 0.0.0.0/0 ${c.gateway}`))
   if (d.wanMode === "balance" && gws.length > 1) {
     lines.push("nexthop-group CARRIERS")
     for (const c of gws) lines.push(`nexthop ${c.gateway}`)
@@ -239,19 +255,18 @@ export function failoverBlock(d: AsterDeployment): Block {
   return { id: "failover", code: lines.join("\n"), docs: ["sla", "track"], verify: true }
 }
 
-/** 6. Basic client filters (same idea as the MikroTik's): Windows file sharing and NetBIOS never leave to the internet. */
+/**
+ * 6. Basic client filters (same idea as the MikroTik's): Windows file sharing and NetBIOS never leave to the internet.
+ * They go at the top (highest ids) of each plan's upload table, the one table bound on the plan's VLAN, instead of a
+ * second table whose order against it the docs don't define. The plans step binds the table.
+ */
 export function filtersBlock(d: AsterDeployment): Block {
-  const lines = ["configure terminal", "access-list L3 FILTRO-CLIENTES ingress"]
-  const ports: [number, number][] = [
-    [6, 135],
-    [6, 139],
-    [6, 445],
-    [17, 137],
-    [17, 138],
-  ]
-  ports.forEach(([proto, port], k) => lines.push(`rule ${500 - k} ip-protocol ${proto} dst-port ${port} packet-action deny`))
-  lines.push("exit")
-  for (const p of d.plans) lines.push(`interface ${vlanIface(d, p)}`, "acl FILTRO-CLIENTES priority 100", "exit")
+  const lines = ["configure terminal"]
+  d.plans.forEach((p, i) => {
+    lines.push(`access-list L3 UL-${planTag(p, i)} ingress`)
+    FILTERS.forEach(([proto, port], k) => lines.push(`rule ${MAX_RULES - k} ip-protocol ${proto} dst-port ${port} packet-action deny`))
+    lines.push("exit")
+  })
   lines.push("end", "write")
   return { id: "filters", code: lines.join("\n"), docs: ["acl"], verify: true }
 }
@@ -275,7 +290,7 @@ export function plansBlock(d: AsterDeployment, only?: number): Block {
     const h = poolHosts(plan.pool)
     if (!h) return
     const tag = planTag(plan, i)
-    const hosts = h.hosts.slice(0, MAX_RULES)
+    const hosts = h.hosts.slice(0, MAX_HOSTS)
     lines.push(`! ── Plan ${plan.name} (${plan.mbps}M): ${hosts.length} direcciones de ${plan.pool}`)
     for (const dir of ["DL", "UL"] as const) {
       // One CAR template (traffic behavior) per address and direction: each is its own policer with its own buckets.
@@ -308,7 +323,8 @@ export function plansBlock(d: AsterDeployment, only?: number): Block {
       hosts.forEach((ip, k) => {
         const name = `${dir}${tag}_${lastOctets(ip)}`
         const match = dir === "DL" ? `dst-ip ${ip}/32` : `src-ip ${ip}/32`
-        lines.push(`rule ${MAX_RULES - k} ${match} packet-action permit traffic-behavior ${name}${twoStage ? ` set-hqos-user U${name}` : ""}`)
+        // Below the filters (ids MAX_RULES… taken by them in the upload table).
+        lines.push(`rule ${MAX_HOSTS - k} ${match} packet-action permit traffic-behavior ${name}${twoStage ? ` set-hqos-user U${name}` : ""}`)
       })
       lines.push("exit")
     }
@@ -331,19 +347,22 @@ export function plansBlock(d: AsterDeployment, only?: number): Block {
 }
 
 /** 8. PPPoE users (local, on the device) for each plan's server, from the pasted list. */
-export function usersBlock(d: AsterDeployment, rows: { user: string; password: string; mbps: number }[]): { block: Block; unplaced: string[] } {
+export function usersBlock(d: AsterDeployment, rows: { user: string; password: string; mbps: number }[]): { block: Block; unplaced: string[]; badPassword: string[] } {
   const lines = ["configure terminal"]
   const unplaced: string[] = []
+  const badPassword: string[] = []
+  const good = rows.filter((r) => (okPassword(r.password) ? true : (badPassword.push(r.user), false)))
   d.plans.forEach((p, i) => {
-    const mine = rows.filter((r) => r.mbps === p.mbps && d.plans.findIndex((x) => x.mbps === r.mbps) === i)
+    if (d.plans.findIndex((x) => x.mbps === p.mbps) !== i) return
+    const mine = good.filter((r) => r.mbps === p.mbps)
     if (!mine.length) return
     lines.push(`interface pppoe-server ${i}`)
     for (const r of mine) lines.push(`ppp chap username ${r.user} ${r.password}`)
     lines.push("exit")
   })
-  for (const r of rows) if (!d.plans.some((p) => p.mbps === r.mbps)) unplaced.push(r.user)
+  for (const r of good) if (!d.plans.some((p) => p.mbps === r.mbps)) unplaced.push(r.user)
   lines.push("end", "write")
-  return { block: { id: "users", code: lines.join("\n"), docs: ["pppoeServer", "pppoeGuide"], verify: false }, unplaced }
+  return { block: { id: "users", code: lines.join("\n"), docs: ["pppoeServer", "pppoeGuide"], verify: false }, unplaced, badPassword }
 }
 
 /** Checks after installing (all documented show commands). */

@@ -111,12 +111,14 @@
         "plans": "Agrega al menos un plan.",
         "tooManyPlans": "AsterNOS tiene 8 servidores PPPoE (0 a 7): máximo 8 planes.",
         "pool": "El rango de «{plan}» no es válido: escríbelo como 100.64.1.0/24 (de /20 a /30).",
-        "poolSize": "El rango de «{plan}» tiene {n} direcciones y cada lista de reglas admite 500: usa uno más chico (un /24 tiene 253).",
+        "poolSize": "El rango de «{plan}» tiene {n} direcciones y caben 495 por plan (cada lista de reglas admite 500 y 5 son de los filtros): usa uno más chico (un /24 tiene 253).",
         "vlan": "La VLAN de «{plan}» falta, está fuera de 2 a 4094 o se repite.",
         "carriers": "Agrega al menos un carrier.",
         "carrierStatic": "Al carrier «{carrier}» le falta la IP o el gateway.",
         "balanceGateway": "«{carrier}» recibe la IP por DHCP: para repartir o revisar el carrier hace falta su gateway; con varios carriers usa IP fija.",
-        "olt": "Escribe el puerto (o puertos) hacia la OLT."
+        "olt": "Escribe el puerto (o puertos) hacia la OLT.",
+        "dhcpNat": "«{carrier}» recibe la IP por DHCP: el NAT de AsterNOS se configura con la IP del carrier, que así no se conoce de antemano. Usa IP fija o agrega el NAT a mano con la IP que reciba.",
+        "sameSpeed": "«{plan}» tiene la misma velocidad que otro plan: los usuarios se asignan por velocidad y este no recibiría ninguno. Usa velocidades distintas."
       }
     },
     "guide": {
@@ -153,7 +155,7 @@
         },
         "filters": {
           "title": "Filtros para los clientes",
-          "what": "Lo mismo que en el MikroTik: el tráfico de Windows y NetBIOS de los clientes no sale a internet."
+          "what": "Lo mismo que en el MikroTik: el tráfico de Windows y NetBIOS de los clientes no sale a internet. Van al principio de la lista de reglas de subida de cada plan, que se activa en el paso de planes."
         },
         "plans": {
           "title": "Planes con ráfaga",
@@ -206,7 +208,8 @@
       "carriersWhat": "Las IPs de los carriers, el NAT de salida y el reparto o el orden de respaldo.",
       "failover": "Revisión de carriers",
       "failoverWhat": "La revisión por ping de cada carrier (SLA) y las rutas que salen si deja de responder (track).",
-      "checksWhat": "Comandos para revisar el equipo después de instalar: versión y licencia, puertos, sesiones PPPoE, NAT, carriers, limitadores y uso del CPU."
+      "checksWhat": "Comandos para revisar el equipo después de instalar: versión y licencia, puertos, sesiones PPPoE, NAT, carriers, limitadores y uso del CPU.",
+      "usersBadPassword": "Contraseña con espacios o comillas (AsterNOS la tomaría como varias palabras), no se escribió: {users}."
     }
   }
 }

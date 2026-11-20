@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { planDefaults, RULES } from "../mikrotik/burst"
 import { asterBurst, carKBps, compare, hqosBps, MAX_BUCKET } from "./burst"
-import { accessBlock, carriersBlock, deploymentIssues, plansBlock, poolHosts, pppoeBlock, usersBlock, type AsterDeployment } from "./config"
+import { accessBlock, carriersBlock, deploymentIssues, filtersBlock, plansBlock, poolHosts, pppoeBlock, usersBlock, type AsterDeployment } from "./config"
 
 const deployment = (p: Partial<AsterDeployment> = {}): AsterDeployment => ({
   hostname: "Los Pinos",
@@ -73,8 +73,8 @@ describe("AsterNOS configuration", () => {
     expect(code).toContain("traffic behavior DL200M0_1_2")
     expect(code).toMatch(/car tr-tcm cir \d+ cbs \d+ pir 25000 pbs \d+ yellow-packet-action REMARK red-packet-action REMARK remark-tc 1/)
     expect(code).toContain("tc-queue 1 mode strict shaping pir 5000000")
-    expect(code).toContain("rule 500 dst-ip 100.64.1.2/32 packet-action permit traffic-behavior DL200M0_1_2 set-hqos-user UDL200M0_1_2")
-    expect(code).toContain("rule 500 src-ip 100.64.1.2/32")
+    expect(code).toContain("rule 495 dst-ip 100.64.1.2/32 packet-action permit traffic-behavior DL200M0_1_2 set-hqos-user UDL200M0_1_2")
+    expect(code).toContain("rule 495 src-ip 100.64.1.2/32")
     expect(code).toContain("interface ethernet 5\nacl DL-200M0 priority 200")
     expect(code).toContain("interface sub-ethernet 1.200\nacl UL-200M0 priority 200")
     expect(code.match(/^traffic behavior /gm)).toHaveLength(253 * 2)
@@ -104,5 +104,25 @@ describe("AsterNOS configuration", () => {
     expect(r.block.code).toContain("interface pppoe-server 1\nppp chap username beto x2")
     expect(r.unplaced).toEqual(["carla"])
     expect(accessBlock(deployment()).code).toContain("hostname LosPinos")
+  })
+  it("review 2026-11-20: filters at the top of each plan's upload table, routes when balancing, NAT and speed warnings, bad passwords", () => {
+    const f = filtersBlock(deployment()).code
+    expect(f).toContain("access-list L3 UL-200M0 ingress\nrule 500 ip-protocol 6 dst-port 135 packet-action deny")
+    expect(f).not.toContain("FILTRO")
+    const balance = carriersBlock(deployment()).code
+    expect(balance).toContain("ip route 0.0.0.0/0 200.1.1.1 10\nip route 0.0.0.0/0 201.2.2.1 20")
+    expect(balance).toContain("nexthop-group CARRIERS")
+    const dhcp = deployment({ carriers: [{ name: "Izzi", port: 5, mode: "dhcp", address: "", gateway: "", mbps: 500 }] })
+    expect(deploymentIssues(dhcp).map((i) => i.code)).toEqual(["dhcpNat"])
+    const same = deployment({ plans: [...deployment().plans, { name: "Empresa 200", mbps: 200, vlan: 300, pool: "100.64.9.0/24" }] })
+    expect(deploymentIssues(same)).toContainEqual({ code: "sameSpeed", plan: "Empresa 200" })
+    const r = usersBlock(deployment(), [
+      { user: "ana", password: "con espacio", mbps: 200 },
+      { user: "beto", password: 'com"illa', mbps: 200 },
+      { user: "carla", password: "bien123", mbps: 200 },
+    ])
+    expect(r.badPassword).toEqual(["ana", "beto"])
+    expect(r.block.code).toContain("ppp chap username carla bien123")
+    expect(r.block.code).not.toContain("ana")
   })
 })
