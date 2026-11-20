@@ -64,7 +64,8 @@
       "leftHint": "Mueve el inventario a la bodega antes (Materiales → Existencias); si lo borras, lo que quede ahí aparece como «Despliegue borrado» y se puede sacar desde ahí.",
       "linksHint": "Lo que pagamos por los carriers de sus cuartos.",
       "linksMissing": "{n, plural, one {# carrier sin precio (cuenta como 0)} other {# carriers sin precio (cuentan como 0)}}.",
-      "profitHint": "Ingreso − edificio − enlaces. No incluye equipo ni mano de obra."
+      "profitHint": "Ingreso − edificio − enlaces. No incluye equipo ni mano de obra.",
+      "state": "Estado"
     },
     "towers": {
       "intro": "Las torres de la ubicación y qué cuarto de telecom atiende a cada una.",

@@ -1,0 +1,11 @@
+{
+  "places": {
+    "state": "Estado",
+    "stateName": "Escribe el estado",
+    "otherState": "Otro estado…",
+    "municipality": "Alcaldía o municipio",
+    "municipalityName": "Escribe la alcaldía o municipio",
+    "otherMunicipality": "Otro…",
+    "none": "Sin elegir"
+  }
+}

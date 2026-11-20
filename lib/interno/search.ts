@@ -73,7 +73,7 @@ export function searchAll(d: SearchData, q: string, limitPerKind = 8): Hit[] {
   add(
     "sites",
     d.sites,
-    (s) => [s.name, s.address, s.municipality, ...s.rooms.flatMap((r) => [r.name, ...r.equipment.flatMap((e) => [e.model, e.serial, e.ip])])].join(" "),
+    (s) => [s.name, s.address, s.municipality, s.state, ...s.rooms.flatMap((r) => [r.name, ...r.equipment.flatMap((e) => [e.model, e.serial, e.ip])])].join(" "),
     (s) => ({ id: s.id, label: siteLabel(s), detail: [s.address, s.municipality].filter(Boolean).join(" · "), href: `${A}/despliegues?d=${s.id}` })
   )
   add(

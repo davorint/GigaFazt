@@ -1,6 +1,6 @@
 "use client"
 
-import { PlaceFields } from "./PlaceFields"
+import { PlaceFields } from "@/components/interno/PlaceFields"
 import { useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import { NumberField } from "@/components/mikrotik/NumberField"

@@ -1,5 +1,6 @@
 "use client"
 
+import { PlaceFields } from "@/components/interno/PlaceFields"
 import { useEffect, useRef, useSyncExternalStore, type MouseEvent, type ReactNode } from "react"
 import { useTranslations } from "next-intl"
 import { NumberField } from "@/components/mikrotik/NumberField"
@@ -91,11 +92,11 @@ function SiteList({ t, list, clients }: { t: T; list: Site[]; clients: Client[] 
     .filter(
       (s) =>
         !needle ||
-        fold([s.name, s.address, s.municipality, ...s.rooms.flatMap((r) => [...r.equipment.flatMap((e) => [e.model, e.serial, e.ip]), ...r.carriers.flatMap((c) => [c.name, c.ip, c.account])])].join(" ")).includes(needle)
+        fold([s.name, s.address, s.municipality, s.state, ...s.rooms.flatMap((r) => [...r.equipment.flatMap((e) => [e.model, e.serial, e.ip]), ...r.carriers.flatMap((c) => [c.name, c.ip, c.account])])].join(" ")).includes(needle)
     )
     .sort((a, b) => siteLabel(a).localeCompare(siteLabel(b), "es"))
   const add = (v: Record<string, string>) => {
-    const s = newSite({ name: v.name, address: v.address, municipality: v.municipality })
+    const s = newSite({ name: v.name, address: v.address })
     saveSite(s)
     go(`?d=${s.id}`)
   }
@@ -107,7 +108,6 @@ function SiteList({ t, list, clients }: { t: T; list: Site[]; clients: Client[] 
         fields={[
           { key: "name", label: t("general.name"), required: true, placeholder: t("list.addNamePlaceholder") },
           { key: "address", label: t("general.address") },
-          { key: "municipality", label: t("general.municipality") },
         ]}
         onAdd={add}
       />
@@ -117,12 +117,12 @@ function SiteList({ t, list, clients }: { t: T; list: Site[]; clients: Client[] 
         disabled={!list.length}
         build={() =>
           toCsv(
-            [t("general.name"), t("general.address"), t("general.municipality"), t("general.tiles.towers"), t("general.tiles.apartments"), t("general.tiles.rooms"), t("general.tiles.clients"), t("general.tiles.active"), t("list.csvMonthly"), t("general.notes")],
+            [t("general.name"), t("general.address"), t("general.municipality"), t("general.state"), t("general.tiles.towers"), t("general.tiles.apartments"), t("general.tiles.rooms"), t("general.tiles.clients"), t("general.tiles.active"), t("list.csvMonthly"), t("general.notes")],
             [...list]
               .sort((x, y) => siteLabel(x).localeCompare(siteLabel(y), "es"))
               .map((x) => {
                 const st = siteStats(x, clients)
-                return [x.name, x.address, x.municipality, x.towers.length, x.towers.reduce((n, w) => n + (w.apartments ?? 0), 0) || null, x.rooms.length, st.clients, st.active, st.monthly || null, x.notes]
+                return [x.name, x.address, x.municipality, x.state, x.towers.length, x.towers.reduce((n, w) => n + (w.apartments ?? 0), 0) || null, x.rooms.length, st.clients, st.active, st.monthly || null, x.notes]
               })
           )
         }
@@ -273,8 +273,8 @@ function General({ t, s, up, stats }: { t: T; s: Site; up: Up; stats: SiteStats 
       <div className={GRID}>
         <TextField label={t("general.name")} value={s.name} onChange={(v) => up({ name: v })} hint={t("general.nameHint")} />
         <TextField label={t("general.address")} value={s.address} onChange={(v) => up({ address: v })} />
-        <TextField label={t("general.municipality")} value={s.municipality} onChange={(v) => up({ municipality: v })} />
       </div>
+      <PlaceFields state={s.state} municipality={s.municipality} onChange={(p) => up(p)} />
       <AreaField label={t("general.notes")} value={s.notes} onChange={(v) => up({ notes: v })} />
       <AtSite t={t} s={s} />
       <RecordHistory kind="sites" id={s.id} />

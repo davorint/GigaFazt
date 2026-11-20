@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 import { SyncBar } from "@/components/interno/SyncBar"
 import { DeletedList } from "@/components/interno/RecordHistory"
 import syncCopy from "@/messages/internal/sync.es.json"
+import places from "@/messages/internal/places.es.json"
 import { AdminLinks } from "@/components/interno/AdminLinks"
 import { SurveysApp } from "@/components/surveys/SurveysApp"
 import copy from "@/messages/internal/levantamientos.es.json"
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
 }
 
 /** The number field shared with the MikroTik tools reads its "invalid" message from there. */
-const messages = { ...copy, ...syncCopy, ...materiales, mikrotik: { params: { invalid: mikrotik.mikrotik.params.invalid } } }
+const messages = { ...copy, ...syncCopy, ...places, ...materiales, mikrotik: { params: { invalid: mikrotik.mikrotik.params.invalid } } }
 
 export default async function LevantamientosPage({ params }: PageProps<"/[locale]/interno/levantamientos">) {
   const { locale } = await params

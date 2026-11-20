@@ -116,3 +116,14 @@ describe("cancel reasons and agreements on Hoy (owner, 2026-11-19)", () => {
     expect(allClear(s)).toBe(false)
   })
 })
+
+describe("deployment state and municipality menus (owner, 2026-11-20)", () => {
+  it("keeps the state; older deployments get it from a listed municipality, typed ones stay as written", async () => {
+    const { decodeSite, newSite } = await import("./model")
+    const old = JSON.parse(JSON.stringify(newSite({ municipality: "Naucalpan de Juárez" })))
+    delete old.state
+    expect(decodeSite(old)!.state).toBe("Estado de México")
+    expect(decodeSite({ ...old, municipality: "Metepec" })!.state).toBe("")
+    expect(decodeSite({ ...old, state: "Querétaro", municipality: "El Marqués" })).toMatchObject({ state: "Querétaro", municipality: "El Marqués" })
+  })
+})

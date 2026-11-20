@@ -15,6 +15,7 @@
  * Synced through the database like the surveys (kind "sites"). `decodeSite` reads stored or synced values field by
  * field and never throws.
  */
+import { stateOf } from "../survey/places"
 import { newId } from "../survey/id"
 
 export const EQUIPMENT_KINDS = ["router", "olt", "switch", "ups", "otro"] as const
@@ -89,6 +90,8 @@ export type Site = {
   name: string
   address: string
   municipality: string
+  /** Its state (lib/survey/places menus, or typed in). */
+  state: string
   towers: Tower[]
   /** The building's administration: a client of type Administración ("" = none). */
   adminClientId: string
@@ -138,6 +141,7 @@ export function newSite(p: Partial<Site> = {}): Site {
     name: "",
     address: "",
     municipality: "",
+    state: "",
     towers: [],
     adminClientId: "",
     contacts: [],
@@ -220,6 +224,8 @@ export function decodeSite(v: unknown): Site | null {
     name: str(v.name, 200),
     address: str(v.address, 300),
     municipality: str(v.municipality, 120),
+    // Deployments from before the menus (2026-11-20): a listed municipality fills its state.
+    state: str(v.state, 80) || stateOf(str(v.municipality, 120)),
     towers,
     adminClientId: ref(v.adminClientId),
     contacts: list(v.contacts, decodeContact, 30),

@@ -3,17 +3,17 @@
 import { useState } from "react"
 import { useTranslations } from "next-intl"
 import { TextField } from "@/components/mikrotik/TextField"
-import { GRID, PickField } from "./SurveyFields"
+import { GRID, PickField } from "@/components/surveys/SurveyFields"
 import { STATES, isKnownState, municipalitiesOf, stateOf } from "@/lib/survey/places"
 
 const OTHER = "__otro"
 
 /**
- * State and alcaldía / municipio as menus (owner, 2026-11-20), each with "Otro" to type one that isn't listed. Picking a
+ * State and alcaldía / municipio as menus (owner, 2026-11-20; surveys and deployments), each with "Otro" to type one that isn't listed. Picking a
  * listed municipality with no state chosen fills the state; changing the state clears a municipality that isn't its.
  */
 export function PlaceFields({ state, municipality, onChange }: { state: string; municipality: string; onChange: (p: { state: string; municipality: string }) => void }) {
-  const t = useTranslations("levantamientos.ident")
+  const t = useTranslations("places")
   // "Otro" chosen but nothing typed yet: kept here so the text box stays open.
   const [otherState, setOtherState] = useState(!!state && !isKnownState(state))
   const [otherMuni, setOtherMuni] = useState(false)
