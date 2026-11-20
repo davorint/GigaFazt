@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import { SECTIONS, completeness, newSurvey, readSurveyFile, surveyFile, surveyFileItems, type Section, type Survey } from "@/lib/survey/model"
 import { useDropUntouched } from "@/components/interno/useDropUntouched"
+import { markFresh } from "@/lib/fresh"
 import { QuickAdd } from "@/components/interno/QuickAdd"
 import { RecordHistory } from "@/components/interno/RecordHistory"
 import { readState } from "@/lib/sync/state"
@@ -105,6 +106,19 @@ export function SurveysApp() {
   const catalog = useSyncExternalStore(subscribeCatalog, catalogSnapshot, catalogServerSnapshot)
   const search = useSyncExternalStore(subscribeUrl, readSearch, () => "")
   useDropUntouched(new URLSearchParams(search).get("l"), surveyList, deleteSurvey)
+  // "Nuevo levantamiento" in Despliegues opens ?nuevo=1: the survey is created here, and the address switches to it in
+  // the same step, so the blank-record cleanup (lib/fresh.ts) already knows it is the open one.
+  const started = useRef(false)
+  useEffect(() => {
+    if (started.current || !store.loaded || new URLSearchParams(window.location.search).get("nuevo") !== "1") return
+    started.current = true
+    const base = newSurvey(t("towers.defaultName", { l: "A" }))
+    const s = { ...base, ident: { ...base.ident, surveyors: readState().name } }
+    saveSurvey(s)
+    markFresh(s)
+    window.history.replaceState(null, "", `${window.location.pathname}?l=${s.id}`)
+    window.dispatchEvent(new PopStateEvent("popstate"))
+  }, [store.loaded, t])
   if (!store.loaded) return null
   const q = new URLSearchParams(search)
   const open = q.get("l")

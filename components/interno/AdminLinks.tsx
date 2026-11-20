@@ -1,7 +1,7 @@
 import copy from "@/messages/internal/proveedores.es.json"
 import { NewReportsBadge } from "./NewReportsBadge"
 
-/** The internal menu (owner, 2026-11-18: one menu on every internal page): the admin sections, then the technical tools. */
+/** The internal menu (owner, 2026-11-18: one menu on every internal page; 2026-11-20: one list, one color). */
 const GROUPS = [
   {
     key: "adminGroup",
@@ -22,11 +22,6 @@ const GROUPS = [
       ["/interno/admin/cuentas-por-pagar", "cuentas-por-pagar"],
       ["/interno/admin/cuentas-por-cobrar", "cuentas-por-cobrar"],
       ["/interno/admin/equipo", "equipo"],
-    ],
-  },
-  {
-    key: "techGroup",
-    links: [
       ["/interno/equipos-telecom", "equipos-telecom"],
     ],
   },
@@ -45,7 +40,7 @@ export function AdminLinks({ current }: { current: Key }) {
               <a
                 href={href}
                 aria-current={key === current ? "page" : undefined}
-                className={`block rounded-md px-2.5 py-1.5 underline-offset-4 hover:text-foreground hover:underline aria-[current=page]:bg-white/10 aria-[current=page]:text-foreground aria-[current=page]:no-underline ${g.key === "techGroup" ? "text-zinc-400" : "text-zinc-300"}`}
+                className="block rounded-md px-2.5 py-1.5 text-zinc-300 underline-offset-4 hover:text-foreground hover:underline aria-[current=page]:bg-white/10 aria-[current=page]:text-foreground aria-[current=page]:no-underline"
               >
                 {copy.links[key]}
                 {key === "reportes_clientes" && <NewReportsBadge label={copy.links.newReports} />}

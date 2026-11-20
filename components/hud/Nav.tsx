@@ -43,13 +43,14 @@ const SECTION_IDS = ["hero", "plans", "fiber", "wifi", "map", "faq"]
 
 /**
  * `base` prefixes the hash links when rendered off the home page (e.g. "/es").
- * `current` marks the page link of the page being viewed.
+ * `current` marks the link of the page being viewed: a page (Empresas, Clientes) or the home section a page belongs to
+ * (/planes → Planes, /cobertura/… → Cobertura; 2026-11-20, so every page lights its link).
  *
  * 2026-11-07: links sit in a glass pill with a sliding cyan underline under
  * the active section; a thin scroll-progress line runs along the bottom of the
  * condensed bar (transform only, written outside React); the CTA is a pill.
  */
-export function Nav({ base = "", current }: { base?: string; current?: (typeof PAGES)[number]["key"] }) {
+export function Nav({ base = "", current }: { base?: string; current?: (typeof PAGES)[number]["key"] | (typeof LINKS)[number]["key"] }) {
   const t = useTranslations("nav")
   const tb = useTranslations("business")
   const locale = useLocale()
@@ -117,7 +118,7 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
 
   // Sliding underline: measure the active link inside the pill.
   const activeKey =
-    links.find((l) => (l.page ? current === l.key : active === l.href.split("#")[1]))?.key ?? null
+    links.find((l) => current === l.key || (!l.page && !current && active === l.href.split("#")[1]))?.key ?? null
   useLayoutEffect(() => {
     const measure = () => {
       const el = activeKey ? linksRef.current?.querySelector<HTMLElement>(`[data-key="${activeKey}"]`) : null
@@ -181,8 +182,8 @@ export function Nav({ base = "", current }: { base?: string; current?: (typeof P
             )}
           >
             {links.map((link) => {
-              const isPage = link.page && current === link.key
-              const isActive = isPage || (!link.page && active === link.href.split("#")[1])
+              const isPage = current === link.key
+              const isActive = isPage || (!link.page && !current && active === link.href.split("#")[1])
               return (
                 <SmartLink
                   key={link.key}

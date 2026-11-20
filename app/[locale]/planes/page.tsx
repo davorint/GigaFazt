@@ -36,7 +36,7 @@ export default async function PlanesPage({ params }: PageProps<"/[locale]/planes
 
   return (
     <>
-      <Nav base={`/${locale}`} />
+      <Nav base={`/${locale}`} current="planes" />
       <PageTransition>
       <main className="pt-8">
         <Section id="plans" aria-label={t("plans")}>

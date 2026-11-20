@@ -1,12 +1,10 @@
 "use client"
 
-import { SECTIONS as SURVEY_SECTIONS, completeness, newSurvey, type Survey } from "@/lib/survey/model"
-import { saveSurvey, subscribeSurveys, surveysServerSnapshot, surveysSnapshot } from "@/lib/survey/store"
-import { readState } from "@/lib/sync/state"
+import { SECTIONS as SURVEY_SECTIONS, completeness, type Survey } from "@/lib/survey/model"
+import { subscribeSurveys, surveysServerSnapshot, surveysSnapshot } from "@/lib/survey/store"
 import { PlaceFields } from "@/components/interno/PlaceFields"
 import { useEffect, useRef, useSyncExternalStore, type MouseEvent, type ReactNode } from "react"
 import { useTranslations } from "next-intl"
-import { useRouter } from "next/navigation"
 import { NumberField } from "@/components/mikrotik/NumberField"
 import { TextField } from "@/components/mikrotik/TextField"
 import { AreaField, DateField, GRID, PickField } from "@/components/surveys/SurveyFields"
@@ -91,24 +89,20 @@ const SURVEYS = "/interno/levantamientos"
  * Surveys still being captured (owner, 2026-11-20: one section; a survey becomes a deployment once captured), newest
  * first, with how much is filled. A survey whose deployment was deleted shows here again.
  */
-function SurveysInProgress({ t, list }: { t: T; list: Survey[] }) {
-  const tower = useTranslations("despliegues")("survey.firstTower")
-  const router = useRouter()
-  const start = () => {
-    const s = newSurvey(tower)
-    saveSurvey({ ...s, ident: { ...s.ident, surveyors: readState().name } })
-    router.push(`${SURVEYS}?l=${s.id}`)
-  }
-  const shown = [...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+function SurveysInProgress({ t, list, needle }: { t: T; list: Survey[]; needle: string }) {
+  const shown = list
+    .filter((x) => !needle || fold([x.ident.name, x.ident.address, x.ident.municipality, x.ident.state].join(" ")).includes(needle))
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   return (
     <section aria-labelledby="levantamientos-curso" className="grid gap-2 rounded-xl border border-white/10 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="levantamientos-curso" className="text-base font-medium text-foreground">
           {t("survey.title", { n: shown.length })}
         </h2>
-        <button type="button" onClick={start} className="inline-flex h-10 items-center rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+        {/* Created on the survey page (?nuevo=1), which also removes it if left blank. */}
+        <a href={`${SURVEYS}?nuevo=1`} className="inline-flex h-10 items-center rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
           {t("survey.new")}
-        </button>
+        </a>
       </div>
       <p className="text-xs text-zinc-400">{t("survey.hint")}</p>
       {shown.length > 0 && (
@@ -182,7 +176,7 @@ function SiteList({ t, list, clients, surveys }: { t: T; list: Site[]; clients: 
   }
   return (
     <div className="mt-6 grid gap-4">
-      <SurveysInProgress t={t} list={surveys} />
+      <SurveysInProgress t={t} list={surveys} needle={needle} />
       <QuickAdd
         title={t("list.add")}
         submit={t("list.addSubmit")}

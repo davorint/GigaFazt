@@ -95,7 +95,7 @@ async function AreaContent({ params }: { params: PageProps<"/[locale]/cobertura/
 
   return (
     <>
-      <Nav base={home} />
+      <Nav base={home} current="cobertura" />
       <PageTransition>
       <main className="pt-16">
         <Section id="area" aria-label={name}>
