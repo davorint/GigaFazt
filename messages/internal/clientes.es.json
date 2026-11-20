@@ -198,7 +198,20 @@
       "cancelledAt": "Cancelado el",
       "cancelledAtHint": "Los meses facturados (día 1) antes de esta fecha se siguen debiendo en Cobranza.",
       "priceUntil": "Antes: {price} hasta {month}",
-      "priceFrom": "El precio actual aplica desde {month}. Un cambio de precio cuenta a partir del mes siguiente."
+      "priceFrom": "El precio actual aplica desde {month}. Un cambio de precio cuenta a partir del mes siguiente.",
+      "cancelReason": "Motivo de la cancelación",
+      "cancelReasons": {
+        "none": "Sin anotar",
+        "precio": "Precio",
+        "fallas": "Fallas del servicio",
+        "mudanza": "Se mudó",
+        "competencia": "Se fue con otro proveedor",
+        "falta-de-pago": "Falta de pago",
+        "cierre": "Cierre del negocio",
+        "otro": "Otro"
+      },
+      "cancelNote": "Detalle (opcional)",
+      "cancelNoteHint": "Lo que dijo el cliente, con quién se fue, qué precio le dieron…"
     },
     "contacts": {
       "title": "Contactos",

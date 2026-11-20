@@ -11,34 +11,7 @@ import { localToday } from "@/lib/clients/from-lead"
 import { mxn } from "@/lib/materials/catalog"
 import { isKind, providerName, type Provider } from "@/lib/providers/model"
 import { providersServerSnapshot, providersSnapshot, subscribeProviders } from "@/lib/providers/store"
-import {
-  EQUIPMENT_KINDS,
-  POWER_PAYERS,
-  newEquipment,
-  newPort,
-  newRoom,
-  newRoomCarrier,
-  newSite,
-  newSiteContact,
-  newTower,
-  removeRoom,
-  removeTower,
-  roomCapacity,
-  roomLabel,
-  siteCost,
-  linksCost,
-  siteProfit,
-  unpricedLinks,
-  siteLabel,
-  towerLabel,
-  type Equipment,
-  type PonPort,
-  type Room,
-  type RoomCarrier,
-  type Site,
-  type SiteContact,
-  type Tower,
-} from "@/lib/sites/model"
+import { EQUIPMENT_KINDS, POWER_PAYERS, newEquipment, newPort, newRoom, newRoomCarrier, newSite, newSiteContact, newTower, removeRoom, removeTower, roomCapacity, roomLabel, siteCost, linksCost, siteProfit, unpricedLinks, siteLabel, towerLabel, type Equipment, type PonPort, type Room, type RoomCarrier, type Site, type SiteContact, type Tower, agreementStatus, RENEWALS, DEFAULT_NOTICE_DAYS } from "@/lib/sites/model"
 import { portClients, siteStats, type SiteStats } from "@/lib/sites/stats"
 import { useDropUntouched } from "@/components/interno/useDropUntouched"
 import { QuickAdd } from "@/components/interno/QuickAdd"
@@ -584,7 +557,7 @@ function Access({ t, s, up, clients }: { t: T; s: Site; up: Up; clients: Client[
 
 function Agreement({ t, s, up }: { t: T; s: Site; up: Up }) {
   const today = localToday()
-  const days = s.contractEnd ? Math.round((Date.parse(s.contractEnd) - Date.parse(today)) / 864e5) : null
+  const a = agreementStatus(s, today)
   return (
     <div className="grid gap-5">
       <div className={GRID}>
@@ -593,10 +566,14 @@ function Agreement({ t, s, up }: { t: T; s: Site; up: Up }) {
         <NumberField label={t("agreement.power")} unit={t("agreement.perMonth")} optional max={1e7} value={s.powerMonthly} onChange={(v) => up({ powerMonthly: v })} />
         <DateField label={t("agreement.start")} value={s.contractStart} onChange={(v) => up({ contractStart: v })} />
         <DateField label={t("agreement.end")} value={s.contractEnd} onChange={(v) => up({ contractEnd: v })} />
+        <PickField label={t("agreement.renewal")} value={s.renewal} onChange={(renewal) => up({ renewal })} options={RENEWALS.map((x) => ({ value: x, label: t(`agreement.renewals.${x || "none"}`) }))} />
+        <NumberField label={t("agreement.notice")} unit={t("agreement.days")} optional max={730} value={s.noticeDays} onChange={(v) => up({ noticeDays: v })} hint={t("agreement.noticeHint", { n: DEFAULT_NOTICE_DAYS })} />
+        <NumberField label={t("agreement.increase")} unit="%" optional max={100} value={s.rentIncreasePct} onChange={(v) => up({ rentIncreasePct: v })} hint={t("agreement.increaseHint")} />
       </div>
       <p className="text-sm text-zinc-100">{t("agreement.cost", { cost: mxn(siteCost(s)) })}</p>
-      {days !== null && days >= 0 && days <= 90 && <p className="text-sm text-amber-200">{t("agreement.ends", { days })}</p>}
-      {days !== null && days < 0 && <p className="text-sm text-red-300">{t("agreement.ended", { date: s.contractEnd })}</p>}
+      {a.status === "renovado" && <p className="text-sm text-zinc-300">{t("agreement.rolled", { date: a.end })}</p>}
+      {a.status === "por-vencer" && <p className="text-sm text-amber-200">{t("agreement.ends", { days: a.daysLeft ?? 0, date: a.end })}</p>}
+      {a.status === "vencido" && <p className="text-sm text-red-300">{t("agreement.ended", { date: a.end })}</p>}
       <AreaField label={t("agreement.notes")} value={s.agreementNotes} onChange={(v) => up({ agreementNotes: v })} hint={t("agreement.notesHint")} />
     </div>
   )

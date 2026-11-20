@@ -3,6 +3,7 @@ import { hasDatabase } from "@/lib/db/client"
 import { json, requireInterno } from "@/lib/internal-api"
 import { digestText } from "@/lib/interno/digest"
 import { decodePayable, type Payable } from "@/lib/finance/payables"
+import { decodeSite, type Site } from "@/lib/sites/model"
 import { decodeReceivable, type Receivable } from "@/lib/finance/receivables"
 import { todaySummary } from "@/lib/interno/today"
 import { decodeClient, type Client } from "@/lib/clients/model"
@@ -45,6 +46,7 @@ async function run() {
       notes: await rows<Note>("notes", decodeNote),
       payables: await rows<Payable>("payables", decodePayable),
       receivables: await rows<Receivable>("receivables", decodeReceivable),
+      sites: await rows<Site>("sites", decodeSite),
     },
     day
   )

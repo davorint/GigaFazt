@@ -81,3 +81,38 @@ describe("locations", () => {
     expect(matchInternal("/INTERNO/admin/deployments")?.rewriteTo).toBe("/es/interno/admin/despliegues")
   })
 })
+
+describe("building agreements (owner, 2026-11-19)", () => {
+  it("in force, in its notice period, ended, no date; an automatic renewal rolls a year at a time", async () => {
+    const { agreementStatus, decodeSite, newSite } = await import("./model")
+    const at = (p: object) => agreementStatus(newSite(p), "2026-11-19")
+    expect(at({}).status).toBe("sin-fecha")
+    expect(at({ contractEnd: "2027-06-30" })).toMatchObject({ status: "vigente", noticeFrom: "2027-05-01" })
+    expect(at({ contractEnd: "2026-12-31" })).toMatchObject({ status: "por-vencer", daysLeft: 42 })
+    expect(at({ contractEnd: "2027-03-01", noticeDays: 120 }).status).toBe("por-vencer")
+    expect(at({ contractEnd: "2026-11-01" })).toMatchObject({ status: "vencido", end: "2026-11-01" })
+    expect(at({ contractEnd: "2024-02-29", renewal: "automatica" })).toMatchObject({ status: "renovado", end: "2027-02-28" })
+    expect(at({ contractEnd: "2025-12-01", renewal: "automatica" })).toMatchObject({ status: "por-vencer", end: "2026-12-01" })
+    const back = decodeSite(JSON.parse(JSON.stringify(newSite({ renewal: "negociar", noticeDays: 90, rentIncreasePct: 5 }))))!
+    expect([back.renewal, back.noticeDays, back.rentIncreasePct]).toEqual(["negociar", 90, 5])
+    expect(decodeSite({ ...newSite(), renewal: "x" })!.renewal).toBe("")
+  })
+})
+
+describe("cancel reasons and agreements on Hoy (owner, 2026-11-19)", () => {
+  it("a cancellation keeps its reason and note; reactivating drops them", () => {
+    const c = newClient({ services: [newService("internet", { status: "cancelado", cancelledAt: "2026-10-01", cancelReason: "competencia", cancelNote: "Se fue con otro" })] })
+    const back = decodeClient(JSON.parse(JSON.stringify(c)))!
+    expect([back.services[0].cancelReason, back.services[0].cancelNote]).toEqual(["competencia", "Se fue con otro"])
+    const on = decodeClient(JSON.parse(JSON.stringify({ ...c, services: [{ ...c.services[0], status: "activo" }] })))!
+    expect([on.services[0].cancelReason, on.services[0].cancelNote]).toEqual(["", ""])
+  })
+  it("Hoy lists agreements ended or in their notice period", async () => {
+    const { todaySummary, allClear } = await import("../interno/today")
+    const { newSite } = await import("./model")
+    const base = { reports: [], clients: [], payments: [], tools: [], items: [], moves: [], units: [], notes: [] }
+    const s = todaySummary({ ...base, sites: [newSite({ name: "Torre A", contractEnd: "2026-12-15" }), newSite({ name: "Torre B", contractEnd: "2028-01-01" }), newSite({ name: "Torre C", contractEnd: "2026-10-01" })] }, "2026-11-19")
+    expect(s.agreements.map((a) => [a.label, a.ended])).toEqual([["Torre C", true], ["Torre A", false]])
+    expect(allClear(s)).toBe(false)
+  })
+})

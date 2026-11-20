@@ -11,6 +11,7 @@ import {
   CLIENT_KINDS,
   PAY_METHODS,
   SERVICE_STATUSES,
+  CANCEL_REASONS,
   SERVICE_TYPES,
   clientLabel,
   clientStatus,
@@ -442,7 +443,7 @@ function ServiceCard({ t, c, s, n, onChange, onRemove }: { t: T; c: Client; s: S
         <PickField
           label={t("services.status")}
           value={s.status}
-          onChange={(status) => up({ status, cancelledAt: status === "cancelado" ? s.cancelledAt || localToday() : "" })}
+          onChange={(status) => up(status === "cancelado" ? { status, cancelledAt: s.cancelledAt || localToday() } : { status, cancelledAt: "", cancelReason: "", cancelNote: "" })}
           options={SERVICE_STATUSES.map((x) => ({ value: x, label: t(`statuses.${x}`) }))}
         />
         {s.status === "cancelado" && (
@@ -451,6 +452,15 @@ function ServiceCard({ t, c, s, n, onChange, onRemove }: { t: T; c: Client; s: S
             <p className="text-xs text-zinc-400">{t("services.cancelledAtHint")}</p>
           </div>
         )}
+        {s.status === "cancelado" && (
+          <PickField
+            label={t("services.cancelReason")}
+            value={s.cancelReason}
+            onChange={(cancelReason) => up({ cancelReason })}
+            options={CANCEL_REASONS.map((x) => ({ value: x, label: t(`services.cancelReasons.${x || "none"}`) }))}
+          />
+        )}
+        {s.status === "cancelado" && <TextField label={t("services.cancelNote")} value={s.cancelNote} onChange={(v) => up({ cancelNote: v })} hint={t("services.cancelNoteHint")} />}
         <TextField label={t(`services.plan.${s.type}`)} value={s.plan} onChange={(v) => up({ plan: v })} hint={t(`services.planHint.${s.type}`)} />
         <DateField label={t("services.start")} value={s.start} onChange={(v) => up({ start: v })} />
         <div className="grid gap-1">

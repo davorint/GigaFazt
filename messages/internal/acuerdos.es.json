@@ -1,0 +1,31 @@
+{
+  "acuerdos": {
+    "meta": {
+      "title": "Acuerdos con edificios · GigaFazt interno"
+    },
+    "kicker": "Interno · Administración",
+    "title": "Acuerdos con edificios",
+    "lead": "Cada acuerdo con un edificio y en qué va: los vencidos y los que hay que renovar o negociar primero. Los términos se editan en cada despliegue (Acuerdo con el edificio).",
+    "hint": "Por vencer: dentro del aviso previo del acuerdo (o 60 días antes del fin si no se anotó). Los de renovación automática pasan solos al siguiente año.",
+    "none": "Todavía no hay despliegues.",
+    "cost": "Costo al mes (edificios)",
+    "status": {
+      "vencido": "Vencidos",
+      "por-vencer": "Por vencer",
+      "sin-fecha": "Sin fecha de fin",
+      "renovado": "Renovado solo",
+      "vigente": "Vigente"
+    },
+    "ends": "{days, plural, =0 {termina hoy ({date})} one {termina mañana ({date})} other {termina el {date}}}",
+    "noEnd": "sin fecha de fin anotada",
+    "noticeFrom": "avisar desde el {date}",
+    "renewal": {
+      "none": "renovación sin definir",
+      "automatica": "renovación automática",
+      "negociar": "hay que negociar",
+      "no": "no se renueva"
+    },
+    "monthly": "{amount} al mes",
+    "increase": "aumento anual {pct} %"
+  }
+}

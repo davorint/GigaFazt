@@ -5,7 +5,7 @@
     },
     "kicker": "Interno · Administración",
     "title": "Números del negocio",
-    "lead": "Mes a mes, de los clientes, pagos y reportes que tiene este teléfono (sincroniza para ver los de todos).",
+    "lead": "Tablero del mes, clientes en riesgo y mes a mes, de los clientes, pagos, cuentas y reportes que tiene este teléfono (sincroniza para ver los de todos).",
     "thisMonth": "Este mes",
     "ofExpected": "de {amount} por cobrar ({pct})",
     "change": "{n, plural, =0 {igual que el mes pasado} one {# más que el mes pasado} other {{n} contra el mes pasado}}",
@@ -34,7 +34,57 @@
       "income": "Ingreso",
       "building": "Edificio",
       "links": "Enlaces",
-      "profit": "Ganancia"
+      "profit": "Ganancia",
+      "penetration": "Penetración"
+    },
+    "dash": {
+      "title": "Tablero",
+      "hint": "Lo más importante del mes contra el mes pasado. Cobrado y pagado son dinero que entró y salió (pagos registrados), no lo facturado.",
+      "vsLast": "{d} contra el mes pasado",
+      "vsLastText": "el mes pasado: {v}",
+      "vsLastMoves": "el mes pasado: +{n} / −{c}",
+      "churn": "Cancelación del mes",
+      "cashIn": "Cobrado (todo)",
+      "cashOut": "Pagado a proveedores",
+      "net": "Flujo del mes",
+      "receivableOverdue": "Por cobrar vencido",
+      "payableOverdue": "Por pagar vencido",
+      "backlog": "Instalaciones pendientes",
+      "backlogHint": "Citas de instalación por hacer en la Agenda.",
+      "reports": "Reportes abiertos",
+      "mttr": "Se resuelven en {h} h en promedio (últimos 30 días).",
+      "noMttr": "Sin reportes resueltos en 30 días.",
+      "penetration": "Penetración",
+      "penetrationHint": "{active} clientes activos de {apartments} departamentos en los despliegues.",
+      "atRisk": "Clientes en riesgo",
+      "atRiskHint": "Lista abajo: llámales antes de que cancelen."
+    },
+    "risk": {
+      "title": "Clientes en riesgo",
+      "hint": "Clientes activos con alguna señal de que pueden irse: atrasados, con una promesa de pago vencida, con 2 o más reportes en 60 días, o con luz baja o que va bajando.",
+      "none": "Nadie en riesgo por ahora.",
+      "owes": "debe {amount}",
+      "reasons": {
+        "atrasado": "Atrasado",
+        "promesa": "Promesa vencida",
+        "reportes": "Reportes repetidos",
+        "luz": "Luz baja o bajando"
+      }
+    },
+    "churn": {
+      "title": "Por qué cancelan (últimos 12 meses)",
+      "hint": "El motivo que se anota al cancelar un servicio en Clientes.",
+      "none": "Sin cancelaciones en 12 meses.",
+      "reasons": {
+        "none": "Sin motivo anotado",
+        "precio": "Precio",
+        "fallas": "Fallas del servicio",
+        "mudanza": "Se mudó",
+        "competencia": "Se fue con otro proveedor",
+        "falta-de-pago": "Falta de pago",
+        "cierre": "Cierre del negocio",
+        "otro": "Otro"
+      }
     }
   }
 }

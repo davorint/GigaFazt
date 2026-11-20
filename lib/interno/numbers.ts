@@ -10,10 +10,11 @@
  *   date count from the start of the records, as Cobranza does).
  */
 import type { Client } from "../clients/model"
-import { addMonths, chargeFor, monthOf, type Payment } from "../payments/model"
+import { addMonths, chargeFor, ledger, monthOf, type Payment } from "../payments/model"
 import { hoursToSolve, type Report } from "../reports/model"
 import { siteCost, siteLabel, linksCost, siteProfit, unpricedLinks, type Site } from "../sites/model"
-import { monthlyTotal } from "../clients/model"
+import { clientStatus, lightDrop, monthlyTotal, type CancelReason } from "../clients/model"
+import { lightStatus } from "../clients/optics"
 
 export type MonthNumbers = {
   month: string
@@ -65,15 +66,79 @@ export function monthNumbers(clients: Client[], payments: Payment[], reports: Re
   })
 }
 
-export type SiteNumbers = { id: string; name: string; clients: number; income: number; building: number; links: number; profit: number; unpricedLinks: number }
+export type SiteNumbers = {
+  id: string
+  name: string
+  clients: number
+  /** Clients with an active service, the building's apartments, and active ÷ apartments (null without apartments). */
+  active: number
+  apartments: number
+  penetration: number | null
+  income: number
+  building: number
+  links: number
+  profit: number
+  unpricedLinks: number
+}
 
-/** Each location's month today: its clients' active services against the building and its internet links. Least profitable first. */
+/**
+ * Each location's month today: its clients' active services against the building and its internet links, and its
+ * penetration (clients with an active service ÷ apartments). Least profitable first.
+ */
 export function siteNumbers(sites: Site[], clients: Client[]): SiteNumbers[] {
   return sites
     .map((s) => {
       const mine = clients.filter((c) => c.siteId === s.id)
       const income = mine.reduce((a, c) => a + monthlyTotal(c), 0)
-      return { id: s.id, name: siteLabel(s), clients: mine.length, income, building: siteCost(s), links: linksCost(s), profit: siteProfit(s, income), unpricedLinks: unpricedLinks(s) }
+      const active = mine.filter((c) => clientStatus(c) === "activo").length
+      const apartments = s.towers.reduce((a, t) => a + (t.apartments ?? 0), 0)
+      return { id: s.id, name: siteLabel(s), clients: mine.length, active, apartments, penetration: apartments ? active / apartments : null, income, building: siteCost(s), links: linksCost(s), profit: siteProfit(s, income), unpricedLinks: unpricedLinks(s) }
     })
     .sort((a, b) => a.profit - b.profit)
+}
+
+// ── Churn ───────────────────────────────────────────────────────────────────
+
+/** Cancelled services per month ÷ active clients at the end of the month before (null without active clients). */
+export function churnRate(rows: MonthNumbers[], i: number): number | null {
+  const before = rows[i - 1]?.activeClients ?? 0
+  return before ? rows[i].cancelled / before : null
+}
+
+/** Why services were cancelled in the given months, most common first ("" = not recorded). */
+export function cancelReasons(clients: Client[], months: string[]): { reason: CancelReason; n: number }[] {
+  const count = new Map<CancelReason, number>()
+  for (const c of clients) for (const s of c.services) if (s.status === "cancelado" && months.includes(s.cancelledAt.slice(0, 7))) count.set(s.cancelReason, (count.get(s.cancelReason) ?? 0) + 1)
+  return [...count].map(([reason, n]) => ({ reason, n })).sort((a, b) => b.n - a.n)
+}
+
+// ── Clients at risk ─────────────────────────────────────────────────────────
+
+export type RiskReason = "atrasado" | "promesa" | "reportes" | "luz"
+export type AtRisk = { client: Client; reasons: RiskReason[]; owed: number }
+
+/** Reports in this many days that make a client "with repeated problems". */
+const REPORT_DAYS = 60
+const REPORTS_FOR_RISK = 2
+
+/**
+ * Clients with an active service who may leave (owner, 2026-11-19), to call before they cancel: late on a payment, a
+ * payment promise past its date, REPORTS_FOR_RISK or more reports in REPORT_DAYS days, or weak or falling light (below
+ * the ONT's margin, or 2 dB or more lost since the first reading). Most reasons first, then the most owed.
+ */
+export function clientsAtRisk(clients: Client[], payments: Payment[], reports: Report[], today: string): AtRisk[] {
+  const since = Date.parse(`${today}T00:00:00Z`) - REPORT_DAYS * 864e5
+  const out: AtRisk[] = []
+  for (const c of clients) {
+    if (clientStatus(c) !== "activo") continue
+    const l = ledger(c, payments, today)
+    const reasons: RiskReason[] = []
+    if (l.status === "atrasado") reasons.push("atrasado")
+    if (c.promiseDate && c.promiseDate < today && l.owed > 0) reasons.push("promesa")
+    if (reports.filter((r) => r.clientId === c.id && Date.parse(r.createdAt) >= since).length >= REPORTS_FOR_RISK) reasons.push("reportes")
+    const net = c.services.filter((s) => s.type === "internet" && s.status === "activo")
+    if (net.some((s) => lightStatus(s.rxDbm) === "baja" || (lightDrop(s) ?? 0) >= 2)) reasons.push("luz")
+    if (reasons.length) out.push({ client: c, reasons, owed: l.owed })
+  }
+  return out.sort((a, b) => b.reasons.length - a.reasons.length || b.owed - a.owed)
 }

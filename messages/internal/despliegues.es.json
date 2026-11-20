@@ -195,9 +195,22 @@
       "notes": "Notas del acuerdo",
       "notesHint": "Lo que se acordó: exclusividad, comisión por cliente, servicios para áreas comunes…",
       "cost": "Costo al mes para nosotros: {cost}",
-      "ends": "{days, plural, =0 {El contrato termina hoy.} one {El contrato termina mañana.} other {El contrato termina en # días.}}",
-      "ended": "El contrato terminó el {date}.",
-      "perMonth": "MXN/mes"
+      "ends": "{days, plural, =0 {El acuerdo termina hoy ({date}).} one {El acuerdo termina mañana ({date}).} other {El acuerdo termina en # días ({date}). Es momento de renovar o negociar.}}",
+      "ended": "El acuerdo terminó el {date}.",
+      "perMonth": "MXN/mes",
+      "renewal": "Renovación al terminar",
+      "renewals": {
+        "none": "Sin definir",
+        "automatica": "Automática (se renueva sola por un año)",
+        "negociar": "Hay que negociarla",
+        "no": "No se renueva"
+      },
+      "notice": "Aviso previo",
+      "days": "días",
+      "noticeHint": "Con cuánto tiempo hay que avisar o negociar antes del fin. Si no se anota, se avisa {n} días antes.",
+      "increase": "Aumento anual de la renta",
+      "increaseHint": "Lo acordado (por ejemplo, INPC o un porcentaje fijo). Solo de referencia.",
+      "rolled": "Se renovó solo; el periodo actual termina el {date}."
     },
     "clients": {
       "intro": "Los clientes que tienen este despliegue elegido (en Clientes → Despliegue). Toca uno para abrirlo en Clientes.",

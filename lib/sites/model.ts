@@ -21,6 +21,11 @@ export const EQUIPMENT_KINDS = ["router", "olt", "switch", "ups", "otro"] as con
 export type EquipmentKind = (typeof EQUIPMENT_KINDS)[number]
 export const POWER_PAYERS = ["", "nosotros", "edificio", "incluido"] as const
 export type PowerPayer = (typeof POWER_PAYERS)[number]
+/** How the agreement renews at its end: by itself, by negotiating it, or it doesn't ("" = not said). */
+export const RENEWALS = ["", "automatica", "negociar", "no"] as const
+export type Renewal = (typeof RENEWALS)[number]
+/** Days before the end to start the renewal when the agreement doesn't say. */
+export const DEFAULT_NOTICE_DAYS = 60
 
 export type SiteContact = { id: string; name: string; role: string; phone: string; email: string }
 
@@ -96,6 +101,10 @@ export type Site = {
   powerPayer: PowerPayer
   contractStart: string
   contractEnd: string
+  /** How it renews, the days of notice the agreement asks for (null = DEFAULT_NOTICE_DAYS), the yearly rent increase (%). */
+  renewal: Renewal
+  noticeDays: number | null
+  rentIncreasePct: number | null
   agreementNotes: string
   rooms: Room[]
   notes: string
@@ -140,6 +149,9 @@ export function newSite(p: Partial<Site> = {}): Site {
     powerPayer: "",
     contractStart: "",
     contractEnd: "",
+    renewal: "",
+    noticeDays: null,
+    rentIncreasePct: null,
     agreementNotes: "",
     rooms: [newRoom({ name: "Cuarto principal" })],
     notes: "",
@@ -219,6 +231,9 @@ export function decodeSite(v: unknown): Site | null {
     powerPayer: oneOf(POWER_PAYERS, v.powerPayer, ""),
     contractStart: date(v.contractStart),
     contractEnd: date(v.contractEnd),
+    renewal: oneOf(RENEWALS, v.renewal, ""),
+    noticeDays: num(v.noticeDays, 0, 730),
+    rentIncreasePct: num(v.rentIncreasePct, 0, 100),
     agreementNotes: str(v.agreementNotes, 4000),
     // A port's tower or OLT that no longer exists reads as "not set".
     rooms: rooms.map((r) => {
@@ -264,4 +279,38 @@ export function removeTower(s: Site, towerId: string): Site {
 /** Deletes a room and clears the towers that pointed to it. */
 export function removeRoom(s: Site, roomId: string): Site {
   return { ...s, rooms: s.rooms.filter((r) => r.id !== roomId), towers: s.towers.map((t) => (t.roomId === roomId ? { ...t, roomId: "" } : t)) }
+}
+
+export type AgreementStatus = "sin-fecha" | "vigente" | "por-vencer" | "vencido" | "renovado"
+
+/** yyyy-mm-dd plus whole years (Feb 29 → Feb 28). */
+const plusYears = (d: string, n: number) => {
+  const [y, m, day] = d.split("-").map(Number)
+  const last = new Date(Date.UTC(y + n, m, 0)).getUTCDate()
+  return `${y + n}-${String(m).padStart(2, "0")}-${String(Math.min(day, last)).padStart(2, "0")}`
+}
+const daysBetween = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 864e5)
+
+/**
+ * Where a building's agreement stands (owner, 2026-11-19): no end date; in force; within its notice period (time to
+ * renew or negotiate); ended. An automatic renewal past its end rolls forward a year at a time ("renovado"), and its
+ * current period is the one shown. `end` is the end of the current period.
+ */
+export function agreementStatus(s: Pick<Site, "contractEnd" | "renewal" | "noticeDays">, today: string): { status: AgreementStatus; end: string; daysLeft: number | null; noticeFrom: string } {
+  if (!s.contractEnd) return { status: "sin-fecha", end: "", daysLeft: null, noticeFrom: "" }
+  let end = s.contractEnd
+  let rolled = false
+  if (s.renewal === "automatica") while (end < today) {
+    end = plusYears(end, 1)
+    rolled = true
+  }
+  const notice = s.noticeDays ?? DEFAULT_NOTICE_DAYS
+  const noticeFrom = (() => {
+    const x = new Date(`${end}T12:00:00Z`)
+    x.setUTCDate(x.getUTCDate() - notice)
+    return x.toISOString().slice(0, 10)
+  })()
+  const daysLeft = daysBetween(today, end)
+  const status: AgreementStatus = end < today ? "vencido" : today >= noticeFrom ? "por-vencer" : rolled ? "renovado" : "vigente"
+  return { status, end, daysLeft, noticeFrom }
 }

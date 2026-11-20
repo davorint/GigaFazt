@@ -22,6 +22,9 @@ export const SERVICE_STATUSES = ["activo", "suspendido", "cancelado"] as const
 export type ServiceStatus = (typeof SERVICE_STATUSES)[number]
 /** A client's status: from its services ("sin servicio" when it has none). */
 export type ClientStatus = ServiceStatus | "sin-servicio"
+/** Why a service was cancelled (owner, 2026-11-19), to learn where clients are lost ("" = not recorded). */
+export const CANCEL_REASONS = ["", "precio", "fallas", "mudanza", "competencia", "falta-de-pago", "cierre", "otro"] as const
+export type CancelReason = (typeof CANCEL_REASONS)[number]
 export const PAY_METHODS = ["", "efectivo", "transferencia", "tarjeta", "deposito", "otro"] as const
 export type PayMethod = (typeof PAY_METHODS)[number]
 
@@ -41,6 +44,8 @@ export type Service = {
   start: string
   /** When it was cancelled (YYYY-MM-DD, "" = not cancelled or not known): months due before it are still owed. */
   cancelledAt: string
+  cancelReason: CancelReason
+  cancelNote: string
   notes: string
   // Internet only (empty on the others)
   ontModel: string
@@ -107,6 +112,8 @@ export function newService(type: ServiceType, p: Partial<Service> = {}): Service
     priceHistory: [],
     start: "",
     cancelledAt: "",
+    cancelReason: "",
+    cancelNote: "",
     notes: "",
     ontModel: type === "internet" ? DEFAULT_ONT : "",
     ontSn: "",
@@ -183,6 +190,8 @@ function decodeService(v: unknown): Service | null {
       : [],
     start: date(v.start),
     cancelledAt: oneOf(SERVICE_STATUSES, v.status, "activo") === "cancelado" ? date(v.cancelledAt) : "",
+    cancelReason: oneOf(SERVICE_STATUSES, v.status, "activo") === "cancelado" ? oneOf(CANCEL_REASONS, v.cancelReason, "") : "",
+    cancelNote: oneOf(SERVICE_STATUSES, v.status, "activo") === "cancelado" ? str(v.cancelNote, 300) : "",
     notes: str(v.notes, 2000),
     ontModel: net ? str(v.ontModel, 60) : "",
     ontSn: net ? str(v.ontSn, 40).toUpperCase() : "",
@@ -345,7 +354,7 @@ export function fillEmpty(base: Client, incoming: Client): { client: Client; cha
       changed = true
       continue
     }
-    const r = fillFields(services[k], s, ["id", "type", "status", "cancelledAt", "priceHistory", "rxHistory"])
+    const r = fillFields(services[k], s, ["id", "type", "status", "cancelledAt", "cancelReason", "cancelNote", "priceHistory", "rxHistory"])
     if (r.changed) {
       services[k] = r.out
       changed = true

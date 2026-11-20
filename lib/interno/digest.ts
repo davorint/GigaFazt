@@ -52,6 +52,10 @@ export function digestText(s: Today, today: string, link: string): string | null
     out.push("", `🧾 Complementos de pago pendientes: ${s.complements.length}`)
     out.push(...list(s.complements, (c) => `${c.side === "cobrar" ? "emitir" : "pedir al proveedor"}: ${c.label} · a más tardar ${c.deadline}`))
   }
+  if (s.agreements.length) {
+    out.push("", `🏢 Acuerdos con edificios por renovar: ${s.agreements.length}`)
+    out.push(...list(s.agreements, (a) => `${a.label} · ${a.ended ? "terminó" : "termina"} ${a.end}`))
+  }
   if (s.pinned.length) {
     out.push("", `📌 Notas fijadas: ${s.pinned.length}`)
     out.push(...list(s.pinned, (n) => n.title))

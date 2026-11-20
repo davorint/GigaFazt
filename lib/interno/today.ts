@@ -19,6 +19,7 @@ import { isOpen, reportCode, type Report } from "../reports/model"
 import { BODEGA, countAt, type Move, type Unit } from "../stock/model"
 import { toolAlerts, toolLabel, type Alert, type Tool } from "../tools/model"
 import type { Payable } from "../finance/payables"
+import { agreementStatus, siteLabel, type Site } from "../sites/model"
 import type { Receivable } from "../finance/receivables"
 import { balanceOf, complementPending, isOpenDoc } from "../finance/common"
 
@@ -33,6 +34,7 @@ export type TodayInput = {
   notes: Note[]
   payables?: Payable[]
   receivables?: Receivable[]
+  sites?: Site[]
 }
 
 export type Today = {
@@ -47,6 +49,8 @@ export type Today = {
   charges: { id: string; label: string; balance: number; due: string }[]
   /** PPD documents with payments still without their complemento: "cobrar" ones we issue, "pagar" ones we ask for. */
   complements: { id: string; side: "pagar" | "cobrar"; label: string; deadline: string }[]
+  /** Building agreements ended or within their notice period (renew or negotiate). */
+  agreements: { id: string; label: string; end: string; ended: boolean }[]
 }
 
 /** Days ahead a bill shows on "Hoy" before it's due. */
@@ -107,6 +111,12 @@ export function todaySummary(d: TodayInput, today: string, now = Date.now()): To
     .filter((x) => x.deadline)
     .sort((a, b) => a.deadline.localeCompare(b.deadline))
 
+  const agreements = (d.sites ?? [])
+    .map((s) => ({ s, a: agreementStatus(s, today) }))
+    .filter(({ a }) => a.status === "vencido" || a.status === "por-vencer")
+    .map(({ s, a }) => ({ id: s.id, label: siteLabel(s), end: a.end, ended: a.status === "vencido" }))
+    .sort((a, b) => a.end.localeCompare(b.end))
+
   return {
     reports: { fresh, urgent, stale, open: open.length },
     payments: { late, lateAmount: collectionStats(d.clients, d.payments, today).lateAmount },
@@ -116,8 +126,9 @@ export function todaySummary(d: TodayInput, today: string, now = Date.now()): To
     bills,
     charges,
     complements,
+    agreements,
   }
 }
 
 /** Nothing to look at today. */
-export const allClear = (t: Today) => !t.reports.open && !t.payments.late.length && !t.tools.length && !t.lowStock.length && !t.pinned.length && !t.bills.length && !t.charges.length && !t.complements.length
+export const allClear = (t: Today) => !t.reports.open && !t.payments.late.length && !t.tools.length && !t.lowStock.length && !t.pinned.length && !t.bills.length && !t.charges.length && !t.complements.length && !t.agreements.length

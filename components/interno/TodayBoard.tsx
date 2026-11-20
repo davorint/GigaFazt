@@ -124,6 +124,7 @@ export function TodayBoard() {
     [t("bills.title"), s.bills.length],
     [t("charges.title"), s.charges.length],
     [t("complements.title"), s.complements.length],
+    [t("agreements.title"), s.agreements.length],
   ]
     .filter(([, n]) => !n)
     .map(([label]) => String(label))
@@ -219,6 +220,12 @@ export function TodayBoard() {
               {list(
                 s.complements.slice(0, 4).map((c) => ({ key: `${c.side}-${c.id}`, text: t(`complements.${c.side}`, { label: c.label, date: c.deadline }), href: `${A}/${c.side === "cobrar" ? "cuentas-por-cobrar?c=" : "cuentas-por-pagar?p="}${c.id}` })),
                 s.complements.length - 4
+              )}
+            </Card>
+            <Card title={t("agreements.title")} href={`${A}/acuerdos`} open={t("open")} count={s.agreements.length} tone={s.agreements.some((a) => a.ended) ? "red" : s.agreements.length ? "amber" : "ok"}>
+              {list(
+                s.agreements.slice(0, 4).map((a) => ({ key: a.id, text: t(a.ended ? "agreements.ended" : "agreements.soon", { label: a.label, date: a.end }), href: `${A}/despliegues?d=${a.id}` })),
+                s.agreements.length - 4
               )}
             </Card>
             <Card title={t("notes.title")} href={`${A}/notas`} open={t("open")} count={s.pinned.length} tone={s.pinned.length ? "amber" : "ok"}>
