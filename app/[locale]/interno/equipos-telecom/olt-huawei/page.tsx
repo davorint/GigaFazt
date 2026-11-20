@@ -7,8 +7,8 @@ import internal from "@/messages/internal/olt.es.json"
 
 /**
  * Internal knowledge base for Huawei OLTs (MA5600T family and MA5800), served at /interno/equipos-telecom/olt-huawei (owner,
- * 2026-11-16; under Equipos de Telecom since 2026-11-20, the old /interno/olt redirects here). Same rules as
- * /interno/equipos-telecom/scripts-mikrotik and /interno/calculadora: proxy.ts maps any capitalization here, inside [locale]
+ * 2026-11-16; under Equipos de Telecom since 2026-11-20). Same rules as
+ * /interno/equipos-telecom/scripts-mikrotik and /interno/equipos-telecom/calculadora: proxy.ts maps any capitalization here, inside [locale]
  * so the name never appears in the public pages' router payload; Spanish only, not linked from the public
  * site, not in the sitemap, noindex; copy from messages/internal/.
  */

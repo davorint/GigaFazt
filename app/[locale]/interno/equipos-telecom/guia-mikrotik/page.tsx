@@ -9,7 +9,7 @@ import internal from "@/messages/internal/mikrotik.es.json"
  * The ideal guide for a deployment (owner, 2026-11-16): the saved deployments, the step-by-step guide with its fields,
  * the deployment's download (the guide plus the expert scripts turned on) and the "what's installed" check. The expert
  * scripts and the full editors live at /interno/equipos-telecom/scripts-mikrotik (owner, 2026-11-20: under Equipos de Telecom). Same
- * rules as that page: proxy.ts sends the old /interno/mikrotik-optimo (and -optimal) here, inside [locale]; Spanish only, not linked, not in the sitemap, noindex.
+ * rules as that page: proxy.ts maps any capitalization here, inside [locale]; Spanish only, not linked, not in the sitemap, noindex.
  */
 export const metadata: Metadata = {
   title: { absolute: internal.mikrotik.meta.titleGuide },

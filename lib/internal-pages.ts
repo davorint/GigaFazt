@@ -1,28 +1,16 @@
 /**
  * Internal pages, all under /interno (owner, 2026-11-17): /interno lists the tools; /interno/equipos-telecom holds the
- * MikroTik guide of a deployment (guia-mikrotik), the expert scripts (scripts-mikrotik) and the Huawei OLT knowledge base
- * (olt-huawei) (owner, 2026-11-20; the old /interno/mikrotik-optimo, /interno/mikrotik, /interno/olt and /interno/routers
- * redirect there), /interno/admin the providers and the master materials list, /interno/calculadora the calculators
- * and simulators. Behind a password (lib/internal-auth.ts; the sign-in
- * page /interno/entrar is the only one open), never linked from the public site, not in the sitemap and noindex. The
- * old addresses (/mikrotik, /olt…) no longer exist. Served from the Spanish route; any capitalization
- * (/INTERNO/MikroTik, /ES/interno/OLT) maps to the lowercase route.
+ * MikroTik guide of a deployment (guia-mikrotik), the expert scripts (scripts-mikrotik), the Huawei OLT knowledge base
+ * (olt-huawei) and the calculators and simulators (calculadora) (owner, 2026-11-20; their old addresses are gone, no
+ * redirects); /interno/admin the admin pages. Behind a password (lib/internal-auth.ts; the sign-in page /interno/entrar
+ * is the only one open), never linked from the public site, not in the sitemap and noindex. Served from the Spanish
+ * route; any capitalization (/INTERNO/Equipos-Telecom/OLT-Huawei) maps to the lowercase route.
  */
 
 export const INTERNAL_ROOT = "interno"
-export const INTERNAL_PAGES = ["levantamientos", "admin", "equipos-telecom", "calculadora"] as const
+export const INTERNAL_PAGES = ["levantamientos", "admin", "equipos-telecom"] as const
 /** The network equipment pages (/interno/equipos-telecom/<page>). */
-export const TELECOM_PAGES = ["guia-mikrotik", "scripts-mikrotik", "olt-huawei"] as const
-/** Other spellings of a network equipment page. */
-const TELECOM_ALIASES: Record<string, (typeof TELECOM_PAGES)[number]> = { guia: "guia-mikrotik", guide: "guia-mikrotik", scripts: "scripts-mikrotik", mikrotik: "scripts-mikrotik", olt: "olt-huawei", huawei: "olt-huawei" }
-/** Addresses that moved: they redirect to the new one, keeping what follows (bookmarks, old links, shared OLT builds). */
-const MOVED: Record<string, string> = {
-  "mikrotik-optimo": "equipos-telecom/guia-mikrotik",
-  "mikrotik-optimal": "equipos-telecom/guia-mikrotik",
-  mikrotik: "equipos-telecom/scripts-mikrotik",
-  olt: "equipos-telecom/olt-huawei",
-  routers: "equipos-telecom",
-}
+export const TELECOM_PAGES = ["guia-mikrotik", "scripts-mikrotik", "olt-huawei", "calculadora"] as const
 /** The admin area's pages (/interno/admin/<page>). */
 export const ADMIN_PAGES = ["notas", "despliegues", "clientes", "reportes_clientes", "herramientas", "compras-herramientas", "proveedores", "materiales", "compras-materiales", "agenda", "numeros", "equipo", "cuentas-por-pagar", "cuentas-por-cobrar", "acuerdos"] as const
 /** Other spellings of an admin page. */
@@ -30,22 +18,18 @@ const ADMIN_ALIASES: Record<string, (typeof ADMIN_PAGES)[number]> = { notes: "no
 /** The sign-in page: the only internal page served without the password. */
 export const LOGIN_PAGE = "entrar"
 export const LOGIN_PATH = `/${INTERNAL_ROOT}/${LOGIN_PAGE}`
-/** Other spellings that open an internal page. */
-const ALIASES: Record<string, (typeof INTERNAL_PAGES)[number]> = { equipos: "equipos-telecom", telecom: "equipos-telecom", "equipos-de-telecom": "equipos-telecom" }
-const KNOWN = new Map<string, string>([...INTERNAL_PAGES.map((p): [string, string] => [p, p]), [LOGIN_PAGE, LOGIN_PAGE], ...Object.entries(ALIASES)])
+const KNOWN = new Map<string, string>([...INTERNAL_PAGES.map((p): [string, string] => [p, p]), [LOGIN_PAGE, LOGIN_PAGE]])
 
 export type InternalMatch = {
   /** Where to rewrite, or null when the path is already the canonical route. */
   rewriteTo: string | null
   /** The sign-in page (served without the password). */
   open: boolean
-  /** A page that moved: send the browser here instead (no locale; the query string is added by the proxy). */
-  redirectTo?: string
 }
 
 /**
- * Matches /interno and everything under it, its RSC/segment variants (/interno.rsc, /interno/calculadora.rsc…) and the
- * locale-prefixed route it is served from (/es/interno/calculadora), in any case.
+ * Matches /interno and everything under it, its RSC/segment variants (/interno.rsc, /interno/levantamientos.rsc…) and the
+ * locale-prefixed route it is served from (/es/interno/levantamientos), in any case.
  */
 export function matchInternal(pathname: string): InternalMatch | null {
   const root = new RegExp(`^/${INTERNAL_ROOT}(?=$|[/.])(.*)$`, "i").exec(pathname)
@@ -55,8 +39,6 @@ export function matchInternal(pathname: string): InternalMatch | null {
   const rest = (root ? root[1] : local![2]) ?? ""
   // The sub-page's name: its known spelling in lowercase; anything else is kept and ends in a 404.
   const sub = /^\/([^/.]+)(.*)$/.exec(rest)
-  const moved = sub ? MOVED[sub[1].toLowerCase()] : undefined
-  if (moved) return { rewriteTo: null, open: false, redirectTo: `/${INTERNAL_ROOT}/${moved}${sub![2]}` }
   const page = sub ? KNOWN.get(sub[1].toLowerCase()) : undefined
   let after = sub?.[2] ?? ""
   // Under /interno/admin the second name is canonicalized too (/INTERNO/Admin/Proveedores).
@@ -66,10 +48,11 @@ export function matchInternal(pathname: string): InternalMatch | null {
     const known = sub2 && ((ADMIN_PAGES as readonly string[]).find((p) => p === name) ?? ADMIN_ALIASES[name])
     if (sub2 && known) after = `/${known}${sub2[2]}`
   }
+  // Under /interno/equipos-telecom too, by its lowercase name only.
   if (page === "equipos-telecom") {
     const sub2 = /^\/([^/.]+)(.*)$/.exec(after)
     const name = sub2?.[1].toLowerCase() ?? ""
-    const known = sub2 && ((TELECOM_PAGES as readonly string[]).find((p) => p === name) ?? TELECOM_ALIASES[name])
+    const known = sub2 && (TELECOM_PAGES as readonly string[]).find((p) => p === name)
     if (sub2 && known) after = `/${known}${sub2[2]}`
   }
   const tail = sub ? (page ? `/${page}${after}` : rest) : rest

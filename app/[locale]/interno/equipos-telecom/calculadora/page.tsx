@@ -7,9 +7,9 @@ import internal from "@/messages/internal/mikrotik.es.json"
 
 /**
  * Internal calculators and simulators (burst, plans, shared parent, busy-hour
- * capacity, solver), served at /interno/calculadora; the MikroTik scripts live at
- * /interno/equipos-telecom/scripts-mikrotik. Same rules as that page: proxy.ts rewrites /interno/calculadora (any
- * capitalization) here, inside [locale] so the name never appears in the
+ * capacity, solver), served at /interno/equipos-telecom/calculadora; the MikroTik scripts live at
+ * /interno/equipos-telecom/scripts-mikrotik. Under Equipos de Telecom since 2026-11-20 (owner).
+ * Same rules as that page: proxy.ts maps any capitalization here, inside [locale] so the name never appears in the
  * public pages' router payload; Spanish only, not linked, not in the sitemap,
  * noindex; copy from messages/internal/.
  */
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 }
 
-export default async function CalculadoraPage({ params }: PageProps<"/[locale]/interno/calculadora">) {
+export default async function CalculadoraPage({ params }: PageProps<"/[locale]/interno/equipos-telecom/calculadora">) {
   const { locale } = await params
   if (locale !== "es") notFound()
   setRequestLocale(locale)

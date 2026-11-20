@@ -29,7 +29,6 @@ const GROUPS = [
     key: "techGroup",
     links: [
       ["/interno/equipos-telecom", "equipos-telecom"],
-      ["/interno/calculadora", "calculadora"],
     ],
   },
 ] as const

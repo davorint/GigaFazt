@@ -275,7 +275,7 @@
         "short": "No caben: con {boards} × {board} el {chassis} da {ports} puertos y se necesitan {need}. Escoge un chasis más grande o pon más clientes por puerto.",
         "saved": "Guardada en «{name}». Hora pico ahora revisa sus puertos contra los clientes.",
         "open": "Ábrelo en Hora pico",
-        "note": "Usa los despliegues de /interno/equipos-telecom/scripts-mikrotik y /interno/calculadora (los guarda este navegador). Guardar pone este chasis como la OLT del despliegue; los marcos MA5600T no tienen modelo propio allá y quedan como «Otra». Para GPON en un MA5800 sugiere la combo CSHF: sirve a los ONT GPON hoy y a los XGS-PON después.",
+        "note": "Usa los despliegues de /interno/equipos-telecom/scripts-mikrotik y /interno/equipos-telecom/calculadora (los guarda este navegador). Guardar pone este chasis como la OLT del despliegue; los marcos MA5600T no tienen modelo propio allá y quedan como «Otra». Para GPON en un MA5800 sugiere la combo CSHF: sirve a los ONT GPON hoy y a los XGS-PON después.",
         "models": {
           "ma5608t": "Huawei MA5608T",
           "ma5683t": "Huawei MA5683T",

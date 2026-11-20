@@ -791,7 +791,7 @@
         },
         "capacity": {
           "title": "Capacidad de internet",
-          "load": "Demanda promedio en hora pico ≈ {demand} contra {internet} que dan los enlaces después de sus colas ({pct} %). Es con el promedio supuesto por cliente: arriba de ~{warn} % las ráfagas llenan los enlaces a ratos (Hora pico, en /interno/calculadora, dice cuánto).",
+          "load": "Demanda promedio en hora pico ≈ {demand} contra {internet} que dan los enlaces después de sus colas ({pct} %). Es con el promedio supuesto por cliente: arriba de ~{warn} % las ráfagas llenan los enlaces a ratos (Hora pico, en /interno/equipos-telecom/calculadora, dice cuánto).",
           "loadMeasured": "Tráfico medido en hora pico ≈ {demand} contra {internet} que dan los enlaces después de sus colas ({pct} %). Arriba de ~{warn} % las ráfagas llenan los enlaces a ratos; si un enlace ya iba lleno al medir, la demanda real es mayor.",
           "planOverLink": "Con este reparto, una prueba de velocidad (un cliente hacia un servidor) nunca pasa de un enlace ({link}): un cliente de {plan} llena ese enlace él solo.",
           "best": "Lo óptimo: un enlace de 10 Gbps (o 2 × 10 Gbps para respaldo) en vez de varios de 1 Gbps; ninguna configuración da más capacidad de la contratada.",

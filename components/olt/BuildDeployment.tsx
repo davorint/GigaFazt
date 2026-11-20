@@ -112,7 +112,7 @@ export function BuildDeployment({ build, ports, onBuild }: { build: Build; ports
           <>
             {" "}
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-            <a href="/interno/calculadora#hora-pico" className="underline decoration-white/30 underline-offset-4 hover:decoration-white">
+            <a href="/interno/equipos-telecom/calculadora#hora-pico" className="underline decoration-white/30 underline-offset-4 hover:decoration-white">
               {t("open")}
             </a>
           </>

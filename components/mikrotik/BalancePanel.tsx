@@ -282,7 +282,7 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
           <p className="text-sm text-zinc-300">
             {t("capacity")}{" "}
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- the other internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-            <a href="/interno/calculadora#hora-pico" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+            <a href="/interno/equipos-telecom/calculadora#hora-pico" className="text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
               {t("capacityLink")}
             </a>
           </p>
