@@ -92,7 +92,7 @@ function SharedExport({ state }: { state: LabState }) {
             {t("shared.export.badNetwork", { count: g.members.length })}
           </p>
         )}
-        <SetupChecks compact href="/interno/equipos-telecom/scripts-mikrotik#antes-de-pegar" />
+        <SetupChecks compact href="/interno/equipos-telecom/mikrotik/scripts#antes-de-pegar" />
       </div>
     </details>
   )

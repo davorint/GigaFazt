@@ -85,7 +85,7 @@ const readHash = () => window.location.hash
 type Jump = "params" | "sim" | "compare" | "shared" | "deployments" | "guide" | "installed" | "capacity" | "links" | "setup" | "advanced" | "solver" | "export" | "bulk" | "how"
 
 /**
- * The internal pages: /interno/equipos-telecom/guia-mikrotik is the ideal guide for a deployment (owner, 2026-11-16), /interno/equipos-telecom/scripts-mikrotik the expert
+ * The internal pages: /interno/equipos-telecom/mikrotik/guia is the ideal guide for a deployment (owner, 2026-11-16), /interno/equipos-telecom/mikrotik/scripts the expert
  * scripts and full editors, /interno/equipos-telecom/calculadora the calculators and simulators (owner, 2026-11-15).
  */
 export type LabPage = "guide" | "scripts" | "calculators"

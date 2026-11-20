@@ -19,7 +19,7 @@ async function handleInternal(request: NextRequest, match: InternalMatch): Promi
   let res: NextResponse
   if (!match.open && !(await cookieOk(request.cookies.get(AUTH_COOKIE)?.value))) {
     const to = new URL(LOGIN_PATH, request.url)
-    const page = /^\/(?:[a-z]{2}\/)?(interno(?:\/[a-z0-9-]+){0,2})/i.exec(request.nextUrl.pathname)
+    const page = /^\/(?:[a-z]{2}\/)?(interno(?:\/[a-z0-9-]+){0,3})/i.exec(request.nextUrl.pathname)
     if (page) to.searchParams.set("next", `/${page[1].toLowerCase()}`)
     res = NextResponse.redirect(to, 307)
   } else {

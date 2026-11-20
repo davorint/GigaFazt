@@ -6,8 +6,8 @@ describe("/interno routes", () => {
   it("everything under /interno, served from the Spanish route", () => {
     expect(matchInternal("/interno")).toEqual({ rewriteTo: "/es/interno", open: false })
     expect(matchInternal("/interno/equipos-telecom")).toEqual({ rewriteTo: "/es/interno/equipos-telecom", open: false })
-    expect(matchInternal("/interno/equipos-telecom/scripts-mikrotik")).toEqual({ rewriteTo: "/es/interno/equipos-telecom/scripts-mikrotik", open: false })
-    expect(matchInternal("/interno/equipos-telecom/guia-mikrotik")).toEqual({ rewriteTo: "/es/interno/equipos-telecom/guia-mikrotik", open: false })
+    expect(matchInternal("/interno/equipos-telecom/mikrotik/scripts")).toEqual({ rewriteTo: "/es/interno/equipos-telecom/mikrotik/scripts", open: false })
+    expect(matchInternal("/interno/equipos-telecom/mikrotik/guia")).toEqual({ rewriteTo: "/es/interno/equipos-telecom/mikrotik/guia", open: false })
     expect(matchInternal("/interno/equipos-telecom/olt-huawei")).toEqual({ rewriteTo: "/es/interno/equipos-telecom/olt-huawei", open: false })
     expect(matchInternal("/interno/equipos-telecom/calculadora")).toEqual({ rewriteTo: "/es/interno/equipos-telecom/calculadora", open: false })
     expect(matchInternal("/interno/equipos-telecom/olt-huawei.rsc")).toEqual({ rewriteTo: "/es/interno/equipos-telecom/olt-huawei.rsc", open: false })
@@ -16,12 +16,19 @@ describe("/interno routes", () => {
     expect(matchInternal("/en/interno/levantamientos")).toEqual({ rewriteTo: null, open: false })
   })
   it("any capitalization", () => {
-    expect(matchInternal("/INTERNO/Equipos-Telecom/Scripts-MikroTik")).toEqual({ rewriteTo: "/es/interno/equipos-telecom/scripts-mikrotik", open: false })
+    expect(matchInternal("/INTERNO/Equipos-Telecom/MikroTik/Scripts")).toEqual({ rewriteTo: "/es/interno/equipos-telecom/mikrotik/scripts", open: false })
     expect(matchInternal("/ES/Interno/Levantamientos")).toEqual({ rewriteTo: "/es/interno/levantamientos", open: false })
     expect(matchInternal("/interno/Equipos-Telecom/OLT-Huawei")).toEqual({ rewriteTo: "/es/interno/equipos-telecom/olt-huawei", open: false })
   })
   it("the old tool addresses are gone (owner, 2026-11-20: no redirects); they end in a 404", () => {
     for (const old of ["mikrotik", "mikrotik-optimo", "olt", "calculadora", "routers"]) expect(matchInternal(`/interno/${old}`)).toEqual({ rewriteTo: `/es/interno/${old}`, open: false })
+  })
+  it("MikroTik has its own section inside Equipos de Telecom (owner, 2026-11-20)", () => {
+    expect(matchInternal("/interno/equipos-telecom/mikrotik")).toEqual({ rewriteTo: "/es/interno/equipos-telecom/mikrotik", open: false })
+    expect(matchInternal("/Interno/Equipos-Telecom/MIKROTIK/Guia")).toEqual({ rewriteTo: "/es/interno/equipos-telecom/mikrotik/guia", open: false })
+    expect(matchInternal("/es/interno/equipos-telecom/mikrotik/scripts")).toEqual({ rewriteTo: null, open: false })
+    // The old addresses are gone (404).
+    expect(matchInternal("/interno/equipos-telecom/guia-mikrotik")?.rewriteTo).toBe("/es/interno/equipos-telecom/guia-mikrotik")
   })
   it("admin pages and their other spellings", () => {
     expect(matchInternal("/interno/admin/notas")).toEqual({ rewriteTo: "/es/interno/admin/notas", open: false })
@@ -121,6 +128,7 @@ describe("/interno password", () => {
   it("after signing in, only pages under /interno", () => {
     expect(auth.safeNext("/interno/olt")).toBe("/interno/olt")
     expect(auth.safeNext("/interno")).toBe("/interno")
+    expect(auth.safeNext("/interno/equipos-telecom/mikrotik/guia")).toBe("/interno/equipos-telecom/mikrotik/guia")
     for (const x of ["https://evil.example", "//evil.example", "/es/planes", "/interno/../x", "/interno/olt?x", null]) expect(auth.safeNext(x)).toBe("/interno")
   })
 })

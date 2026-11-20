@@ -8,7 +8,7 @@ import internal from "@/messages/internal/mikrotik.es.json"
 /**
  * Internal calculators and simulators (burst, plans, shared parent, busy-hour
  * capacity, solver), served at /interno/equipos-telecom/calculadora; the MikroTik scripts live at
- * /interno/equipos-telecom/scripts-mikrotik. Under Equipos de Telecom since 2026-11-20 (owner).
+ * /interno/equipos-telecom/mikrotik/scripts. Under Equipos de Telecom since 2026-11-20 (owner).
  * Same rules as that page: proxy.ts maps any capitalization here, inside [locale] so the name never appears in the
  * public pages' router payload; Spanish only, not linked, not in the sitemap,
  * noindex; copy from messages/internal/.

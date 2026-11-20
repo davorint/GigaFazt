@@ -7,7 +7,7 @@ import internal from "@/messages/internal/mikrotik.es.json"
 
 /**
  * Internal MikroTik scripts (queues, deployments, load balancing, setup), served
- * at /interno/equipos-telecom/scripts-mikrotik (owner, 2026-11-20); the calculators and simulators live at /interno/equipos-telecom/calculadora.
+ * at /interno/equipos-telecom/mikrotik/scripts (owner, 2026-11-20); the calculators and simulators live at /interno/equipos-telecom/calculadora.
  * Behind the /interno password (owner, 2026-11-17); proxy.ts maps any
  * capitalization here. It sits inside [locale] on purpose: a static
  * folder at the app root is listed in every public page's router payload
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 }
 
-export default async function ScriptsMikrotikPage({ params }: PageProps<"/[locale]/interno/equipos-telecom/scripts-mikrotik">) {
+export default async function ScriptsMikrotikPage({ params }: PageProps<"/[locale]/interno/equipos-telecom/mikrotik/scripts">) {
   const { locale } = await params
   if (locale !== "es") notFound()
   setRequestLocale(locale)

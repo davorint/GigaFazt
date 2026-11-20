@@ -1,6 +1,6 @@
 /**
  * Internal pages, all under /interno (owner, 2026-11-17): /interno lists the tools; /interno/equipos-telecom holds the
- * MikroTik guide of a deployment (guia-mikrotik), the expert scripts (scripts-mikrotik), the Huawei OLT knowledge base
+ * MikroTik tools (mikrotik: the guide of a deployment, guia, and the expert scripts, scripts), the Huawei OLT knowledge base
  * (olt-huawei) and the calculators and simulators (calculadora); /interno/herramientas the tools we have (en-existencia)
  * and their buying options (compras), /interno/materiales the stock (en-existencia) and the master list with its buying
  * options (compras) (owner, 2026-11-20; old addresses are gone, no redirects); /interno/admin the admin
@@ -16,7 +16,9 @@ export const TOOL_PAGES = ["en-existencia", "compras"] as const
 /** The material pages (/interno/materiales/<page>). */
 export const MATERIAL_PAGES = ["en-existencia", "compras"] as const
 /** The network equipment pages (/interno/equipos-telecom/<page>). */
-export const TELECOM_PAGES = ["guia-mikrotik", "scripts-mikrotik", "olt-huawei", "calculadora"] as const
+export const TELECOM_PAGES = ["mikrotik", "olt-huawei", "calculadora"] as const
+/** The MikroTik pages (/interno/equipos-telecom/mikrotik/<page>). */
+export const MIKROTIK_PAGES = ["guia", "scripts"] as const
 /** The admin area's pages (/interno/admin/<page>). */
 export const ADMIN_PAGES = ["notas", "despliegues", "clientes", "reportes_clientes", "proveedores", "agenda", "numeros", "usuarios", "cuentas-por-pagar", "cuentas-por-cobrar", "acuerdos"] as const
 /** Other spellings of an admin page. */
@@ -60,7 +62,14 @@ export function matchInternal(pathname: string): InternalMatch | null {
     const sub2 = /^\/([^/.]+)(.*)$/.exec(after)
     const name = sub2?.[1].toLowerCase() ?? ""
     const known = sub2 && SUBPAGES[page].find((p) => p === name)
-    if (sub2 && known) after = `/${known}${sub2[2]}`
+    let rest3 = sub2?.[2] ?? ""
+    // /interno/equipos-telecom/mikrotik/<guia|scripts>
+    if (known === "mikrotik") {
+      const sub3 = /^\/([^/.]+)(.*)$/.exec(rest3)
+      const k3 = sub3 && (MIKROTIK_PAGES as readonly string[]).find((p) => p === sub3[1].toLowerCase())
+      if (sub3 && k3) rest3 = `/${k3}${sub3[2]}`
+    }
+    if (sub2 && known) after = `/${known}${rest3}`
   }
   const tail = sub ? (page ? `/${page}${after}` : rest) : rest
   const canonical = `/${locale}/${INTERNAL_ROOT}${tail}`

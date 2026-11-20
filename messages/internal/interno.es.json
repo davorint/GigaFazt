@@ -57,13 +57,22 @@
         "lead": "Todo lo de los equipos de red de los despliegues: los routers MikroTik, las OLT Huawei y las calculadoras y simuladores.",
         "metaTitle": "Equipos de Telecom · GigaFazt interno",
         "pages": {
-          "guia-mikrotik": {
-            "name": "Guía MikroTik",
-            "desc": "La guía paso a paso de cada despliegue, el archivo listo para pegar en el router y la revisión de lo que ya tiene instalado."
-          },
-          "scripts-mikrotik": {
-            "name": "Scripts MikroTik",
-            "desc": "Parámetros, despliegues, varios enlaces, configuración, scripts de experto, exportar y varios clientes."
+          "mikrotik": {
+            "name": "MikroTik",
+            "desc": "La guía paso a paso de cada despliegue y los scripts de experto: colas, varios enlaces, configuración y más.",
+            "kicker": "Uso interno · Equipos de Telecom · MikroTik",
+            "lead": "Los routers MikroTik de los despliegues: la guía de cada uno y los scripts de experto.",
+            "metaTitle": "MikroTik · GigaFazt interno",
+            "pages": {
+              "guia": {
+                "name": "Guía MikroTik",
+                "desc": "La guía paso a paso de cada despliegue, el archivo listo para pegar en el router y la revisión de lo que ya tiene instalado."
+              },
+              "scripts": {
+                "name": "Scripts MikroTik",
+                "desc": "Parámetros, despliegues, varios enlaces, configuración, scripts de experto, exportar y varios clientes."
+              }
+            }
           },
           "olt-huawei": {
             "name": "OLT Huawei",

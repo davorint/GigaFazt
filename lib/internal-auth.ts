@@ -142,5 +142,5 @@ export async function cookieOk(value: string | undefined, now = Date.now()): Pro
 
 /** Where to go after signing in: only a page under /interno (never another site). */
 export function safeNext(next: unknown): string {
-  return typeof next === "string" && /^\/interno(?:\/[a-z0-9-]+){0,2}$/i.test(next) ? next : "/interno"
+  return typeof next === "string" && /^\/interno(?:\/[a-z0-9-]+){0,3}$/i.test(next) ? next : "/interno"
 }
