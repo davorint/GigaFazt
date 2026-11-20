@@ -353,7 +353,7 @@ function ReportEditor({ t, r, all, clients, sites }: { t: T; r: Report; all: Rep
         {(!client || r.source === "web") && (
           <div className={GRID}>
             <TextField label={t("client.name")} value={r.name} onChange={(v) => up({ name: v })} />
-            <TextField label={t("client.phone")} value={r.phone} onChange={(v) => up({ phone: v })} />
+            <TextField label={t("client.phone")} value={r.phone} onChange={(v) => up({ phone: v })} type="tel" />
             <TextField label={t("client.address")} value={r.address} onChange={(v) => up({ address: v })} />
           </div>
         )}

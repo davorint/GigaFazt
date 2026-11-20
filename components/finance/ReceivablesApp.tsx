@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl"
 import { NumberField } from "@/components/mikrotik/NumberField"
 import { TextField } from "@/components/mikrotik/TextField"
 import { AreaField, DateField, GRID, PickField } from "@/components/surveys/SurveyFields"
-import { QuickAdd } from "@/components/interno/QuickAdd"
+import { QuickAdd, readAmount } from "@/components/interno/QuickAdd"
 import { RecordHistory } from "@/components/interno/RecordHistory"
 import { useOpenParam } from "@/components/interno/useOpenParam"
 import { ClientPick } from "@/components/clients/ClientPick"
@@ -64,7 +64,7 @@ export function ReceivablesApp() {
   }).sort((a, b) => a.oldest.localeCompare(b.oldest) || b.amount - a.amount)
   const add = (v: Record<string, string>) => {
     const category = (CHARGE_CATEGORIES as readonly string[]).includes(v.category) ? (v.category as ChargeCategory) : "otro"
-    const x = newReceivable({ concept: v.concept.trim(), payer: v.payer.trim(), category, amount: Number(v.amount) || 0, issueDate: today, dueDate: today, by: readState().name, updatedAt: new Date().toISOString() })
+    const x = newReceivable({ concept: v.concept.trim(), payer: v.payer.trim(), category, amount: readAmount(v.amount), issueDate: today, dueDate: today, by: readState().name, updatedAt: new Date().toISOString() })
     receivablesStore.save(x)
     setOpenId(x.id)
   }
@@ -91,7 +91,7 @@ export function ReceivablesApp() {
           fields={[
             { key: "concept", label: t("concept"), required: true, placeholder: t("cobrar.conceptPlaceholder") },
             { key: "payer", label: t("cobrar.payer") },
-            { key: "amount", label: t("amount"), kind: "number", min: 0 },
+            { key: "amount", label: t("amount"), kind: "money" },
             { key: "category", label: t("category"), kind: "select", options: CHARGE_CATEGORIES.map((c) => ({ value: c, label: t(`cobrar.categories.${c}`) })) },
           ]}
           onAdd={add}

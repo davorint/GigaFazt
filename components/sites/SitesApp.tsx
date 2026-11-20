@@ -610,8 +610,8 @@ function Access({ t, s, up, clients }: { t: T; s: Site; up: Up; clients: Client[
             <div className={GRID}>
               <TextField label={t("access.contactName")} value={k.name} onChange={(v) => setC({ ...k, name: v })} />
               <TextField label={t("access.contactRole")} value={k.role} onChange={(v) => setC({ ...k, role: v })} />
-              <TextField label={t("access.contactPhone")} value={k.phone} onChange={(v) => setC({ ...k, phone: v })} />
-              <TextField label={t("access.contactEmail")} value={k.email} onChange={(v) => setC({ ...k, email: v })} />
+              <TextField label={t("access.contactPhone")} value={k.phone} onChange={(v) => setC({ ...k, phone: v })} type="tel" />
+              <TextField label={t("access.contactEmail")} value={k.email} onChange={(v) => setC({ ...k, email: v })} type="email" />
             </div>
             <button type="button" onClick={() => up({ contacts: s.contacts.filter((x) => x.id !== k.id) })} className={DANGER}>
               {t("access.removeContact")}

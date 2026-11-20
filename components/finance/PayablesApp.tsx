@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl"
 import { NumberField } from "@/components/mikrotik/NumberField"
 import { TextField } from "@/components/mikrotik/TextField"
 import { AreaField, DateField, GRID, PickField } from "@/components/surveys/SurveyFields"
-import { QuickAdd } from "@/components/interno/QuickAdd"
+import { QuickAdd, readAmount } from "@/components/interno/QuickAdd"
 import { RecordHistory } from "@/components/interno/RecordHistory"
 import { useOpenParam } from "@/components/interno/useOpenParam"
 import { PAY_CATEGORIES, lookalike, newPayable, recurringBills, type PayCategory, type Payable } from "@/lib/finance/payables"
@@ -61,7 +61,7 @@ export function PayablesApp() {
   const cfdiPending = list.filter((x) => !x.cancelled && complementPending(x)).length
   const add = (v: Record<string, string>) => {
     const category = (PAY_CATEGORIES as readonly string[]).includes(v.category) ? (v.category as PayCategory) : "otro"
-    const x = newPayable({ concept: v.concept.trim(), payee: v.payee.trim(), category, amount: Number(v.amount) || 0, issueDate: today, dueDate: today, by: readState().name, updatedAt: new Date().toISOString() })
+    const x = newPayable({ concept: v.concept.trim(), payee: v.payee.trim(), category, amount: readAmount(v.amount), issueDate: today, dueDate: today, by: readState().name, updatedAt: new Date().toISOString() })
     payablesStore.save(x)
     setOpenId(x.id)
   }
@@ -112,7 +112,7 @@ export function PayablesApp() {
         fields={[
           { key: "concept", label: t("concept"), required: true, placeholder: t("pagar.conceptPlaceholder") },
           { key: "payee", label: t("pagar.payee") },
-          { key: "amount", label: t("amount"), kind: "number", min: 0 },
+          { key: "amount", label: t("amount"), kind: "money" },
           { key: "category", label: t("category"), kind: "select", options: PAY_CATEGORIES.map((c) => ({ value: c, label: t(`pagar.categories.${c}`) })) },
         ]}
         onAdd={add}

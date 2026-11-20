@@ -320,7 +320,9 @@ function Duplicates({ t, c }: { t: T; c: Client }) {
 
 function Editor({ t, c }: { t: T; c: Client }) {
   const up = (p: Partial<Client>) => saveClient({ ...c, ...p })
-  const text = (f: "phone" | "whatsapp" | "email" | "tower" | "apartment") => <TextField label={t(`fields.${f}`)} value={c[f]} onChange={(v) => up({ [f]: v })} />
+  const text = (f: "phone" | "whatsapp" | "email" | "tower" | "apartment") => (
+    <TextField label={t(`fields.${f}`)} value={c[f]} onChange={(v) => up({ [f]: v })} type={f === "phone" || f === "whatsapp" ? "tel" : f === "email" ? "email" : "text"} />
+  )
   const setService = (s: Service) => up({ services: c.services.map((x) => (x.id === s.id ? s : x)) })
   const setContact = (k: Contact) => up({ contacts: c.contacts.map((x) => (x.id === k.id ? k : x)) })
   const business = c.kind === "empresa" || c.kind === "administracion"
@@ -355,8 +357,8 @@ function Editor({ t, c }: { t: T; c: Client }) {
               <div className={GRID}>
                 <TextField label={t("contacts.name")} value={k.name} onChange={(v) => setContact({ ...k, name: v })} />
                 <TextField label={t("contacts.role")} value={k.role} onChange={(v) => setContact({ ...k, role: v })} />
-                <TextField label={t("contacts.phone")} value={k.phone} onChange={(v) => setContact({ ...k, phone: v })} />
-                <TextField label={t("contacts.email")} value={k.email} onChange={(v) => setContact({ ...k, email: v })} />
+                <TextField label={t("contacts.phone")} value={k.phone} onChange={(v) => setContact({ ...k, phone: v })} type="tel" />
+                <TextField label={t("contacts.email")} value={k.email} onChange={(v) => setContact({ ...k, email: v })} type="email" />
               </div>
               <button type="button" onClick={() => up({ contacts: c.contacts.filter((x) => x.id !== k.id) })} className={DANGER}>
                 {t("contacts.remove")}

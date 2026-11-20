@@ -7,6 +7,8 @@ import { useTranslations } from "next-intl"
 export type QuickField =
   | { key: string; label: string; kind?: "text" | "tel"; required?: boolean; placeholder?: string }
   | { key: string; label: string; kind: "number"; min?: number; placeholder?: string }
+  /** Money: a keypad with the decimal point (the plain number keypad has none on iPhone); read with readAmount. */
+  | { key: string; label: string; kind: "money"; placeholder?: string }
   | { key: string; label: string; kind: "select"; options: { value: string; label: string }[] }
 
 const SELECT =
@@ -70,7 +72,7 @@ export function QuickAdd({
               <Input
                 id={`${id}-${f.key}`}
                 type={f.kind === "number" ? "number" : f.kind === "tel" ? "tel" : "text"}
-                inputMode={f.kind === "number" ? "numeric" : f.kind === "tel" ? "tel" : undefined}
+                inputMode={f.kind === "number" ? "numeric" : f.kind === "tel" ? "tel" : f.kind === "money" ? "decimal" : undefined}
                 min={f.kind === "number" ? f.min : undefined}
                 value={v[f.key]}
                 placeholder={f.placeholder}
@@ -96,4 +98,13 @@ export function QuickAdd({
       <p className="text-xs text-zinc-400">{hint ?? t("next")}</p>
     </form>
   )
+}
+
+/** An amount as typed ("$2,500.50", "2500,5" with a decimal comma): its number, or 0. */
+export function readAmount(v: string): number {
+  let t = v.replace(/[\s$]/g, "")
+  // A single comma followed by 1–2 digits at the end is a decimal comma; any other comma groups thousands.
+  t = /^\d+,\d{1,2}$/.test(t) ? t.replace(",", ".") : t.replace(/,/g, "")
+  const n = Number(t)
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : 0
 }

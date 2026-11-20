@@ -167,7 +167,7 @@ function Editor({ t, p }: { t: T; p: Provider }) {
           <TextField label={t("tradeName")} value={p.tradeName} onChange={(v) => up({ tradeName: v })} />
           <TextField label={t("legalName")} value={p.legalName} onChange={(v) => up({ legalName: v })} />
           <TextField label={t("rfc")} value={p.rfc} onChange={(v) => up({ rfc: v.toUpperCase().slice(0, 13) })} hint={rfcBad ? t("rfcBad") : undefined} />
-          <TextField label={t("website")} value={p.website} onChange={(v) => up({ website: v })} />
+          <TextField label={t("website")} value={p.website} onChange={(v) => up({ website: v })} type="url" />
         </div>
       </div>
       <div className="grid gap-3">
@@ -176,7 +176,7 @@ function Editor({ t, p }: { t: T; p: Provider }) {
           <ItemCard key={c.id} title={c.name || t("contact", { n: k + 1 })} removeLabel={t("removeContact")} onRemove={() => up({ contacts: p.contacts.filter((x) => x.id !== c.id) })}>
             <div className={GRID}>
               {(["name", "role", "phone", "whatsapp", "email"] as const).map((f) => (
-                <TextField key={f} label={t(f === "name" ? "contactName" : f === "role" ? "contactRole" : f)} value={c[f]} onChange={(v) => up({ contacts: p.contacts.map((x) => (x.id === c.id ? { ...x, [f]: v } : x)) })} />
+                <TextField key={f} label={t(f === "name" ? "contactName" : f === "role" ? "contactRole" : f)} value={c[f]} onChange={(v) => up({ contacts: p.contacts.map((x) => (x.id === c.id ? { ...x, [f]: v } : x)) })} type={f === "phone" || f === "whatsapp" ? "tel" : f === "email" ? "email" : "text"} />
               ))}
             </div>
           </ItemCard>

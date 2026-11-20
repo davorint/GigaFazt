@@ -75,8 +75,8 @@ export function ContactsSection({ s, set }: SectionProps) {
             <div className={GRID}>
               <PickField label={t("contacts.role")} value={c.role} onChange={(v) => upC(c.id, { role: v })} options={roles.map((r) => ({ value: r, label: t(`contacts.roles.${r}`) }))} />
               <TextField label={t("contacts.name")} value={c.name} onChange={(v) => upC(c.id, { name: v })} />
-              <TextField label={t("contacts.phone")} value={c.phone} onChange={(v) => upC(c.id, { phone: v })} />
-              <TextField label={t("contacts.email")} value={c.email} onChange={(v) => upC(c.id, { email: v })} />
+              <TextField label={t("contacts.phone")} value={c.phone} onChange={(v) => upC(c.id, { phone: v })} type="tel" />
+              <TextField label={t("contacts.email")} value={c.email} onChange={(v) => upC(c.id, { email: v })} type="email" />
             </div>
             <AreaField label={t("contacts.notes")} value={c.notes} onChange={(v) => upC(c.id, { notes: v })} rows={2} />
           </ItemCard>
