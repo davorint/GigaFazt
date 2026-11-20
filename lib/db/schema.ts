@@ -380,6 +380,8 @@ export const teamMembers = pgTable("team_members", {
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  /** When the password last changed (null = never since the account was made): sessions signed in before it end. */
+  passwordChangedAt: timestamp("password_changed_at", { withTimezone: true }),
 })
 
 // ── Cuentas por pagar / por cobrar (/interno/admin/cuentas-por-pagar, -por-cobrar) ──

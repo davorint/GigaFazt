@@ -10,8 +10,9 @@ import { INTERNAL_HEADERS, LOGIN_PATH, matchInternal, type InternalMatch } from 
 const handleI18n = createMiddleware(routing)
 
 /**
- * Internal pages under /interno: noindex, behind the password (session cookie checked here, before any page or RSC
- * payload is served); without it every page except the sign-in one goes to /interno/entrar. Any capitalization is
+ * Internal pages under /interno: noindex, behind the password (the session cookie is checked here, before any page or RSC
+ * payload is served; whether the account still counts is checked by the data routes and, when a page opens, by
+ * SessionGuard); without it every page except the sign-in one goes to /interno/entrar. Any capitalization is
  * rewritten to the Spanish route it is served from.
  */
 async function handleInternal(request: NextRequest, match: InternalMatch): Promise<NextResponse> {

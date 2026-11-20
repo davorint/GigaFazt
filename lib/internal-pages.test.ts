@@ -59,6 +59,12 @@ describe("/interno password", () => {
   afterAll(() => {
     vi.unstubAllEnvs()
   })
+  it("a session says who and when it was signed in (owner review 2026-11-20)", async () => {
+    const at = Date.UTC(2026, 10, 20, 12, 0, 0)
+    const s = await auth.sessionOf(await auth.newSession(at, "member-0001"), at + 1000)
+    expect(s).toEqual({ member: "member-0001", issuedAt: at })
+    expect((await auth.sessionOf(await auth.newSession(at), at + 1000))?.member).toBe("")
+  })
   it("accepts the password and nothing else", async () => {
     expect(auth.authConfigured()).toBe(true)
     expect(await auth.passwordOk(PASS)).toBe(true)
@@ -97,8 +103,8 @@ describe("/interno password", () => {
     const now = Date.now()
     const id = "3f1c2a4e-1111-4222-8333-944455556666"
     const s = await auth.newSession(now, id)
-    expect(await auth.sessionOf(s, now)).toEqual({ member: id })
-    expect(await auth.sessionOf(await auth.newSession(now), now)).toEqual({ member: "" })
+    expect(await auth.sessionOf(s, now)).toMatchObject({ member: id })
+    expect(await auth.sessionOf(await auth.newSession(now), now)).toMatchObject({ member: "" })
     const [exp, nonce, , sig] = s.split(".")
     expect(await auth.sessionOf(`${exp}.${nonce}.otro-miembro-1.${sig}`, now)).toBeNull()
     expect(await auth.sessionOf(`${exp}.${nonce}.-.${sig}`, now)).toBeNull()

@@ -7,7 +7,7 @@ import { useEffect, useId, useState } from "react"
  * With JavaScript it also carries the page asked for (?next=) and shows why the last try failed (?error=1 wrong
  * password, limit too many tries, config the server has no password set).
  */
-type Labels = { name: string; nameHint: string; password: string; submit: string; error: string; errorLimit: string; errorConfig: string; errorAccounts: string }
+type Labels = { name: string; nameHint: string; password: string; submit: string; error: string; errorLimit: string; errorConfig: string; errorAccounts: string; errorEnded: string }
 
 export function LoginForm({ labels }: { labels: Labels }) {
   const id = useId()
@@ -19,7 +19,7 @@ export function LoginForm({ labels }: { labels: Labels }) {
     // Read once after mounting: the page is static, the query only exists in the browser.
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one read of the URL after hydration, not a cascade
     setNext(q.get("next") ?? "")
-    setError(e === "limit" ? labels.errorLimit : e === "config" ? labels.errorConfig : e === "accounts" ? labels.errorAccounts : e ? labels.error : null)
+    setError(e === "limit" ? labels.errorLimit : e === "config" ? labels.errorConfig : e === "accounts" ? labels.errorAccounts : e === "ended" ? labels.errorEnded : e ? labels.error : null)
   }, [labels])
   return (
     <form action="/api/interno/entrar" method="post" className="mt-8 grid gap-4">

@@ -85,6 +85,13 @@
       "when": 1795129148065,
       "tag": "0011_payables_receivables",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795182696806,
+      "tag": "0012_team_password_changed",
+      "breakpoints": true
     }
   ]
 }

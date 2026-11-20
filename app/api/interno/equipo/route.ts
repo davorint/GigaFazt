@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server"
+import { AUTH_COOKIE, newSession, sessionCookie } from "@/lib/internal-auth"
 import { hasDatabase } from "@/lib/db/client"
 import { json, whoIs } from "@/lib/internal-api"
 import { accountsOn, createMember, members, updateMember, type TeamError } from "@/lib/team/server"
@@ -56,5 +57,9 @@ export async function PATCH(request: NextRequest) {
     active: typeof b.active === "boolean" ? b.active : undefined,
     admin: typeof b.admin === "boolean" ? b.admin : undefined,
   })
-  return typeof r === "string" ? fail(r) : json({ member: r })
+  if (typeof r === "string") return fail(r)
+  const res = json({ member: r })
+  // A new password ends the sessions signed in before it; the person who changed their own keeps this one.
+  if (self && typeof b.password === "string") res.cookies.set(AUTH_COOKIE, await newSession(Date.now(), r.id), sessionCookie(request.nextUrl.protocol === "https:"))
+  return res
 }

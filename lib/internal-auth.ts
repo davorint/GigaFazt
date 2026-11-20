@@ -109,7 +109,12 @@ export async function newSession(now = Date.now(), memberId = ""): Promise<strin
   return `${exp}.${nonce}.${member}.${b64url(sig)}`
 }
 
-export type Session = { /** The team account's id, "" for the shared password. */ member: string }
+export type Session = {
+  /** The team account's id, "" for the shared password. */
+  member: string
+  /** When it was signed in (ms): its expiry minus AUTH_DAYS. */
+  issuedAt: number
+}
 
 /** The session a cookie carries, or null when it's missing, expired, forged or the host values aren't set. */
 export async function sessionOf(value: string | undefined, now = Date.now()): Promise<Session | null> {
@@ -125,8 +130,11 @@ export async function sessionOf(value: string | undefined, now = Date.now()): Pr
   const sig = fromB64url(sigText)
   if (!sig || sig.length !== 32 || !fromB64url(nonce)) return null
   const ok = await crypto.subtle.verify("HMAC", await hmacKey(sec), new Uint8Array(sig), signed(exp, nonce, member))
-  return ok ? { member: member && member !== "-" ? member : "" } : null
+  return ok ? { member: member && member !== "-" ? member : "", issuedAt: (Number(exp) - AUTH_DAYS * 24 * 60 * 60) * 1000 } : null
 }
+
+/** The session cookie's options (HttpOnly, AUTH_DAYS, secure on https). */
+export const sessionCookie = (https: boolean) => ({ httpOnly: true, secure: https, sameSite: "lax" as const, path: "/", maxAge: AUTH_DAYS * 24 * 60 * 60 })
 
 export async function cookieOk(value: string | undefined, now = Date.now()): Promise<boolean> {
   return (await sessionOf(value, now)) !== null

@@ -88,7 +88,8 @@
       "errorConfig": "El acceso no está configurado en el servidor. Falta la contraseña en las variables del hosting.",
       "name": "Tu nombre",
       "nameHint": "El de tu cuenta del equipo. Si todavía no hay cuentas, déjalo vacío y usa la contraseña compartida.",
-      "errorAccounts": "Ya hay cuentas del equipo: entra con tu nombre y tu contraseña. Si no tienes cuenta, pídela a quien administra."
+      "errorAccounts": "Ya hay cuentas del equipo: entra con tu nombre y tu contraseña. Si no tienes cuenta, pídela a quien administra.",
+      "errorEnded": "Tu sesión terminó: cambiaron tu contraseña, desactivaron tu cuenta o ya hay cuentas del equipo. Entra de nuevo con tu nombre y tu contraseña."
     },
     "admin": {
       "meta": {

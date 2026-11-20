@@ -1,14 +1,15 @@
 /**
  * The /api/interno/* routes check the same session cookie as the /interno pages (the proxy lets /api through, so each
  * route checks it itself), and here also who it is: a team account must still be active, and once accounts exist the
- * shared team password's sessions no longer reach the data (lib/team). A refused session answers 401
+ * shared team password's sessions no longer reach the data, and a session signed in before the person's last password
+ * change ends (lib/team). Pages ask the same when they open (SessionGuard). A refused session answers 401
  * { error: "signin" } so the phone sends the person to sign in again. Server code only.
  */
 import "server-only"
 import { NextResponse, type NextRequest } from "next/server"
 import { AUTH_COOKIE, sessionOf } from "./internal-auth"
 import { INTERNAL_HEADERS } from "./internal-pages"
-import { accountsOn, memberById, type Member } from "./team/server"
+import { accountsOn, memberById, sessionCurrent, type Member } from "./team/server"
 
 export type Who = { member: Member | null }
 
@@ -19,7 +20,7 @@ export async function whoIs(request: NextRequest): Promise<Who | null> {
   try {
     if (s.member) {
       const m = await memberById(s.member)
-      return m && m.active ? { member: m } : null
+      return m && m.active && sessionCurrent(m, s.issuedAt) ? { member: m } : null
     }
     // The shared password: only while no team account has been set up.
     return (await accountsOn()) ? null : { member: null }
