@@ -16,9 +16,11 @@ export const TOOL_PAGES = ["en-existencia", "compras"] as const
 /** The material pages (/interno/materiales/<page>). */
 export const MATERIAL_PAGES = ["en-existencia", "compras"] as const
 /** The network equipment pages (/interno/equipos-telecom/<page>). */
-export const TELECOM_PAGES = ["mikrotik", "olt-huawei", "calculadora"] as const
+export const TELECOM_PAGES = ["mikrotik", "asternos", "olt-huawei", "calculadora"] as const
 /** The MikroTik pages (/interno/equipos-telecom/mikrotik/<page>). */
 export const MIKROTIK_PAGES = ["guia", "scripts"] as const
+/** The AsterNOS pages (/interno/equipos-telecom/asternos/<page>, owner 2026-11-20). */
+export const ASTERNOS_PAGES = ["guia", "scripts"] as const
 /** The admin area's pages (/interno/admin/<page>). */
 export const ADMIN_PAGES = ["notas", "despliegues", "clientes", "reportes_clientes", "proveedores", "agenda", "numeros", "usuarios", "cuentas-por-pagar", "cuentas-por-cobrar", "acuerdos"] as const
 /** Other spellings of an admin page. */
@@ -63,10 +65,11 @@ export function matchInternal(pathname: string): InternalMatch | null {
     const name = sub2?.[1].toLowerCase() ?? ""
     const known = sub2 && SUBPAGES[page].find((p) => p === name)
     let rest3 = sub2?.[2] ?? ""
-    // /interno/equipos-telecom/mikrotik/<guia|scripts>
-    if (known === "mikrotik") {
+    // /interno/equipos-telecom/<mikrotik|asternos>/<guia|scripts>
+    const third: Record<string, readonly string[]> = { mikrotik: MIKROTIK_PAGES, asternos: ASTERNOS_PAGES }
+    if (known && third[known]) {
       const sub3 = /^\/([^/.]+)(.*)$/.exec(rest3)
-      const k3 = sub3 && (MIKROTIK_PAGES as readonly string[]).find((p) => p === sub3[1].toLowerCase())
+      const k3 = sub3 && third[known].find((p) => p === sub3[1].toLowerCase())
       if (sub3 && k3) rest3 = `/${k3}${sub3[2]}`
     }
     if (sub2 && known) after = `/${known}${rest3}`

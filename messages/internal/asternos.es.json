@@ -1,0 +1,212 @@
+{
+  "asternos": {
+    "meta": {
+      "guide": "Guía AsterNOS · Interno",
+      "scripts": "Scripts AsterNOS · Interno"
+    },
+    "kicker": "Uso interno · Equipos de Telecom · AsterNOS",
+    "guideTitle": "Guía AsterNOS",
+    "guideLead": "El despliegue con AsterNOS-VPP en lugar del MikroTik: un PPPoE por plan, carriers con balanceo o respaldo, NAT, filtros y los planes con la ráfaga del MikroTik. Cada comando viene de la documentación de Asterfusion y lo que no está documentado se marca para verificar en el equipo.",
+    "scriptsTitle": "Scripts AsterNOS",
+    "scriptsLead": "Las partes del despliegue por separado: usuarios PPPoE, planes con ráfaga (con la comparación contra el MikroTik), carriers y respaldo, y los comandos de revisión.",
+    "code": {
+      "lines": "{n, plural, one {# línea} other {# líneas}}",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "download": "Descargar .txt",
+      "more": "… y {n, plural, one {# línea más} other {# líneas más}}: descarga el archivo completo.",
+      "verifyTag": "VERIFICAR",
+      "verify": "Usa algo que la documentación de AsterNOS no muestra. Pruébalo en el equipo antes de un edificio y avísame qué respondió.",
+      "sources": "Fuentes:",
+      "docs": {
+        "firstUse": "Primer uso",
+        "cli": "Línea de comandos",
+        "device": "Dispositivo",
+        "ntp": "NTP",
+        "users": "Usuarios locales",
+        "iface": "Interfaces",
+        "subIface": "Subinterfaces",
+        "lag": "Agregación de enlaces",
+        "ipv4": "IPv4 y DHCP",
+        "pppoeServer": "Servidor PPPoE",
+        "pppoeGuide": "Guía PPPoE",
+        "staticRoute": "Rutas estáticas",
+        "pbr": "Ruteo por políticas",
+        "sla": "SLA",
+        "track": "Track",
+        "nat": "NAT",
+        "natGuide": "Guía NAT",
+        "acl": "ACL",
+        "car": "Regulación de tráfico (CAR)",
+        "qosCase": "Caso QoS-VPP",
+        "hqos": "HQoS",
+        "hqosCase": "Caso HQoS-VPP",
+        "upgrade": "Sistema y actualización",
+        "status": "Estado del equipo"
+      }
+    },
+    "form": {
+      "device": "Equipo",
+      "hostname": "Nombre del equipo",
+      "hostnameHint": "Letras y números (por ejemplo, el despliegue).",
+      "adminUser": "Usuario de administración",
+      "adminUserHint": "Una cuenta propia; la contraseña se escribe en el texto generado, nunca aquí. Cambia la de fábrica (admin / asteros) en el primer acceso.",
+      "mgmtPort": "Puerto de administración",
+      "mgmtAddress": "IP de administración",
+      "mgmtAddressHint": "Con prefijo, por ejemplo 192.168.88.2/24. Vacío si ya la configuraste por consola.",
+      "mgmtGateway": "Gateway de administración",
+      "ntp": "Servidor NTP",
+      "dns": "DNS para los clientes",
+      "dnsHint": "El que reciben por PPPoE.",
+      "oltPorts": "Puertos hacia la OLT",
+      "oltPortsHint": "Uno (1) o varios separados por coma (1, 2): con dos o más se agregan con LACP.",
+      "plans": "Planes",
+      "plansHint": "Cada plan llega en su propia VLAN desde la OLT y tiene su servidor PPPoE y su rango de direcciones. Cada dirección del rango recibe su propio limitador con la ráfaga del plan (hasta 8 planes y 500 clientes por plan).",
+      "planName": "Nombre",
+      "planSpeed": "Velocidad del plan",
+      "vlan": "VLAN",
+      "pool": "Rango de direcciones",
+      "poolHint": "Por ejemplo 100.64.1.0/24: la primera dirección es el gateway y el resto, los clientes.",
+      "removePlan": "Quitar plan",
+      "addPlan": "Agregar plan",
+      "rule": "Regla de ráfaga (como en el MikroTik)",
+      "ruleHint": "La misma regla de la guía MikroTik: de ella salen max-limit, burst-threshold y burst-time de cada plan.",
+      "rules": {
+        "flat": "Sin ráfaga (100 %)",
+        "s80": "Sostenido 80 %",
+        "s50": "Sostenido 50 %",
+        "s20": "Sostenido 20 %"
+      },
+      "design": "Cómo se imita la ráfaga",
+      "designs": {
+        "two-stage": "Dos etapas (la más parecida al MikroTik)",
+        "single": "Un limitador (respaldo)"
+      },
+      "designsHint": {
+        "two-stage": "Un marcador por cliente decide si va en ráfaga y un moldeador HQoS lo frena a max-limit al terminarse. A menos de ±10 % del MikroTik en todos los casos probados. Verificar que la marca llegue al HQoS.",
+        "single": "Un solo limitador por cliente: igual al MikroTik desde reposo y con pausas largas; da más datos cuando el cliente hace ráfagas cada pocos segundos."
+      },
+      "carriers": "Carriers",
+      "carrierName": "Nombre",
+      "carrierPort": "Puerto",
+      "carrierMode": "Cómo recibe la IP",
+      "modes": {
+        "static": "IP fija",
+        "dhcp": "DHCP"
+      },
+      "carrierAddress": "IP del puerto",
+      "carrierAddressHint": "Con prefijo, por ejemplo 200.10.10.2/30.",
+      "carrierGateway": "Gateway del carrier",
+      "carrierMbps": "Capacidad contratada",
+      "removeCarrier": "Quitar carrier",
+      "addCarrier": "Agregar carrier",
+      "wanMode": "Con varios carriers",
+      "wanModes": {
+        "balance": "Repartir el tráfico entre todos",
+        "failover": "Usar el primero y los demás de respaldo"
+      },
+      "probe": "IP para revisar cada carrier",
+      "probeHint": "A la que se hace ping por cada carrier; si no responde, ese carrier sale de las rutas hasta que vuelva.",
+      "issues": {
+        "plans": "Agrega al menos un plan.",
+        "tooManyPlans": "AsterNOS tiene 8 servidores PPPoE (0 a 7): máximo 8 planes.",
+        "pool": "El rango de «{plan}» no es válido: escríbelo como 100.64.1.0/24 (de /20 a /30).",
+        "poolSize": "El rango de «{plan}» tiene {n} direcciones y cada lista de reglas admite 500: usa uno más chico (un /24 tiene 253).",
+        "vlan": "La VLAN de «{plan}» falta, está fuera de 2 a 4094 o se repite.",
+        "carriers": "Agrega al menos un carrier.",
+        "carrierStatic": "Al carrier «{carrier}» le falta la IP o el gateway.",
+        "balanceGateway": "«{carrier}» recibe la IP por DHCP: para repartir o revisar el carrier hace falta su gateway; con varios carriers usa IP fija.",
+        "olt": "Escribe el puerto (o puertos) hacia la OLT."
+      }
+    },
+    "guide": {
+      "before": {
+        "title": "Antes de empezar",
+        "console": "El primer acceso es por consola serial (115200, 8N1) con admin / asteros: cambia esa contraseña de inmediato. Escribe los comandos después de entrar con «configure terminal».",
+        "license": "El servidor PPPoE, el HQoS o el CGNAT podrían requerir la licencia comercial: revisa «show license» y pregúntalo al comprar.",
+        "verify": "Los bloques marcados VERIFICAR usan algo que la documentación no muestra (por ejemplo, PPPoE sobre una VLAN o la marca del limitador llegando al HQoS): pruébalos primero en el equipo.",
+        "backup": "Cada «write» guarda la configuración en /etc/sonic/config_db.json y deja la anterior con fecha para regresar a ella."
+      },
+      "fields": "Datos del despliegue",
+      "steps": "Pasos",
+      "downloadAll": "Descargar todo",
+      "blocks": {
+        "access": {
+          "title": "Primer acceso",
+          "what": "Nombre del equipo, una cuenta de administración propia (con bloqueo tras intentos fallidos), la IP de administración y la hora por NTP."
+        },
+        "olt": {
+          "title": "Enlace a la OLT y VLAN por plan",
+          "what": "El puerto (o puertos con LACP) hacia la OLT y una subinterfaz por plan con su VLAN. En la OLT, cada ONT va en la VLAN de su plan: cambiar de plan es cambiar la VLAN."
+        },
+        "pppoe": {
+          "title": "Un servidor PPPoE por plan",
+          "what": "Cada plan tiene su rango de direcciones, su gateway, el DNS y su servidor PPPoE en la VLAN del plan. Los usuarios se agregan en Scripts → Usuarios PPPoE."
+        },
+        "carriers": {
+          "title": "Carriers y NAT",
+          "what": "La IP de cada carrier, NAT de salida por cada uno y el reparto del tráfico (grupo de gateways) o las rutas en orden de preferencia para respaldo."
+        },
+        "failover": {
+          "title": "Revisión de cada carrier",
+          "what": "Un ping por cada carrier a la IP de revisión; si deja de responder, sus rutas salen hasta que vuelva a responder."
+        },
+        "filters": {
+          "title": "Filtros para los clientes",
+          "what": "Lo mismo que en el MikroTik: el tráfico de Windows y NetBIOS de los clientes no sale a internet."
+        },
+        "plans": {
+          "title": "Planes con ráfaga",
+          "what": "Cada dirección de cada plan recibe su limitador de bajada y de subida con la ráfaga del MikroTik (ver Scripts → Planes para los valores y la comparación). Es el bloque más largo: descárgalo y pégalo por partes."
+        },
+        "save": {
+          "title": "Guardar",
+          "what": "Guarda la configuración (sobrevive a reinicios) y muéstrala para revisarla."
+        }
+      }
+    },
+    "scripts": {
+      "uses": "Usa los datos de la guía: {plans, plural, one {# plan} other {# planes}} y {carriers, plural, one {# carrier} other {# carriers}}.",
+      "editInGuide": "Cambiarlos en la guía →",
+      "tabsLabel": "Scripts AsterNOS",
+      "tabs": {
+        "users": "Usuarios PPPoE",
+        "plans": "Planes con ráfaga",
+        "carriers": "Carriers y respaldo",
+        "checks": "Revisión"
+      },
+      "usersWhat": "Pega la lista de clientes: cada uno queda en el servidor PPPoE de su plan. La lista no sale de este teléfono.",
+      "usersList": "Clientes",
+      "usersHint": "Una línea por cliente: nombre, usuario PPPoE, plan (200, 500M, 1G o el nombre del plan), contraseña. Separados por coma, punto y coma o tabulador.",
+      "usersErrors": "{n, plural, one {# línea no se pudo leer} other {# líneas no se pudieron leer}} (líneas {lines}): revisa las columnas y la contraseña.",
+      "usersUnplaced": "Sin plan en este despliegue (agrega el plan en la guía): {users}.",
+      "plansWhat": "Para cada plan: los valores del MikroTik (de la regla elegida), cómo quedan en AsterNOS y cuántos datos da cada diseño comparado con el MikroTik en distintos usos. Verde: a 10 % o menos.",
+      "planLine": "{mbps} Mbps · VLAN {vlan} · {pool}",
+      "mikrotikLine": "MikroTik: max-limit {max}M, burst-limit {burst}M, burst-threshold {threshold}M, burst-time {time} s. Desde reposo da {real} s de ráfaga.",
+      "twoStageLine": "AsterNOS (dos etapas): marcador que se recarga a {refill}M ({share} % del burst-threshold) con {size} de ráfaga; HQoS por cliente hasta {user}M y lo que pase de la ráfaga a {over}M.",
+      "singleLine": "AsterNOS (un limitador): CIR {cir}M, PIR {pir}M y {cbs} de ráfaga; lo demás se descarta.",
+      "noBurst": "Sin ráfaga: el plan queda fijo a {mbps} Mbps.",
+      "compareTitle": "Comparación de {plan} con el MikroTik",
+      "compareCaption": "Datos que da AsterNOS comparados con el MikroTik en 2 minutos de cada uso.",
+      "cols": {
+        "pattern": "Uso",
+        "twoStage": "Dos etapas",
+        "single": "Un limitador"
+      },
+      "patterns": {
+        "speedtest": "Prueba de velocidad (15 s)",
+        "dl50": "Descarga de 50 MB",
+        "dl500": "Descarga de 500 MB",
+        "on5off25": "5 s de uso, 25 s de pausa",
+        "on4off12": "4 s de uso, 12 s de pausa",
+        "on3off8": "3 s de uso, 8 s de pausa",
+        "on2off4": "2 s de uso, 4 s de pausa",
+        "on10off6": "10 s de uso, 6 s de pausa"
+      },
+      "carriersWhat": "Las IPs de los carriers, el NAT de salida y el reparto o el orden de respaldo.",
+      "failover": "Revisión de carriers",
+      "failoverWhat": "La revisión por ping de cada carrier (SLA) y las rutas que salen si deja de responder (track).",
+      "checksWhat": "Comandos para revisar el equipo después de instalar: versión y licencia, puertos, sesiones PPPoE, NAT, carriers, limitadores y uso del CPU."
+    }
+  }
+}
