@@ -28,8 +28,7 @@ const GROUPS = [
   {
     key: "techGroup",
     links: [
-      ["/interno/mikrotik-optimo", "mikrotik-optimo"],
-      ["/interno/mikrotik", "mikrotik"],
+      ["/interno/routers", "routers"],
       ["/interno/calculadora", "calculadora"],
       ["/interno/olt", "olt"],
     ],

@@ -43,7 +43,7 @@ export function SetupPanel({ state, onSetup, onWans }: Props) {
   }
   const plans = useMemo(() => setupPlans(s.plans, s.rule), [s.plans, s.rule])
   const issues = checkSetup(s, ctx)
-  // The same steps, with the same guards, as the guide on /mikrotik-optimo.
+  // The same steps, with the same guards, as the guide on /interno/routers/guia-mikrotik.
   const steps = setupSteps(state, setupParts(s, { ...ctx, name: state.deployment, plans }))
   const olt = oltSetup(s, { plans })
 

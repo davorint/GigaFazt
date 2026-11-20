@@ -8,8 +8,8 @@ import internal from "@/messages/internal/mikrotik.es.json"
 /**
  * The ideal guide for a deployment (owner, 2026-11-16): the saved deployments, the step-by-step guide with its fields,
  * the deployment's download (the guide plus the expert scripts turned on) and the "what's installed" check. The expert
- * scripts and the full editors live at /interno/mikrotik. Same rules as that page: proxy.ts rewrites /interno/mikrotik-optimo (and
- * /interno/mikrotik-optimal, any capitalization) here, inside [locale]; Spanish only, not linked, not in the sitemap, noindex.
+ * scripts and the full editors live at /interno/routers/scripts-mikrotik (owner, 2026-11-20: both under Routers). Same rules
+ * as that page: proxy.ts sends the old /interno/routers/guia-mikrotik (and -optimal) here, inside [locale]; Spanish only, not linked, not in the sitemap, noindex.
  */
 export const metadata: Metadata = {
   title: { absolute: internal.mikrotik.meta.titleGuide },
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 }
 
-export default async function MikrotikOptimoPage({ params }: PageProps<"/[locale]/interno/mikrotik-optimo">) {
+export default async function GuiaMikrotikPage({ params }: PageProps<"/[locale]/interno/routers/guia-mikrotik">) {
   const { locale } = await params
   if (locale !== "es") notFound()
   setRequestLocale(locale)

@@ -16,7 +16,10 @@ const handleI18n = createMiddleware(routing)
  */
 async function handleInternal(request: NextRequest, match: InternalMatch): Promise<NextResponse> {
   let res: NextResponse
-  if (!match.open && !(await cookieOk(request.cookies.get(AUTH_COOKIE)?.value))) {
+  if (match.redirectTo) {
+    // A page that moved (/interno/mikrotik → /interno/routers/scripts-mikrotik): the sign-in check runs on the new address.
+    res = NextResponse.redirect(new URL(`${match.redirectTo}${request.nextUrl.search}`, request.url), 308)
+  } else if (!match.open && !(await cookieOk(request.cookies.get(AUTH_COOKIE)?.value))) {
     const to = new URL(LOGIN_PATH, request.url)
     const page = /^\/(?:[a-z]{2}\/)?(interno(?:\/[a-z0-9-]+){0,2})/i.exec(request.nextUrl.pathname)
     if (page) to.searchParams.set("next", `/${page[1].toLowerCase()}`)

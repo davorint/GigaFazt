@@ -16,13 +16,22 @@
         "name": "Administración",
         "desc": "Despliegues con sus cuartos de telecom, clientes y solicitudes, proveedores y la lista maestra de materiales con precios."
       },
-      "mikrotik-optimo": {
-        "name": "Guía óptima MikroTik",
-        "desc": "La guía paso a paso de cada despliegue, el archivo listo para pegar en el router y la revisión de lo que ya tiene instalado."
-      },
-      "mikrotik": {
-        "name": "Scripts MikroTik",
-        "desc": "Parámetros, despliegues, varios enlaces, configuración, scripts de experto, exportar y varios clientes."
+      "routers": {
+        "name": "Routers",
+        "desc": "MikroTik: la guía paso a paso de cada despliegue y los scripts de experto (colas, varios enlaces, configuración).",
+        "kicker": "Uso interno · Routers",
+        "lead": "Todo lo de los routers MikroTik de los despliegues.",
+        "metaTitle": "Routers · GigaFazt interno",
+        "pages": {
+          "guia-mikrotik": {
+            "name": "Guía MikroTik",
+            "desc": "La guía paso a paso de cada despliegue, el archivo listo para pegar en el router y la revisión de lo que ya tiene instalado."
+          },
+          "scripts-mikrotik": {
+            "name": "Scripts MikroTik",
+            "desc": "Parámetros, despliegues, varios enlaces, configuración, scripts de experto, exportar y varios clientes."
+          }
+        }
       },
       "calculadora": {
         "name": "Calculadoras y simuladores",

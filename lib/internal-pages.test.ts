@@ -5,18 +5,26 @@ import { matchInternal } from "./internal-pages"
 describe("/interno routes", () => {
   it("everything under /interno, served from the Spanish route", () => {
     expect(matchInternal("/interno")).toEqual({ rewriteTo: "/es/interno", open: false })
-    expect(matchInternal("/interno/mikrotik")).toEqual({ rewriteTo: "/es/interno/mikrotik", open: false })
-    expect(matchInternal("/interno/mikrotik-optimo")).toEqual({ rewriteTo: "/es/interno/mikrotik-optimo", open: false })
+    expect(matchInternal("/interno/routers")).toEqual({ rewriteTo: "/es/interno/routers", open: false })
+    expect(matchInternal("/interno/routers/scripts-mikrotik")).toEqual({ rewriteTo: "/es/interno/routers/scripts-mikrotik", open: false })
+    expect(matchInternal("/interno/routers/guia-mikrotik")).toEqual({ rewriteTo: "/es/interno/routers/guia-mikrotik", open: false })
     expect(matchInternal("/interno/calculadora")).toEqual({ rewriteTo: "/es/interno/calculadora", open: false })
     expect(matchInternal("/interno/olt.rsc")).toEqual({ rewriteTo: "/es/interno/olt.rsc", open: false })
     expect(matchInternal("/interno.rsc")).toEqual({ rewriteTo: "/es/interno.rsc", open: false })
     expect(matchInternal("/es/interno/olt")).toEqual({ rewriteTo: null, open: false })
     expect(matchInternal("/en/interno/olt")).toEqual({ rewriteTo: null, open: false })
   })
-  it("any capitalization, and the -optimal spelling", () => {
-    expect(matchInternal("/INTERNO/MikroTik")).toEqual({ rewriteTo: "/es/interno/mikrotik", open: false })
+  it("any capitalization, and other spellings of the router pages", () => {
+    expect(matchInternal("/INTERNO/Routers/Scripts-MikroTik")).toEqual({ rewriteTo: "/es/interno/routers/scripts-mikrotik", open: false })
     expect(matchInternal("/ES/Interno/OLT")).toEqual({ rewriteTo: "/es/interno/olt", open: false })
-    expect(matchInternal("/interno/MIKROTIK-OPTIMAL")).toEqual({ rewriteTo: "/es/interno/mikrotik-optimo", open: false })
+    expect(matchInternal("/interno/router/Guia")).toEqual({ rewriteTo: "/es/interno/routers/guia-mikrotik", open: false })
+  })
+  it("the MikroTik pages moved under /interno/routers (owner, 2026-11-20): the old addresses redirect", () => {
+    expect(matchInternal("/interno/mikrotik")).toEqual({ rewriteTo: null, open: false, redirectTo: "/interno/routers/scripts-mikrotik" })
+    expect(matchInternal("/INTERNO/MikroTik")?.redirectTo).toBe("/interno/routers/scripts-mikrotik")
+    expect(matchInternal("/es/interno/mikrotik-optimo")?.redirectTo).toBe("/interno/routers/guia-mikrotik")
+    expect(matchInternal("/interno/MIKROTIK-OPTIMAL")?.redirectTo).toBe("/interno/routers/guia-mikrotik")
+    expect(matchInternal("/interno/mikrotik.rsc")?.redirectTo).toBe("/interno/routers/scripts-mikrotik.rsc")
   })
   it("admin pages and their other spellings", () => {
     expect(matchInternal("/interno/admin/notas")).toEqual({ rewriteTo: "/es/interno/admin/notas", open: false })

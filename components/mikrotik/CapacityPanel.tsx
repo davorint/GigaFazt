@@ -399,7 +399,7 @@ export function CapacityPanel({ state, onCapacity, onStatus, measuredAverages }:
               <p className="text-sm text-zinc-300">
                 {t("capacity.deployment.linksSummary", { total: fmtRate(netCap), count: state.wans.length, mode: modeName })}{" "}
                 {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- the other internal page: a full load (each page keeps its own state; proxy.ts rewrites it) */}
-                <a href="/interno/mikrotik#enlaces" className={LINK}>
+                <a href="/interno/routers/scripts-mikrotik#enlaces" className={LINK}>
                   {t("capacity.deployment.linksEdit")}
                 </a>
               </p>
