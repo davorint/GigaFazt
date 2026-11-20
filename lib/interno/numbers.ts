@@ -24,6 +24,8 @@ export type MonthNumbers = {
   rate: number | null
   newServices: number
   cancelled: number
+  /** Clients with a live service at the end of last month and none at the end of this one (they left). */
+  lost: number
   activeClients: number
   /** expected / active clients (null without active clients). */
   arpu: number | null
@@ -48,6 +50,7 @@ export function monthNumbers(clients: Client[], payments: Payment[], reports: Re
     const collected = payments.filter((p) => monthOf(p.date) === month).reduce((a, p) => a + p.amount, 0)
     const services = clients.flatMap((c) => c.services)
     const activeClients = clients.filter((c) => activeAt(c, month)).length
+    const lost = clients.filter((c) => activeAt(c, addMonths(month, -1)) && !activeAt(c, month)).length
     const resolved = reports.filter((r) => r.status === "resuelto" && r.resolvedAt.slice(0, 7) === month)
     const hours = resolved.map(hoursToSolve).filter((h): h is number => h !== null)
     return {
@@ -57,6 +60,7 @@ export function monthNumbers(clients: Client[], payments: Payment[], reports: Re
       rate: expected > 0 ? collected / expected : null,
       newServices: services.filter((s) => s.start.slice(0, 7) === month).length,
       cancelled: services.filter((s) => s.status === "cancelado" && s.cancelledAt.slice(0, 7) === month).length,
+      lost,
       activeClients,
       arpu: activeClients ? expected / activeClients : null,
       reportsOpened: reports.filter((r) => r.createdAt.slice(0, 7) === month).length,
@@ -99,16 +103,30 @@ export function siteNumbers(sites: Site[], clients: Client[]): SiteNumbers[] {
 
 // ── Churn ───────────────────────────────────────────────────────────────────
 
-/** Cancelled services per month ÷ active clients at the end of the month before (null without active clients). */
+/**
+ * Churn: clients who left this month ÷ clients active at the end of the month before (null without any). Clients, not
+ * services: one who drops internet and TV together is one client lost.
+ */
 export function churnRate(rows: MonthNumbers[], i: number): number | null {
   const before = rows[i - 1]?.activeClients ?? 0
-  return before ? rows[i].cancelled / before : null
+  return before ? rows[i].lost / before : null
 }
 
-/** Why services were cancelled in the given months, most common first ("" = not recorded). */
+/**
+ * Why clients cancelled in the given months, most common first ("" = not recorded): once per client and month (services
+ * cancelled together count once, with the first reason written down).
+ */
 export function cancelReasons(clients: Client[], months: string[]): { reason: CancelReason; n: number }[] {
   const count = new Map<CancelReason, number>()
-  for (const c of clients) for (const s of c.services) if (s.status === "cancelado" && months.includes(s.cancelledAt.slice(0, 7))) count.set(s.cancelReason, (count.get(s.cancelReason) ?? 0) + 1)
+  for (const c of clients) {
+    const byMonth = new Map<string, CancelReason>()
+    for (const s of c.services) {
+      const m = s.cancelledAt.slice(0, 7)
+      if (s.status !== "cancelado" || !months.includes(m)) continue
+      if (!byMonth.get(m)) byMonth.set(m, s.cancelReason)
+    }
+    for (const r of byMonth.values()) count.set(r, (count.get(r) ?? 0) + 1)
+  }
   return [...count].map(([reason, n]) => ({ reason, n })).sort((a, b) => b.n - a.n)
 }
 
@@ -135,7 +153,7 @@ export function clientsAtRisk(clients: Client[], payments: Payment[], reports: R
     const reasons: RiskReason[] = []
     if (l.status === "atrasado") reasons.push("atrasado")
     if (c.promiseDate && c.promiseDate < today && l.owed > 0) reasons.push("promesa")
-    if (reports.filter((r) => r.clientId === c.id && Date.parse(r.createdAt) >= since).length >= REPORTS_FOR_RISK) reasons.push("reportes")
+    if (reports.filter((r) => r.clientId === c.id && r.status !== "descartado" && Date.parse(r.createdAt) >= since).length >= REPORTS_FOR_RISK) reasons.push("reportes")
     const net = c.services.filter((s) => s.type === "internet" && s.status === "activo")
     if (net.some((s) => lightStatus(s.rxDbm) === "baja" || (lightDrop(s) ?? 0) >= 2)) reasons.push("luz")
     if (reasons.length) out.push({ client: c, reasons, owed: l.owed })

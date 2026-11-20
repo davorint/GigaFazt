@@ -44,7 +44,7 @@ describe("dashboard, churn, clients at risk, penetration (owner, 2026-11-19)", (
   })
   it("churn = cancelled this month ÷ active at the end of last month; reasons counted, unrecorded ones too", async () => {
     const { churnRate, cancelReasons } = await import("./numbers")
-    const rows = [{ activeClients: 20, cancelled: 0 }, { activeClients: 19, cancelled: 2 }] as never
+    const rows = [{ activeClients: 20, lost: 0 }, { activeClients: 19, lost: 2 }] as never
     expect(churnRate(rows, 1)).toBe(0.1)
     expect(churnRate(rows, 0)).toBeNull()
     const gone = (r: string, at: string) => newClient({ services: [newService("internet", { start: "2025-01-01", status: "cancelado", cancelledAt: at, cancelReason: r as never })] })
@@ -59,12 +59,32 @@ describe("dashboard, churn, clients at risk, penetration (owner, 2026-11-19)", (
     const fine = newClient({ id: "cli-fine01", services: [newService("internet", { monthly: 396, start: "2026-06-01" })] })
     const noisy = newClient({ id: "cli-noisy1", services: [newService("internet", { monthly: 396, start: "2026-06-01" })] })
     const gone = newClient({ id: "cli-gone01", services: [newService("internet", { monthly: 396, start: "2026-06-01", status: "cancelado", cancelledAt: "2026-07-01" })] })
-    const pays = ["2026-06", "2026-07", "2026-08", "2026-09", "2026-10", "2026-11"].flatMap((m) => [fine, noisy].map((c) => newPayment({ clientId: c.id, month: m, date: `${m}-01`, amount: 396 })))
+    const pays = ["2026-06", "2026-07", "2026-08", "2026-09", "2026-10", "2026-11"].flatMap((m) => [fine, noisy].map((c) => newPayment({ clientId: c.id, date: `${m}-01`, amount: 396 })))
     const reps = [newReport({ clientId: noisy.id, createdAt: "2026-10-01T10:00:00Z" }), newReport({ clientId: noisy.id, createdAt: "2026-11-10T10:00:00Z" })]
     const r = clientsAtRisk([late, fine, noisy, gone], pays, reps, "2026-11-19")
     expect(r.map((x) => [x.client.id, x.reasons])).toEqual([
       ["cli-late01", ["atrasado", "promesa"]],
       ["cli-noisy1", ["reportes"]],
     ])
+  })
+})
+
+describe("churn counts clients, not services (2026-11-19 review)", () => {
+  it("a client dropping internet and TV together is one client lost and one reason; discarded reports don't make risk", async () => {
+    const { churnRate, cancelReasons, clientsAtRisk } = await import("./numbers")
+    const both = newClient({
+      services: [
+        newService("internet", { monthly: 396, start: "2026-01-01", status: "cancelado", cancelledAt: "2026-10-05", cancelReason: "mudanza" }),
+        newService("iptv", { monthly: 250, start: "2026-01-01", status: "cancelado", cancelledAt: "2026-10-05" }),
+      ],
+    })
+    const stays = newClient({ services: [newService("internet", { monthly: 396, start: "2026-01-01" })] })
+    const rows = monthNumbers([both, stays], [], [], ["2026-09", "2026-10"])
+    expect([rows[1].cancelled, rows[1].lost]).toEqual([2, 1])
+    expect(churnRate(rows, 1)).toBe(0.5)
+    expect(cancelReasons([both], ["2026-10"])).toEqual([{ reason: "mudanza", n: 1 }])
+    const pays = ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10", "2026-11"].map((m) => newPayment({ clientId: stays.id, date: `${m}-01`, amount: 396 }))
+    const reps = [newReport({ clientId: stays.id, createdAt: "2026-11-01T10:00:00Z", status: "descartado" }), newReport({ clientId: stays.id, createdAt: "2026-11-10T10:00:00Z" })]
+    expect(clientsAtRisk([stays], pays, reps, "2026-11-19")).toEqual([])
   })
 })

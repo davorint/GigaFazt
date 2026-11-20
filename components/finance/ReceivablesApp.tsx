@@ -54,8 +54,8 @@ export function ReceivablesApp() {
     return c ? clientLabel(c) : x.payer
   }
   const shown = list
-    .filter((x) => (show === "todas" ? true : show === "abiertas" ? isOpenDoc(x) : show === "vencidas" ? st(x) === "vencido" : st(x) === "pagado"))
-    .filter((x) => !q.trim() || fold([x.concept, nameOf(x), x.notes, x.cfdi.uuid].join(" ")).includes(fold(q.trim())))
+    .filter((x) => x.id === openId || show === "todas" || (show === "abiertas" ? isOpenDoc(x) : show === "vencidas" ? st(x) === "vencido" : st(x) === "pagado"))
+    .filter((x) => x.id === openId || !q.trim() || fold([x.concept, nameOf(x), x.notes, x.cfdi.uuid].join(" ")).includes(fold(q.trim())))
     .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
   // Monthly service per client: total owed and the oldest month due.
   const byClient = [...new Map(service.map((s) => [s.clientId, s])).keys()].map((id) => {

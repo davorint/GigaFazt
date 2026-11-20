@@ -48,9 +48,9 @@ export function PayablesApp() {
   const missing = recurringBills(month, sites.list, providers).filter((b) => !list.some((x) => x.id === b.id))
   const fold = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase()
   const shown = list
-    .filter((x) => (show === "todas" ? true : show === "abiertas" ? isOpenDoc(x) : show === "vencidas" ? st(x) === "vencido" : st(x) === "pagado"))
-    .filter((x) => !cat || x.category === cat)
-    .filter((x) => !q.trim() || fold([x.concept, x.payee, providerName(providers.find((p) => p.id === x.providerId) ?? { tradeName: "", legalName: "" } as never), x.notes, x.cfdi.uuid].join(" ")).includes(fold(q.trim())))
+    .filter((x) => x.id === openId || show === "todas" || (show === "abiertas" ? isOpenDoc(x) : show === "vencidas" ? st(x) === "vencido" : st(x) === "pagado"))
+    .filter((x) => x.id === openId || !cat || x.category === cat)
+    .filter((x) => x.id === openId || !q.trim() || fold([x.concept, x.payee, providerName(providers.find((p) => p.id === x.providerId) ?? { tradeName: "", legalName: "" } as never), x.notes, x.cfdi.uuid].join(" ")).includes(fold(q.trim())))
     .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999") || a.concept.localeCompare(b.concept, "es"))
   const sum = (xs: Payable[]) => xs.reduce((a, x) => a + balanceOf(x), 0)
   const paidThisMonth = list.reduce((a, x) => a + x.payments.filter((p) => p.date.slice(0, 7) === month).reduce((b, p) => b + p.amount, 0), 0)
