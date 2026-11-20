@@ -18,7 +18,6 @@ const GROUPS = [
       ["/interno/admin/proveedores", "proveedores"],
       ["/interno/admin/materiales", "materiales"],
       ["/interno/admin/compras-materiales", "compras-materiales"],
-      ["/interno/levantamientos", "levantamientos"],
       ["/interno/admin/numeros", "numeros"],
       ["/interno/admin/cuentas-por-pagar", "cuentas-por-pagar"],
       ["/interno/admin/cuentas-por-cobrar", "cuentas-por-cobrar"],

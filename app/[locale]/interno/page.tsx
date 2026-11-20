@@ -49,7 +49,7 @@ export default async function InternoPage({ params }: PageProps<"/[locale]/inter
         <TodayBoard />
         <h2 className="mt-12 text-lg font-medium text-foreground">{t.toolsTitle}</h2>
         <ul className="mt-4 grid gap-4 sm:grid-cols-2">
-          {INTERNAL_PAGES.map((p) => (
+          {INTERNAL_PAGES.filter((p) => p !== "levantamientos").map((p) => (
             <li key={p}>
               <a
                 href={`/interno/${p}`}

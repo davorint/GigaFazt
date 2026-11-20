@@ -42,7 +42,7 @@ export default async function LevantamientosPage({ params }: PageProps<"/[locale
         <h1 className="mt-3 text-4xl font-light tracking-tight text-foreground sm:text-5xl">{t.title}</h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-zinc-300">{t.lead}</p>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-400">{t.storage}</p>
-        <AdminLinks current="levantamientos" />
+        <AdminLinks current="despliegues" />
       </section>
       <NextIntlClientProvider locale="es" messages={messages}>
         <SyncBar />

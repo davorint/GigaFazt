@@ -1,8 +1,12 @@
 "use client"
 
+import { siteFromSurvey } from "@/lib/sites/from-survey"
+import { siteLabel } from "@/lib/sites/model"
+import { saveSite, sitesServerSnapshot, sitesSnapshot, subscribeSites } from "@/lib/sites/store"
 import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from "react"
 import { localToday } from "@/lib/clients/from-lead"
 import { useTranslations } from "next-intl"
+import { useRouter } from "next/navigation"
 import { SECTIONS, completeness, newSurvey, readSurveyFile, surveyFile, surveyFileItems, type Section, type Survey } from "@/lib/survey/model"
 import { useDropUntouched } from "@/components/interno/useDropUntouched"
 import { QuickAdd } from "@/components/interno/QuickAdd"
@@ -241,9 +245,9 @@ function SurveyNav({ s, section }: { s: Survey; section: Section }) {
     <nav aria-label={t("nav.label")} className="sticky top-0 z-20 -mx-4 min-w-0 border-b border-white/10 bg-background/90 px-4 backdrop-blur-md sm:-mx-6 sm:px-6">
       <ul ref={row} className="flex gap-1 overflow-x-auto py-2 text-sm [scrollbar-width:none] md:flex-wrap md:overflow-visible">
         <li className="shrink-0">
-          <NavLink href="?" className="block rounded-md px-2.5 py-1.5 text-zinc-400 hover:text-foreground">
-            ← {t("nav.list")}
-          </NavLink>
+          <a href={DEPLOYMENTS} className="block rounded-md px-2.5 py-1.5 text-zinc-400 hover:text-foreground">
+            ← {t("nav.deployments")}
+          </a>
         </li>
         {SECTIONS.map((k) => {
           const c = completeness(s, k)
@@ -270,6 +274,50 @@ function SurveyNav({ s, section }: { s: Survey; section: Section }) {
   )
 }
 
+const DEPLOYMENTS = "/interno/admin/despliegues"
+
+/**
+ * Once captured, a survey becomes a deployment (owner, 2026-11-20): the shared data is copied into a new one
+ * (lib/sites/from-survey.ts) and the survey keeps the link, showing as that deployment's "Levantamiento" tab.
+ */
+function ToSite({ s }: { s: Survey }) {
+  const t = useTranslations("levantamientos")
+  const sites = useSyncExternalStore(subscribeSites, sitesSnapshot, sitesServerSnapshot)
+  const router = useRouter()
+  const site = s.siteId ? sites.list.find((x) => x.id === s.siteId) : undefined
+  if (!sites.loaded) return null
+  if (site)
+    return (
+      <p className="rounded-xl border border-emerald-400/30 p-3 text-sm text-emerald-100">
+        {t("toSite.done", { name: siteLabel(site) })}{" "}
+        <a href={`${DEPLOYMENTS}?d=${site.id}`} className="underline decoration-white/40 underline-offset-4 hover:decoration-white">
+          {t("toSite.open")}
+        </a>
+      </p>
+    )
+  const convert = () => {
+    if (!window.confirm(t("toSite.confirm", { name: s.ident.name || t("list.untitled") }))) return
+    const made = siteFromSurvey(s, {
+      room: t("toSite.room"),
+      roles: { administrador: t("contacts.roles.administrador"), comite: t("contacts.roles.comite"), mantenimiento: t("contacts.roles.mantenimiento"), otro: t("contacts.roles.otro") },
+      ip: { publica: t("carriers.ips.publica"), nat: t("carriers.ips.nat") },
+    })
+    saveSite(made)
+    saveSurvey({ ...s, status: "done", siteId: made.id })
+    router.push(`${DEPLOYMENTS}?d=${made.id}`)
+  }
+  return (
+    <div className="grid gap-2 rounded-xl border border-white/10 p-3">
+      {/* A deployment it pointed to was deleted: it can be converted again. */}
+      {s.siteId && <p className="text-xs text-amber-200">{t("toSite.gone")}</p>}
+      <p className="text-sm text-zinc-300">{t("toSite.hint")}</p>
+      <button type="button" onClick={convert} className={`${PRIMARY} w-fit`}>
+        {t("toSite.button")}
+      </button>
+    </div>
+  )
+}
+
 function Editor({ s, section, catalog }: { s: Survey; section: Section; catalog: Item[] }) {
   const t = useTranslations("levantamientos")
   const k = SECTIONS.indexOf(section)
@@ -289,6 +337,7 @@ function Editor({ s, section, catalog }: { s: Survey; section: Section; catalog:
         <span className="font-mono text-xs text-zinc-400">{t("editor.saved")}</span>
       </div>
       <SurveyNav s={s} section={section} />
+      <ToSite s={s} />
       <section aria-labelledby="seccion-titulo" className="grid gap-4">
         <h3 id="seccion-titulo" className="text-lg font-medium text-foreground">
           {t(`sections.${section}`)}

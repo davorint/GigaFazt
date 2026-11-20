@@ -127,3 +127,31 @@ describe("deployment state and municipality menus (owner, 2026-11-20)", () => {
     expect(decodeSite({ ...old, state: "Querétaro", municipality: "El Marqués" })).toMatchObject({ state: "Querétaro", municipality: "El Marqués" })
   })
 })
+
+describe("a survey becomes a deployment (owner, 2026-11-20)", () => {
+  it("carries name, place, towers with apartments, contacts, access, rent and power, the room and available carriers", async () => {
+    const { newSurvey, emptyTower, decodeSurvey } = await import("../survey/model")
+    const { siteFromSurvey } = await import("./from-survey")
+    const s = newSurvey("Torre A")
+    s.ident = { ...s.ident, name: "Residencial Sur", address: "Calle 1", municipality: "Coyoacán", state: "Ciudad de México" }
+    const t = { ...emptyTower("Torre B"), floorsAbove: 3, floors: [0, 1, 2].map((level) => ({ ...emptyTower("x").floors[0], level, units: 4 })) }
+    s.towers = [t]
+    s.contacts = [{ id: "c-000001", role: "administrador", name: "Rosa", phone: "551", email: "", notes: "" }, { id: "c-000002", role: "otro", name: "", phone: "", email: "", notes: "" }]
+    s.permits = { ...s.permits, workHours: "9 a 18", accessRules: "Con gafete", rules: "Sin ruido" }
+    s.commercial = { ...s.commercial, rentMonthly: 2500, powerMonthly: 400, powerPaidBy: "pendiente", notes: "Exclusividad 3 años" }
+    s.room = { ...s.room, location: "Sótano 1", access: "Llave en caseta", amps: 20, dedicatedBreaker: "si" }
+    s.carriers = [
+      { id: "k-000001", providerId: "", name: "Totalplay", available: "si", mbps: 1000, leadDays: null, ip: "nat", entry: "", notes: "" },
+      { id: "k-000002", providerId: "", name: "Izzi", available: "no", mbps: 500, leadDays: null, ip: "", entry: "", notes: "" },
+    ]
+    const site = siteFromSurvey(s, { room: "Cuarto de telecom", roles: { administrador: "Administrador", comite: "Comité", mantenimiento: "Mantenimiento", otro: "Otro" }, ip: { publica: "Pública", nat: "Detrás de NAT" } })
+    expect(site).toMatchObject({ name: "Residencial Sur", address: "Calle 1", municipality: "Coyoacán", state: "Ciudad de México", accessHours: "9 a 18", accessRules: "Con gafete\nSin ruido", rentMonthly: 2500, powerMonthly: 400, powerPayer: "", agreementNotes: "Exclusividad 3 años" })
+    expect(site.towers).toMatchObject([{ name: "Torre B", floors: 3, apartments: 12, roomId: site.rooms[0].id }])
+    expect(site.contacts).toMatchObject([{ name: "Rosa", role: "Administrador", phone: "551" }])
+    expect(site.rooms[0]).toMatchObject({ name: "Cuarto de telecom", location: "Sótano 1", access: "Llave en caseta", breaker: "20 A (exclusivo)" })
+    expect(site.rooms[0].carriers).toMatchObject([{ name: "Totalplay", downMbps: 1000, upMbps: 1000, ip: "Detrás de NAT" }])
+    const linked = decodeSurvey(JSON.parse(JSON.stringify({ ...s, siteId: site.id })))!
+    expect(linked.siteId).toBe(site.id)
+    expect(decodeSurvey(JSON.parse(JSON.stringify(s)))!.siteId).toBe("")
+  })
+})

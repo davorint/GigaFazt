@@ -70,7 +70,7 @@
         },
         "despliegues": {
           "name": "Despliegues",
-          "desc": "Cada ubicación con sus torres, cuartos de telecom (equipos, carriers, puertos PON), contactos, acceso, el acuerdo con el edificio y sus clientes."
+          "desc": "Cada edificio, del levantamiento a la operación: los levantamientos en curso y, ya convertidos, los despliegues con torres, cuartos de telecom, equipos, carriers, contactos, acuerdo y clientes."
         },
         "clientes": {
           "name": "Clientes",

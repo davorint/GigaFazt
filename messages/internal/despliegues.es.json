@@ -5,9 +5,9 @@
     },
     "kicker": "Administración",
     "title": "Despliegues",
-    "lead": "Cada ubicación donde tenemos red: sus torres, sus cuartos de telecom (uno o dos) con equipos, carriers y puertos PON, los contactos y el acceso, el acuerdo con el edificio y sus clientes. Se comparte entre los teléfonos por la base de datos.",
+    "lead": "Cada edificio, del levantamiento a la operación: un edificio nuevo empieza como levantamiento y, ya capturado, se convierte en despliegue con sus torres, sus cuartos de telecom (uno o dos) con equipos, carriers y puertos PON, los contactos y el acceso, el acuerdo con el edificio y sus clientes. Se comparte entre los teléfonos por la base de datos.",
     "list": {
-      "add": "Nuevo despliegue",
+      "add": "Nuevo despliegue (edificio ya en operación)",
       "search": "Buscar",
       "searchHint": "Nombre, dirección, alcaldía o municipio, serie o IP de un equipo, carrier.",
       "empty": "Todavía no hay despliegues.",
@@ -28,7 +28,8 @@
       "cuartos": "Cuartos de telecom",
       "acceso": "Contactos y acceso",
       "acuerdo": "Acuerdo",
-      "clientes": "Clientes"
+      "clientes": "Clientes",
+      "levantamiento": "Levantamiento"
     },
     "general": {
       "name": "Nombre",
@@ -223,6 +224,21 @@
         "cancelado": "Cancelado",
         "sin-servicio": "Sin servicio"
       }
+    },
+    "survey": {
+      "title": "{n, plural, =0 {Levantamientos en curso} one {# levantamiento en curso} other {# levantamientos en curso}}",
+      "new": "Nuevo levantamiento",
+      "hint": "Un edificio nuevo empieza como levantamiento. Cuando esté capturado, ábrelo y usa «Convertir en despliegue».",
+      "badge": "LEVANTAMIENTO",
+      "visit": "visita {date}",
+      "filled": "{pct} % capturado",
+      "files": "Importar o exportar archivos de levantamientos",
+      "firstTower": "Torre A",
+      "linked": "Este despliegue salió del levantamiento del {date} ({who}). Ahí siguen el diseño de fibra, las rutas, las áreas comunes, los pendientes, los materiales y la propuesta.",
+      "linkedHint": "Lo que pasó al despliegue (torres, contactos, acceso, renta y luz, cuarto y carriers) se edita aquí; cambiarlo en el levantamiento ya no lo cambia en el despliegue.",
+      "open": "Abrir el levantamiento",
+      "proposal": "Propuesta para el edificio",
+      "noneLinked": "Este despliegue no salió de un levantamiento."
     }
   }
 }

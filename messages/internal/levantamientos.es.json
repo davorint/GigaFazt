@@ -384,7 +384,8 @@
     "nav": {
       "label": "Secciones del levantamiento",
       "list": "Todos",
-      "proposal": "Propuesta para el edificio →"
+      "proposal": "Propuesta para el edificio →",
+      "deployments": "Despliegues"
     },
     "materials": {
       "intro": "Lo que lleva este proyecto, con los precios de la lista maestra (con IVA incluido). Las cantidades salen del diseño de fibra; puedes cambiarlas.",
@@ -423,6 +424,15 @@
         "waHello": "Hola {name}, quiero pedirte lo siguiente:",
         "waEnd": "¿Me confirmas precio con IVA y tiempo de entrega? Gracias."
       }
+    },
+    "toSite": {
+      "hint": "¿Ya capturaste el edificio? Conviértelo en despliegue: pasan el nombre, la dirección, las torres con sus departamentos, los contactos y el acceso, la renta y la luz, y el cuarto de telecom con los carriers disponibles. El diseño, las rutas, los pendientes, los materiales y la propuesta se quedan aquí, en la pestaña Levantamiento del despliegue.",
+      "button": "Convertir en despliegue",
+      "confirm": "¿Convertir «{name}» en despliegue? Se crea el despliegue con lo capturado; este levantamiento se queda ligado a él.",
+      "done": "Este levantamiento ya es el despliegue «{name}».",
+      "open": "Abrir el despliegue →",
+      "gone": "El despliegue que se hizo con este levantamiento ya no existe; puedes convertirlo de nuevo.",
+      "room": "Cuarto de telecom"
     }
   }
 }

@@ -73,6 +73,8 @@ export type Survey = {
   createdAt: string
   updatedAt: string
   status: "draft" | "done"
+  /** The deployment this survey became ("" = still a survey; lib/sites/from-survey.ts). */
+  siteId: string
   ident: { name: string; address: string; municipality: string; state: string; lat: number | null; lng: number | null; visitDate: string; surveyors: string }
   contacts: Contact[]
   permits: { assembly: Approval; assemblyDate: string; agreement: Approval; agreementDate: string; workHours: string; accessRules: string; rules: string }
@@ -148,6 +150,7 @@ export function newSurvey(firstTower = "Torre A", now = new Date().toISOString()
     pending: [],
     optics: DEFAULT_OPTICS,
     materials: EMPTY_MATERIALS,
+    siteId: "",
   }
 }
 
@@ -378,6 +381,7 @@ export function decodeSurvey(v: unknown): Survey | null {
     })),
     optics: decodeOptics(v.optics),
     materials: decodeMaterials(v.materials),
+    siteId: typeof v.siteId === "string" && /^[\w-]{6,64}$/.test(v.siteId) ? v.siteId : "",
     pending: list(v.pending, (x) => ({ id: id(x.id), text: str(x.text, 500), who: one(x.who, ["edificio", "nosotros"] as const, "edificio"), done: bool(x.done) })),
   }
 }

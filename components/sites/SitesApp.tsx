@@ -1,8 +1,12 @@
 "use client"
 
+import { SECTIONS as SURVEY_SECTIONS, completeness, newSurvey, type Survey } from "@/lib/survey/model"
+import { saveSurvey, subscribeSurveys, surveysServerSnapshot, surveysSnapshot } from "@/lib/survey/store"
+import { readState } from "@/lib/sync/state"
 import { PlaceFields } from "@/components/interno/PlaceFields"
 import { useEffect, useRef, useSyncExternalStore, type MouseEvent, type ReactNode } from "react"
 import { useTranslations } from "next-intl"
+import { useRouter } from "next/navigation"
 import { NumberField } from "@/components/mikrotik/NumberField"
 import { TextField } from "@/components/mikrotik/TextField"
 import { AreaField, DateField, GRID, PickField } from "@/components/surveys/SurveyFields"
@@ -28,7 +32,7 @@ import { placesStockItems, sitePlace } from "@/lib/stock/model"
 import { movesStore, unitsStore } from "@/lib/stock/store"
 
 type T = ReturnType<typeof useTranslations>
-const SECTIONS = ["general", "torres", "cuartos", "acceso", "acuerdo", "clientes"] as const
+const SECTIONS = ["general", "torres", "cuartos", "acceso", "acuerdo", "clientes", "levantamiento"] as const
 type Section = (typeof SECTIONS)[number]
 const SMALL = "inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const DANGER = "inline-flex min-h-9 w-fit items-center rounded-full border border-red-400/30 px-3 text-xs text-red-200 hover:bg-red-400/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -71,16 +75,92 @@ export function SitesApp() {
   const store = useSyncExternalStore(subscribeSites, sitesSnapshot, sitesServerSnapshot)
   const clients = useSyncExternalStore(subscribeClients, clientsSnapshot, clientsServerSnapshot).list
   const search = useSyncExternalStore(subscribeUrl, readSearch, () => "")
+  const surveys = useSyncExternalStore(subscribeSurveys, surveysSnapshot, surveysServerSnapshot)
   useDropUntouched(new URLSearchParams(search).get("d"), siteList, deleteSite)
-  if (!store.loaded) return null
+  if (!store.loaded || !surveys.loaded) return null
   const params = new URLSearchParams(search)
   const open = store.list.find((s) => s.id === params.get("d"))
   const section = (SECTIONS as readonly string[]).includes(params.get("s") ?? "") ? (params.get("s") as Section) : "general"
-  if (open) return <SiteEditor t={t} s={open} section={section} clients={clients} />
-  return <SiteList t={t} list={store.list} clients={clients} />
+  if (open) return <SiteEditor t={t} s={open} section={section} clients={clients} survey={surveys.list.find((x) => x.siteId === open.id)} />
+  return <SiteList t={t} list={store.list} clients={clients} surveys={surveys.list.filter((x) => !x.siteId || !store.list.some((s) => s.id === x.siteId))} />
 }
 
-function SiteList({ t, list, clients }: { t: T; list: Site[]; clients: Client[] }) {
+const SURVEYS = "/interno/levantamientos"
+
+/**
+ * Surveys still being captured (owner, 2026-11-20: one section; a survey becomes a deployment once captured), newest
+ * first, with how much is filled. A survey whose deployment was deleted shows here again.
+ */
+function SurveysInProgress({ t, list }: { t: T; list: Survey[] }) {
+  const tower = useTranslations("despliegues")("survey.firstTower")
+  const router = useRouter()
+  const start = () => {
+    const s = newSurvey(tower)
+    saveSurvey({ ...s, ident: { ...s.ident, surveyors: readState().name } })
+    router.push(`${SURVEYS}?l=${s.id}`)
+  }
+  const shown = [...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  return (
+    <section aria-labelledby="levantamientos-curso" className="grid gap-2 rounded-xl border border-white/10 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="levantamientos-curso" className="text-base font-medium text-foreground">
+          {t("survey.title", { n: shown.length })}
+        </h2>
+        <button type="button" onClick={start} className="inline-flex h-10 items-center rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+          {t("survey.new")}
+        </button>
+      </div>
+      <p className="text-xs text-zinc-400">{t("survey.hint")}</p>
+      {shown.length > 0 && (
+        <ul className="grid gap-2">
+          {shown.map((x) => {
+            const filled = SURVEY_SECTIONS.reduce((a, k) => {
+              const c = completeness(x, k)
+              return { done: a.done + c.done, total: a.total + c.total }
+            }, { done: 0, total: 0 })
+            return (
+              <li key={x.id}>
+                <a href={`${SURVEYS}?l=${x.id}`} className="grid gap-1 rounded-lg border border-white/10 p-3 hover:bg-white/[0.03] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="text-sm text-zinc-100">{x.ident.name || t("list.untitled")}</span>
+                    <span className="shrink-0 rounded-full border border-cyan-300/40 px-2 py-0.5 font-mono text-[0.7rem] text-cyan-100">{t("survey.badge")}</span>
+                  </span>
+                  <span className="text-xs text-zinc-400">
+                    {[x.ident.address, x.ident.municipality, x.ident.visitDate && t("survey.visit", { date: x.ident.visitDate }), filled.total ? t("survey.filled", { pct: Math.round((filled.done / filled.total) * 100) }) : ""].filter(Boolean).join(" · ")}
+                  </span>
+                </a>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      <a href={SURVEYS} className="w-fit text-xs text-zinc-400 underline decoration-white/30 underline-offset-4 hover:text-zinc-200">
+        {t("survey.files")}
+      </a>
+    </section>
+  )
+}
+
+/** The survey this deployment came from: its date and who did it, and its pages (the sections and the proposal). */
+function SurveyTab({ t, survey }: { t: T; survey: Survey | undefined }) {
+  if (!survey) return <p className="text-sm text-zinc-400">{t("survey.noneLinked")}</p>
+  return (
+    <div className="grid gap-3">
+      <p className="text-sm text-zinc-300">{t("survey.linked", { date: survey.ident.visitDate || "—", who: survey.ident.surveyors || "—" })}</p>
+      <div className="flex flex-wrap gap-2">
+        <a href={`${SURVEYS}?l=${survey.id}`} className={SMALL}>
+          {t("survey.open")}
+        </a>
+        <a href={`${SURVEYS}/propuesta?l=${survey.id}`} className={SMALL}>
+          {t("survey.proposal")}
+        </a>
+      </div>
+      <p className="text-xs text-zinc-400">{t("survey.linkedHint")}</p>
+    </div>
+  )
+}
+
+function SiteList({ t, list, clients, surveys }: { t: T; list: Site[]; clients: Client[]; surveys: Survey[] }) {
   const search = useSyncExternalStore(subscribeUrl, readSearch, () => "")
   const q = new URLSearchParams(search).get("q") ?? ""
   const setQ = (v: string) => {
@@ -102,6 +182,7 @@ function SiteList({ t, list, clients }: { t: T; list: Site[]; clients: Client[] 
   }
   return (
     <div className="mt-6 grid gap-4">
+      <SurveysInProgress t={t} list={surveys} />
       <QuickAdd
         title={t("list.add")}
         submit={t("list.addSubmit")}
@@ -152,7 +233,7 @@ function SiteList({ t, list, clients }: { t: T; list: Site[]; clients: Client[] 
   )
 }
 
-function SiteEditor({ t, s, section, clients }: { t: T; s: Site; section: Section; clients: Client[] }) {
+function SiteEditor({ t, s, section, clients, survey }: { t: T; s: Site; section: Section; clients: Client[]; survey: Survey | undefined }) {
   const up = (p: Partial<Site>) => saveSite({ ...s, ...p })
   const stats = siteStats(s, clients)
   const row = useRef<HTMLUListElement>(null)
@@ -175,7 +256,7 @@ function SiteEditor({ t, s, section, clients }: { t: T; s: Site; section: Sectio
               {t("nav.back")}
             </NavLink>
           </li>
-          {SECTIONS.map((k) => (
+          {SECTIONS.filter((k) => k !== "levantamiento" || survey).map((k) => (
             <li key={k} className="shrink-0">
               <NavLink
                 href={`?d=${s.id}&s=${k}`}
@@ -197,6 +278,7 @@ function SiteEditor({ t, s, section, clients }: { t: T; s: Site; section: Sectio
       {section === "acceso" && <Access t={t} s={s} up={up} clients={clients} />}
       {section === "acuerdo" && <Agreement t={t} s={s} up={up} />}
       {section === "clientes" && <SiteClients t={t} s={s} clients={clients} />}
+      {section === "levantamiento" && <SurveyTab t={t} survey={survey} />}
     </div>
   )
 }
