@@ -113,7 +113,7 @@ export function ClientHistory({ c }: { c: Client }) {
         {!held.length && <p className="text-xs text-zinc-400">{t("noEquipment")}</p>}
         {held.map((u) => (
           // eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load
-          <a key={u.id} href="/interno/admin/materiales?t=equipos" className={ROW}>
+          <a key={u.id} href="/interno/materiales/en-existencia?t=equipos" className={ROW}>
             <span className="font-mono text-zinc-100">{u.serial}</span>
             <span className="text-xs text-zinc-400">{itemName(u.itemId)}</span>
           </a>

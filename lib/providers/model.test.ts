@@ -59,7 +59,7 @@ describe("admin routes", () => {
   it("/interno/admin and its pages, any capitalization; the old /interno/materiales is gone", () => {
     expect(matchInternal("/interno/admin")).toEqual({ rewriteTo: "/es/interno/admin", open: false })
     expect(matchInternal("/interno/admin/proveedores")).toEqual({ rewriteTo: "/es/interno/admin/proveedores", open: false })
-    expect(matchInternal("/INTERNO/Admin/Materiales")).toEqual({ rewriteTo: "/es/interno/admin/materiales", open: false })
+    expect(matchInternal("/INTERNO/Materiales/En-Existencia")).toEqual({ rewriteTo: "/es/interno/materiales/en-existencia", open: false })
     expect(matchInternal("/interno/admin/proveedores.rsc")?.rewriteTo).toBe("/es/interno/admin/proveedores.rsc")
     // Not a known page: kept as typed, the app answers 404.
     expect(matchInternal("/interno/materiales")?.rewriteTo).toBe("/es/interno/materiales")

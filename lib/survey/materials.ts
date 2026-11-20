@@ -1,6 +1,6 @@
 /**
  * Materials and cost of a site survey (phase 3): what its fiber design needs, priced from the master list
- * (/interno/admin/materiales), plus extra items picked by hand, plus what each new client takes (drop, ONT, connector,
+ * (/interno/materiales/en-existencia), plus extra items picked by hand, plus what each new client takes (drop, ONT, connector,
  * installation) times the expected clients. Prices include IVA (owner's choice), so totals are plain sums.
  *
  * Quantities from the design, per tower: each base splitter and floor splitter by ratio, each tap by ratio, one floor

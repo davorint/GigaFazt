@@ -1,5 +1,5 @@
 /**
- * The master materials list (/interno/admin/materiales, owner 2026-11-17: "the main materials section under /interno… from
+ * The master materials list (/interno/materiales/en-existencia, owner 2026-11-17: "the main materials section under /interno… from
  * there we will pick and choose the materials that we need for each project… like the master list"). Each item: name,
  * category, unit, price with IVA included (owner's choice), supplier, part number, notes, and optionally what it's for
  * in a design (`role`: a 1:16 splitter, a 10/90 tap, riser fiber per meter, a floor box, the ONT…), which is how a site

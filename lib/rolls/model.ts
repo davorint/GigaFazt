@@ -1,5 +1,5 @@
 /**
- * Fiber rolls (/interno/admin/materiales?t=bobinas, owner 2026-11-18: "specify the number of fiber rolls, the length
+ * Fiber rolls (/interno/materiales/en-existencia?t=bobinas, owner 2026-11-18: "specify the number of fiber rolls, the length
  * of the rolls, the type of fiber, how much fiber is left, all easy to input with drop menus").
  *
  * One record per physical roll: the cable (drop, interior, ADSS…), its strands, single mode or multimode and the fiber

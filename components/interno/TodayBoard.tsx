@@ -198,7 +198,7 @@ export function TodayBoard() {
                 s.tools.length - 4
               )}
             </Card>
-            <Card title={t("stock.title")} href={`${A}/materiales?t=existencias`} open={t("open")} count={s.lowStock.length} tone={s.lowStock.length ? "amber" : "ok"}>
+            <Card title={t("stock.title")} href={`/interno/materiales/en-existencia?t=existencias`} open={t("open")} count={s.lowStock.length} tone={s.lowStock.length ? "amber" : "ok"}>
               {list(
                 s.lowStock.slice(0, 4).map((x) => ({ key: x.id, text: t("stock.line", { name: x.name, has: x.has, min: x.min, unit: x.unit }) })),
                 s.lowStock.length - 4

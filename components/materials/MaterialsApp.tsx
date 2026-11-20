@@ -10,7 +10,7 @@ import { UnitsPanel } from "./UnitsPanel"
 const TABS = ["existencias", "bobinas", "equipos"] as const
 type Tab = (typeof TABS)[number]
 /** Prices and suppliers moved to their own page (owner, 2026-11-18). */
-export const BUY_PAGE = "/interno/admin/compras-materiales"
+export const BUY_PAGE = "/interno/materiales/compras"
 
 const subscribeUrl = (cb: () => void) => {
   window.addEventListener("popstate", cb)

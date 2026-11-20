@@ -167,7 +167,7 @@ export const tools = pgTable(
 )
 export const toolVersions = versions("tool_versions", "tool_id")
 
-// ── Installation stock (/interno/admin/materiales) ─────────────────────────
+// ── Installation stock (/interno/materiales/en-existencia) ─────────────────────────
 
 export const stockMoves = pgTable(
   "stock_moves",
@@ -269,7 +269,7 @@ export const notes = pgTable(
 )
 export const noteVersions = versions("note_versions", "note_id")
 
-// ── Fiber rolls (/interno/admin/materiales?t=bobinas) ───────────────────────
+// ── Fiber rolls (/interno/materiales/en-existencia?t=bobinas) ───────────────────────
 
 export const rolls = pgTable(
   "rolls",

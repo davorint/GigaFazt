@@ -2,22 +2,25 @@
  * Internal pages, all under /interno (owner, 2026-11-17): /interno lists the tools; /interno/equipos-telecom holds the
  * MikroTik guide of a deployment (guia-mikrotik), the expert scripts (scripts-mikrotik), the Huawei OLT knowledge base
  * (olt-huawei) and the calculators and simulators (calculadora); /interno/herramientas the tools we have (en-existencia)
- * and their buying options (compras) (owner, 2026-11-20; old addresses are gone, no redirects); /interno/admin the admin
+ * and their buying options (compras), /interno/materiales the stock (en-existencia) and the master list with its buying
+ * options (compras) (owner, 2026-11-20; old addresses are gone, no redirects); /interno/admin the admin
  * pages. Behind a password (lib/internal-auth.ts; the sign-in page /interno/entrar
  * is the only one open), never linked from the public site, not in the sitemap and noindex. Served from the Spanish
  * route; any capitalization (/INTERNO/Equipos-Telecom/OLT-Huawei) maps to the lowercase route.
  */
 
 export const INTERNAL_ROOT = "interno"
-export const INTERNAL_PAGES = ["levantamientos", "admin", "herramientas", "equipos-telecom"] as const
+export const INTERNAL_PAGES = ["levantamientos", "admin", "materiales", "herramientas", "equipos-telecom"] as const
 /** The tool pages (/interno/herramientas/<page>). */
 export const TOOL_PAGES = ["en-existencia", "compras"] as const
+/** The material pages (/interno/materiales/<page>). */
+export const MATERIAL_PAGES = ["en-existencia", "compras"] as const
 /** The network equipment pages (/interno/equipos-telecom/<page>). */
 export const TELECOM_PAGES = ["guia-mikrotik", "scripts-mikrotik", "olt-huawei", "calculadora"] as const
 /** The admin area's pages (/interno/admin/<page>). */
-export const ADMIN_PAGES = ["notas", "despliegues", "clientes", "reportes_clientes", "proveedores", "materiales", "compras-materiales", "agenda", "numeros", "equipo", "cuentas-por-pagar", "cuentas-por-cobrar", "acuerdos"] as const
+export const ADMIN_PAGES = ["notas", "despliegues", "clientes", "reportes_clientes", "proveedores", "agenda", "numeros", "equipo", "cuentas-por-pagar", "cuentas-por-cobrar", "acuerdos"] as const
 /** Other spellings of an admin page. */
-const ADMIN_ALIASES: Record<string, (typeof ADMIN_PAGES)[number]> = { notes: "notas", "post-it": "notas", postits: "notas", deployments: "despliegues", "reportes-clientes": "reportes_clientes", reportes: "reportes_clientes", reports: "reportes_clientes", "materiales-compras": "compras-materiales", "opciones-materiales": "compras-materiales", precios: "compras-materiales", calendario: "agenda", citas: "agenda", "números": "numeros", negocio: "numeros", numbers: "numeros", team: "equipo", usuarios: "equipo", cuentas: "equipo", "por-pagar": "cuentas-por-pagar", "por-cobrar": "cuentas-por-cobrar", "cuentas-pagar": "cuentas-por-pagar", "cuentas-cobrar": "cuentas-por-cobrar", pagar: "cuentas-por-pagar", cobrar: "cuentas-por-cobrar", contratos: "acuerdos", edificios: "acuerdos", agreements: "acuerdos" }
+const ADMIN_ALIASES: Record<string, (typeof ADMIN_PAGES)[number]> = { notes: "notas", "post-it": "notas", postits: "notas", deployments: "despliegues", "reportes-clientes": "reportes_clientes", reportes: "reportes_clientes", reports: "reportes_clientes", calendario: "agenda", citas: "agenda", "números": "numeros", negocio: "numeros", numbers: "numeros", team: "equipo", usuarios: "equipo", cuentas: "equipo", "por-pagar": "cuentas-por-pagar", "por-cobrar": "cuentas-por-cobrar", "cuentas-pagar": "cuentas-por-pagar", "cuentas-cobrar": "cuentas-por-cobrar", pagar: "cuentas-por-pagar", cobrar: "cuentas-por-cobrar", contratos: "acuerdos", edificios: "acuerdos", agreements: "acuerdos" }
 /** The sign-in page: the only internal page served without the password. */
 export const LOGIN_PAGE = "entrar"
 export const LOGIN_PATH = `/${INTERNAL_ROOT}/${LOGIN_PAGE}`
@@ -51,11 +54,12 @@ export function matchInternal(pathname: string): InternalMatch | null {
     const known = sub2 && ((ADMIN_PAGES as readonly string[]).find((p) => p === name) ?? ADMIN_ALIASES[name])
     if (sub2 && known) after = `/${known}${sub2[2]}`
   }
-  // Under /interno/equipos-telecom and /interno/herramientas too, by its lowercase name only.
-  if (page === "equipos-telecom" || page === "herramientas") {
+  // Under /interno/equipos-telecom, /interno/herramientas and /interno/materiales too, by its lowercase name only.
+  const SUBPAGES: Record<string, readonly string[]> = { "equipos-telecom": TELECOM_PAGES, herramientas: TOOL_PAGES, materiales: MATERIAL_PAGES }
+  if (page && SUBPAGES[page]) {
     const sub2 = /^\/([^/.]+)(.*)$/.exec(after)
     const name = sub2?.[1].toLowerCase() ?? ""
-    const known = sub2 && ((page === "herramientas" ? TOOL_PAGES : TELECOM_PAGES) as readonly string[]).find((p) => p === name)
+    const known = sub2 && SUBPAGES[page].find((p) => p === name)
     if (sub2 && known) after = `/${known}${sub2[2]}`
   }
   const tail = sub ? (page ? `/${page}${after}` : rest) : rest

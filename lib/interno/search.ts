@@ -98,7 +98,7 @@ export function searchAll(d: SearchData, q: string, limitPerKind = 8): Hit[] {
     "materials",
     d.items,
     (x) => [x.name, x.sku, x.notes, ...x.offers.map((o) => o.sku)].join(" "),
-    (x) => ({ id: x.id, label: x.name, detail: x.unit, href: `${A}/compras-materiales?m=${x.id}` })
+    (x) => ({ id: x.id, label: x.name, detail: x.unit, href: `/interno/materiales/compras?m=${x.id}` })
   )
   add(
     "units",
@@ -107,7 +107,7 @@ export function searchAll(d: SearchData, q: string, limitPerKind = 8): Hit[] {
     (u) => {
       const item = d.items.find((x) => x.id === u.itemId)
       const client = d.clients.find((c) => c.id === u.clientId)
-      return { id: u.id, label: u.serial, detail: [item?.name, client ? clientLabel(client) : ""].filter(Boolean).join(" · "), href: client ? `${A}/clientes?c=${client.id}` : `${A}/materiales?t=equipos` }
+      return { id: u.id, label: u.serial, detail: [item?.name, client ? clientLabel(client) : ""].filter(Boolean).join(" · "), href: client ? `${A}/clientes?c=${client.id}` : `/interno/materiales/en-existencia?t=equipos` }
     }
   )
   add(

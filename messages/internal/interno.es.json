@@ -16,6 +16,23 @@
         "name": "Administración",
         "desc": "Despliegues con sus cuartos de telecom, clientes y solicitudes, proveedores y la lista maestra de materiales con precios."
       },
+      "materiales": {
+        "name": "Materiales",
+        "desc": "Los materiales que tenemos (existencias, movimientos y equipos por número de serie) y la lista maestra con sus opciones de compra y precios.",
+        "kicker": "Uso interno · Materiales",
+        "lead": "Los materiales de los despliegues: lo que hay en existencia y la lista maestra con sus opciones de compra.",
+        "metaTitle": "Materiales · GigaFazt interno",
+        "pages": {
+          "en-existencia": {
+            "name": "Materiales en existencia",
+            "desc": "Existencias en la bodega y en cada despliegue, bobinas de fibra y ONTs por número de serie."
+          },
+          "compras": {
+            "name": "Compras de materiales",
+            "desc": "La lista maestra con las opciones de compra de cada material: proveedor, precio con IVA, enlace y estado. De aquí salen los costos de los proyectos."
+          }
+        }
+      },
       "herramientas": {
         "name": "Herramientas",
         "desc": "Las herramientas que tenemos (quién las tiene, calibración y mantenimiento) y las opciones para comprar las que faltan.",
@@ -100,14 +117,6 @@
         "proveedores": {
           "name": "Proveedores",
           "desc": "Materiales y equipo, carriers, servicios y contratistas: contactos, condiciones, calificación y, para carriers, cobertura y precios."
-        },
-        "materiales": {
-          "name": "Materiales en existencia",
-          "desc": "Existencias en la bodega y en cada despliegue, bobinas de fibra y ONTs por número de serie."
-        },
-        "compras-materiales": {
-          "name": "Compras de materiales",
-          "desc": "La lista maestra con las opciones de compra de cada material: proveedor, precio con IVA, enlace y estado. De aquí salen los costos de los proyectos."
         },
         "agenda": {
           "name": "Agenda",

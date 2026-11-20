@@ -52,7 +52,7 @@ export function useSellers(): Provider[] {
 }
 
 /**
- * Compras de materiales (/interno/admin/compras-materiales, owner 2026-11-18): the master list with every buying option
+ * Compras de materiales (/interno/materiales/compras, owner 2026-11-18): the master list with every buying option
  * of each material (supplier or store, price with IVA, link, status), the offers seen on the web to add, and
  * "Registrar compra", which records what was bought into the stock.
  */
@@ -296,7 +296,7 @@ function ItemRow({ t, item: x, supplierName, open, onToggle }: { t: T; item: Ite
               <p className="text-xs text-zinc-400">{t("use.none")}</p>
             )}
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (proxy.ts checks the session) */}
-            <a href="/interno/admin/materiales?t=existencias" className={LINK}>
+            <a href="/interno/materiales/en-existencia?t=existencias" className={LINK}>
               {t("stockLink")}
             </a>
           </fieldset>
