@@ -366,7 +366,7 @@ export const appointments = pgTable(
 )
 export const appointmentVersions = versions("appointment_versions", "appointment_id")
 
-// ── Team accounts (/interno/admin/equipo) ───────────────────────────────────
+// ── Team accounts (/interno/admin/usuarios) ─────────────────────────────────
 
 /**
  * One account per person (owner, 2026-11-19): name + their own password (PBKDF2 hash, lib/team), same access for

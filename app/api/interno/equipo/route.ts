@@ -5,7 +5,7 @@ import { json, whoIs } from "@/lib/internal-api"
 import { accountsOn, createMember, members, updateMember, type TeamError } from "@/lib/team/server"
 
 /**
- * The team accounts (/interno/admin/equipo).
+ * The team accounts (/interno/admin/usuarios, "Usuarios y accesos").
  * GET: the list (names, admin, active; never passwords).
  * POST { name, password, admin }: add someone (admins only; the very first account can be made by whoever is signed
  * in with the shared password, and it is always an admin).

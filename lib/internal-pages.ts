@@ -18,9 +18,9 @@ export const MATERIAL_PAGES = ["en-existencia", "compras"] as const
 /** The network equipment pages (/interno/equipos-telecom/<page>). */
 export const TELECOM_PAGES = ["guia-mikrotik", "scripts-mikrotik", "olt-huawei", "calculadora"] as const
 /** The admin area's pages (/interno/admin/<page>). */
-export const ADMIN_PAGES = ["notas", "despliegues", "clientes", "reportes_clientes", "proveedores", "agenda", "numeros", "equipo", "cuentas-por-pagar", "cuentas-por-cobrar", "acuerdos"] as const
+export const ADMIN_PAGES = ["notas", "despliegues", "clientes", "reportes_clientes", "proveedores", "agenda", "numeros", "usuarios", "cuentas-por-pagar", "cuentas-por-cobrar", "acuerdos"] as const
 /** Other spellings of an admin page. */
-const ADMIN_ALIASES: Record<string, (typeof ADMIN_PAGES)[number]> = { notes: "notas", "post-it": "notas", postits: "notas", deployments: "despliegues", "reportes-clientes": "reportes_clientes", reportes: "reportes_clientes", reports: "reportes_clientes", calendario: "agenda", citas: "agenda", "números": "numeros", negocio: "numeros", numbers: "numeros", team: "equipo", usuarios: "equipo", cuentas: "equipo", "por-pagar": "cuentas-por-pagar", "por-cobrar": "cuentas-por-cobrar", "cuentas-pagar": "cuentas-por-pagar", "cuentas-cobrar": "cuentas-por-cobrar", pagar: "cuentas-por-pagar", cobrar: "cuentas-por-cobrar", contratos: "acuerdos", edificios: "acuerdos", agreements: "acuerdos" }
+const ADMIN_ALIASES: Record<string, (typeof ADMIN_PAGES)[number]> = { notes: "notas", "post-it": "notas", postits: "notas", deployments: "despliegues", "reportes-clientes": "reportes_clientes", reportes: "reportes_clientes", reports: "reportes_clientes", calendario: "agenda", citas: "agenda", "números": "numeros", negocio: "numeros", numbers: "numeros", "por-pagar": "cuentas-por-pagar", "por-cobrar": "cuentas-por-cobrar", "cuentas-pagar": "cuentas-por-pagar", "cuentas-cobrar": "cuentas-por-cobrar", pagar: "cuentas-por-pagar", cobrar: "cuentas-por-cobrar", contratos: "acuerdos", edificios: "acuerdos", agreements: "acuerdos" }
 /** The sign-in page: the only internal page served without the password. */
 export const LOGIN_PAGE = "entrar"
 export const LOGIN_PATH = `/${INTERNAL_ROOT}/${LOGIN_PAGE}`

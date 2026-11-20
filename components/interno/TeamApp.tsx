@@ -27,7 +27,7 @@ function Field({ label, type = "text", value, onChange, autoComplete }: { label:
   )
 }
 
-/** /interno/admin/equipo: the team accounts (needs a connection: they live only in the database, never on the phone). */
+/** /interno/admin/usuarios (Usuarios y accesos): the team accounts (needs a connection: they live only in the database, never on the phone). */
 export function TeamApp() {
   const t = useTranslations("equipo")
   const [st, setSt] = useState<State | null>(null)

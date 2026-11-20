@@ -127,8 +127,8 @@
           "name": "Números del negocio",
           "desc": "Mes a mes: cobrado y por cobrar, altas y bajas, ingreso por cliente, cobranza, reportes y la ganancia de cada despliegue."
         },
-        "equipo": {
-          "name": "Equipo",
+        "usuarios": {
+          "name": "Usuarios y accesos",
           "desc": "Las cuentas del equipo: cada persona entra con su nombre y su contraseña, y su nombre queda en cada cambio."
         },
         "cuentas-por-pagar": {

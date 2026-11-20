@@ -1,8 +1,8 @@
 {
   "equipo": {
-    "meta": { "title": "Equipo · GigaFazt interno" },
+    "meta": { "title": "Usuarios y accesos · GigaFazt interno" },
     "kicker": "Interno · Administración",
-    "title": "Equipo",
+    "title": "Usuarios y accesos",
     "lead": "Cada persona entra con su nombre y su contraseña, y su nombre queda en cada cambio. Quien administra agrega personas, cambia contraseñas y da de baja. Si alguien se va, dale de baja: deja de ver los datos en menos de un minuto.",
     "noAccounts": "Todavía no hay cuentas: se entra con la contraseña compartida. Crea primero la tuya (será la de administrador); en cuanto exista, la contraseña compartida deja de funcionar y cada persona entra con su cuenta.",
     "firstTitle": "Crea tu cuenta (administrador)",

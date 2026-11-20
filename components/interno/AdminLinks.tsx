@@ -19,7 +19,7 @@ const GROUPS = [
       ["/interno/admin/numeros", "numeros"],
       ["/interno/admin/cuentas-por-pagar", "cuentas-por-pagar"],
       ["/interno/admin/cuentas-por-cobrar", "cuentas-por-cobrar"],
-      ["/interno/admin/equipo", "equipo"],
+      ["/interno/admin/usuarios", "usuarios"],
       ["/interno/equipos-telecom", "equipos-telecom"],
     ],
   },
