@@ -57,7 +57,7 @@ export function Proposal() {
           <p className="font-mono text-xs uppercase tracking-widest text-zinc-500">GigaFazt · {t("kind")}</p>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("title", { name: s.ident.name || s.ident.address || t("building") })}</h1>
           <p className="text-sm text-zinc-600">
-            {[s.ident.address, s.ident.municipality].filter(Boolean).join(", ")} · {today}
+            {[s.ident.address, s.ident.municipality, s.ident.state].filter(Boolean).join(", ")} · {today}
           </p>
         </header>
 

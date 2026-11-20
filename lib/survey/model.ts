@@ -15,6 +15,7 @@
  * providers), and the CDMX condominium law (the internal rules and the assembly decide on common areas).
  */
 
+import { stateOf } from "./places"
 import { DEFAULT_OPTICS, decodeDesign, decodeOptics, type Design, type Optics } from "./design"
 import { newId } from "./id"
 import { EMPTY_MATERIALS, decodeMaterials, type SurveyMaterials } from "./materials"
@@ -72,7 +73,7 @@ export type Survey = {
   createdAt: string
   updatedAt: string
   status: "draft" | "done"
-  ident: { name: string; address: string; municipality: string; lat: number | null; lng: number | null; visitDate: string; surveyors: string }
+  ident: { name: string; address: string; municipality: string; state: string; lat: number | null; lng: number | null; visitDate: string; surveyors: string }
   contacts: Contact[]
   permits: { assembly: Approval; assemblyDate: string; agreement: Approval; agreementDate: string; workHours: string; accessRules: string; rules: string }
   commercial: {
@@ -135,7 +136,7 @@ export function newSurvey(firstTower = "Torre A", now = new Date().toISOString()
     createdAt: now,
     updatedAt: now,
     status: "draft",
-    ident: { name: "", address: "", municipality: "", lat: null, lng: null, visitDate: today(), surveyors: "" },
+    ident: { name: "", address: "", municipality: "", state: "", lat: null, lng: null, visitDate: today(), surveyors: "" },
     contacts: [],
     permits: { assembly: "", assemblyDate: "", agreement: "", agreementDate: "", workHours: "", accessRules: "", rules: "" },
     commercial: { units: null, occupied: null, expectedClients: null, providers: [], rentMonthly: null, powerMonthly: null, deposit: null, exclusivity: "", powerPaidBy: "", notes: "" },
@@ -294,6 +295,8 @@ export function decodeSurvey(v: unknown): Survey | null {
       name: str(i.name, 200),
       address: str(i.address, 500),
       municipality: str(i.municipality, 200),
+      // Surveys from before the state menu (2026-11-20): a listed municipality fills its state.
+      state: str(i.state, 80) || stateOf(str(i.municipality, 200)),
       lat: num(i.lat, -90, 90),
       lng: num(i.lng, -180, 180),
       visitDate: date(i.visitDate).slice(0, 10),

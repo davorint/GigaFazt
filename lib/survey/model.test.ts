@@ -4,7 +4,7 @@ import { matchInternal } from "../internal-pages"
 
 const filled = (): Survey => {
   const s = newSurvey("Torre A", "2026-11-17T10:00:00.000Z")
-  s.ident = { name: "Torre Norte", address: "Av. Siempre Viva 742", municipality: "Benito Juárez", lat: 19.37, lng: -99.16, visitDate: "2026-11-17", surveyors: "Ana y Luis" }
+  s.ident = { name: "Torre Norte", address: "Av. Siempre Viva 742", municipality: "Benito Juárez", state: "Ciudad de México", lat: 19.37, lng: -99.16, visitDate: "2026-11-17", surveyors: "Ana y Luis" }
   s.towers[0] = syncFloors({ ...s.towers[0], floorsAbove: 4, floorsBelow: 2 })
   s.contacts.push({ id: "contact-1", role: "administrador", name: "Rosa", phone: "5512345678", email: "", notes: "" })
   return s
@@ -95,5 +95,24 @@ describe("route", () => {
   it("/interno/levantamientos is an internal page", () => {
     expect(matchInternal("/interno/levantamientos")).toEqual({ rewriteTo: "/es/interno/levantamientos", open: false })
     expect(matchInternal("/INTERNO/Levantamientos")?.rewriteTo).toBe("/es/interno/levantamientos")
+  })
+})
+
+describe("state and municipality menus (owner, 2026-11-20)", () => {
+  it("lists CDMX's 16 alcaldías, Huixquilucan and Naucalpan, the Morelos towns; old surveys get their state", async () => {
+    const { PLACES, municipalitiesOf, stateOf } = await import("./places")
+    expect(PLACES["Ciudad de México"]).toHaveLength(16)
+    expect(municipalitiesOf("Estado de México")).toEqual(["Huixquilucan", "Naucalpan de Juárez"])
+    expect(municipalitiesOf("Jalisco")).toEqual([])
+    expect(municipalitiesOf("")).toHaveLength(20)
+    expect(stateOf("Coyoacán")).toBe("Ciudad de México")
+    expect(stateOf("Metepec")).toBe("")
+    const old = JSON.parse(JSON.stringify(newSurvey()))
+    old.ident.municipality = "Huixquilucan"
+    delete old.ident.state
+    expect(decodeSurvey(old)!.ident.state).toBe("Estado de México")
+    old.ident.state = "Querétaro"
+    old.ident.municipality = "El Marqués"
+    expect(decodeSurvey(old)!.ident).toMatchObject({ state: "Querétaro", municipality: "El Marqués" })
   })
 })

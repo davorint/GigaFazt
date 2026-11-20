@@ -113,7 +113,7 @@ export function searchAll(d: SearchData, q: string, limitPerKind = 8): Hit[] {
   add(
     "surveys",
     d.surveys,
-    (s) => [s.ident.name, s.ident.address, s.ident.municipality].join(" "),
+    (s) => [s.ident.name, s.ident.address, s.ident.municipality, s.ident.state].join(" "),
     (s) => ({ id: s.id, label: s.ident.name || "—", detail: s.ident.address, href: `/interno/levantamientos?l=${s.id}` })
   )
   add(

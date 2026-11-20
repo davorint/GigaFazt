@@ -68,7 +68,13 @@
       "lat": "Latitud",
       "lng": "Longitud",
       "visitDate": "Fecha de la visita",
-      "surveyors": "Quién hizo el levantamiento"
+      "surveyors": "Quién hizo el levantamiento",
+      "state": "Estado",
+      "stateName": "Escribe el estado",
+      "otherState": "Otro estado…",
+      "municipalityName": "Escribe la alcaldía o municipio",
+      "otherMunicipality": "Otro…",
+      "none": "Sin elegir"
     },
     "contacts": {
       "title": "Contactos",

@@ -1,5 +1,6 @@
 "use client"
 
+import { PlaceFields } from "./PlaceFields"
 import { useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import { NumberField } from "@/components/mikrotik/NumberField"
@@ -37,10 +38,8 @@ export function IdentSection({ s, set }: SectionProps) {
     <div className="grid gap-4">
       <TextField label={t("name")} value={i.name} onChange={(v) => up({ name: v })} />
       <TextField label={t("address")} value={i.address} onChange={(v) => up({ address: v })} />
-      <div className={GRID}>
-        <TextField label={t("municipality")} value={i.municipality} onChange={(v) => up({ municipality: v })} />
-        <DateField label={t("visitDate")} value={i.visitDate} onChange={(v) => up({ visitDate: v })} />
-      </div>
+      <PlaceFields state={i.state} municipality={i.municipality} onChange={(p) => up(p)} />
+      <DateField label={t("visitDate")} value={i.visitDate} onChange={(v) => up({ visitDate: v })} />
       <TextField label={t("surveyors")} value={i.surveyors} onChange={(v) => up({ surveyors: v })} />
       <div className="grid gap-3 rounded-xl border border-white/10 p-4">
         <p className="text-sm font-medium text-foreground">{t("location")}</p>

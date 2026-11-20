@@ -137,7 +137,7 @@ function List({ list, catalog }: { list: Survey[]; catalog: Item[] }) {
   const create = (v: Record<string, string>) => {
     const base = newSurvey(t("towers.defaultName", { l: "A" }))
     // Starts with the phone's name from the sync bar as who did it (editable).
-    const s = { ...base, ident: { ...base.ident, name: v.name, address: v.address, municipality: v.municipality, surveyors: readState().name } }
+    const s = { ...base, ident: { ...base.ident, name: v.name, address: v.address, surveyors: readState().name } }
     saveSurvey(s)
     go(hrefOf(s.id))
   }
@@ -163,7 +163,6 @@ function List({ list, catalog }: { list: Survey[]; catalog: Item[] }) {
         fields={[
           { key: "name", label: t("ident.name"), required: true },
           { key: "address", label: t("ident.address") },
-          { key: "municipality", label: t("ident.municipality") },
         ]}
         onAdd={create}
       />
