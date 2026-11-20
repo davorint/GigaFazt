@@ -293,7 +293,7 @@ function AtSite({ t, s }: { t: T; s: Site }) {
         <ul className="grid gap-1">
           {tools.map((x) => (
             <li key={x.id}>
-              <a href={`/interno/admin/herramientas?h=${x.id}`} className="text-sm text-zinc-200 underline-offset-4 hover:underline">
+              <a href={`/interno/herramientas/en-existencia?h=${x.id}`} className="text-sm text-zinc-200 underline-offset-4 hover:underline">
                 {toolLabel(x)}
                 {x.quantity > 1 ? ` × ${x.quantity}` : ""}
               </a>

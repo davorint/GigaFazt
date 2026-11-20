@@ -1,5 +1,5 @@
 /**
- * Tools (/interno/admin/herramientas, owner 2026-11-18: "all the necessary tools like pliers, thermo fuser, etc";
+ * Tools (/interno/herramientas/en-existencia, owner 2026-11-18: "all the necessary tools like pliers, thermo fuser, etc";
  * answers: where it is / who has it, maintenance, purchase; only the current holder (no lending history); no kits; start
  * with the usual FTTH tools).
  *

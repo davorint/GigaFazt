@@ -27,7 +27,7 @@ describe("search across sections", () => {
     expect(searchAll(d, "5512345678").map((h) => h.kind)).toEqual(["clients", "reports"])
     expect(searchAll(d, "jperez4b")[0].kind).toBe("clients")
     expect(searchAll(d, "hwtc1234")[0].kind).toBe("clients")
-    expect(searchAll(d, "fs-778")[0]).toMatchObject({ kind: "tools", href: "/interno/admin/herramientas?h=tool-0001" })
+    expect(searchAll(d, "fs-778")[0]).toMatchObject({ kind: "tools", href: "/interno/herramientas/en-existencia?h=tool-0001" })
   })
   it("nothing for one letter or no match", () => {
     expect(searchAll(d, "j")).toEqual([])

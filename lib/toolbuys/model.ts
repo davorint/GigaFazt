@@ -1,5 +1,5 @@
 /**
- * Buying options for tools (/interno/admin/compras-herramientas, owner 2026-11-18: "options that we have when we want
+ * Buying options for tools (/interno/herramientas/compras, owner 2026-11-18: "options that we have when we want
  * to buy new stuff"; candidates with offers). One record is one candidate model for a need ("Fusionadora de fibra
  * óptica": Signal Fire AI-9, AI-20…), so the page groups them by need to compare. Each has several offers (store,
  * price with IVA, link, date), a priority and a status: idea → cotizado → aprobado → comprado / descartado. Marking it

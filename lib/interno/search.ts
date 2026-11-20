@@ -86,7 +86,7 @@ export function searchAll(d: SearchData, q: string, limitPerKind = 8): Hit[] {
     "tools",
     d.tools,
     (x) => [x.name, x.brand, x.model, x.serial, x.holder, x.notes].join(" "),
-    (x) => ({ id: x.id, label: toolLabel(x), detail: [x.serial, x.holder || siteName(x.siteId)].filter(Boolean).join(" · "), href: `${A}/herramientas?h=${x.id}` })
+    (x) => ({ id: x.id, label: toolLabel(x), detail: [x.serial, x.holder || siteName(x.siteId)].filter(Boolean).join(" · "), href: `/interno/herramientas/en-existencia?h=${x.id}` })
   )
   add(
     "providers",

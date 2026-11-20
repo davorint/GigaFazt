@@ -11,7 +11,7 @@ import copy from "@/messages/internal/herramientas.es.json"
 import mikrotik from "@/messages/internal/mikrotik.es.json"
 
 /**
- * /interno/admin/herramientas (owner, 2026-11-18): the tools (pliers, fusion splicer, meters…) with where each one is,
+ * /interno/herramientas/en-existencia (owner, 2026-11-18): the tools (pliers, fusion splicer, meters…) with where each one is,
  * its purchase and its maintenance. Behind the /interno password (proxy.ts); Spanish only, not linked from the public site, not in the sitemap, noindex.
  */
 export const metadata: Metadata = {
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 /** The number field shared with the MikroTik tools reads its "invalid" message from there. */
 const messages = { ...copy, ...syncCopy, mikrotik: { params: { invalid: mikrotik.mikrotik.params.invalid } } }
 
-export default async function HerramientasPage({ params }: PageProps<"/[locale]/interno/admin/herramientas">) {
+export default async function HerramientasPage({ params }: PageProps<"/[locale]/interno/herramientas/en-existencia">) {
   const { locale } = await params
   if (locale !== "es") notFound()
   setRequestLocale(locale)
@@ -39,7 +39,7 @@ export default async function HerramientasPage({ params }: PageProps<"/[locale]/
         <h1 className="mt-3 text-4xl font-light tracking-tight text-foreground sm:text-5xl">{t.title}</h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-zinc-300">{t.lead}</p>
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (proxy.ts checks the session and rewrites it) */}
-        <a href="/interno/admin/compras-herramientas" className="mt-3 inline-flex min-h-9 w-fit items-center text-sm text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+        <a href="/interno/herramientas/compras" className="mt-3 inline-flex min-h-9 w-fit items-center text-sm text-zinc-100 underline decoration-white/30 underline-offset-4 hover:decoration-white">
           {t.buyLink}
         </a>
         <AdminLinks current="herramientas" />

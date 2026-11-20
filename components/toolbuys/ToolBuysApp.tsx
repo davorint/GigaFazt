@@ -37,7 +37,7 @@ const fold = (s: string) =>
     .trim()
 
 /**
- * Compras de herramientas (/interno/admin/compras-herramientas, owner 2026-11-18): candidate models for each tool we
+ * Compras de herramientas (/interno/herramientas/compras, owner 2026-11-18): candidate models for each tool we
  * need, with their offers, priority and status, grouped by need to compare; options seen on the web to add; "Marcar
  * comprada" fills the tool in Herramientas.
  */
@@ -219,7 +219,7 @@ function BuyRow({ t, tc, x, needs, open, onToggle }: { t: T; tc: T; x: ToolBuy; 
 
           <div className="grid gap-2">
             {x.status === "comprado" && x.toolId ? (
-              <a href={`/interno/admin/herramientas?h=${x.toolId}`} className={LINK}>
+              <a href={`/interno/herramientas/en-existencia?h=${x.toolId}`} className={LINK}>
                 {t("bought")}
               </a>
             ) : (

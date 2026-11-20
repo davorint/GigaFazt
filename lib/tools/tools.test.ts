@@ -63,8 +63,10 @@ describe("tools", () => {
     expect(decodeTool(null)).toBeNull()
     expect(decodeTool([])).toBeNull()
   })
-  it("/interno/admin/herramientas, and /interno/admin/tools opens it", () => {
-    expect(matchInternal("/interno/admin/Herramientas")?.rewriteTo).toBe("/es/interno/admin/herramientas")
-    expect(matchInternal("/interno/admin/TOOLS")?.rewriteTo).toBe("/es/interno/admin/herramientas")
+  it("/interno/herramientas and its pages (owner, 2026-11-20); the old admin address is gone", () => {
+    expect(matchInternal("/interno/Herramientas")?.rewriteTo).toBe("/es/interno/herramientas")
+    expect(matchInternal("/interno/Herramientas/En-Existencia")?.rewriteTo).toBe("/es/interno/herramientas/en-existencia")
+    expect(matchInternal("/es/interno/herramientas/compras")?.rewriteTo).toBeNull()
+    expect(matchInternal("/interno/admin/herramientas")?.rewriteTo).toBe("/es/interno/admin/herramientas")
   })
 })

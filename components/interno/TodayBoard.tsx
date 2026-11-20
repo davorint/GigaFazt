@@ -192,9 +192,9 @@ export function TodayBoard() {
                 s.payments.late.length - 4
               )}
             </Card>
-            <Card title={t("tools.title")} href={`${A}/herramientas?show=atencion`} open={t("open")} count={s.tools.length} tone={serious ? "red" : s.tools.length ? "amber" : "ok"}>
+            <Card title={t("tools.title")} href={`/interno/herramientas/en-existencia?show=atencion`} open={t("open")} count={s.tools.length} tone={serious ? "red" : s.tools.length ? "amber" : "ok"}>
               {list(
-                s.tools.slice(0, 4).map((x) => ({ key: x.id, text: `${x.label} · ${x.alerts.map((a) => t(`tools.alerts.${a}`)).join(", ")}`, href: `${A}/herramientas?h=${x.id}` })),
+                s.tools.slice(0, 4).map((x) => ({ key: x.id, text: `${x.label} · ${x.alerts.map((a) => t(`tools.alerts.${a}`)).join(", ")}`, href: `/interno/herramientas/en-existencia?h=${x.id}` })),
                 s.tools.length - 4
               )}
             </Card>

@@ -145,7 +145,7 @@ export const sites = pgTable(
 )
 export const siteVersions = versions("site_versions", "site_id")
 
-// ── Tools (/interno/admin/herramientas) ───────────────────────────────────
+// ── Tools (/interno/herramientas/en-existencia) ───────────────────────────────────
 
 export const tools = pgTable(
   "tools",
@@ -287,7 +287,7 @@ export const rolls = pgTable(
 )
 export const rollVersions = versions("roll_versions", "roll_id")
 
-// ── Tool buying options (/interno/admin/compras-herramientas) ───────────────
+// ── Tool buying options (/interno/herramientas/compras) ───────────────
 
 export const toolBuys = pgTable(
   "tool_buys",

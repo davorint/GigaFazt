@@ -60,9 +60,8 @@ describe("material offers: link and status", () => {
 describe("routes", () => {
   it("the two buying pages and their other spellings", () => {
     expect(matchInternal("/interno/admin/compras-materiales")?.rewriteTo).toBe("/es/interno/admin/compras-materiales")
-    expect(matchInternal("/INTERNO/Admin/Compras-Herramientas")?.rewriteTo).toBe("/es/interno/admin/compras-herramientas")
+    expect(matchInternal("/INTERNO/Herramientas/Compras")?.rewriteTo).toBe("/es/interno/herramientas/compras")
     expect(matchInternal("/interno/admin/materiales-compras")?.rewriteTo).toBe("/es/interno/admin/compras-materiales")
-    expect(matchInternal("/interno/admin/opciones-herramientas")?.rewriteTo).toBe("/es/interno/admin/compras-herramientas")
     expect(matchInternal("/interno/admin/precios")?.rewriteTo).toBe("/es/interno/admin/compras-materiales")
   })
 })

@@ -70,7 +70,7 @@ test("signed in: a visited internal page opens without signal", async ({ page, c
   await context.setOffline(true)
   await page.reload()
   await expect(page.getByRole("heading", { name: "Notas", level: 1 })).toBeVisible()
-  await page.goto("/interno/admin/herramientas").catch(() => undefined)
+  await page.goto("/interno/herramientas/en-existencia").catch(() => undefined)
   await expect(page.getByRole("heading", { name: "Sin conexión" })).toBeVisible()
   await context.setOffline(false)
 })
