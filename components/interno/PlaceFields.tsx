@@ -27,6 +27,8 @@ export function PlaceFields({ state, municipality, onChange }: { state: string; 
       return onChange({ state: "", municipality: listed.includes(municipality) ? "" : municipality })
     }
     setOtherState(false)
+    // A new state shows its own list again (a typed municipality that stays keeps its text box by itself).
+    setOtherMuni(false)
     const keep = !municipality || (municipalitiesOf(v) as string[]).includes(municipality) || (!stateOf(municipality) && !v)
     onChange({ state: v, municipality: keep ? municipality : "" })
   }
