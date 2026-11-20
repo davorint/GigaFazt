@@ -18,7 +18,9 @@ const DANGER = "inline-flex min-h-9 w-fit items-center rounded-full border borde
 const ACTIONS: MoveKind[] = ["compra", "instalacion", "reemplazo", "traspaso", "devolucion", "baja", "ajuste"]
 
 /** What each place has, low-stock warnings, recording movements and their history. */
-export function StockPanel({ items }: { items: Item[] }) {
+export function StockPanel({ items: all_ }: { items: Item[] }) {
+  // Labor (category "obra") is a cost in the proposals, never stock: not listed, warned about or moved here.
+  const items = all_.filter((x) => x.category !== "obra")
   const t = useTranslations("materiales")
   const moves = useSyncExternalStore(movesStore.subscribe, movesStore.snapshot, movesStore.serverSnapshot).list
   const units = useSyncExternalStore(unitsStore.subscribe, unitsStore.snapshot, unitsStore.serverSnapshot).list

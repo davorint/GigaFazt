@@ -1,5 +1,7 @@
 "use client"
 
+import { clientPlace } from "@/lib/clients/place"
+import { sitesSnapshot } from "@/lib/sites/store"
 import { useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import type { Client } from "@/lib/clients/model"
@@ -70,7 +72,7 @@ export function ClientHistory({ c }: { c: Client }) {
         {scheduling ? (
           <ScheduleForm
             kind="visita"
-            base={{ clientId: c.id, siteId: c.siteId, name: clientLabel(c), phone: c.whatsapp || c.phone, address: [c.building, c.tower, c.apartment].filter(Boolean).join(" ") }}
+            base={{ clientId: c.id, siteId: c.siteId, name: clientLabel(c), phone: c.whatsapp || c.phone, address: clientPlace(c, sitesSnapshot().list) }}
             onDone={() => setScheduling(false)}
           />
         ) : (

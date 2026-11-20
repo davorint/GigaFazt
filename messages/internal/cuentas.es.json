@@ -126,7 +126,10 @@
         "impuestos": "Impuestos",
         "nomina": "Nómina",
         "otro": "Otro"
-      }
+      },
+      "recurringDoubt": "{n, plural, one {Este pago fijo parece que ya está capturado a mano} other {Estos # pagos fijos parecen ya capturados a mano}}; revisa antes de agregarlos para no pagar dos veces:",
+      "recurringLike": "{fixed} → ya está «{like}»",
+      "recurringAddAnyway": "{n, plural, one {Agregarlo de todos modos} other {Agregarlos de todos modos}}"
     },
     "cobrar": {
       "title": "Cuentas por cobrar",

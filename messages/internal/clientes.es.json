@@ -265,7 +265,7 @@
     "pay": {
       "intro": "El servicio se paga por adelantado: la factura de cada mes se corta el día 1 y vence ese día. El cliente tiene {grace} días para pagar: el día 11 el mes cuenta como atrasado y se corta el servicio (lista de morosos para el MikroTik). El mes de la instalación se cobra si se instaló a más tardar el día 15 (vence el día de la instalación, con los mismos {grace} días); si se instaló después del 15, ese mes es gratis. Un servicio cancelado sigue debiendo los meses facturados antes de su fecha de cancelación. Cada mes se cobra al precio que tenía entonces. Los pagos cubren primero el mes más antiguo. Se cobra desde \"Cobrar desde\" del cliente; si no lo tiene, desde su primer pago registrado o desde este mes.",
       "tiles": {
-        "expected": "Por cobrar cada mes",
+        "expected": "Por cobrar este mes",
         "collected": "Cobrado este mes",
         "payments": "{n, plural, one {# pago} other {# pagos}}",
         "late": "Atrasados",

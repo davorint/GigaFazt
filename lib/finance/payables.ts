@@ -74,6 +74,24 @@ export function recurringBills(month: string, sites: Site[], providers: Provider
   return out
 }
 
+const fold = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase()
+
+/**
+ * A bill entered by hand that looks like this fixed one (owner review 2026-11-20: the month's rent typed by hand was
+ * offered again as missing): same category and month, the same deployment or none given, and for a link the same
+ * provider, or the carrier's name in its payee or concept. Shown as "parece que ya está" instead of being added again.
+ */
+export function lookalike(b: Payable, list: Payable[]): Payable | undefined {
+  const month = b.issueDate.slice(0, 7)
+  return list.find((x) => {
+    if (x.cancelled || x.id === b.id || x.category !== b.category || (x.issueDate || x.dueDate).slice(0, 7) !== month) return false
+    if (x.siteId && x.siteId !== b.siteId) return false
+    if (b.category !== "enlace") return true
+    if (x.providerId && b.providerId) return x.providerId === b.providerId
+    return !!b.payee && fold(`${x.payee} ${x.concept}`).includes(fold(b.payee))
+  })
+}
+
 // ── Reading stored or synced values ─────────────────────────────────────────
 
 export function decodePayable(v: unknown): Payable | null {

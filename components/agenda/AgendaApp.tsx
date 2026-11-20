@@ -1,5 +1,7 @@
 "use client"
 
+import { clientPlace } from "@/lib/clients/place"
+import { sitesSnapshot } from "@/lib/sites/store"
 import { useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import { AreaField, DateField, GRID, PickField } from "@/components/surveys/SurveyFields"
@@ -74,16 +76,19 @@ export function AgendaApp() {
   return (
     <div className="mt-6 grid gap-5">
       <div className="flex flex-wrap items-end gap-2">
-        <button type="button" onClick={() => setDay(addDays(day, -7))} className={SMALL}>
-          {t("prev")}
-        </button>
-        <button type="button" onClick={() => setDay(today)} className={SMALL}>
-          {t("thisWeek")}
-        </button>
-        <button type="button" onClick={() => setDay(addDays(day, 7))} className={SMALL}>
-          {t("next")}
-        </button>
-        <div className="min-w-48">
+        {/* The three week buttons stay together on a phone; the technician and "Nueva cita" go on the next line. */}
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => setDay(addDays(day, -7))} className={SMALL}>
+            {t("prev")}
+          </button>
+          <button type="button" onClick={() => setDay(today)} className={SMALL}>
+            {t("thisWeek")}
+          </button>
+          <button type="button" onClick={() => setDay(addDays(day, 7))} className={SMALL}>
+            {t("next")}
+          </button>
+        </div>
+        <div className="min-w-48 flex-1 sm:flex-none">
           <PickField label={t("who")} value={who} onChange={setWho} options={[{ value: "", label: t("everyone") }, { value: "-", label: t("unassigned") }, ...names.map((n) => ({ value: n, label: n }))]} />
         </div>
         <button type="button" onClick={() => setAdding(!adding)} className="h-10 rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
@@ -98,7 +103,7 @@ export function AgendaApp() {
           <ScheduleForm
             key={clientId}
             kind="visita"
-            base={client ? { clientId: client.id, siteId: client.siteId, name: clientLabel(client), phone: client.whatsapp || client.phone, address: [client.building, client.tower, client.apartment].filter(Boolean).join(" ") } : {}}
+            base={client ? { clientId: client.id, siteId: client.siteId, name: clientLabel(client), phone: client.whatsapp || client.phone, address: clientPlace(client, sitesSnapshot().list) } : {}}
             onDone={(a) => {
               setAdding(false)
               setClientId("")
@@ -169,11 +174,14 @@ function VisitRow({ t, v }: { t: T; v: ReportVisit }) {
 function ApptRow({ t, a, open, onToggle, showDate }: { t: T; a: Appointment; open: boolean; onToggle: () => void; showDate?: boolean }) {
   const up = (p: Partial<Appointment>) => agendaStore.save({ ...a, ...p, updatedAt: new Date().toISOString() })
   const wa = waDigits(a.phone)
+  // A client's appointment shows the client's current name (renamed later, or saved without one).
+  const client = useSyncExternalStore(subscribeClients, clientsSnapshot, clientsServerSnapshot).list.find((c) => c.id === a.clientId)
+  const who = (client && clientLabel(client)) || a.name
   return (
     <div className="rounded-xl border border-white/10">
       <button type="button" onClick={onToggle} aria-expanded={open} className="flex w-full items-start justify-between gap-3 rounded-xl p-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
         <span className="grid gap-0.5">
-          <span className="text-sm text-zinc-100">{[showDate ? dayLabel(a.date) : "", a.time || t("anyTime"), t(`kinds.${a.kind}`), a.name || "—"].filter(Boolean).join(" · ")}</span>
+          <span className="text-sm text-zinc-100">{[showDate ? dayLabel(a.date) : "", a.time || t("anyTime"), t(`kinds.${a.kind}`), who || "—"].filter(Boolean).join(" · ")}</span>
           <span className="font-mono text-xs text-zinc-400">{[a.address, a.who || t("unassigned")].filter(Boolean).join(" · ")}</span>
         </span>
         <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs ${TONE[a.status]}`}>{t(`statuses.${a.status}`)}</span>

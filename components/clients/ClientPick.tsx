@@ -1,5 +1,7 @@
 "use client"
 
+import { clientPlace } from "@/lib/clients/place"
+import { sitesSnapshot } from "@/lib/sites/store"
 import { useState, useSyncExternalStore } from "react"
 import { TextField } from "@/components/mikrotik/TextField"
 import { PickField } from "@/components/surveys/SurveyFields"
@@ -12,8 +14,8 @@ const fold = (s: string) =>
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase()
 
-/** A client's name with their apartment, for lists. */
-export const clientLine = (c: Client) => [clientLabel(c), [c.building, c.tower, c.apartment].filter(Boolean).join(" ")].filter(Boolean).join(" · ")
+/** A client's name with where they live (their deployment, tower and apartment), for lists. */
+export const clientLine = (c: Client) => [clientLabel(c), clientPlace(c, typeof window === "undefined" ? [] : sitesSnapshot().list)].filter(Boolean).join(" · ")
 
 /** Picks a client by typing part of the name, apartment, phone or PPPoE user (a location's clients first). */
 export function ClientPick({

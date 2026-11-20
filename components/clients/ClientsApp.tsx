@@ -1,5 +1,6 @@
 "use client"
 
+import { clientPlace } from "@/lib/clients/place"
 import { useMemo, useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import { NumberField } from "@/components/mikrotik/NumberField"
@@ -238,7 +239,7 @@ function matchesLight(c: Client, f: "" | "mala" | "sin") {
 }
 
 function Row({ t, c, open, onToggle }: { t: T; c: Client; open: boolean; onToggle: () => void }) {
-  const where = [c.building, c.tower, c.apartment].filter(Boolean).join(" · ")
+  const where = clientPlace(c, useSyncExternalStore(subscribeSites, sitesSnapshot, sitesServerSnapshot).list)
   const status = clientStatus(c)
   const light = clientLight(c)
   const services = c.services.filter((s) => s.status !== "cancelado").map((s) => (s.type === "internet" && s.plan ? `${t("services.types.internet")} ${s.plan}` : t(`services.types.${s.type}`)))

@@ -8,7 +8,7 @@ import { AreaField, DateField, GRID, PickField } from "@/components/surveys/Surv
 import { QuickAdd } from "@/components/interno/QuickAdd"
 import { RecordHistory } from "@/components/interno/RecordHistory"
 import { useOpenParam } from "@/components/interno/useOpenParam"
-import { PAY_CATEGORIES, newPayable, recurringBills, type PayCategory, type Payable } from "@/lib/finance/payables"
+import { PAY_CATEGORIES, lookalike, newPayable, recurringBills, type PayCategory, type Payable } from "@/lib/finance/payables"
 import { agingTotals, balanceOf, complementPending, finStatus, isOpenDoc, type FinStatus } from "@/lib/finance/common"
 import { payablesStore } from "@/lib/finance/store"
 import { providerName } from "@/lib/providers/model"
@@ -45,7 +45,11 @@ export function PayablesApp() {
   const list = store.list
   const st = (x: Payable): FinStatus => finStatus(x, today)
   const open = list.filter(isOpenDoc)
-  const missing = recurringBills(month, sites.list, providers).filter((b) => !list.some((x) => x.id === b.id))
+  const fixed = recurringBills(month, sites.list, providers).filter((b) => !list.some((x) => x.id === b.id))
+  // Typed by hand already (same category, month, deployment, carrier): not offered as missing, shown to check.
+  const doubts = fixed.map((b) => ({ b, like: lookalike(b, list) })).filter((d) => d.like)
+  const missing = fixed.filter((b) => !doubts.some((d) => d.b.id === b.id))
+  const addFixed = (bills: Payable[]) => payablesStore.save(...bills.map((b) => ({ ...b, by: readState().name, updatedAt: new Date().toISOString() })))
   const fold = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase()
   const shown = list
     .filter((x) => x.id === openId || show === "todas" || (show === "abiertas" ? isOpenDoc(x) : show === "vencidas" ? st(x) === "vencido" : st(x) === "pagado"))
@@ -75,13 +79,30 @@ export function PayablesApp() {
         <AgingTiles t={t} totals={agingTotals(open.map((x) => ({ due: x.dueDate, amount: balanceOf(x) })), today)} />
       </section>
 
-      {missing.length > 0 && (
+      {(missing.length > 0 || doubts.length > 0) && (
         <div className="grid gap-2 rounded-xl border border-cyan-400/30 p-3">
-          <p className="text-sm text-cyan-100">{t("pagar.recurring", { n: missing.length, total: mxn(missing.reduce((a, b) => a + b.amount, 0)) })}</p>
-          <p className="text-xs text-zinc-400">{missing.map((b) => b.concept).join(" · ")}</p>
-          <button type="button" onClick={() => payablesStore.save(...missing.map((b) => ({ ...b, by: readState().name, updatedAt: new Date().toISOString() })))} className={SMALL}>
-            {t("pagar.recurringAdd")}
-          </button>
+          {missing.length > 0 && (
+            <>
+              <p className="text-sm text-cyan-100">{t("pagar.recurring", { n: missing.length, total: mxn(missing.reduce((a, b) => a + b.amount, 0)) })}</p>
+              <p className="text-xs text-zinc-400">{missing.map((b) => b.concept).join(" · ")}</p>
+              <button type="button" onClick={() => addFixed(missing)} className={SMALL}>
+                {t("pagar.recurringAdd")}
+              </button>
+            </>
+          )}
+          {doubts.length > 0 && (
+            <>
+              <p className="text-xs text-amber-200">{t("pagar.recurringDoubt", { n: doubts.length })}</p>
+              <ul className="grid gap-1 text-xs text-zinc-300">
+                {doubts.map((d) => (
+                  <li key={d.b.id}>{t("pagar.recurringLike", { fixed: d.b.concept, like: d.like!.concept || d.like!.payee })}</li>
+                ))}
+              </ul>
+              <button type="button" onClick={() => addFixed(doubts.map((d) => d.b))} className={SMALL}>
+                {t("pagar.recurringAddAnyway", { n: doubts.length })}
+              </button>
+            </>
+          )}
         </div>
       )}
 
