@@ -15,7 +15,7 @@
  *   without a date, from before dates were kept, no longer counts). Each month is charged at the price the service had
  *   then (its price history), so a price change doesn't rewrite past months.
  */
-import { priceAt, type Client, type Service } from "../clients/model"
+import { onHold, priceAt, type Client, type Service } from "../clients/model"
 import { newId } from "../survey/id"
 import { csvCell } from "../csv"
 
@@ -78,8 +78,8 @@ const daysBetween = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00
 
 // ── What a client owes ───────────────────────────────────────────────────
 
-/** Monthly charge: active and suspended services with a price (cancelled ones stop counting). */
-export const monthlyDue = (c: Client) => c.services.filter((s) => s.status !== "cancelado").reduce((a, s) => a + (s.monthly ?? 0), 0)
+/** Monthly charge: active and suspended services with a price (cancelled ones and manual holds don't count). */
+export const monthlyDue = (c: Client) => c.services.filter((s) => s.status !== "cancelado" && !s.hold).reduce((a, s) => a + (s.monthly ?? 0), 0)
 
 /**
  * Whether a service is charged for a month: from its installation month when installed by the 15th (else from the next
@@ -91,9 +91,14 @@ export function chargedIn(s: Service, month: string): boolean {
     const first = monthOf(s.start)
     if (month < first || (month === first && !installMonthCharged(s.start))) return false
   }
+  // On manual hold on the month's invoice day: not charged (a hold that starts later in the month still pays it).
+  if (onHold(s, dueDate(month))) return false
   if (s.status !== "cancelado") return true
   return !!s.cancelledAt && dueDate(month) < s.cancelledAt
 }
+
+/** Months not charged because a service was on manual hold (for the client's history). */
+export const pausedMonths = (c: Client, months: string[]) => months.filter((m) => c.services.some((s) => onHold(s, dueDate(m)) && priceAt(s, m)))
 
 /** What a month costs: the services charged that month. */
 export const chargeFor = (c: Client, month: string) => c.services.filter((s) => chargedIn(s, month)).reduce((a, s) => a + (priceAt(s, month) ?? 0), 0)
@@ -138,6 +143,8 @@ export type Ledger = {
   lastPayment: Payment | null
   /** The next payment day to watch: the oldest unpaid month's, else the first charged month after what's covered ("" = none). */
   nextDue: string
+  /** Months of the ledger not charged because of a manual hold. */
+  paused: string[]
 }
 
 /**
@@ -197,7 +204,7 @@ export function ledger(c: Client, all: Payment[], today: string): Ledger {
     for (let i = 0; i < 24 && chargeFor(c, m) <= 0; i++) m = addMonths(m, 1)
     if (chargeFor(c, m) > 0) nextDue = monthDue(c, m)
   }
-  return { monthly, start, months, paidTotal, owed, lateMonths, status, coveredUntil, credit: Math.max(0, left), lastPayment: payments.at(-1) ?? null, nextDue }
+  return { monthly, start, months, paidTotal, owed, lateMonths, status, coveredUntil, credit: Math.max(0, left), lastPayment: payments.at(-1) ?? null, nextDue, paused: pausedMonths(c, months.map((x) => x.month)) }
 }
 
 export type CollectionStats = { expected: number; collected: number; late: number; lateAmount: number; soon: number; payments: number }

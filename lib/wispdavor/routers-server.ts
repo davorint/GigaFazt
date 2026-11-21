@@ -4,7 +4,7 @@
  */
 import "server-only"
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto"
-import { decodeClient, type Client } from "../clients/model"
+import { decodeClient, withHold, type Client } from "../clients/model"
 import { getPool } from "../db/client"
 import { todayInMexico } from "../lead"
 import { decodePayment, type Payment } from "../payments/model"
@@ -235,7 +235,8 @@ async function setServiceStatus(clientId: string, serviceId: string, status: "ac
   // A cancelled service stays cancelled: the router only suspends and reactivates.
   if (!s || s.status === status || s.status === "cancelado") return
   c.id = clientId
-  const next = { ...c, services: c.services.map((x) => (x.id === serviceId ? { ...x, status } : x)), updatedAt: new Date().toISOString() }
+  // Back to active ends a manual hold today (the paused months stay uncharged).
+  const next = { ...c, services: c.services.map((x) => (x.id === serviceId ? { ...(status === "activo" ? withHold(x, false, todayInMexico()) : x), status } : x)), updatedAt: new Date().toISOString() }
   await sync("clients", Number.MAX_SAFE_INTEGER - 1, [{ id: clientId, baseVersion: row.version, data: next, deleted: false, editedAt: next.updatedAt }], "Router (WispDavor)")
 }
 

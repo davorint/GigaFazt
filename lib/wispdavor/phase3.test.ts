@@ -132,3 +132,28 @@ describe("WispDavor review (2026-11-21)", () => {
     expect(monthsLabel(["2026-12", "2027-01", "2027-02"])).toBe("diciembre de 2026 a febrero de 2027")
   })
 })
+
+describe("Manual holds aren't charged (owner, 2026-11-21)", () => {
+  it("a month whose day 1 falls in a hold is free; the month a hold starts in still pays", async () => {
+    const { ledger } = await import("../payments/model")
+    const { withHold } = await import("../clients/model")
+    // Service since September; on hold from 2026-09-20 to 2026-11-05 → October and November free, September charged.
+    const s = { ...svc("kiko"), status: "activo" as const, holds: [{ from: "2026-09-20", to: "2026-11-05" }] }
+    const c = newClient({ id: "cli-kiko", name: "kiko", siteId: "site-001", billingFrom: "2026-09", services: [s] })
+    const l = ledger(c, [], TODAY)
+    expect(l.months.map((m) => [m.month, m.charge])).toEqual([
+      ["2026-09", 396],
+      ["2026-10", 0],
+      ["2026-11", 0],
+    ])
+    expect(l.paused).toEqual(["2026-10", "2026-11"])
+    // Still on hold: open period counts only while the flag is on; turning it off closes it today.
+    const open = withHold({ ...svc("lalo"), status: "suspendido" as const }, true, "2026-10-15")
+    const held = newClient({ id: "cli-lalo", name: "lalo", siteId: "site-001", billingFrom: "2026-09", services: [open] })
+    expect(ledger(held, [], TODAY).months.map((m) => m.charge)).toEqual([396, 396, 0])
+    expect(ledger(held, [], TODAY).monthly).toBe(0)
+    const off = withHold(open, false, "2026-11-21")
+    expect(off.holds).toEqual([{ from: "2026-10-15", to: "2026-11-21" }])
+    expect(withHold(withHold(svc("x"), true, TODAY), false, TODAY).holds).toEqual([])
+  })
+})

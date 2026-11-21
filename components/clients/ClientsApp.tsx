@@ -25,6 +25,7 @@ import {
   setPrice,
   possibleDuplicates,
   withReading,
+  withHold,
   lightDrop,
   type Client,
   type ClientKind,
@@ -446,16 +447,33 @@ function ServiceCard({ t, c, s, n, onChange, onRemove }: { t: T; c: Client; s: S
         <PickField
           label={t("services.status")}
           value={s.status}
-          onChange={(status) => up(status === "cancelado" ? { status, cancelledAt: s.cancelledAt || localToday(), hold: false } : { status, cancelledAt: "", cancelReason: "", cancelNote: "", hold: status === "suspendido" ? s.hold : false })}
+          onChange={(status) => {
+            // Leaving "suspendido" ends a manual hold today (its paused months stay in the history).
+            const h = status === "suspendido" ? {} : (({ hold, holds }) => ({ hold, holds }))(withHold(s, false, localToday()))
+            up(status === "cancelado" ? { status, cancelledAt: s.cancelledAt || localToday(), ...h } : { status, cancelledAt: "", cancelReason: "", cancelNote: "", ...h })
+          }}
           options={SERVICE_STATUSES.map((x) => ({ value: x, label: t(`statuses.${x}`) }))}
         />
         {s.type === "internet" && s.status === "suspendido" && (
           <label className="flex min-h-10 items-center gap-2 self-end text-sm text-zinc-200">
-            <input type="checkbox" checked={s.hold} onChange={(e) => up({ hold: e.target.checked })} className="size-5 accent-white" />
+            <input
+              type="checkbox"
+              checked={s.hold}
+              onChange={(e) => {
+                const { hold, holds } = withHold(s, e.target.checked, localToday())
+                up({ hold, holds })
+              }}
+              className="size-5 accent-white"
+            />
             <span>
               {t("services.hold")} <span className="block text-xs text-zinc-400">{t("services.holdHint")}</span>
             </span>
           </label>
+        )}
+        {s.holds.length > 0 && (
+          <p className="self-end text-xs text-zinc-400">
+            {t("services.holds", { list: s.holds.map((h) => (h.to ? t("services.holdPeriod", { from: h.from, to: h.to }) : t("services.holdOpen", { from: h.from }))).join(" · ") })}
+          </p>
         )}
         {s.status === "cancelado" && (
           <div className="grid gap-1">

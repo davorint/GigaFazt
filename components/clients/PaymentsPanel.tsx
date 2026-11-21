@@ -51,11 +51,13 @@ function download(name: string, text: string) {
 
 /** One line about where the client stands: owed, months late, covered until. */
 export function ledgerLine(t: T, l: Ledger) {
-  if (l.status === "sin-cobro") return t("pay.noCharge")
+  const paused = l.paused.length ? t("pay.paused", { n: l.paused.length, months: l.paused.map(monthName).join(", ") }) : ""
+  if (l.status === "sin-cobro") return [t("pay.noCharge"), paused].filter(Boolean).join(" · ")
   const parts = [t("pay.monthly", { amount: mxn(l.monthly) })]
   if (l.owed > 0) parts.push(t("pay.owed", { amount: mxn(l.owed) }))
   if (l.lateMonths.length) parts.push(t("pay.lateMonths", { n: l.lateMonths.length }))
   parts.push(l.coveredUntil ? t("pay.covered", { month: monthName(l.coveredUntil) }) : t("pay.notCovered", { month: monthName(l.start) }))
+  if (paused) parts.push(paused)
   return parts.join(" · ")
 }
 

@@ -213,7 +213,10 @@
       "cancelNote": "Detalle (opcional)",
       "cancelNoteHint": "Lo que dijo el cliente, con quién se fue, qué precio le dieron…",
       "hold": "Suspensión manual (no reconectar sola)",
-      "holdHint": "Para suspensiones que no son por adeudo (abuso, mudanza…): WispDavor no la reconecta aunque esté al corriente."
+      "holdHint": "Para suspensiones que no son por adeudo (viaje, mudanza, abuso…): WispDavor no la reconecta y no se cobra el mes cuyo día 1 cae en la pausa.",
+      "holds": "En pausa (sin cobro): {list}",
+      "holdPeriod": "{from} → {to}",
+      "holdOpen": "desde {from}"
     },
     "contacts": {
       "title": "Contactos",
@@ -373,7 +376,8 @@
         "send": "Mandar recordatorio por WhatsApp",
         "skip": "Saltar",
         "stop": "Terminar"
-      }
+      },
+      "paused": "{n, plural, one {# mes en pausa} other {# meses en pausa}} sin cobro ({months})"
     },
     "history": {
       "title": "Historial del cliente",

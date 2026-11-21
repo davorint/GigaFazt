@@ -51,6 +51,11 @@ export type Service = {
    * the client is up to date, until this is unchecked. Debt suspensions don't set it and reconnect on payment.
    */
   hold: boolean
+  /**
+   * When it was on manual hold (owner, 2026-11-21: "manual holds shouldn't be charged"): from the day it was put on hold
+   * to the day it came off ("" = still on hold). A month isn't charged when its invoice day (the 1st) falls in one.
+   */
+  holds: HoldPeriod[]
   notes: string
   // Internet only (empty on the others)
   ontModel: string
@@ -126,6 +131,7 @@ export function newService(type: ServiceType, p: Partial<Service> = {}): Service
     cancelReason: "",
     cancelNote: "",
     hold: false,
+    holds: [],
     notes: "",
     ontModel: type === "internet" ? DEFAULT_ONT : "",
     ontSn: "",
@@ -183,6 +189,22 @@ const iso = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(
 const oneOf = <T extends string>(list: readonly T[], v: unknown, fallback: T): T => ((list as readonly unknown[]).includes(v) ? (v as T) : fallback)
 const idOf = (v: unknown) => (typeof v === "string" && /^[\w-]{6,64}$/.test(v) ? v : newId())
 
+export type HoldPeriod = { from: string; to: string }
+
+/** Whether the service was on manual hold on a day (an open period counts only while the hold is still on). */
+export const onHold = (s: Pick<Service, "hold" | "holds">, day: string) => s.holds.some((h) => h.from <= day && (h.to ? day < h.to : s.hold))
+
+/**
+ * The service with its manual hold on or off from today: on opens a period, off closes the open one (a period that
+ * starts and ends the same day is dropped, it paused nothing).
+ */
+export function withHold<S extends Pick<Service, "hold" | "holds">>(s: S, on: boolean, today: string): S {
+  const open = s.holds.find((h) => !h.to)
+  if (on) return { ...s, hold: true, holds: open ? s.holds : [...s.holds, { from: today, to: "" }] }
+  const holds = s.holds.map((h) => (h.to ? h : { ...h, to: today })).filter((h) => h.from < h.to)
+  return { ...s, hold: false, holds }
+}
+
 function decodeService(v: unknown): Service | null {
   if (!isObj(v)) return null
   const type = oneOf(SERVICE_TYPES, v.type, "otro")
@@ -206,6 +228,14 @@ function decodeService(v: unknown): Service | null {
     cancelReason: oneOf(SERVICE_STATUSES, v.status, "activo") === "cancelado" ? oneOf(CANCEL_REASONS, v.cancelReason, "") : "",
     cancelNote: oneOf(SERVICE_STATUSES, v.status, "activo") === "cancelado" ? str(v.cancelNote, 300) : "",
     hold: oneOf(SERVICE_STATUSES, v.status, "activo") === "suspendido" && v.hold === true,
+    holds: Array.isArray(v.holds)
+      ? v.holds
+          .filter(isObj)
+          .map((h) => ({ from: date(h.from), to: date(h.to) }))
+          .filter((h) => h.from && (!h.to || h.from < h.to))
+          .sort((a, b) => a.from.localeCompare(b.from))
+          .slice(-50)
+      : [],
     notes: str(v.notes, 2000),
     ontModel: net ? str(v.ontModel, 60) : "",
     ontSn: net ? str(v.ontSn, 40).toUpperCase() : "",
