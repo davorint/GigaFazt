@@ -65,7 +65,7 @@
       },
       "software": {
         "name": "Software",
-        "desc": "DavorOLT y WispDavor.",
+        "desc": "DavorOLT (herramientas de la OLT Huawei) y WispDavor.",
         "kicker": "Uso interno · Software",
         "lead": "El software propio: DavorOLT y WispDavor.",
         "metaTitle": "Software · GigaFazt interno",
@@ -73,7 +73,7 @@
         "pages": {
           "davorolt": {
             "name": "DavorOLT",
-            "desc": "Sección de DavorOLT.",
+            "desc": "Las herramientas de la OLT Huawei MA5608T: configuración inicial, autorizar y administrar ONUs, planes, PPPoE, IPTV. Cada una arma el comando listo para pegar.",
             "metaTitle": "DavorOLT · GigaFazt interno"
           },
           "wispdavor": {

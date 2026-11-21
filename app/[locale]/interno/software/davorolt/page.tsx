@@ -1,17 +1,19 @@
 import type { Metadata } from "next"
+import { NextIntlClientProvider } from "next-intl"
 import { setRequestLocale } from "next-intl/server"
 import { notFound } from "next/navigation"
 import { AdminLinks } from "@/components/interno/AdminLinks"
-import copy from "@/messages/internal/interno.es.json"
+import { DavorOltApp } from "@/components/davorolt/DavorOltApp"
+import davorolt from "@/messages/internal/davorolt.es.json"
 
 /**
- * /interno/software/davorolt (owner, 2026-11-21): the DavorOLT section, empty until its content is decided. Behind the
- * /interno password (proxy.ts); Spanish only, not linked from the public site, noindex.
+ * /interno/software/davorolt (owner, 2026-11-21): command tools for the Huawei MA5608T, in the spirit of AdminOLT and
+ * SmartOLT (lib/davorolt). Behind the /interno password (proxy.ts); Spanish only, noindex; works offline once opened.
  */
-const t = copy.interno.tools.software.pages.davorolt
+const t = davorolt.davorolt
 
 export const metadata: Metadata = {
-  title: { absolute: t.metaTitle },
+  title: { absolute: t.meta.title },
   description: null,
   alternates: null,
   openGraph: null,
@@ -20,18 +22,21 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 }
 
-export default async function DavorOLTPage({ params }: PageProps<"/[locale]/interno/software/davorolt">) {
+export default async function DavorOltPage({ params }: PageProps<"/[locale]/interno/software/davorolt">) {
   const { locale } = await params
   if (locale !== "es") notFound()
   setRequestLocale(locale)
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 pb-24 sm:px-6">
+    <main className="mx-auto w-full max-w-5xl px-4 pb-24 sm:px-6">
       <section data-section="davorolt" className="pt-8 pb-2 sm:pt-14">
-        <p className="eyebrow">{copy.interno.tools.software.kicker}</p>
-        <h1 className="mt-3 text-4xl font-light tracking-tight text-foreground sm:text-5xl">{t.name}</h1>
-        <p className="mt-3 max-w-2xl text-base leading-relaxed text-zinc-300">{copy.interno.tools.software.empty}</p>
+        <p className="eyebrow">{t.kicker}</p>
+        <h1 className="mt-3 text-4xl font-light tracking-tight text-foreground sm:text-5xl">{t.title}</h1>
+        <p className="mt-3 max-w-2xl text-base leading-relaxed text-zinc-300">{t.lead}</p>
         <AdminLinks current="software" />
       </section>
+      <NextIntlClientProvider locale="es" messages={davorolt}>
+        <DavorOltApp />
+      </NextIntlClientProvider>
     </main>
   )
 }
