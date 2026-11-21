@@ -288,7 +288,8 @@
           "G03": "G03 Gastos en general",
           "S01": "S01 Sin efectos fiscales"
         },
-        "none": "Ningún cliente coincide."
+        "none": "Ningún cliente coincide.",
+        "publico": "RFC genérico: régimen 616, uso S01 y el código postal del lugar de expedición, como pide el SAT. Pon el nombre del cliente (no «PUBLICO EN GENERAL»)."
       },
       "toInvoice": "Pagos por facturar (clientes con datos fiscales, últimos 90 días)",
       "toInvoiceNone": "Nada por facturar.",
@@ -452,12 +453,16 @@
       "statuses": {
         "pending": "en cola",
         "ready": "en el router",
-        "used": "usada"
+        "used": "usada",
+        "removed": "quitada del router"
       },
       "sold": "Vendida",
       "error": "No se pudo (sin conexión o error del servidor).",
       "cardTitle": "Wi-Fi GigaFazt",
-      "printHint": "Imprime las fichas sin vender del router y plan elegidos arriba (o todas si no eliges)."
+      "printHint": "Imprime las fichas sin vender del router y plan elegidos arriba (o todas si no eliges).",
+      "remove": "Quitar del router",
+      "confirmRemove": "¿Quitar la ficha {code} del router? Deja de funcionar.",
+      "removed": "La ficha se quita en el siguiente reporte del router."
     }
   }
 }

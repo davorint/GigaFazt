@@ -10,7 +10,7 @@ import { clientLabel, type Client, type Fiscal } from "@/lib/clients/model"
 import { saveClient } from "@/lib/clients/store"
 import { mxn } from "@/lib/materials/catalog"
 import { readState } from "@/lib/sync/state"
-import { DEFAULT_CFDI, REGIMES, USES, fiscalIssues, settingsReady, type CfdiSettings } from "@/lib/wispdavor/cfdi"
+import { DEFAULT_CFDI, PUBLICO_RFC, REGIMES, USES, fiscalIssues, settingsReady, type CfdiSettings } from "@/lib/wispdavor/cfdi"
 import { useWispData } from "./useWispData"
 
 type T = ReturnType<typeof useTranslations>
@@ -242,7 +242,7 @@ function FiscalEditor({ t, clients }: { t: T; clients: Client[] }) {
             <PickField label={t("fiscal.use")} value={c.fiscal.use} onChange={(use) => up({ use })} options={[{ value: "", label: "—" }, ...USES.map((u) => ({ value: u, label: t(`fiscal.uses.${u}`) }))]} />
             <TextField label={t("fiscal.email")} type="email" value={c.fiscal.email} onChange={(email) => up({ email: email.slice(0, 200) })} />
           </div>
-          <p className={`text-xs ${issues.length ? "text-amber-200" : "text-emerald-300"}`}>{issues.length ? issues.map((i) => t(`fiscal.issues.${i}`)).join(" · ") : t("fiscal.complete")}</p>
+          <p className={`text-xs ${issues.length ? "text-amber-200" : "text-emerald-300"}`}>{issues.length ? issues.map((i) => t(`fiscal.issues.${i}`)).join(" · ") : c.fiscal.rfc === PUBLICO_RFC ? t("fiscal.publico") : t("fiscal.complete")}</p>
         </div>
       )}
     </section>

@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
 import { editorOf, json, requireInterno } from "@/lib/internal-api"
 import { decodePlans } from "@/lib/wispdavor/hotspot"
-import { createVouchers, getPlans, listVouchers, markSold, savePlans } from "@/lib/wispdavor/hotspot-server"
+import { createVouchers, getPlans, listVouchers, markSold, removeVoucher, savePlans } from "@/lib/wispdavor/hotspot-server"
 import { listRouters } from "@/lib/wispdavor/routers-server"
 
 /**
@@ -43,6 +43,9 @@ export async function POST(request: NextRequest) {
     if (b.action === "generate") {
       const r = await createVouchers(String(b.routerId ?? ""), String(b.planId ?? ""), Number(b.count) || 1, await editorOf(request))
       return "error" in r ? json({ error: r.error }, 409) : json({ ok: true, codes: r.codes })
+    }
+    if (b.action === "remove" && typeof b.code === "string" && /^[a-z0-9]{8}$/.test(b.code)) {
+      return (await removeVoucher(b.code, await editorOf(request))) ? json({ ok: true }) : json({ error: "not-removable" }, 409)
     }
     if (b.action === "sold" && typeof b.code === "string" && /^[a-z0-9]{8}$/.test(b.code)) {
       await markSold(b.code, b.sold === true)

@@ -3,7 +3,7 @@ import { clientIp, ipHash } from "@/lib/reports/limits"
 import { PAY_KINDS } from "@/lib/wispdavor/online"
 import { clientForToken } from "@/lib/wispdavor/portal-server"
 import { SITE_URL, SITE_URL_CONFIGURED } from "@/lib/site"
-import { startCheckout, stripeConfigured } from "@/lib/wispdavor/stripe-server"
+import { startCheckout, stripeConfigured, webhookConfigured } from "@/lib/wispdavor/stripe-server"
 
 const HEADERS = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow", "Referrer-Policy": "no-referrer" }
 
@@ -12,7 +12,7 @@ const HEADERS = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex
  * month ahead) and its address; back to /mi-cuenta when done. The amount is computed here, never taken from the page.
  */
 export async function POST(request: Request) {
-  if (!stripeConfigured()) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: HEADERS })
+  if (!stripeConfigured() || !webhookConfigured()) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: HEADERS })
   const raw = await request.text()
   if (raw.length > 512) return NextResponse.json({ error: "too_large" }, { status: 413, headers: HEADERS })
   let b: { token?: unknown; kind?: unknown; saveCard?: unknown } = {}

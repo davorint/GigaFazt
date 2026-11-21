@@ -52,6 +52,12 @@ export function HotspotApp() {
     setMsg(r?.ok && b.codes ? t("created", { n: b.codes.length }) : t("error"))
     if (r?.ok) await load()
   }
+  const remove = async (code: string) => {
+    if (!window.confirm(t("confirmRemove", { code }))) return
+    const r = await fetch("/api/interno/hotspot", { method: "POST", headers: headers(), body: JSON.stringify({ action: "remove", code }) }).catch(() => null)
+    setMsg(r?.ok ? t("removed") : t("error"))
+    await load()
+  }
   const sold = async (code: string, value: boolean) => {
     await fetch("/api/interno/hotspot", { method: "POST", headers: headers(), body: JSON.stringify({ action: "sold", code, sold: value }) }).catch(() => null)
     await load()
@@ -59,7 +65,7 @@ export function HotspotApp() {
   /** The unsold, unused vouchers as printable cards in a window of their own. */
   const print = () => {
     // Unsold, unused vouchers; only the router and plan chosen above when one is chosen.
-    const list = (data?.vouchers ?? []).filter((v) => !v.sold_at && v.status !== "used" && (!gen.routerId || v.router_id === gen.routerId) && (!gen.planId || v.plan_id === gen.planId))
+    const list = (data?.vouchers ?? []).filter((v) => !v.sold_at && v.status !== "used" && v.status !== "removed" && (!gen.routerId || v.router_id === gen.routerId) && (!gen.planId || v.plan_id === gen.planId))
     const w = window.open("", "_blank")
     if (!w) return
     const cards = list
@@ -161,10 +167,19 @@ export function HotspotApp() {
                 {v.price !== null ? ` · ${mxn(v.price)}` : ""} · {t.has(`statuses.${v.status}`) ? t(`statuses.${v.status}`) : v.status}
                 {v.uptime ? ` · ${v.uptime}` : ""}
               </span>
-              <label className="flex min-h-9 items-center gap-2 text-xs text-zinc-300">
-                <input type="checkbox" checked={!!v.sold_at} onChange={(e) => sold(v.code, e.target.checked)} className="size-4 accent-white" />
-                {t("sold")}
-              </label>
+              {v.status !== "removed" && (
+                <span className="flex flex-wrap items-center gap-3">
+                  <label className="flex min-h-9 items-center gap-2 text-xs text-zinc-300">
+                    <input type="checkbox" checked={!!v.sold_at} onChange={(e) => sold(v.code, e.target.checked)} className="size-4 accent-white" />
+                    {t("sold")}
+                  </label>
+                  {!v.sold_at && v.status !== "used" && (
+                    <button type="button" onClick={() => remove(v.code)} className={DANGER}>
+                      {t("remove")}
+                    </button>
+                  )}
+                </span>
+              )}
             </li>
           ))}
         </ul>

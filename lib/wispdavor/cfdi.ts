@@ -29,10 +29,14 @@ export const REGIMES = ["601", "603", "605", "606", "608", "612", "616", "621", 
 export const USES = ["G03", "S01"] as const
 
 export const RFC_RE = /^[A-ZÑ&]{3,4}\d{6}[A-Z\d]{3}$/
+/** SAT's generic RFC (a client with no RFC of their own). */
+export const PUBLICO_RFC = "XAXX010101000"
 
 export type FiscalIssue = "rfc" | "name" | "regime" | "zip" | "use"
 
 export function fiscalIssues(f: Fiscal): FiscalIssue[] {
+  // Generic RFC: only the name is needed; regime, use and postal code are fixed by SAT (cfdiBody fills them).
+  if (f.rfc === PUBLICO_RFC) return f.name.trim() ? [] : ["name"]
   const out: FiscalIssue[] = []
   if (!RFC_RE.test(f.rfc)) out.push("rfc")
   if (!f.name.trim()) out.push("name")
@@ -109,7 +113,12 @@ export function cfdiBody(c: Client, p: Payment, s: CfdiSettings, opts: { folio?:
     PaymentMethod: "PUE",
     ExpeditionPlace: s.expeditionPlace,
     Exportation: "01",
-    Receiver: { Rfc: c.fiscal.rfc, Name: c.fiscal.name, CfdiUse: c.fiscal.use, FiscalRegime: c.fiscal.regime, TaxZipCode: c.fiscal.zip },
+    // Generic RFC: SAT asks for regime 616, use S01 and the place of issue as the receiver's postal code. The client's
+    // own name stays (the name "PUBLICO EN GENERAL" would make it a global invoice, which this isn't).
+    Receiver:
+      c.fiscal.rfc === PUBLICO_RFC
+        ? { Rfc: PUBLICO_RFC, Name: c.fiscal.name, CfdiUse: "S01", FiscalRegime: "616", TaxZipCode: s.expeditionPlace }
+        : { Rfc: c.fiscal.rfc, Name: c.fiscal.name, CfdiUse: c.fiscal.use, FiscalRegime: c.fiscal.regime, TaxZipCode: c.fiscal.zip },
     Items: [
       {
         ProductCode: s.productCode,

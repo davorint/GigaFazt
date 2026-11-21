@@ -27,7 +27,7 @@ describe("WispDavor phase 2: online payment rules", () => {
 describe("WispDavor phase 2: CFDI", () => {
   it("splits the price with IVA into subtotal + 16 %, PUE, payment form by method", () => {
     const b = cfdiBody(client(), newPayment({ clientId: "cli-0001", date: "2026-11-02", amount: 396, method: "transferencia" }), SETTINGS)
-    expect(b).toMatchObject({ Serie: "GF", CfdiType: "I", PaymentForm: "03", PaymentMethod: "PUE", ExpeditionPlace: "62000", Receiver: { Rfc: "XAXX010101000", CfdiUse: "S01", FiscalRegime: "616", TaxZipCode: "01000" } })
+    expect(b).toMatchObject({ Serie: "GF", CfdiType: "I", PaymentForm: "03", PaymentMethod: "PUE", ExpeditionPlace: "62000", Receiver: { Rfc: "XAXX010101000", CfdiUse: "S01", FiscalRegime: "616", TaxZipCode: "62000" } })
     expect(b.Items[0]).toMatchObject({ ProductCode: "81112101", UnitCode: "E48", Subtotal: 341.38, Total: 396, Taxes: [{ Total: 54.62, Base: 341.38, Rate: 0.16, IsRetention: false }] })
     expect(b.Items[0].Description).toBe("Servicio de internet 200M noviembre de 2026")
     expect([paymentForm({ method: "efectivo" }), paymentForm({ method: "tarjeta" }), paymentForm({ method: "tarjeta" }, "debit"), paymentForm({ method: "otro" })]).toEqual(["01", "04", "28", "99"])
@@ -35,6 +35,9 @@ describe("WispDavor phase 2: CFDI", () => {
   it("checks the receiver and the settings; old clients get empty fiscal data", () => {
     expect(fiscalIssues(fiscal)).toEqual([])
     expect(fiscalIssues({ ...fiscal, rfc: "nope", zip: "1" })).toEqual(["rfc", "zip"])
+    // Generic RFC: only the name matters (SAT fixes regime, use and postal code).
+    expect(fiscalIssues({ ...fiscal, rfc: "XAXX010101000", regime: "", use: "", zip: "" })).toEqual([])
+    expect(fiscalIssues({ ...fiscal, rfc: "XAXX010101000", name: "" })).toEqual(["name"])
     expect(settingsReady(DEFAULT_CFDI)).toBe(false)
     expect(settingsReady(SETTINGS)).toBe(true)
     expect(decodeClient({ id: "cli-0002", name: "x" })?.fiscal).toEqual({ rfc: "", name: "", regime: "", zip: "", use: "", email: "" })

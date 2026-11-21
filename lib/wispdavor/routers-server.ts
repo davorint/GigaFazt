@@ -254,7 +254,7 @@ export async function routerDigest(): Promise<string[]> {
   const out: string[] = []
   if (quiet.length) {
     out.push(`📡 Routers sin reportarse: ${quiet.length} (sus cortes y reconexiones automáticas están detenidos)`)
-    for (const r of quiet.slice(0, 10)) out.push(`• ${r.name}${r.last_seen_at ? ` · último reporte ${r.last_seen_at.toISOString().slice(0, 16).replace("T", " ")} UTC` : " · nunca se ha reportado"}`)
+    for (const r of quiet.slice(0, 10)) out.push(`• ${r.name}${r.last_seen_at ? ` · último reporte ${r.last_seen_at.toLocaleString("es-MX", { timeZone: "America/Mexico_City", dateStyle: "short", timeStyle: "short" })}` : " · nunca se ha reportado"}`)
   }
   if (failed) out.push(`⚠️ Acciones de router que fallaron (24 h): ${failed} — WispDavor → Routers`)
   return out

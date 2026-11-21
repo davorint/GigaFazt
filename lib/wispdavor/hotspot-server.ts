@@ -42,3 +42,13 @@ export async function listVouchers(limit = 500) {
 export async function markSold(code: string, sold: boolean) {
   await getPool().query(`update vouchers set sold_at = ${sold ? "now()" : "null"} where code = $1`, [code])
 }
+
+/** Takes an unsold voucher off its router (lost, damaged…): the router removes the hotspot user; the row stays as removed. */
+export async function removeVoucher(code: string, by: string): Promise<boolean> {
+  const pool = getPool()
+  const v = (await pool.query(`select router_id from vouchers where code = $1 and sold_at is null and status not in ('used', 'removed')`, [code])).rows[0] as { router_id: string } | undefined
+  if (!v) return false
+  await queueAction(v.router_id, { kind: "unvoucher", user: code, arg1: "", arg2: "", arg3: "", arg4: "" }, { by })
+  await pool.query(`update vouchers set status = 'removed' where code = $1`, [code])
+  return true
+}
