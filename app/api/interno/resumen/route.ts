@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
-import { json, requireInterno } from "@/lib/internal-api"
+import { cronAuthorized, json, requireInterno } from "@/lib/internal-api"
 import { digestText } from "@/lib/interno/digest"
 import { decodePayable, type Payable } from "@/lib/finance/payables"
 import { decodeSite, type Site } from "@/lib/sites/model"
@@ -66,8 +66,7 @@ async function run() {
 }
 
 export async function GET(request: NextRequest) {
-  const secret = process.env.CRON_SECRET
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) return json({ error: "unauthorized" }, 401)
+  if (!cronAuthorized(request)) return json({ error: "unauthorized" }, 401)
   try {
     return await run()
   } catch (e) {

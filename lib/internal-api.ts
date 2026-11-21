@@ -6,6 +6,7 @@
  * { error: "signin" } so the phone sends the person to sign in again. Server code only.
  */
 import "server-only"
+import { createHash, timingSafeEqual } from "node:crypto"
 import { NextResponse, type NextRequest } from "next/server"
 import { AUTH_COOKIE, sessionOf } from "./internal-auth"
 import { INTERNAL_HEADERS } from "./internal-pages"
@@ -54,4 +55,15 @@ export function json(body: unknown, status = 200): NextResponse {
   const res = NextResponse.json(body, { status })
   for (const [k, v] of Object.entries(INTERNAL_HEADERS)) res.headers.set(k, v)
   return res
+}
+
+/**
+ * A scheduled job's call (vercel.json crons): `Authorization: Bearer <CRON_SECRET>`, compared in constant time (hashes of
+ * equal length); never allowed when CRON_SECRET isn't set.
+ */
+export function cronAuthorized(request: NextRequest): boolean {
+  const secret = process.env.CRON_SECRET
+  if (!secret) return false
+  const h = (s: string) => createHash("sha256").update(s).digest()
+  return timingSafeEqual(h(request.headers.get("authorization") ?? ""), h(`Bearer ${secret}`))
 }

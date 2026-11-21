@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
-import { json } from "@/lib/internal-api"
+import { cronAuthorized, json } from "@/lib/internal-api"
 import { neonSnapshot, telegramFile } from "@/lib/backup/auto"
 
 /**
@@ -8,8 +8,7 @@ import { neonSnapshot, telegramFile } from "@/lib/backup/auto"
  * `Authorization: Bearer <CRON_SECRET>`. Neon snapshot and Telegram file run independently (lib/backup/auto.ts).
  */
 export async function GET(request: NextRequest) {
-  const secret = process.env.CRON_SECRET
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) return json({ error: "unauthorized" }, 401)
+  if (!cronAuthorized(request)) return json({ error: "unauthorized" }, 401)
   const day = new Date().toISOString().slice(0, 10)
   const run = async (f: () => Promise<{ ok: boolean; detail: string }>) => f().catch((e: unknown) => ({ ok: false, detail: e instanceof Error ? e.message.slice(0, 160) : "error" }))
   const neon = await run(() => neonSnapshot(day))

@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
-import { json } from "@/lib/internal-api"
+import { cronAuthorized, json } from "@/lib/internal-api"
 import { trafficRetention } from "@/lib/wispdavor/routers-server"
 import { runAutopay, stripeConfigured } from "@/lib/wispdavor/stripe-server"
 
@@ -11,8 +11,7 @@ import { runAutopay, stripeConfigured } from "@/lib/wispdavor/stripe-server"
  * router actions removed. Each part runs even if the other fails.
  */
 export async function GET(request: NextRequest) {
-  const secret = process.env.CRON_SECRET
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) return json({ error: "unauthorized" }, 401)
+  if (!cronAuthorized(request)) return json({ error: "unauthorized" }, 401)
   if (!hasDatabase()) return json({ ok: false, error: "no-database" }, 409)
   const part = async <T,>(f: () => Promise<T>) => {
     try {
