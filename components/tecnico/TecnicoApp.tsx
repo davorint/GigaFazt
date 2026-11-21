@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useSyncExternalStore } from "react"
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import { MoveForm } from "@/components/materials/MoveForm"
 import { AreaField, DateField, PickField } from "@/components/surveys/SurveyFields"
@@ -17,6 +17,7 @@ import { reportCode, type Report } from "@/lib/reports/model"
 import { reportsStore } from "@/lib/reports/store"
 import { readState } from "@/lib/sync/state"
 import { SignaturePad } from "./SignaturePad"
+import { drop, enqueue, pending, type Pending } from "@/lib/field/outbox"
 
 const BTN = "inline-flex min-h-11 w-fit items-center rounded-full border border-white/15 px-4 text-sm text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-40"
 const PRIMARY = "inline-flex min-h-11 w-fit items-center rounded-full bg-white px-5 text-sm font-medium text-black hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-40"
@@ -48,16 +49,36 @@ async function shrink(file: File): Promise<Blob> {
   return file
 }
 
-async function upload(ref: JobRef, kind: FieldFile["kind"], blob: Blob, name: string): Promise<FieldFile | null> {
+/** Saved; "retry" (no signal, or the server failed: it waits in the phone's outbox); "bad" (refused: type or size). */
+type Upload = { file: FieldFile } | "retry" | "bad"
+
+async function upload(ref: JobRef, kind: FieldFile["kind"], blob: Blob, name: string): Promise<Upload> {
   const form = new FormData()
   form.set("tipo", ref.kind)
   form.set("ref", ref.id)
   form.set("clase", kind)
   form.set("archivo", blob, name)
   const r = await fetch("/api/interno/campo", { method: "POST", headers: { "x-interno-nombre": encodeURIComponent(readState().name) }, body: form }).catch(() => null)
-  if (!r?.ok) return null
+  if (!r || r.status >= 500 || r.status === 401 || r.status === 503) return "retry"
+  if (!r.ok) return "bad"
   const b = (await r.json().catch(() => ({}))) as { file?: FieldFile }
-  return b.file ?? null
+  return b.file ? { file: b.file } : "retry"
+}
+
+/** Sends what waits in the outbox, oldest first; stops at the first that still can't go (no signal yet). */
+async function flushOutbox(): Promise<{ sent: number; bad: number }> {
+  let sent = 0
+  let bad = 0
+  for (const p of await pending()) {
+    const r = await upload(p.ref, p.kind, p.blob, p.name)
+    if (r === "retry") break
+    if (r !== "bad") {
+      sent++
+      saveField(p.ref, (cur) => ({ files: [...cur.files, r.file], ...(p.kind === "firma" && p.signedBy ? { signedBy: p.signedBy } : {}) }))
+    } else bad++
+    if (p.key !== undefined) await drop(p.key)
+  }
+  return { sent, bad }
 }
 
 /** The job's record as it is now in this phone (an upload can finish after other edits), with its field work changed. */
@@ -88,6 +109,32 @@ export function TecnicoApp() {
   const [day, setDay] = useState("")
   const [who, setWho] = useState<string | null>(null)
   const [openId, setOpenId] = useState("")
+  // Photos and signatures waiting for signal (this phone's outbox), sent on load, when signal comes back, or on demand.
+  const [queue, setQueue] = useState<Pending[]>([])
+  const [flushMsg, setFlushMsg] = useState("")
+  const refreshQueue = useCallback(async () => setQueue(await pending()), [])
+  // One send at a time: the "online" event and a tap on "Subir ahora" together would send the same file twice.
+  const flushing = useRef(false)
+  const flush = useCallback(async () => {
+    if (flushing.current) return
+    flushing.current = true
+    try {
+      const r = await flushOutbox()
+      if (r.sent || r.bad) setFlushMsg(t("outboxSent", { sent: r.sent, bad: r.bad }))
+    } finally {
+      flushing.current = false
+    }
+    await refreshQueue()
+  }, [refreshQueue, t])
+  // Only once this phone's jobs are loaded: a file sent before that couldn't be linked to its job.
+  const ready = agenda.loaded && reports.loaded
+  useEffect(() => {
+    if (!ready) return
+    void flush()
+    const on = () => void flush()
+    window.addEventListener("online", on)
+    return () => window.removeEventListener("online", on)
+  }, [flush, ready])
   if (!agenda.loaded || !reports.loaded || !clients.loaded) return null
   const today = localToday()
   const date = day || today
@@ -117,17 +164,44 @@ export function TecnicoApp() {
           </button>
         </div>
       </div>
+      {queue.length > 0 && (
+        <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/40 p-3 text-sm text-amber-100">
+          {t("outbox", { n: queue.length })}
+          <button type="button" onClick={() => void flush()} className={BTN}>
+            {t("outboxRetry")}
+          </button>
+        </div>
+      )}
+      {flushMsg && <p className="text-xs text-zinc-300">{flushMsg}</p>}
       {!jobs.length && <p className="text-sm text-zinc-400">{me ? t("noneMine", { who: me }) : t("none")}</p>}
       <ol className="grid gap-3">
         {jobs.map((j, i) => (
-          <JobCard key={`${j.ref.kind}-${j.ref.id}`} n={i + 1} job={j} open={openId === j.ref.id} toggle={() => setOpenId(openId === j.ref.id ? "" : j.ref.id)} items={catalog.items} clientName={clients.list.find((c) => c.id === j.rec.clientId)?.name ?? ""} />
+          <JobCard key={`${j.ref.kind}-${j.ref.id}`} n={i + 1} job={j} open={openId === j.ref.id} toggle={() => setOpenId(openId === j.ref.id ? "" : j.ref.id)} items={catalog.items} clientName={clients.list.find((c) => c.id === j.rec.clientId)?.name ?? ""} queued={queue.filter((q) => q.ref.id === j.ref.id)} onQueued={() => void refreshQueue()} />
         ))}
       </ol>
     </div>
   )
 }
 
-function JobCard({ n, job, open, toggle, items, clientName }: { n: number; job: Job; open: boolean; toggle: () => void; items: Parameters<typeof MoveForm>[0]["items"]; clientName: string }) {
+function JobCard({
+  n,
+  job,
+  open,
+  toggle,
+  items,
+  clientName,
+  queued,
+  onQueued,
+}: {
+  n: number
+  job: Job
+  open: boolean
+  toggle: () => void
+  items: Parameters<typeof MoveForm>[0]["items"]
+  clientName: string
+  queued: Pending[]
+  onQueued: () => void
+}) {
   const t = useTranslations("tecnico")
   const f = job.rec.field
   const [msg, setMsg] = useState("")
@@ -139,7 +213,8 @@ function JobCard({ n, job, open, toggle, items, clientName }: { n: number; job: 
   const phone = job.rec.phone.replace(/\D/g, "")
   const wa = phone.length === 10 ? `52${phone}` : phone
   const title = job.kind === "agenda" ? t(`kinds.${job.rec.kind}`) : `${t("report")} ${reportCode(job.rec)} · ${t(`categories.${job.rec.category}`)}`
-  const signed = f.files.some((x) => x.kind === "firma")
+  // A signature waiting for signal counts: the client already signed.
+  const signed = f.files.some((x) => x.kind === "firma") || queued.some((q) => q.kind === "firma")
   const arrive = () => {
     const done = (lat: number | null, lng: number | null) => saveField(job.ref, () => ({ arrivedAt: new Date().toISOString(), lat, lng }))
     if (!navigator.geolocation) return done(null, null)
@@ -154,23 +229,39 @@ function JobCard({ n, job, open, toggle, items, clientName }: { n: number; job: 
     setBusy(true)
     setMsg("")
     let ok = 0
-    for (const file of [...files].slice(0, MAX_FIELD_FILES - f.files.length)) {
-      const saved = await upload(job.ref, "foto", await shrink(file), file.name.replace(/\.[^.]+$/, "") + ".jpg")
-      if (saved) {
+    let waiting = 0
+    let bad = 0
+    for (const file of [...files].slice(0, MAX_FIELD_FILES - f.files.length - queued.length)) {
+      const blob = await shrink(file)
+      const name = file.name.replace(/\.[^.]+$/, "") + ".jpg"
+      const r = await upload(job.ref, "foto", blob, name)
+      if (r === "bad") bad++
+      else if (r === "retry") {
+        // No signal: it waits on the phone and goes by itself later.
+        if (await enqueue({ ref: job.ref, kind: "foto", name, blob, signedBy: "" })) waiting++
+        else bad++
+      } else {
         ok++
-        saveField(job.ref, (cur) => ({ files: [...cur.files, saved] }))
+        saveField(job.ref, (cur) => ({ files: [...cur.files, r.file] }))
       }
     }
     setBusy(false)
-    setMsg(ok === files.length ? t("photosSaved", { n: ok }) : t("photosFailed"))
+    if (waiting) onQueued()
+    setMsg(t("photosResult", { ok, waiting, bad }))
   }
   const sign = async () => {
     if (!signature || !signer.trim()) return
     setBusy(true)
-    const saved = await upload(job.ref, "firma", signature, "firma.png")
+    const r = await upload(job.ref, "firma", signature, "firma.png")
     setBusy(false)
-    if (!saved) return setMsg(t("signFailed"))
-    saveField(job.ref, (cur) => ({ files: [...cur.files, saved], signedBy: signer.trim() }))
+    if (r === "bad") return setMsg(t("signFailed"))
+    if (r === "retry") {
+      if (!(await enqueue({ ref: job.ref, kind: "firma", name: "firma.png", blob: signature, signedBy: signer.trim() }))) return setMsg(t("signFailed"))
+      setSignature(null)
+      onQueued()
+      return setMsg(t("signedWaiting"))
+    }
+    saveField(job.ref, (cur) => ({ files: [...cur.files, r.file], signedBy: signer.trim() }))
     setSignature(null)
     setMsg(t("signed"))
   }

@@ -2,6 +2,9 @@
 
 import { useEffect, useState, type ReactNode } from "react"
 import { useLocale, useTranslations } from "next-intl"
+import { speedLabel } from "@/lib/format"
+import { simplePdf } from "@/lib/pdf/simple"
+import { plans } from "@/lib/plans"
 import { OXXO_DAYS } from "@/lib/wispdavor/online"
 import type { PortalView } from "@/lib/wispdavor/portal-server"
 
@@ -86,6 +89,64 @@ function OnlinePay({ online, money, ahead }: { online: NonNullable<PortalView["o
 }
 
 /** The token from the address's #fragment (never sent to the server in the address, logs or referrers). */
+/**
+ * "Cambiar de plan" (owner, 2026-11-21): the lineup with the client's current plan marked; asking for another sends a
+ * request to the team (Reportes), applied from the next month. Nothing changes by itself.
+ */
+function PlanChange({ current, money }: { current: string; money: (n: number) => string }) {
+  const t = useTranslations("portal.plan")
+  const [msg, setMsg] = useState("")
+  const [busy, setBusy] = useState(false)
+  // Clientes names plans like the router profiles ("200M", "1G"): the same speed is the same plan.
+  const mbps = Number(/\d+/.exec(current)?.[0] ?? 0) * (/g/i.test(current) ? 1000 : 1)
+  const ask = async (id: string, label: string) => {
+    if (!window.confirm(t("confirm", { plan: label }))) return
+    setBusy(true)
+    setMsg("")
+    try {
+      const r = await fetch("/api/mi-cuenta/plan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: tokenFromHash(), plan: id }) })
+      const b = (await r.json().catch(() => ({}))) as { kind?: string; code?: string; error?: string }
+      setMsg(r.ok ? t(b.kind === "duplicate" ? "duplicate" : "sent", { code: b.code ?? "" }) : t(r.status === 429 ? "busy" : "error"))
+    } catch {
+      setMsg(t("error"))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <section aria-labelledby="pt-plan" className={CARD}>
+      <h2 id="pt-plan" className={H2}>
+        {t("title")}
+      </h2>
+      <p className="text-sm text-muted-foreground">{t("lead")}</p>
+      <ul className="grid gap-2 sm:grid-cols-3">
+        {plans.map((p) => {
+          const label = speedLabel(p.downMbps)
+          const mine = p.downMbps === mbps
+          return (
+            <li key={p.id} className={`grid gap-2 rounded-xl border p-3 ${mine ? "border-white/40" : "border-white/10"}`}>
+              <span className="text-base text-foreground">{label}</span>
+              {typeof p.priceMxn === "number" && <span className="font-mono text-sm text-muted-foreground">{t("price", { amount: money(p.priceMxn) })}</span>}
+              {mine ? (
+                <span className="text-xs text-emerald-300">{t("current")}</span>
+              ) : (
+                <button type="button" disabled={busy} onClick={() => void ask(p.id, label)} className="inline-flex min-h-10 w-fit items-center rounded-full border border-white/15 px-4 text-sm text-foreground hover:bg-white/5 disabled:opacity-50">
+                  {t("ask")}
+                </button>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+      {msg && (
+        <p role="status" className="text-sm text-foreground">
+          {msg}
+        </p>
+      )}
+    </section>
+  )
+}
+
 const tokenFromHash = () => decodeURIComponent(window.location.hash.replace(/^#/, "").replace(/^k=/, "")).trim()
 
 /**
@@ -188,6 +249,7 @@ export function PortalApp({ pay }: { pay: ReactNode }) {
             ))}
           </ul>
         </section>
+        {v.services.some((s) => s.type === "internet" && s.status !== "cancelado") && <PlanChange current={v.services.find((s) => s.type === "internet" && s.status !== "cancelado")?.plan ?? ""} money={money} />}
         <section aria-labelledby="pt-payments" className={CARD}>
           <h2 id="pt-payments" className={H2}>
             {t("paymentsTitle")}
@@ -244,7 +306,37 @@ export function PortalApp({ pay }: { pay: ReactNode }) {
           </dl>
           <p className="text-xs text-muted-foreground">{t("receiptNote")}</p>
           <div className="flex gap-2 print:hidden">
-            <button type="button" onClick={() => window.print()} className="inline-flex min-h-10 items-center rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200">
+            <button
+              type="button"
+              onClick={() => {
+                // The same receipt as a PDF file (owner, 2026-11-21), made on the phone.
+                const pdf = simplePdf(
+                  [
+                    { text: t("receiptTitle"), size: 20, bold: true },
+                    { text: "GigaFazt", size: 12, bold: true, gap: 34 },
+                    { text: v.place, size: 11 },
+                    { text: `${t("pdf.date")}: ${day(receipt.date)}`, size: 12, gap: 34 },
+                    { text: `${t("pdf.amount")}: ${money(receipt.amount)}`, size: 14, bold: true },
+                    { text: `${t("pdf.method")}: ${t(`methods.${receipt.method}`)}`, size: 12 },
+                    ...(receipt.reference ? [{ text: `${t("pdf.reference")}: ${receipt.reference}`, size: 12 }] : []),
+                    { text: t("receiptNote"), size: 10, muted: true, gap: 40 },
+                  ],
+                  t("receiptTitle")
+                )
+                const url = URL.createObjectURL(new Blob([pdf as Uint8Array<ArrayBuffer>], { type: "application/pdf" }))
+                const a = document.createElement("a")
+                a.href = url
+                a.download = `comprobante-gigafazt-${receipt.date.slice(0, 10)}.pdf`
+                document.body.append(a)
+                a.click()
+                a.remove()
+                setTimeout(() => URL.revokeObjectURL(url), 60000)
+              }}
+              className="inline-flex min-h-10 items-center rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200"
+            >
+              {t("pdf.download")}
+            </button>
+            <button type="button" onClick={() => window.print()} className="inline-flex min-h-10 items-center rounded-full border border-white/15 px-4 text-sm text-foreground hover:bg-white/5">
               {t("print")}
             </button>
             <button type="button" onClick={() => setReceipt(null)} className="inline-flex min-h-10 items-center rounded-full border border-white/15 px-4 text-sm text-foreground hover:bg-white/5">

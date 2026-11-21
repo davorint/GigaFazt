@@ -5,7 +5,7 @@
     },
     "kicker": "Uso interno · Campo",
     "title": "Técnico",
-    "lead": "Tus instalaciones y visitas del día, en orden: llega, toma fotos, anota el material, que el cliente firme y termina. Funciona sin señal; las fotos y la firma se suben cuando hay.",
+    "lead": "Tus instalaciones y visitas del día, en orden: llega, toma fotos, anota el material, que el cliente firme y termina. Funciona sin señal: las fotos y la firma esperan en el teléfono y se suben solas cuando hay.",
     "who": "Técnico",
     "everyone": "Todos",
     "day": "Día",
@@ -76,6 +76,11 @@
       "photoAlt": "Foto {name}",
       "signatureAlt": "Firma de {name}",
       "materials": "Anotó material usado (Materiales → En existencia, movimientos)."
-    }
+    },
+    "outbox": "{n, plural, one {# foto o firma espera} other {# fotos o firmas esperan}} señal en este teléfono; se suben solas cuando haya.",
+    "outboxRetry": "Subir ahora",
+    "outboxSent": "Se subieron {sent} pendientes{bad, plural, =0 {} other {; # no eran válidas y se descartaron}}.",
+    "photosResult": "{ok, plural, =0 {} one {# foto guardada. } other {# fotos guardadas. }}{waiting, plural, =0 {} one {# espera señal en el teléfono. } other {# esperan señal en el teléfono. }}{bad, plural, =0 {} one {# no es una imagen válida.} other {# no son imágenes válidas.}}",
+    "signedWaiting": "Firma guardada en el teléfono: se sube sola cuando haya señal."
   }
 }

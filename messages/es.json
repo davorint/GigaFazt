@@ -1465,6 +1465,25 @@
       "secure": "El pago se hace en la página segura de Stripe; GigaFazt no ve ni guarda los datos de tu tarjeta.",
       "ahead": "Estás al corriente. Si quieres, paga tu siguiente mes por adelantado: {amount}"
     },
-    "outage": "Desde el {since} hay una falla en la red de tu edificio. Ya estamos trabajando en ella; no hace falta que la reportes."
+    "outage": "Desde el {since} hay una falla en la red de tu edificio. Ya estamos trabajando en ella; no hace falta que la reportes.",
+    "plan": {
+      "title": "Cambiar de plan",
+      "lead": "Pide otro plan y te contactamos para confirmarlo. El cambio aplica a partir del mes siguiente.",
+      "price": "{amount} al mes",
+      "current": "Tu plan actual",
+      "ask": "Pedir este plan",
+      "confirm": "¿Pedir el cambio a {plan}? Te contactamos para confirmarlo; aplica a partir del mes siguiente.",
+      "sent": "Recibimos tu solicitud ({code}). Te contactamos para confirmarla; el cambio aplica a partir del mes siguiente.",
+      "duplicate": "Ya tienes una solicitud abierta ({code}). Te contactamos pronto.",
+      "busy": "Demasiados intentos; inténtalo más tarde.",
+      "error": "No se pudo enviar. Inténtalo otra vez o escríbenos por WhatsApp."
+    },
+    "pdf": {
+      "download": "Descargar PDF",
+      "date": "Fecha",
+      "amount": "Importe",
+      "method": "Forma de pago",
+      "reference": "Referencia"
+    }
   }
 }
