@@ -2,13 +2,14 @@
   "asternos": {
     "meta": {
       "guide": "Guía AsterNOS · Interno",
-      "scripts": "Scripts AsterNOS · Interno"
+      "scripts": "Scripts AsterNOS · Interno",
+      "simulator": "Simulador AsterNOS · Interno"
     },
     "kicker": "Uso interno · Equipos de Telecom · AsterNOS",
     "guideTitle": "Guía AsterNOS",
-    "guideLead": "El despliegue con AsterNOS-VPP en lugar del MikroTik: un PPPoE por plan, carriers con balanceo o respaldo, NAT, filtros y los planes con la ráfaga del MikroTik. Cada comando viene de la documentación de Asterfusion y lo que no está documentado se marca para verificar en el equipo.",
+    "guideLead": "El despliegue con AsterNOS-VPP como gateway PPPoE: un PPPoE por plan, carriers con balanceo o respaldo, NAT, filtros y los planes con su ráfaga (diseñados en el simulador). Cada comando viene de la documentación de Asterfusion y lo que no está documentado se marca para verificar en el equipo.",
     "scriptsTitle": "Scripts AsterNOS",
-    "scriptsLead": "Las partes del despliegue por separado: usuarios PPPoE, planes con ráfaga (con la comparación contra el MikroTik), carriers y respaldo, y los comandos de revisión.",
+    "scriptsLead": "Las partes del despliegue por separado: usuarios PPPoE, los limitadores de cada plan, carriers y respaldo, y los comandos de revisión.",
     "code": {
       "lines": "{n, plural, one {# línea} other {# líneas}}",
       "copy": "Copiar",
@@ -42,7 +43,9 @@
         "hqos": "HQoS",
         "hqosCase": "Caso HQoS-VPP",
         "upgrade": "Sistema y actualización",
-        "status": "Estado del equipo"
+        "status": "Estado del equipo",
+        "qosMap": "Mapas de prioridad",
+        "queues": "Colas"
       }
     },
     "form": {
@@ -61,7 +64,7 @@
       "oltPorts": "Puertos hacia la OLT",
       "oltPortsHint": "Uno (1) o varios separados por coma (1, 2): con dos o más se agregan con LACP.",
       "plans": "Planes",
-      "plansHint": "Cada plan llega en su propia VLAN desde la OLT y tiene su servidor PPPoE y su rango de direcciones. Cada dirección del rango recibe su propio limitador con la ráfaga del plan (hasta 8 planes y 500 clientes por plan).",
+      "plansHint": "Cada plan llega en su propia VLAN desde la OLT y tiene su servidor PPPoE y su rango de direcciones; cada dirección recibe su propio limitador con la forma del plan (hasta 8 planes y 495 clientes por plan). La ráfaga se diseña en el simulador.",
       "planName": "Nombre",
       "planSpeed": "Velocidad del plan",
       "vlan": "VLAN",
@@ -69,22 +72,14 @@
       "poolHint": "Por ejemplo 100.64.1.0/24: la primera dirección es el gateway y el resto, los clientes.",
       "removePlan": "Quitar plan",
       "addPlan": "Agregar plan",
-      "rule": "Regla de ráfaga (como en el MikroTik)",
-      "ruleHint": "La misma regla de la guía MikroTik: de ella salen max-limit, burst-threshold y burst-time de cada plan.",
-      "rules": {
-        "flat": "Sin ráfaga (100 %)",
-        "s80": "Sostenido 80 %",
-        "s50": "Sostenido 50 %",
-        "s20": "Sostenido 20 %"
-      },
       "design": "Cómo se imita la ráfaga",
       "designs": {
-        "two-stage": "Dos etapas (la más parecida al MikroTik)",
-        "single": "Un limitador (respaldo)"
+        "two-stage": "Dos etapas (marcador + HQoS)",
+        "single": "Un limitador"
       },
       "designsHint": {
-        "two-stage": "Un marcador por cliente decide si va en ráfaga y un moldeador HQoS lo frena a max-limit al terminarse. A menos de ±10 % del MikroTik en todos los casos probados. Verificar que la marca llegue al HQoS.",
-        "single": "Un solo limitador por cliente: igual al MikroTik desde reposo y con pausas largas; da más datos cuando el cliente hace ráfagas cada pocos segundos."
+        "two-stage": "Un marcador por cliente decide si va en ráfaga y un moldeador HQoS lo lleva al pico o lo deja en el sostenido: moldea en vez de descartar y permite clases de prioridad. Verificar que la marca llegue al HQoS.",
+        "single": "Un solo limitador por cliente (sostenido, pico y ráfaga) que descarta lo que se pasa: menos piezas, pero sin clases de prioridad y la ráfaga se recarga al sostenido."
       },
       "carriers": "Carriers",
       "carrierName": "Nombre",
@@ -119,7 +114,14 @@
         "olt": "Escribe el puerto (o puertos) hacia la OLT.",
         "dhcpNat": "«{carrier}» recibe la IP por DHCP: el NAT de AsterNOS se configura con la IP del carrier, que así no se conoce de antemano. Usa IP fija o agrega el NAT a mano con la IP que reciba.",
         "sameSpeed": "«{plan}» tiene la misma velocidad que otro plan: los usuarios se asignan por velocidad y este no recibiría ninguno. Usa velocidades distintas."
-      }
+      },
+      "clients": "Clientes",
+      "clientsUnit": "clientes",
+      "clientsHint": "Los que tiene o tendrá el plan: para la hora pico y el equipo.",
+      "shapePlain": "Plan fijo, sin ráfaga.",
+      "shapeBurst": "Sostenido {sustained} Mbps, ráfaga de {burst} MB ({seconds} s al pico desde reposo).",
+      "designIt": "Diseñarlo en el simulador →",
+      "classes": "Clase de tiempo real (juegos y llamadas primero)"
     },
     "guide": {
       "before": {
@@ -159,7 +161,7 @@
         },
         "plans": {
           "title": "Planes con ráfaga",
-          "what": "Cada dirección de cada plan recibe su limitador de bajada y de subida con la ráfaga del MikroTik (ver Scripts → Planes para los valores y la comparación). Es el bloque más largo: descárgalo y pégalo por partes."
+          "what": "Cada dirección de cada plan recibe su limitador de bajada y de subida con el pico, el sostenido y la ráfaga del plan (diseñados en el simulador) y, si las activas, la clase de tiempo real. Es el bloque más largo: descárgalo y pégalo por partes."
         },
         "save": {
           "title": "Guardar",
@@ -182,34 +184,150 @@
       "usersHint": "Una línea por cliente: nombre, usuario PPPoE, plan (200, 500M, 1G o el nombre del plan), contraseña. Separados por coma, punto y coma o tabulador.",
       "usersErrors": "{n, plural, one {# línea no se pudo leer} other {# líneas no se pudieron leer}} (líneas {lines}): revisa las columnas y la contraseña.",
       "usersUnplaced": "Sin plan en este despliegue (agrega el plan en la guía): {users}.",
-      "plansWhat": "Para cada plan: los valores del MikroTik (de la regla elegida), cómo quedan en AsterNOS y cuántos datos da cada diseño comparado con el MikroTik en distintos usos. Verde: a 10 % o menos.",
+      "plansWhat": "Los limitadores de cada plan, con su forma (pico, sostenido, ráfaga y recarga). Para diseñarla y ver qué recibe un cliente, usa el simulador.",
       "planLine": "{mbps} Mbps · VLAN {vlan} · {pool}",
-      "mikrotikLine": "MikroTik: max-limit {max}M, burst-limit {burst}M, burst-threshold {threshold}M, burst-time {time} s. Desde reposo da {real} s de ráfaga.",
-      "twoStageLine": "AsterNOS (dos etapas): marcador que se recarga a {refill}M ({share} % del burst-threshold) con {size} de ráfaga; HQoS por cliente hasta {user}M y lo que pase de la ráfaga a {over}M.",
-      "singleLine": "AsterNOS (un limitador): CIR {cir}M, PIR {pir}M y {cbs} de ráfaga; lo demás se descarta.",
-      "noBurst": "Sin ráfaga: el plan queda fijo a {mbps} Mbps.",
-      "compareTitle": "Comparación de {plan} con el MikroTik",
-      "compareCaption": "Datos que da AsterNOS comparados con el MikroTik en 2 minutos de cada uso.",
-      "cols": {
-        "pattern": "Uso",
-        "twoStage": "Dos etapas",
-        "single": "Un limitador"
-      },
-      "patterns": {
-        "speedtest": "Prueba de velocidad (15 s)",
-        "dl50": "Descarga de 50 MB",
-        "dl500": "Descarga de 500 MB",
-        "on5off25": "5 s de uso, 25 s de pausa",
-        "on4off12": "4 s de uso, 12 s de pausa",
-        "on3off8": "3 s de uso, 8 s de pausa",
-        "on2off4": "2 s de uso, 4 s de pausa",
-        "on10off6": "10 s de uso, 6 s de pausa"
-      },
+      "noBurst": "Plan fijo a {mbps} Mbps, sin ráfaga.",
       "carriersWhat": "Las IPs de los carriers, el NAT de salida y el reparto o el orden de respaldo.",
       "failover": "Revisión de carriers",
       "failoverWhat": "La revisión por ping de cada carrier (SLA) y las rutas que salen si deja de responder (track).",
       "checksWhat": "Comandos para revisar el equipo después de instalar: versión y licencia, puertos, sesiones PPPoE, NAT, carriers, limitadores y uso del CPU.",
-      "usersBadPassword": "Contraseña con espacios o comillas (AsterNOS la tomaría como varias palabras), no se escribió: {users}."
+      "usersBadPassword": "Contraseña con espacios o comillas (AsterNOS la tomaría como varias palabras), no se escribió: {users}.",
+      "shapeLine": "Pico {peak} Mbps · sostenido {sustained} Mbps · ráfaga {burst} MB (unos {seconds} s al pico) · recarga {recharge} Mbps."
+    },
+    "simTitle": "Simulador AsterNOS",
+    "simLead": "Para aprovechar lo que AsterNOS-VPP sabe hacer: diseña cada plan con su pico, sostenido, ráfaga y recarga; mira qué recibe un cliente, qué pasa en la hora pico con todos los clientes, cuánto ayudan las clases de prioridad y si el equipo alcanza.",
+    "sim": {
+      "tabsLabel": "Simulador AsterNOS",
+      "tabs": {
+        "design": "Diseñar planes",
+        "busy": "Hora pico",
+        "classes": "Clases de prioridad",
+        "hardware": "Equipo"
+      },
+      "design": {
+        "noPlans": "Agrega planes en la guía.",
+        "plan": "Plan",
+        "shape": "Forma del plan",
+        "presets": {
+          "plain": "Fijo (sin ráfaga)",
+          "short": "Ráfaga corta",
+          "long": "Ráfaga larga"
+        },
+        "peak": "Pico",
+        "peakHint": "La velocidad que se vende: lo más que recibe el cliente.",
+        "sustained": "Sostenido",
+        "sustainedHint": "Lo que mantiene cuando ya usó la ráfaga.",
+        "burst": "Ráfaga",
+        "burstHint": "Datos permitidos por encima del sostenido, en MB (0 = plan fijo).",
+        "recharge": "Recarga",
+        "rechargeHint": "A qué velocidad se vuelve a llenar la ráfaga. Más lenta que el sostenido: quien hace ráfagas una tras otra recibe menos extra.",
+        "rechargeSingle": "Con un limitador la ráfaga se recarga al sostenido (este valor no se usa).",
+        "summary": "Desde reposo da {peak} Mbps unos {seconds} s y luego {sustained} Mbps; en reposo la ráfaga se llena en {recharge} s.",
+        "plain": "Plan fijo a {peak} Mbps.",
+        "results": "Qué recibe un cliente",
+        "cols": {
+          "situation": "Situación",
+          "result": "Resultado"
+        },
+        "situations": {
+          "speedtest": "Prueba de velocidad (15 s)",
+          "dl100": "Descarga de 100 MB",
+          "dl1000": "Descarga de 1 GB",
+          "web": "Navegar (páginas de 3 MB)",
+          "video4k": "Video 4K (25 Mbps)",
+          "bursts": "Uso en ráfagas (3 s sí, 8 s no)"
+        },
+        "res": {
+          "speedtest": "marca ~{mbps} Mbps",
+          "download": "termina en {s} s",
+          "notDone": "no termina en el tiempo simulado",
+          "web": "página en {ms} ms",
+          "video": "arranca en {start} s · {stall} s detenido",
+          "average": "{mbps} Mbps promedio · {burst} s en ráfaga"
+        },
+        "chartOf": "Gráfica de",
+        "chartLabel": "Velocidad en el tiempo: {situation}. Línea gris: pico; línea ámbar: sostenido."
+      },
+      "busy": {
+        "what": "Todos los clientes en la hora pico compartiendo los carriers con el HQoS: el total, un grupo por plan y cada cliente con su sostenido. El reparto es justo (nadie recibe más de lo que pide; lo que sobra se reparte igual). Se simulan cientos de momentos.",
+        "inputs": "Datos",
+        "clientsOf": "Clientes de {plan}",
+        "clientsUnit": "clientes",
+        "active": "Conectados a la vez",
+        "activeHint": "Qué parte de los clientes usa internet al mismo tiempo en la hora pico (supuesto: ajústalo con tus datos).",
+        "demand": "Cuánto pide cada uno",
+        "demandHint": "Parte de su sostenido que pide un cliente conectado (100 % = todos saturan, el peor caso).",
+        "target": "Meta en los peores momentos",
+        "targetHint": "Qué parte de su sostenido debe recibir un cliente incluso en los peores momentos (el 5 % más malo).",
+        "capacity": "Capacidad de los carriers (de la guía): {mbps} Mbps.",
+        "needData": "Escribe los clientes de cada plan y la capacidad de los carriers (en la guía) para simular.",
+        "results": "Resultado",
+        "cols": {
+          "plan": "Plan",
+          "typical": "Normalmente",
+          "bad": "Peores momentos",
+          "test": "Prueba de velocidad"
+        },
+        "load": "Uso de los carriers: {p50} normalmente, {p95} en los momentos más cargados.",
+        "saturated": "Carriers llenos en el {pct} de los momentos.",
+        "over": "Sobreventa: {x}× (los sostenidos de todos juntos ÷ la capacidad).",
+        "growth": "Caben unos {n} clientes en total (×{x} los de ahora) manteniendo la meta del {target} % en los peores momentos.",
+        "growthShort": "Con estos carriers la meta del {target} % se cumple solo hasta unos {n} clientes: faltan carriers o hay que ajustar los planes.",
+        "model": "Modelo: clientes conectados al azar (Monte Carlo), cada plan como grupo del HQoS y cada cliente limitado a su sostenido (en la hora pico las ráfagas se agotan). La prueba de velocidad es la de un cliente más, hasta su pico."
+      },
+      "classes": {
+        "what": "Cada cliente tiene 8 clases en el HQoS. Sin clases, un paquete de un juego o una llamada espera detrás de la descarga del mismo cliente; con una clase de tiempo real (estricta) pasa primero.",
+        "inputs": "Datos",
+        "queue": "Cola por cliente",
+        "packets": "paquetes",
+        "queueHint": "Paquetes que se juntan detrás cuando el cliente satura. AsterNOS no publica el tamaño de sus colas: es un supuesto.",
+        "table": "Espera extra de un paquete de juego mientras el mismo cliente descarga",
+        "cols": {
+          "plan": "Plan",
+          "without": "Sin clases",
+          "with": "Con clase de tiempo real"
+        },
+        "atSustained": "{plan} a {mbps} Mbps",
+        "enable": "Usar la clase de tiempo real en la configuración",
+        "how": "Los paquetes marcados EF, CS5, CS4 o AF41 (llamadas, videollamadas, juegos) van a la clase 7, estricta. Ojo: mucho tráfico de internet llega sin marca; la mejora es segura en lo que marcan los equipos y apps. Verificar en el equipo.",
+        "needTwoStage": "Las clases de prioridad requieren el diseño de dos etapas (HQoS)."
+      },
+      "hardware": {
+        "what": "Si el equipo alcanza para el despliegue: tráfico, reglas, sesiones PPPoE y de NAT, contra las cifras que publica Asterfusion.",
+        "inputs": "Datos",
+        "platform": "Equipo",
+        "platforms": {
+          "et2508": "ET2508 (OCTEON 10, 8 núcleos) · licencia LIC-E2",
+          "vm": "Máquina virtual (KVM / ESXi)"
+        },
+        "cores": "Núcleos de la VM",
+        "coresUnit": "núcleos",
+        "ram": "RAM",
+        "etRamHint": "16 GB de fábrica, hasta 48 GB.",
+        "traffic": "Tráfico en la hora pico",
+        "trafficHint": "Bajada + subida. Vacío = el doble de los carriers ({mbps} Mbps), el peor caso.",
+        "packet": "Tamaño promedio de paquete",
+        "packetHint": "Supuesto: el tráfico real mezcla paquetes grandes (descargas) y chicos (confirmaciones).",
+        "sessions": "Sesiones de NAT por cliente",
+        "sessionsUnit": "sesiones",
+        "sessionsHint": "Conexiones abiertas por cliente en la hora pico (supuesto).",
+        "results": "Resultado",
+        "checks": {
+          "throughput": "Tráfico (Gbps) contra lo que da el equipo",
+          "aclRules": "Reglas ACL contra las 10,000 a velocidad de línea",
+          "pppoe": "Sesiones PPPoE contra 50,000",
+          "nat": "Sesiones de NAT contra las publicadas para esa RAM",
+          "policers": "Limitadores (uno por dirección y sentido)",
+          "hqosUsers": "Usuarios HQoS",
+          "vmCores": "Núcleos contra el mínimo (4)",
+          "vmRam": "RAM contra el mínimo (4 GB)"
+        },
+        "valueOf": "{value} de {limit}",
+        "valueOnly": "{value}",
+        "mpps": "Paquetes por segundo a procesar: {mpps} Mpps.",
+        "estimated": "Para una VM, Asterfusion no publica rendimiento: {gbps} Gbps es una estimación por núcleo a partir del ET2500 (58 Gbps con 8 núcleos). Mide la tuya.",
+        "sources": "Fuentes: hoja de datos AsterNOS-RT-VPP (2026), hoja de datos ET2500 (2026-08) y white paper BNG de AsterNOS-VPP (2026-10). Son cifras del fabricante, no pruebas propias."
+      }
     }
   }
 }

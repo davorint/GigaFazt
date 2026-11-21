@@ -1,14 +1,18 @@
 "use client"
 
 import { useCallback, useSyncExternalStore } from "react"
-import { RULES } from "@/lib/mikrotik/burst"
-import type { AsterDeployment } from "@/lib/asternos/config"
+import type { AsterDeployment, AsterPlan } from "@/lib/asternos/config"
 
 /**
  * The AsterNOS deployment being prepared, kept on this phone (localStorage) and shared by the Guía and Scripts pages.
  * It holds no secrets: passwords are typed into the generated text only.
  */
 const KEY = "gigafazt-asternos"
+
+/** A plain plan (no burst) at its speed: the starting point; the designer gives it burst. */
+export function newPlan(name: string, mbps: number, vlan: number, pool: string): AsterPlan {
+  return { name, mbps, vlan, pool, sustainedMbps: mbps, burstMB: 0, rechargeMbps: mbps, clients: 0 }
+}
 
 export const DEFAULT_DEPLOYMENT: AsterDeployment = {
   hostname: "gigafazt",
@@ -19,16 +23,12 @@ export const DEFAULT_DEPLOYMENT: AsterDeployment = {
   ntp: "pool.ntp.org",
   dns: "1.1.1.1",
   oltPorts: [1],
-  plans: [
-    { name: "200M", mbps: 200, vlan: 200, pool: "100.64.1.0/24" },
-    { name: "500M", mbps: 500, vlan: 500, pool: "100.64.2.0/24" },
-    { name: "1G", mbps: 1000, vlan: 1000, pool: "100.64.3.0/24" },
-  ],
+  plans: [newPlan("200M", 200, 200, "100.64.1.0/24"), newPlan("500M", 500, 500, "100.64.2.0/24"), newPlan("1G", 1000, 1000, "100.64.3.0/24")],
   carriers: [{ name: "Carrier 1", port: 5, mode: "static", address: "", gateway: "", mbps: 1000 }],
   wanMode: "balance",
   probe: "1.1.1.1",
   design: "two-stage",
-  rule: RULES.s20,
+  classes: false,
 }
 
 const listeners = new Set<() => void>()
@@ -44,7 +44,11 @@ function read(): AsterDeployment {
   if (cache && cache.raw === raw) return cache.value
   let value = DEFAULT_DEPLOYMENT
   try {
-    if (raw) value = { ...DEFAULT_DEPLOYMENT, ...(JSON.parse(raw) as Partial<AsterDeployment>) }
+    if (raw) {
+      const v = { ...DEFAULT_DEPLOYMENT, ...(JSON.parse(raw) as Partial<AsterDeployment>) }
+      // Saved before plans were designed natively (2026-11-20): a plain plan at its speed.
+      value = { ...v, plans: v.plans.map((p) => ({ ...newPlan(p.name, p.mbps, p.vlan, p.pool), ...p })) }
+    }
   } catch {
     value = DEFAULT_DEPLOYMENT
   }

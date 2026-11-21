@@ -4,17 +4,14 @@ import { useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 import { AreaField } from "@/components/surveys/SurveyFields"
 import { parseBulk } from "@/lib/mikrotik/bulk"
-import { planDefaults } from "@/lib/mikrotik/burst"
-import { compare } from "@/lib/asternos/burst"
-import { carriersBlock, checksBlock, failoverBlock, planBursts, plansBlock, usersBlock } from "@/lib/asternos/config"
+import { burstSeconds, hasBurst } from "@/lib/asternos/plan"
+import { carriersBlock, checksBlock, failoverBlock, planShape, plansBlock, usersBlock } from "@/lib/asternos/config"
 import { AsterCode } from "./AsterCode"
 import { useAsterDeployment } from "./useAsterDeployment"
 
 const TABS = ["users", "plans", "carriers", "checks"] as const
 type Tab = (typeof TABS)[number]
 
-const pct = (x: number) => `${x >= 0 ? "+" : ""}${Math.round(x * 100)} %`
-const mb = (bytes: number) => `${Math.round(bytes / 1e6).toLocaleString("es-MX")} MB`
 
 /** Scripts AsterNOS: the parts of a deployment one at a time (users, plans with burst, carriers, checks). */
 export function AsterScripts() {
@@ -87,60 +84,25 @@ function Users({ name }: { name: string }) {
   )
 }
 
-/** Each plan: its AsterNOS burst values next to the MikroTik's, the comparison, and its policers to download. */
+/** Each plan: its shape and its limiters to download (designed and simulated in the Simulador). */
 function Plans({ name }: { name: string }) {
   const t = useTranslations("asternos.scripts")
   const [d] = useAsterDeployment()
-  const bursts = useMemo(() => planBursts(d), [d])
   return (
     <div className="grid gap-6">
       <p className="text-sm text-zinc-300">{t("plansWhat")}</p>
-      {bursts.map(({ plan, burst }, i) => {
-        const q = planDefaults(plan.mbps, d.rule)
-        const rows = compare(q, burst)
+      {d.plans.map((plan, i) => {
+        const sh = planShape(plan)
         return (
           <section key={i} aria-label={plan.name} className="grid gap-3 rounded-xl border border-white/10 p-4">
             <h3 className="text-base font-medium text-foreground">
               {plan.name} · {t("planLine", { mbps: plan.mbps, vlan: plan.vlan, pool: plan.pool })}
             </h3>
-            {burst.burst ? (
-              <>
-                <p className="text-sm text-zinc-300">{t("mikrotikLine", { max: q.maxLimit, burst: q.burstLimit, threshold: q.burstThreshold, time: q.burstTime, real: burst.burstS })}</p>
-                <p className="text-sm text-zinc-300">
-                  {d.design === "two-stage"
-                    ? t("twoStageLine", { refill: burst.twoStage.refillMbps, share: Math.round(burst.twoStage.refillShare * 100), size: mb(burst.twoStage.size), user: burst.twoStage.userMbps, over: burst.twoStage.overMbps })
-                    : t("singleLine", { cir: burst.single.cirMbps, pir: burst.single.pirMbps, cbs: mb(burst.single.cbs) })}
-                </p>
-                <div tabIndex={0} role="region" aria-label={t("compareTitle", { plan: plan.name })} className="overflow-x-auto rounded-lg border border-white/10 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-                  <table className="w-full text-sm">
-                    <caption className="px-3 pt-2 text-left text-xs text-zinc-400">{t("compareCaption")}</caption>
-                    <thead>
-                      <tr className="border-b border-white/10">
-                        <th className="px-3 py-2 text-left font-mono text-[0.7rem] font-normal uppercase text-zinc-400">{t("cols.pattern")}</th>
-                        <th className="px-3 py-2 text-right font-mono text-[0.7rem] font-normal uppercase text-zinc-400">{t("cols.twoStage")}</th>
-                        <th className="px-3 py-2 text-right font-mono text-[0.7rem] font-normal uppercase text-zinc-400">{t("cols.single")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((r) => {
-                        const a = r.twoStageMb / r.mikrotikMb - 1
-                        const b = r.singleMb / r.mikrotikMb - 1
-                        const tone = (x: number) => (Math.abs(x) <= 0.1 ? "text-emerald-300" : Math.abs(x) <= 0.25 ? "text-amber-200" : "text-red-300")
-                        return (
-                          <tr key={r.id} className="border-b border-white/5 last:border-0">
-                            <td className="px-3 py-2 text-zinc-100">{t(`patterns.${r.id}`)}</td>
-                            <td className={`px-3 py-2 text-right font-mono ${tone(a)}`}>{pct(a)}</td>
-                            <td className={`px-3 py-2 text-right font-mono ${tone(b)}`}>{pct(b)}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-zinc-300">{t("noBurst", { mbps: plan.mbps })}</p>
-            )}
+            <p className="text-sm text-zinc-300">
+              {hasBurst(sh)
+                ? t("shapeLine", { peak: sh.peakMbps, sustained: sh.sustainedMbps, burst: sh.burstMB, recharge: sh.rechargeMbps, seconds: Math.round(burstSeconds(sh) * 10) / 10 })
+                : t("noBurst", { mbps: plan.mbps })}
+            </p>
             <AsterCode block={plansBlock(d, i)} title={plan.name} file={`asternos-${name}-plan-${plan.name.replace(/[^\w-]/g, "")}.txt`} />
           </section>
         )

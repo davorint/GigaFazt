@@ -76,18 +76,22 @@
           },
           "asternos": {
             "name": "AsterNOS",
-            "desc": "AsterNOS-VPP de Asterfusion en lugar del MikroTik: la guía de cada despliegue y los scripts, con los planes y la ráfaga del MikroTik.",
+            "desc": "AsterNOS-VPP de Asterfusion como gateway PPPoE: la guía de cada despliegue, los scripts y un simulador propio de planes, hora pico, clases de prioridad y equipo.",
             "kicker": "Uso interno · Equipos de Telecom · AsterNOS",
             "lead": "El gateway PPPoE con AsterNOS-VPP: la guía del despliegue y los scripts, cada comando con su fuente en la documentación.",
             "metaTitle": "AsterNOS · GigaFazt interno",
             "pages": {
               "guia": {
                 "name": "Guía AsterNOS",
-                "desc": "El despliegue paso a paso: OLT y VLAN por plan, un PPPoE por plan, carriers con NAT y respaldo, filtros y planes con la ráfaga del MikroTik."
+                "desc": "El despliegue paso a paso: OLT y VLAN por plan, un PPPoE por plan, carriers con NAT y respaldo, filtros y los planes con su ráfaga."
               },
               "scripts": {
                 "name": "Scripts AsterNOS",
-                "desc": "Usuarios PPPoE desde una lista, los planes con ráfaga comparados con el MikroTik, carriers y respaldo, y los comandos de revisión."
+                "desc": "Usuarios PPPoE desde una lista, los limitadores de cada plan, carriers y respaldo, y los comandos de revisión."
+              },
+              "simulador": {
+                "name": "Simulador AsterNOS",
+                "desc": "Diseña los planes (pico, sostenido, ráfaga y recarga), simula la hora pico con el HQoS, las clases de prioridad para juegos y llamadas, y dimensiona el equipo."
               }
             }
           },

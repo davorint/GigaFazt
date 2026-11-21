@@ -5,10 +5,12 @@
  * (DOCS) and says whether it relies on something the docs don't show, to check on the device before a building.
  * Design (owner): local PPPoE users; one VLAN per plan from the OLT, each with its own PPPoE server instance (0–7) and
  * address pool; every address of a plan's pool gets its own burst policer (lib/asternos/burst.ts), so whoever gets an
- * address from the 200M pool gets the 200M plan. Pure functions: text only, nothing sent anywhere.
+ * address from the 200M pool gets the 200M plan. Plans are designed natively (lib/asternos/plan.ts: peak, sustained,
+ * burst, recharge), not derived from MikroTik rules (owner, 2026-11-20). Pure functions: text only, nothing sent anywhere.
  */
-import { planDefaults, type PlanRule } from "../mikrotik/burst"
-import { asterBurst, carKBps, hqosBps, SMALL_BUCKET, type AsterBurst, type BurstDesign } from "./burst"
+import { carKBps, hqosBps, MAX_BUCKET, SMALL_BUCKET, type BurstDesign } from "./burst"
+import { hasBurst } from "./plan"
+import { REALTIME_DSCP, REALTIME_TC } from "./classes"
 
 const BASE = "https://docs.asternos.com/routing"
 /** The documentation pages each block relies on. */
@@ -35,6 +37,8 @@ export const DOCS = {
   qosCase: `${BASE}/user-case/qos-vpp-case/`,
   hqos: `${BASE}/command-line-reference/hqos-configuration/`,
   hqosCase: `${BASE}/user-case/hqos-vpp-case/`,
+  qosMap: `${BASE}/command-line-reference/qos-configuration/priority-map-configuration/`,
+  queues: `${BASE}/command-line-reference/qos-configuration/queue-scheduling/`,
   upgrade: `${BASE}/configuration-guide/system-configuration-guide/`,
   status: `${BASE}/command-line-reference/device-management/device-status/`,
 } as const
@@ -44,7 +48,16 @@ export type DocKey = keyof typeof DOCS
 
 export type AsterPlan = {
   name: string
+  /** The plan's peak (what's sold), Mbps. */
   mbps: number
+  /** What a client keeps once the burst is used, Mbps (= mbps for a plain plan). */
+  sustainedMbps: number
+  /** Data allowed above the sustained speed, MB (0 = no burst). */
+  burstMB: number
+  /** How fast the burst refills, Mbps (two-stage only; the single policer refills at the sustained speed). */
+  rechargeMbps: number
+  /** Clients on this plan (for the busy-hour simulation and sizing). */
+  clients: number
   /** The VLAN this plan's ONTs use (OLT service port / ONT WAN). */
   vlan: number
   /** The plan's PPPoE address pool, e.g. 100.64.1.0/24 (gateway = first address). */
@@ -79,7 +92,8 @@ export type AsterDeployment = {
   /** Address the failover checks ping through each carrier. */
   probe: string
   design: BurstDesign
-  rule: PlanRule
+  /** A strict real-time class per client (DSCP EF, CS5, CS4, AF41 → class 7); two-stage only. */
+  classes: boolean
 }
 
 export type Block = {
@@ -271,52 +285,85 @@ export function filtersBlock(d: AsterDeployment): Block {
   return { id: "filters", code: lines.join("\n"), docs: ["acl"], verify: true }
 }
 
-/** The AsterNOS settings of each plan (from the MikroTik rule). */
-export function planBursts(d: AsterDeployment): { plan: AsterPlan; burst: AsterBurst }[] {
-  return d.plans.map((plan) => ({ plan, burst: asterBurst(planDefaults(plan.mbps, d.rule)) }))
+/** The plan's shape as the generator and the simulator read it. */
+export function planShape(p: AsterPlan) {
+  const sustainedMbps = Math.min(p.sustainedMbps || p.mbps, p.mbps)
+  // The recharge can't exceed the sustained speed (the two classes together must add up to it).
+  return { peakMbps: p.mbps, sustainedMbps, burstMB: Math.max(0, p.burstMB || 0), rechargeMbps: Math.min(p.rechargeMbps || sustainedMbps, sustainedMbps) }
+}
+const bucket = (mb: number) => Math.min(MAX_BUCKET, Math.max(SMALL_BUCKET, Math.round(mb * 1e6)))
+const pbsFor = (mbps: number) => Math.max(SMALL_BUCKET, Math.round((mbps * 1e6 * 0.05) / 8))
+
+/** Addresses each plan gives out (its pool, up to the rules a table holds). */
+const planHosts = (p: AsterPlan) => (poolHosts(p.pool)?.hosts ?? []).slice(0, MAX_HOSTS)
+
+/** What the configuration creates: ACL rules, CAR policers and HQoS users (for sizing). */
+export function configCounts(d: AsterDeployment): { hosts: number; aclRules: number; policers: number; hqosUsers: number } {
+  const twoStage = d.design === "two-stage"
+  let hosts = 0
+  let policers = 0
+  d.plans.forEach((p) => {
+    const n = planHosts(p).length
+    hosts += n
+    // Two-stage plans without burst need no marker: the HQoS user alone holds them to the plan.
+    if (!twoStage || hasBurst(planShape(p))) policers += n * 2
+  })
+  return { hosts, aclRules: hosts * 2 + d.plans.length * FILTERS.length, policers, hqosUsers: twoStage ? hosts * 2 : 0 }
 }
 
 /**
- * 7. Plans with burst, one policer per address of each plan's pool, both directions.
+ * 7. Plans: per address and direction, a limiter with the plan's peak, sustained speed and burst.
+ * Two-stage: a marker (CAR tr-tcm: refills at the recharge speed, burst = the plan's MB, peak = the plan) re-marks what
+ * goes past the burst into class 1; the client's HQoS user lets it reach the peak (class 0) and holds class 1 to
+ * sustained − recharge (the marker keeps letting the recharge rate through as class 0, so both add up to the sustained). Classes 0 and 1 share by DWRR (strict classes always go first, 7 > … > 0, so the over-burst class
+ * must not be strict). With priority classes on, DSCP real-time marks go to class 7, strict, ahead of both.
+ * Single: one CAR tr-tcm per address (CIR = sustained, PIR = peak, burst = the plan's MB), exceed and violate dropped.
  * Download: matched by destination address on the carrier side (ingress); upload: by source address on the plan VLAN.
  */
 export function plansBlock(d: AsterDeployment, only?: number): Block {
   const lines = ["configure terminal"]
   const twoStage = d.design === "two-stage"
+  const classes = twoStage && d.classes
   if (twoStage) lines.push("hqos enable")
+  if (classes) for (const dscp of REALTIME_DSCP) lines.push(`qos map dscp_to_tc TIEMPO-REAL ${dscp} ${REALTIME_TC}`)
   const total = d.carriers.reduce((a, c) => a + (c.mbps || 0), 0) || d.plans.reduce((a, p) => Math.max(a, p.mbps), 0) * 4
-  planBursts(d).forEach(({ plan, burst }, i) => {
+  d.plans.forEach((plan, i) => {
     if (only !== undefined && only !== i) return
-    const h = poolHosts(plan.pool)
-    if (!h) return
+    const hosts = planHosts(plan)
+    if (!hosts.length) return
     const tag = planTag(plan, i)
-    const hosts = h.hosts.slice(0, MAX_HOSTS)
-    lines.push(`! ── Plan ${plan.name} (${plan.mbps}M): ${hosts.length} direcciones de ${plan.pool}`)
+    const sh = planShape(plan)
+    const burst = hasBurst(sh)
+    lines.push(`! ── Plan ${plan.name}: pico ${sh.peakMbps}M, sostenido ${sh.sustainedMbps}M, ráfaga ${sh.burstMB} MB, recarga ${sh.rechargeMbps}M · ${hosts.length} direcciones de ${plan.pool}`)
     for (const dir of ["DL", "UL"] as const) {
-      // One CAR template (traffic behavior) per address and direction: each is its own policer with its own buckets.
-      hosts.forEach((ip) => {
-        const name = `${dir}${tag}_${lastOctets(ip)}`
-        lines.push(`traffic behavior ${name}`)
-        if (!twoStage) {
-          const s = burst.single
-          lines.push(`car tr-tcm cir ${carKBps(s.cirMbps)} cbs ${s.cbs} pir ${carKBps(s.pirMbps)} pbs ${s.pbs} yellow-packet-action DROP red-packet-action DROP`)
-        } else {
-          const s = burst.twoStage
-          // Over the burst (yellow) and over the peak (red) aren't dropped: they go to class 1, held to max-limit below.
-          lines.push(`car tr-tcm cir ${carKBps(s.refillMbps)} cbs ${s.size} pir ${carKBps(s.pirMbps)} pbs ${s.pbs} yellow-packet-action REMARK red-packet-action REMARK remark-tc 1`)
-        }
-        lines.push("exit")
-      })
+      const marker = !twoStage || burst
+      if (marker) {
+        // One CAR template (traffic behavior) per address and direction: each is its own policer with its own buckets.
+        hosts.forEach((ip) => {
+          lines.push(`traffic behavior ${dir}${tag}_${lastOctets(ip)}`)
+          if (!twoStage) {
+            lines.push(
+              burst
+                ? `car tr-tcm cir ${carKBps(sh.sustainedMbps)} cbs ${bucket(sh.burstMB)} pir ${carKBps(sh.peakMbps)} pbs ${pbsFor(sh.peakMbps)} yellow-packet-action DROP red-packet-action DROP`
+                : `car tr-tcm cir ${carKBps(sh.peakMbps)} cbs ${pbsFor(sh.peakMbps)} pir ${carKBps(sh.peakMbps)} pbs ${pbsFor(sh.peakMbps)} yellow-packet-action DROP red-packet-action DROP`
+            )
+          } else {
+            lines.push(`car tr-tcm cir ${carKBps(sh.rechargeMbps)} cbs ${bucket(sh.burstMB)} pir ${carKBps(sh.peakMbps)} pbs ${pbsFor(sh.peakMbps)} yellow-packet-action REMARK red-packet-action REMARK remark-tc 1`)
+          }
+          lines.push("exit")
+        })
+      }
       if (twoStage) {
-        // One HQoS user per address: its total up to burst-limit, class 1 (over the burst) up to max-limit.
         hosts.forEach((ip) => {
           lines.push(`hqos-user-profile U${dir}${tag}_${lastOctets(ip)}`)
-          lines.push(`tc-queue 0 mode strict shaping pir ${hqosBps(burst.twoStage.userMbps)} pbs ${SMALL_BUCKET}`)
-          lines.push(`tc-queue 1 mode strict shaping pir ${hqosBps(burst.twoStage.overMbps)} pbs ${SMALL_BUCKET}`)
+          if (classes) lines.push("qos-map bind dscp_to_tc TIEMPO-REAL", `tc-queue ${REALTIME_TC} mode strict shaping pir ${hqosBps(sh.peakMbps)} pbs ${SMALL_BUCKET}`)
+          lines.push(`tc-queue 0 mode dwrr 1 shaping pir ${hqosBps(sh.peakMbps)} pbs ${SMALL_BUCKET}`)
+          // Over the burst: sustained − recharge, since within-burst traffic keeps arriving at the recharge rate (class 0).
+          if (burst) lines.push(`tc-queue 1 mode dwrr 1 shaping pir ${Math.max(1, hqosBps(sh.sustainedMbps - sh.rechargeMbps))} pbs ${SMALL_BUCKET}`)
           lines.push("exit")
         })
         lines.push(`hqos-user-group-profile G${dir}${tag}`)
-        hosts.forEach((ip) => lines.push(`user-profile U${dir}${tag}_${lastOctets(ip)} shaping pir ${hqosBps(burst.twoStage.userMbps)} pbs ${SMALL_BUCKET}`))
+        hosts.forEach((ip) => lines.push(`user-profile U${dir}${tag}_${lastOctets(ip)} shaping pir ${hqosBps(sh.peakMbps)} pbs ${SMALL_BUCKET}`))
         lines.push("exit")
       }
       lines.push(`access-list L3 ${dir}-${tag} ingress`)
@@ -324,7 +371,7 @@ export function plansBlock(d: AsterDeployment, only?: number): Block {
         const name = `${dir}${tag}_${lastOctets(ip)}`
         const match = dir === "DL" ? `dst-ip ${ip}/32` : `src-ip ${ip}/32`
         // Below the filters (ids MAX_RULES… taken by them in the upload table).
-        lines.push(`rule ${MAX_HOSTS - k} ${match} packet-action permit traffic-behavior ${name}${twoStage ? ` set-hqos-user U${name}` : ""}`)
+        lines.push(`rule ${MAX_HOSTS - k} ${match} packet-action permit${marker ? ` traffic-behavior ${name}` : ""}${twoStage ? ` set-hqos-user U${name}` : ""}`)
       })
       lines.push("exit")
     }
@@ -343,7 +390,9 @@ export function plansBlock(d: AsterDeployment, only?: number): Block {
     for (const c of d.carriers) lines.push(`interface ${wanIface(c)}`, "hqos-profile HQ-UL shared", "exit")
   }
   lines.push("end", "write")
-  return { id: "plans", code: lines.join("\n"), docs: twoStage ? ["car", "qosCase", "acl", "hqos", "hqosCase"] : ["car", "qosCase", "acl"], verify: true }
+  const docs: DocKey[] = twoStage ? ["car", "qosCase", "acl", "hqos", "hqosCase"] : ["car", "qosCase", "acl"]
+  if (classes) docs.push("qosMap")
+  return { id: "plans", code: lines.join("\n"), docs, verify: true }
 }
 
 /** 8. PPPoE users (local, on the device) for each plan's server, from the pasted list. */

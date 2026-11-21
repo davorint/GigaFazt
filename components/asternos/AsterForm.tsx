@@ -4,9 +4,10 @@ import { useTranslations } from "next-intl"
 import { NumberField } from "@/components/mikrotik/NumberField"
 import { TextField } from "@/components/mikrotik/TextField"
 import { GRID, PickField } from "@/components/surveys/SurveyFields"
-import { RULES, RULE_IDS, ruleId, type RuleId } from "@/lib/mikrotik/burst"
 import { BURST_DESIGNS, type BurstDesign } from "@/lib/asternos/burst"
-import { deploymentIssues, type AsterCarrier, type AsterDeployment, type AsterPlan } from "@/lib/asternos/config"
+import { deploymentIssues, planShape, type AsterCarrier, type AsterDeployment, type AsterPlan } from "@/lib/asternos/config"
+import { burstSeconds, hasBurst } from "@/lib/asternos/plan"
+import { newPlan } from "./useAsterDeployment"
 
 const SMALL = "inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
 const DANGER = "inline-flex min-h-9 w-fit items-center rounded-full border border-red-400/30 px-3 text-xs text-red-200 hover:bg-red-400/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -20,7 +21,6 @@ export function AsterForm({ d, set }: { d: AsterDeployment; set: (p: Partial<Ast
   const upPlan = (i: number, p: Partial<AsterPlan>) => set({ plans: d.plans.map((x, k) => (k === i ? { ...x, ...p } : x)) })
   const upCarrier = (i: number, p: Partial<AsterCarrier>) => set({ carriers: d.carriers.map((x, k) => (k === i ? { ...x, ...p } : x)) })
   const issues = deploymentIssues(d)
-  const rid = ruleId(d.rule)
   return (
     <div className="grid gap-6">
       <fieldset className={CARD}>
@@ -47,26 +47,35 @@ export function AsterForm({ d, set }: { d: AsterDeployment; set: (p: Partial<Ast
               <NumberField label={t("planSpeed")} unit="Mbps" min={1} max={10000} value={p.mbps} onChange={(v) => upPlan(i, { mbps: v ?? 1 })} />
               <NumberField label={t("vlan")} unit="VLAN" integer min={2} max={4094} value={p.vlan} onChange={(v) => upPlan(i, { vlan: v ?? 2 })} />
               <TextField label={t("pool")} value={p.pool} onChange={(v) => upPlan(i, { pool: v.trim() })} hint={t("poolHint")} />
+              <NumberField label={t("clients")} unit={t("clientsUnit")} integer min={0} max={50000} value={p.clients} onChange={(v) => upPlan(i, { clients: v ?? 0 })} hint={t("clientsHint")} />
             </div>
+            <p className="text-xs text-zinc-400">
+              {hasBurst(planShape(p))
+                ? t("shapeBurst", { sustained: planShape(p).sustainedMbps, burst: planShape(p).burstMB, seconds: Math.round(burstSeconds(planShape(p)) * 10) / 10 })
+                : t("shapePlain")}{" "}
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- another internal page: a full load (proxy.ts checks the session) */}
+              <a href="/interno/equipos-telecom/asternos/simulador" className="underline decoration-white/30 underline-offset-4 hover:text-zinc-200">
+                {t("designIt")}
+              </a>
+            </p>
             <button type="button" onClick={() => set({ plans: d.plans.filter((_, k) => k !== i) })} className={DANGER}>
               {t("removePlan")}
             </button>
           </div>
         ))}
         {d.plans.length < 8 && (
-          <button type="button" onClick={() => set({ plans: [...d.plans, { name: `Plan ${d.plans.length + 1}`, mbps: 100, vlan: 100 + d.plans.length, pool: `100.64.${10 + d.plans.length}.0/24` }] })} className={SMALL}>
+          <button type="button" onClick={() => set({ plans: [...d.plans, newPlan(`Plan ${d.plans.length + 1}`, 100, 100 + d.plans.length, `100.64.${10 + d.plans.length}.0/24`)] })} className={SMALL}>
             {t("addPlan")}
           </button>
         )}
         <div className={GRID}>
-          <PickField
-            label={t("rule")}
-            value={rid === "custom" ? "s20" : rid}
-            onChange={(v: RuleId) => set({ rule: RULES[v] })}
-            options={RULE_IDS.map((id) => ({ value: id, label: t(`rules.${id}`) }))}
-            hint={t("ruleHint")}
-          />
           <PickField label={t("design")} value={d.design} onChange={(v: BurstDesign) => set({ design: v })} options={BURST_DESIGNS.map((x) => ({ value: x, label: t(`designs.${x}`) }))} hint={t(`designsHint.${d.design}`)} />
+          {d.design === "two-stage" && (
+            <label className="flex min-h-10 items-center gap-2 self-end text-sm text-zinc-200">
+              <input type="checkbox" checked={d.classes} onChange={(e) => set({ classes: e.target.checked })} className="size-5 accent-white" />
+              {t("classes")}
+            </label>
+          )}
         </div>
       </fieldset>
 

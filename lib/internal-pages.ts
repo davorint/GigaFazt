@@ -20,7 +20,7 @@ export const TELECOM_PAGES = ["mikrotik", "asternos", "olt-huawei", "calculadora
 /** The MikroTik pages (/interno/equipos-telecom/mikrotik/<page>). */
 export const MIKROTIK_PAGES = ["guia", "scripts"] as const
 /** The AsterNOS pages (/interno/equipos-telecom/asternos/<page>, owner 2026-11-20). */
-export const ASTERNOS_PAGES = ["guia", "scripts"] as const
+export const ASTERNOS_PAGES = ["guia", "scripts", "simulador"] as const
 /** The admin area's pages (/interno/admin/<page>). */
 export const ADMIN_PAGES = ["notas", "despliegues", "clientes", "reportes_clientes", "proveedores", "agenda", "numeros", "usuarios", "cuentas-por-pagar", "cuentas-por-cobrar", "acuerdos"] as const
 /** Other spellings of an admin page. */
