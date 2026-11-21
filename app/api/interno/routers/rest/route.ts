@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
-import { editorOf, json, requireInterno } from "@/lib/internal-api"
+import { canChangeRouters, editorOf, json, requireInterno } from "@/lib/internal-api"
 import { INTERNAL_HEADERS } from "@/lib/internal-pages"
 import { REST_ACTIONS, RestError, backupNow, backupText, backupsOf, clientLive, credKeySet, liveView, restAct, restViews, saveRest, testRouter, type RestAction } from "@/lib/wispdavor/rest-server"
 
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (!f) return json({ error: "not-found" }, 404)
     return new Response(f.text, { headers: { ...INTERNAL_HEADERS, "Content-Type": "text/plain; charset=utf-8", "Content-Disposition": `attachment; filename="${f.routerId}-${f.createdAt.toISOString().slice(0, 16).replace(/[T:]/g, "-")}.rsc"` } })
   }
-  return json({ ok: true, keySet: credKeySet(), rest: await restViews() })
+  return json({ ok: true, keySet: credKeySet(), rest: await restViews(), canChange: await canChangeRouters(request) })
 }
 
 export async function POST(request: NextRequest) {
@@ -37,6 +37,14 @@ export async function POST(request: NextRequest) {
   try {
     switch (b.action) {
       case "save": {
+        // Opening a router to changes (read-only off, a write user) is for admins; closing it (read-only on, removing
+        // the write user) and the rest of the settings are for anyone.
+        const cur = (await restViews())[id]
+        const opening =
+          (b.readOnly === false && cur?.readOnly !== false) ||
+          (typeof b.writeUser === "string" && b.writeUser.trim() !== "" && b.writeUser.trim() !== (cur?.writeUser ?? "")) ||
+          (typeof b.writePass === "string" && b.writePass !== "")
+        if (opening && !(await canChangeRouters(request))) return json({ error: "admin-only" }, 403)
         const err = await saveRest(
           id,
           {
@@ -64,6 +72,7 @@ export async function POST(request: NextRequest) {
       case "client":
         return json({ ok: true, client: await clientLive(id, text(b.user, 64) ?? "") })
       case "act": {
+        if (!(await canChangeRouters(request))) return json({ error: "admin-only" }, 403)
         const act = REST_ACTIONS.find((a) => a === b.act) as RestAction | undefined
         if (!act) return json({ error: "bad-action" }, 400)
         return json({ ok: true, done: await restAct(id, act, text(b.user, 64) ?? "", text(b.arg, 64) ?? "", by) })

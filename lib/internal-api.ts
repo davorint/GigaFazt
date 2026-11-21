@@ -31,6 +31,16 @@ export async function whoIs(request: NextRequest): Promise<Who | null> {
   }
 }
 
+/**
+ * Changes to routers (owner, 2026-11-21: "admins only"): turning off read-only, write users, actions over REST/API,
+ * the automatic switch, sending differences, creating PPPoE users. Allowed to an admin account, or to the shared
+ * password while no team account exists (nobody can be told apart then).
+ */
+export async function canChangeRouters(request: NextRequest): Promise<boolean> {
+  const w = await whoIs(request)
+  return !!w && (!w.member || w.member.admin)
+}
+
 /** null when the request is signed in; otherwise the 401 to return. */
 export async function requireInterno(request: NextRequest): Promise<NextResponse | null> {
   return (await whoIs(request)) ? null : json({ error: "signin" }, 401)

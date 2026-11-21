@@ -427,7 +427,8 @@
       "pollOption": "{m} minutos",
       "pollHint": "Más seguido = cortes, reconexiones y fallas detectados antes. Cada 10 minutos la base de datos descansa cerca de la mitad del tiempo; cada 2 o 5 casi nada.",
       "pollChanged": "Cambiado. Para que el router lo use, pega su script nuevo: «Llave nueva».",
-      "every": "cada {m} min"
+      "every": "cada {m} min",
+      "adminOnly": "Solo un administrador puede encender «Automático», mandar diferencias o crear usuarios en el router."
     },
     "trafico": {
       "lead": "La bajada y la subida de cada usuario PPPoE, según lo que reporta su router. Cada 5 minutos los últimos 7 días; por hora hasta 90 días.",
@@ -638,7 +639,8 @@
         "protocol": "Respuesta de la API no válida.",
         "bad-op": "Operación no válida.",
         "protocol-choice": "Modo no válido.",
-        "key-changed": "Las contraseñas guardadas no se pueden leer: cambió ROUTER_CRED_KEY. Vuelve a escribirlas y guarda."
+        "key-changed": "Las contraseñas guardadas no se pueden leer: cambió ROUTER_CRED_KEY. Vuelve a escribirlas y guarda.",
+        "admin-only": "Solo un administrador puede hacer cambios en los routers (Equipo → Usuarios y accesos)."
       },
       "mode": "Modo de conexión",
       "modes": {
@@ -650,7 +652,8 @@
         "api": "API de MikroTik por TLS (servicio api-ssl, puerto 8729 por defecto). La contraseña viaja dentro de TLS; la API sin cifrar (8728) no se usa. El grupo necesita api."
       },
       "apiPort": "Puerto API-SSL",
-      "unsaved": "Hay cambios sin guardar: guárdalos para poder probar la conexión."
+      "unsaved": "Hay cambios sin guardar: guárdalos para poder probar la conexión.",
+      "adminOnly": "Solo un administrador puede quitar «Solo lectura», poner el usuario de escritura y hacer cambios."
     },
     "envivo": {
       "lead": "Un router a la vez, por API REST o por la API de MikroTik (lo eliges en su conexión). Leer siempre está permitido; los cambios solo si el router no está en «Solo lectura» y tiene usuario de escritura. Cada cambio queda en sus acciones recientes.",

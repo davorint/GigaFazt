@@ -27,12 +27,16 @@ export function RoutersApp() {
   const [error, setError] = useState(false)
   const [script, setScript] = useState<{ id: string; text: string } | null>(null)
   const [msg, setMsg] = useState("")
+  // Changes to routers are for admins (the server checks too).
+  const [canChange, setCanChange] = useState(true)
   const [form, setForm] = useState({ name: "", siteId: "", pppoe: true, hotspot: false, pollMinutes: DEFAULT_POLL as PollMinutes })
   const load = useCallback(async () => {
     try {
       const r = await fetch("/api/interno/routers", { cache: "no-store" })
       if (!r.ok) throw new Error(String(r.status))
-      setRows(((await r.json()) as { routers: RouterRow[] }).routers)
+      const b = (await r.json()) as { routers: RouterRow[]; canChange?: boolean }
+      setRows(b.routers)
+      setCanChange(b.canChange !== false)
       setError(false)
     } catch {
       setError(true)
@@ -107,7 +111,7 @@ export function RoutersApp() {
       <ul className="grid gap-4">
         {rows?.map((r) => (
           <li key={r.id}>
-            <RouterCard t={t} r={r} siteName={siteName(r.siteId)} sites={d.sites.map((s) => ({ value: s.id, label: siteLabel(s) }))} script={script?.id === r.id ? script.text : ""} post={post} reload={load} setScript={(text) => setScript({ id: r.id, text })} setMsg={setMsg} />
+            <RouterCard t={t} r={r} siteName={siteName(r.siteId)} sites={d.sites.map((s) => ({ value: s.id, label: siteLabel(s) }))} script={script?.id === r.id ? script.text : ""} post={post} reload={load} setScript={(text) => setScript({ id: r.id, text })} setMsg={setMsg} canChange={canChange} />
           </li>
         ))}
       </ul>
@@ -125,6 +129,7 @@ function RouterCard({
   reload,
   setScript,
   setMsg,
+  canChange,
 }: {
   t: T
   r: RouterRow
@@ -135,6 +140,7 @@ function RouterCard({
   reload: () => Promise<void>
   setScript: (text: string) => void
   setMsg: (m: string) => void
+  canChange: boolean
 }) {
   const online = r.online
   // The one-time password of a user just created on this router, shown here (with copy) until the page reloads.
@@ -200,6 +206,7 @@ function RouterCard({
           <input
             type="checkbox"
             checked={r.auto}
+            disabled={!r.auto && !canChange}
             onChange={async (e) => {
               await post({ action: "update", id: r.id, auto: e.target.checked })
               await reload()
@@ -209,6 +216,7 @@ function RouterCard({
           {t("auto")}
         </label>
         <p className="text-xs text-zinc-400">{t("autoHint")}</p>
+        {!canChange && <p className="text-xs text-amber-200">{t("adminOnly")}</p>}
         </div>
       )}
       {/* Without a deployment there's nothing to compare (the warning above says so). */}
@@ -225,12 +233,13 @@ function RouterCard({
           {r.changes.length > 0 && !r.auto && (
             <button
               type="button"
+              disabled={!canChange}
               onClick={async () => {
                 const b = await post({ action: "send", id: r.id })
                 if (b) setMsg(t("sent", { n: Number(b.queued ?? 0) }))
                 await reload()
               }}
-              className={SMALL}
+              className={`${SMALL} disabled:opacity-40`}
             >
               {t("send")}
             </button>
@@ -249,12 +258,13 @@ function RouterCard({
                 </span>
                 <button
                   type="button"
+                  disabled={!canChange}
                   onClick={async () => {
                     const b = await post({ action: "createUser", id: r.id, user: m.user, profile: m.profile, clientId: m.clientId, serviceId: m.serviceId })
                     if (b) setCreated({ user: String(b.user), password: String(b.password) })
                     await reload()
                   }}
-                  className={SMALL}
+                  className={`${SMALL} disabled:opacity-40`}
                 >
                   {t("createUser")}
                 </button>

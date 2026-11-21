@@ -16,6 +16,8 @@ export function RestPanel({ routerId }: { routerId: string }) {
   const t = useTranslations("wispdavor.rest")
   const [view, setView] = useState<RestView | null>(null)
   const [keySet, setKeySet] = useState(true)
+  // Opening a router to changes is for admins (the server checks too).
+  const [canChange, setCanChange] = useState(true)
   // Until this router's saved settings arrive, the toggles wait (a click before would be lost).
   const [loaded, setLoaded] = useState(false)
   const [form, setForm] = useState({ protocol: "rest" as Protocol, host: "", port: "8443", apiPort: "8729", readUser: "", readPass: "", writeUser: "", writePass: "", fingerprint: "" })
@@ -25,8 +27,9 @@ export function RestPanel({ routerId }: { routerId: string }) {
     try {
       const r = await fetch("/api/interno/routers/rest", { cache: "no-store" })
       if (!r.ok) return
-      const b = (await r.json()) as { keySet: boolean; rest: Record<string, RestView> }
+      const b = (await r.json()) as { keySet: boolean; rest: Record<string, RestView>; canChange?: boolean }
       setKeySet(b.keySet)
+      setCanChange(b.canChange !== false)
       setLoaded(true)
       const v = b.rest[routerId] ?? null
       setView(v)
@@ -85,10 +88,11 @@ export function RestPanel({ routerId }: { routerId: string }) {
         <p className="text-xs text-zinc-400">{t("lead")}</p>
         {!keySet && <p className="text-xs text-amber-200">{t("noKey")}</p>}
         <label className="flex min-h-10 items-center gap-2 text-sm text-zinc-100">
-          <input type="checkbox" checked={readOnly} disabled={busy || !loaded || !view} onChange={(e) => void setReadOnly(e.target.checked)} className="size-5 accent-white" />
+          <input type="checkbox" checked={readOnly} disabled={busy || !loaded || !view || (readOnly && !canChange)} onChange={(e) => void setReadOnly(e.target.checked)} className="size-5 accent-white" />
           {t("readOnly")}
         </label>
         <p className="text-xs text-zinc-400">{readOnly ? t("readOnlyOn") : t("readOnlyOff")}</p>
+        {!canChange && <p className="text-xs text-amber-200">{t("adminOnly")}</p>}
         <fieldset className="grid gap-2">
           <legend className="font-mono text-xs text-zinc-300">{t("mode")}</legend>
           <div role="radiogroup" aria-label={t("mode")} className="inline-flex w-fit rounded-full border border-white/15 p-1">

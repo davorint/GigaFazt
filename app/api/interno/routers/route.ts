@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { getPool, hasDatabase } from "@/lib/db/client"
-import { editorOf, json, requireInterno } from "@/lib/internal-api"
+import { canChangeRouters, editorOf, json, requireInterno } from "@/lib/internal-api"
 import { SITE_URL, SITE_URL_CONFIGURED } from "@/lib/site"
 import { agentScript, isOnline, pollOf, randomCode, safe } from "@/lib/wispdavor/routers"
 import { createRouter, deleteRouter, listRouters, queueAction, queueDiffs, rotateKey, routerDiff, updateRouter } from "@/lib/wispdavor/routers-server"
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       const online = isOnline(r.lastSeenAt, r.pollMinutes)
       out.push({ ...r, online, users, changes: diff.changes, missing: diff.missing, unmanaged: diff.unmanaged, actions })
     }
-    return json({ ok: true, routers: out })
+    return json({ ok: true, routers: out, canChange: await canChangeRouters(request) })
   } catch (e) {
     return fail(e)
   }
@@ -65,6 +65,8 @@ export async function POST(request: NextRequest) {
       return json({ ok: true, script: agentScript({ url: agentUrl(request), routerId: id, key: await rotateKey(id), pollMinutes: r?.pollMinutes }) })
     }
     if (b.action === "update") {
+      // Switching automatic changes on is a change to the router: admins only.
+      if (b.auto === true && !(await canChangeRouters(request))) return json({ error: "admin-only" }, 403)
       await updateRouter(id, {
         ...(typeof b.name === "string" ? { name: text(b.name, 60) } : {}),
         ...(typeof b.auto === "boolean" ? { auto: b.auto } : {}),
@@ -81,6 +83,7 @@ export async function POST(request: NextRequest) {
     }
     const router = (await listRouters()).find((r) => r.id === id)
     if (!router) return json({ error: "not-found" }, 404)
+    if ((b.action === "send" || b.action === "createUser") && !(await canChangeRouters(request))) return json({ error: "admin-only" }, 403)
     if (b.action === "send") {
       const { changes } = await routerDiff(router)
       return json({ ok: true, queued: await queueDiffs(id, changes, "staff", by, router.pollMinutes) })

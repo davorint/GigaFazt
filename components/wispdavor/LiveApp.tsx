@@ -28,6 +28,8 @@ export function LiveApp() {
   const d = useWispData()
   const [routers, setRouters] = useState<Routers | null>(null)
   const [rest, setRest] = useState<Record<string, RestView>>({})
+  // Actions are for admins (the server checks too).
+  const [canChange, setCanChange] = useState(true)
   const [id, setId] = useState("")
   const [live, setLive] = useState<LiveView | null>(null)
   const [auto, setAuto] = useState(false)
@@ -43,8 +45,9 @@ export function LiveApp() {
       try {
         const [a, b] = await Promise.all([fetch("/api/interno/routers?basico=1", { cache: "no-store" }), fetch("/api/interno/routers/rest", { cache: "no-store" })])
         const ra = (await a.json()) as { routers: Routers }
-        const rb = (await b.json()) as { rest: Record<string, RestView> }
+        const rb = (await b.json()) as { rest: Record<string, RestView>; canChange?: boolean }
         setRest(rb.rest ?? {})
+        setCanChange(rb.canChange !== false)
         const usable = (ra.routers ?? []).filter((r) => rb.rest?.[r.id]?.host)
         setRouters(usable)
         if (usable[0]) setId((x) => x || usable[0].id)
@@ -151,7 +154,7 @@ export function LiveApp() {
   if (routers === null) return <p className="mt-6 text-sm text-zinc-400">{t("loading")}</p>
   const cfg = rest[id]
   const readOnly = cfg?.readOnly ?? true
-  const canWrite = !readOnly && !!cfg?.writeUser
+  const canWrite = !readOnly && !!cfg?.writeUser && canChange
   const sessions = (live?.sessions ?? []).filter((s) => !q.trim() || `${s.name} ${s.address} ${s.callerId}`.toLowerCase().includes(q.trim().toLowerCase()))
   return (
     <div className="mt-6 grid gap-8">
@@ -273,7 +276,7 @@ export function LiveApp() {
                 )}
                 {client.secret && (
                   <div className="grid gap-2">
-                    {!canWrite && <p className="text-xs text-zinc-400">{readOnly ? t("actsLocked") : t("modeNoWriteUser")}</p>}
+                    {!canWrite && <p className="text-xs text-zinc-400">{!canChange ? tr("adminOnly") : readOnly ? t("actsLocked") : t("modeNoWriteUser")}</p>}
                     <div className="flex flex-wrap gap-2">
                       <button type="button" disabled={!canWrite || busy} onClick={() => void act("suspend")} className={DANGER}>
                         {t("acts.suspend")}
