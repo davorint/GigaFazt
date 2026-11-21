@@ -53,3 +53,6 @@ next-env.d.ts
 # Playwright (npm run e2e)
 /test-results/
 /playwright-report/
+
+# Vendor manuals kept next to the docs, not in git (large, and not ours to publish): docs/smartax_ma5603t.pdf
+docs/*.pdf
