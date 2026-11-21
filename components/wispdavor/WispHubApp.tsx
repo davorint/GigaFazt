@@ -30,15 +30,17 @@ export function WispHubApp() {
   const late = withService.filter((c) => ledger(c, d.payments, today).status === "atrasado")
   const cuts = cutLists(d.clients, d.payments, today)
   const noPhone = withService.filter((c) => !waNumber(c.whatsapp || c.phone))
+  // Before this phone has the data, a dash, not a reassuring 0.
+  const n = (x: number) => (d.clients.length ? String(x) : "—")
   return (
     <div className="mt-6 grid gap-10">
       {!d.clients.length && <p className="text-sm text-amber-200">{t("noData")}</p>}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-        <Tile label={t("tiles.active")} value={String(withService.length)} />
-        <Tile label={t("tiles.late")} value={String(late.length)} tone={late.length ? "text-red-300" : ""} />
-        <Tile label={t("tiles.cut")} value={String(cuts.cut.length)} tone={cuts.cut.length ? "text-amber-200" : ""} />
-        <Tile label={t("tiles.restore")} value={String(cuts.restore.length)} tone={cuts.restore.length ? "text-emerald-300" : ""} />
-        <Tile label={t("tiles.noPhone")} value={String(noPhone.length)} />
+        <Tile label={t("tiles.active")} value={n(withService.length)} />
+        <Tile label={t("tiles.late")} value={n(late.length)} tone={late.length ? "text-red-300" : ""} />
+        <Tile label={t("tiles.cut")} value={n(cuts.cut.length)} tone={cuts.cut.length ? "text-amber-200" : ""} />
+        <Tile label={t("tiles.restore")} value={n(cuts.restore.length)} tone={cuts.restore.length ? "text-emerald-300" : ""} />
+        <Tile label={t("tiles.noPhone")} value={n(noPhone.length)} />
       </div>
       <section aria-labelledby="wd-modules" className="grid gap-3">
         <h2 id="wd-modules" className="text-xl font-light text-foreground">

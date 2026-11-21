@@ -49,6 +49,7 @@ describe("WispDavor phase 2: CFDI", () => {
 const created: Record<string, unknown>[] = []
 const queries: { sql: string; args: unknown[] }[] = []
 let onlineRow: Record<string, unknown> | null = null
+let onItsWay = false
 
 vi.mock("stripe", () => ({
   default: class {
@@ -63,6 +64,7 @@ vi.mock("../db/client", () => {
     queries.push({ sql, args })
     if (sql.includes("from stripe_customers where client_id")) return { rows: [{ customer_id: "cus_1" }] }
     if (sql.includes("from online_payments where id = $1 for update")) return { rows: onlineRow ? [onlineRow] : [] }
+    if (sql.includes("kind in ('oxxo', 'spei')")) return { rows: [], rowCount: onItsWay ? 1 : 0 }
     if (sql.includes("from stripe_customers where autopay")) return { rows: [{ client_id: "cli-0001", customer_id: "cus_1", payment_method_id: "pm_1" }] }
     return { rows: [], rowCount: 1 }
   }
@@ -114,5 +116,11 @@ describe("WispDavor phase 2: Stripe flow (mocked)", () => {
     const { runAutopay } = await import("./stripe-server")
     expect(await runAutopay("2026-12-02")).toMatchObject({ day: false, charged: 0 })
     expect(await runAutopay("2026-12-01")).toMatchObject({ day: true, charged: 1 })
+  })
+  it("auto-pay skips a client with an OXXO or SPEI payment on its way", async () => {
+    const { runAutopay } = await import("./stripe-server")
+    onItsWay = true
+    expect(await runAutopay("2026-12-05")).toMatchObject({ charged: 0, skipped: 1 })
+    onItsWay = false
   })
 })

@@ -22,6 +22,7 @@ import { ledger } from "../payments/model"
 import { sendText } from "../reports/notify"
 import { addPayment, loadClient, loadPayments, portalAddress } from "./db-server"
 import { OXXO_DAYS, amountToCharge, centavos, cobranzaMethod, isAutopayDay, methodsFor, type PayKind } from "./online"
+import { desiredUsers } from "./routers"
 import { waNumber, type TemplateId } from "./whatsapp"
 import { sendTemplate, whatsappConfigured } from "./whatsapp-server"
 
@@ -121,8 +122,25 @@ async function afterPaid(clientId: string, kind: PayKind, amount: number, paymen
   }
   if (!cl) return
   const wasSuspended = cl.services.some((s) => s.type === "internet" && s.status === "suspendido")
-  await message(cl, wasSuspended ? "reconexion" : "pagoRecibido", amount)
-  await sendText("pago", `💳 Pago en línea: ${cl.name || cl.id} · ${mxn(amount)} · ${kind === "spei" ? "SPEI" : kind === "oxxo" ? "OXXO" : kind === "autopay" ? "cobro automático" : "tarjeta"}${wasSuspended ? " · estaba suspendido: reconectar (WispDavor → Cortes)" : ""}`).catch(() => undefined)
+  const back = wasSuspended ? await reconnection(cl) : "no"
+  // "Tu servicio ya está activo" only when it really comes back by itself (the deployment's router is on automatic
+  // and reporting, and the payment cleared what was late); otherwise the plain receipt, and the team reconnects.
+  await message(cl, back === "auto" ? "reconexion" : "pagoRecibido", amount)
+  const note = !wasSuspended ? "" : back === "auto" ? " · estaba suspendido: el router lo reconecta solo" : back === "late" ? " · estaba suspendido y sigue con adeudo o en suspensión manual" : " · estaba suspendido: reconectar (WispDavor → Cortes)"
+  await sendText("pago", `💳 Pago en línea: ${cl.name || cl.id} · ${mxn(amount)} · ${kind === "spei" ? "SPEI" : kind === "oxxo" ? "OXXO" : kind === "autopay" ? "cobro automático" : "tarjeta"}${note}`).catch(() => undefined)
+}
+
+/**
+ * After a payment, whether a suspended client comes back: "late" (still owes, or a manual hold), "auto" (its
+ * deployment has a router on automatic that reported in the last 6 minutes) or "manual" (staff reconnect).
+ */
+async function reconnection(cl: Client): Promise<"auto" | "manual" | "late"> {
+  const desired = desiredUsers([cl], await loadPayments(cl.id), todayInMexico())
+  if (!desired.length) return "manual"
+  if (desired.some((d) => d.suspended)) return "late"
+  if (!cl.siteId) return "manual"
+  const r = await getPool().query(`select 1 from routers where site_id = $1 and auto and pppoe and last_seen_at > now() - interval '6 minutes' limit 1`, [cl.siteId])
+  return (r.rowCount ?? 0) > 0 ? "auto" : "manual"
 }
 
 async function message(cl: Client, template: TemplateId, amount: number) {
@@ -183,7 +201,11 @@ export async function runAutopay(today = todayInMexico()): Promise<AutopayRun> {
   for (const r of rows) {
     const cl = await loadClient(r.client_id)
     const owed = cl ? Math.round(ledger(cl, await loadPayments(cl.id), today).owed * 100) / 100 : 0
-    if (!cl || owed <= 0) {
+    // Skipped: nothing owed, or an OXXO/SPEI payment on its way (started in the last 10 days, not yet paid).
+    const onItsWay = cl
+      ? ((await getPool().query(`select 1 from online_payments where client_id = $1 and kind in ('oxxo', 'spei') and status in ('pending', 'waiting') and created_at > now() - interval '10 days' limit 1`, [cl.id])).rowCount ?? 0) > 0
+      : false
+    if (!cl || owed <= 0 || onItsWay) {
       out.skipped++
       continue
     }

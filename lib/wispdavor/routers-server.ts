@@ -232,12 +232,28 @@ async function setServiceStatus(clientId: string, serviceId: string, status: "ac
 /** Retention (daily): 5-minute traffic older than 7 days becomes hourly; hourly older than 90 days and old actions go. */
 export async function trafficRetention(): Promise<{ hourly: number; deleted5m: number; deletedHourly: number; deletedActions: number }> {
   const pool = getPool()
-  const moved = await pool.query(
-    `insert into traffic_hourly (router_id, "user", hour, down, up)
-       select router_id, "user", date_trunc('hour', bucket), sum(down), sum(up) from traffic_5m where bucket < now() - interval '7 days' group by 1, 2, 3
-     on conflict (router_id, "user", hour) do update set down = traffic_hourly.down + excluded.down, up = traffic_hourly.up + excluded.up`
-  )
-  const d5 = await pool.query(`delete from traffic_5m where bucket < now() - interval '7 days'`)
+  // Moving to hourly and deleting the 5-minute rows happen together, with one cutoff: a failure in between would
+  // otherwise add the same hours again on the next run (or drop rows never moved).
+  const c = await pool.connect()
+  let moved: { rowCount: number | null }
+  let d5: { rowCount: number | null }
+  try {
+    await c.query("begin")
+    const cutoff = new Date(Date.now() - 7 * 24 * 3600 * 1000)
+    moved = await c.query(
+      `insert into traffic_hourly (router_id, "user", hour, down, up)
+         select router_id, "user", date_trunc('hour', bucket), sum(down), sum(up) from traffic_5m where bucket < $1 group by 1, 2, 3
+       on conflict (router_id, "user", hour) do update set down = traffic_hourly.down + excluded.down, up = traffic_hourly.up + excluded.up`,
+      [cutoff]
+    )
+    d5 = await c.query(`delete from traffic_5m where bucket < $1`, [cutoff])
+    await c.query("commit")
+  } catch (e) {
+    await c.query("rollback").catch(() => undefined)
+    throw e
+  } finally {
+    c.release()
+  }
   const dh = await pool.query(`delete from traffic_hourly where hour < now() - interval '90 days'`)
   const da = await pool.query(`delete from router_actions where status in ('done', 'error') and created_at < now() - interval '90 days'`)
   return { hourly: moved.rowCount ?? 0, deleted5m: d5.rowCount ?? 0, deletedHourly: dh.rowCount ?? 0, deletedActions: da.rowCount ?? 0 }

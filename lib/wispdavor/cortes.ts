@@ -35,7 +35,8 @@ export function cutLists(clients: Client[], payments: Payment[], today: string):
       // A manual hold isn't a debt suspension: it isn't reconnected here.
       for (const s of internet(c, "suspendido").filter((x) => !x.hold)) {
         const r = row(s)
-        if (!r.user) out.noUser.push(r)
+        // Reconnecting puts back the plan's profile: without a plan the command would break, so it goes apart too.
+        if (!r.user || !r.plan) out.noUser.push(r)
         else out.restore.push(r)
       }
     }

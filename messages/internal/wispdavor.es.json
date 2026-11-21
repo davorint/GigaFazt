@@ -91,7 +91,7 @@
       "cut": "Por cortar",
       "restore": "Por reconectar",
       "promised": "Con promesa de pago vigente (no se cortan)",
-      "noUser": "Sin usuario PPPoE (no se pueden cortar por comando)",
+      "noUser": "Sin usuario PPPoE o sin plan (no se pueden cortar ni reconectar por comando)",
       "none": "Nadie.",
       "site": "Despliegue",
       "noSite": "Sin despliegue",
@@ -111,7 +111,7 @@
         "unknownPlan": "{value}: ese plan no es un perfil del MikroTik.",
         "badUser": "{value}: usuario PPPoE no válido."
       },
-      "planHint": "Para reconectar, el plan del servicio en Clientes debe ser el nombre del perfil PPPoE en el MikroTik.",
+      "planHint": "Para reconectar, el plan del servicio en Clientes debe ser el nombre del perfil PPPoE en el MikroTik. Las suspensiones manuales (Clientes → «Suspensión manual») nunca aparecen para reconectar.",
       "autoRouter": "Este despliegue tiene su router en «Automático»: corta y reconecta solo; no hace falta pegar estos comandos."
     },
     "portal": {
@@ -192,7 +192,7 @@
       "open": "Abrir despliegue"
     },
     "pagos": {
-      "lead": "El cliente paga desde su portal (enlace privado) en la página segura de Stripe. Cuando el pago llega, se registra solo en Cobranza, se le avisa por WhatsApp, se avisa al equipo y, si estaba suspendido, aparece en Cortes para reconectar.",
+      "lead": "El cliente paga desde su portal (enlace privado) en la página segura de Stripe. Cuando el pago llega, se registra solo en Cobranza, se le avisa por WhatsApp y se avisa al equipo. Si estaba suspendido y ya no debe: con el router de su despliegue en «Automático» se reconecta solo (y el mensaje le dice que ya está activo); si no, aparece en Cortes para reconectar.",
       "status": {
         "stripe": "Stripe",
         "webhook": "Webhook",
@@ -201,7 +201,7 @@
         "off": "falta",
         "test": "modo de prueba"
       },
-      "payments": "Pagos en línea",
+      "payments": "Movimientos",
       "none": "Todavía no hay pagos en línea.",
       "kinds": {
         "card": "Tarjeta",
@@ -322,7 +322,8 @@
           "Llena arriba los datos de las facturas con tu contador (código postal, serie, clave de producto)."
         ]
       },
-      "issuedOk": "Factura timbrada."
+      "issuedOk": "Factura timbrada.",
+      "loading": "Cargando facturas…"
     },
     "routers": {
       "lead": "Cada MikroTik corre un script que cada 2 minutos le dice al sitio qué usuarios PPPoE tiene (perfil, desactivado, conectado, tráfico) y recibe las acciones pendientes. El router no abre ningún puerto y solo ejecuta una lista fija de comandos.",

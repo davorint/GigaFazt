@@ -115,6 +115,7 @@ export function InvoicesApp() {
         <h2 id="wd-issued" className="text-xl font-light text-foreground">
           {t("issued")}
         </h2>
+        {!data && !msg && <p className="text-sm text-zinc-400">{t("loading")}</p>}
         {data && !data.cfdis.length && <p className="text-sm text-zinc-400">{t("issuedNone")}</p>}
         <ul className="grid gap-1.5">
           {data?.cfdis.map((x) => (
