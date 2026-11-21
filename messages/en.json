@@ -1388,5 +1388,59 @@
     "retry": "Try again",
     "home": "Go home",
     "ref": "Reference: {digest}"
+  },
+  "portal": {
+    "metaTitle": "My account · GigaFazt",
+    "eyebrow": "Your account",
+    "loading": "Loading your account…",
+    "noToken": "This link is incomplete. Open the full link we sent you on WhatsApp.",
+    "nomatch": "This link is no longer valid. Ask us for a new one on WhatsApp.",
+    "busy": "Too many lookups in a row. Try again later.",
+    "error": "We couldn't load your account right now. Try again in a moment.",
+    "hello": "Hi, {name}",
+    "private": "This link is personal: don't share it.",
+    "balanceTitle": "Your balance",
+    "status": {
+      "atrasado": "You have an overdue balance",
+      "por-vencer": "Your next payment is coming due",
+      "al-corriente": "You're paid up. Thank you!",
+      "sin-cobro": "You have no services with a monthly charge"
+    },
+    "owed": "You owe",
+    "monthly": "Monthly",
+    "nextDue": "Next payment",
+    "coveredUntil": "Paid through",
+    "lateMonths": "Overdue months",
+    "servicesTitle": "Your services",
+    "serviceTypes": {
+      "internet": "Internet",
+      "iptv": "TV",
+      "otro": "Other"
+    },
+    "serviceStatus": {
+      "activo": "Active",
+      "suspendido": "Suspended",
+      "cancelado": "Cancelled"
+    },
+    "perMonth": "{amount} a month",
+    "paymentsTitle": "Your payments",
+    "noPayments": "No payments recorded yet.",
+    "receipt": "Receipt",
+    "receiptTitle": "Payment receipt",
+    "receiptNote": "Payment recorded by GigaFazt. This is not a tax invoice.",
+    "print": "Print",
+    "close": "Close",
+    "methods": {
+      "efectivo": "Cash",
+      "transferencia": "Transfer",
+      "tarjeta": "Card",
+      "deposito": "Deposit",
+      "otro": "Other",
+      "": "—"
+    },
+    "reportsTitle": "Your reports",
+    "noReports": "No reports in the last 90 days.",
+    "report": "Report a problem",
+    "reported": "reported on {date}"
   }
 }

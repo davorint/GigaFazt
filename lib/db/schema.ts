@@ -457,3 +457,42 @@ export const contractFiles = pgTable(
   },
   (t) => [index("contract_files_contract_idx").on(t.contractId)]
 )
+
+// ── WispDavor (/interno/software/wispdavor) ─────────────────────────────────
+
+/**
+ * The client portal's private links (owner, 2026-11-21: "Private link"): one long random token per link, sent to the client
+ * by WhatsApp; the portal page /mi-cuenta reads it from the address's #fragment (never sent in logs or referrers).
+ * Revoked links stop working; a client can have a new one. The token is kept as is so reminders can include it.
+ */
+export const portalLinks = pgTable(
+  "portal_links",
+  {
+    id: text("id").primaryKey(),
+    clientId: text("client_id").notNull(),
+    token: text("token").notNull().unique(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdBy: text("created_by").notNull().default(""),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    seenCount: integer("seen_count").notNull().default(0),
+  },
+  (t) => [index("portal_links_client_idx").on(t.clientId)]
+)
+
+/** Every WhatsApp notice sent through the Cloud API (owner: "WhatsApp Cloud API"): who, which template, result. */
+export const whatsappSends = pgTable(
+  "whatsapp_sends",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    clientId: text("client_id").notNull().default(""),
+    template: text("template").notNull(),
+    phone: text("phone").notNull(),
+    status: text("status").notNull(),
+    messageId: text("message_id").notNull().default(""),
+    error: text("error").notNull().default(""),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+    sentBy: text("sent_by").notNull().default(""),
+  },
+  (t) => [index("whatsapp_sends_client_idx").on(t.clientId), index("whatsapp_sends_sent_idx").on(t.sentAt)]
+)

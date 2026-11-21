@@ -11,11 +11,11 @@ describe("indexing: public pages in, /interno out", () => {
     }
     expect(urls.filter((u) => /interno|mikrotik|\/api\//i.test(u))).toEqual([])
   })
-  it("robots.txt lets crawlers in (so they see the noindex on /interno) and keeps them off the API", () => {
+  it("robots.txt lets crawlers in (so they see the noindex on /interno) and keeps them off the API and the client portal", () => {
     const r = robots()
     const rules = Array.isArray(r.rules) ? r.rules[0] : r.rules
     expect(rules.allow).toBe("/")
-    expect(rules.disallow).toBe("/api/")
+    expect(rules.disallow).toEqual(["/api/", "/mi-cuenta", "/es/mi-cuenta", "/en/mi-cuenta"])
     expect(r.sitemap).toMatch(/\/sitemap\.xml$/)
   })
   it("every /interno URL, in any spelling, gets the noindex header", () => {

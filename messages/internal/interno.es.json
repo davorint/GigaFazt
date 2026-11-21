@@ -65,7 +65,7 @@
       },
       "software": {
         "name": "Software",
-        "desc": "DavorOLT (herramientas de la OLT Huawei) y WispDavor.",
+        "desc": "DavorOLT (herramientas de la OLT Huawei) y WispDavor (administración del ISP).",
         "kicker": "Uso interno · Software",
         "lead": "El software propio: DavorOLT y WispDavor.",
         "metaTitle": "Software · GigaFazt interno",
@@ -78,7 +78,7 @@
           },
           "wispdavor": {
             "name": "WispDavor",
-            "desc": "Sección de WispDavor.",
+            "desc": "La administración del ISP al estilo Wisphub, con los datos de /interno: cortes y reconexiones, portal del cliente, avisos por WhatsApp y mapa de clientes.",
             "metaTitle": "WispDavor · GigaFazt interno"
           }
         }

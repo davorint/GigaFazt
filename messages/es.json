@@ -1388,5 +1388,59 @@
     "retry": "Intentar de nuevo",
     "home": "Ir al inicio",
     "ref": "Referencia: {digest}"
+  },
+  "portal": {
+    "metaTitle": "Mi cuenta · GigaFazt",
+    "eyebrow": "Tu cuenta",
+    "loading": "Cargando tu cuenta…",
+    "noToken": "Este enlace está incompleto. Abre el enlace completo que te mandamos por WhatsApp.",
+    "nomatch": "Este enlace ya no es válido. Pídenos uno nuevo por WhatsApp.",
+    "busy": "Hubo muchas consultas seguidas. Intenta de nuevo en un rato.",
+    "error": "No pudimos cargar tu cuenta en este momento. Intenta de nuevo en un momento.",
+    "hello": "Hola, {name}",
+    "private": "Este enlace es personal: no lo compartas.",
+    "balanceTitle": "Tu saldo",
+    "status": {
+      "atrasado": "Tienes un saldo vencido",
+      "por-vencer": "Tu próximo pago está por vencer",
+      "al-corriente": "Estás al corriente. ¡Gracias!",
+      "sin-cobro": "No tienes servicios con cobro mensual"
+    },
+    "owed": "Debes",
+    "monthly": "Mensualidad",
+    "nextDue": "Próximo pago",
+    "coveredUntil": "Pagado hasta",
+    "lateMonths": "Meses vencidos",
+    "servicesTitle": "Tus servicios",
+    "serviceTypes": {
+      "internet": "Internet",
+      "iptv": "TV",
+      "otro": "Otro"
+    },
+    "serviceStatus": {
+      "activo": "Activo",
+      "suspendido": "Suspendido",
+      "cancelado": "Cancelado"
+    },
+    "perMonth": "{amount} al mes",
+    "paymentsTitle": "Tus pagos",
+    "noPayments": "Todavía no hay pagos registrados.",
+    "receipt": "Comprobante",
+    "receiptTitle": "Comprobante de pago",
+    "receiptNote": "Pago registrado por GigaFazt. No es una factura fiscal.",
+    "print": "Imprimir",
+    "close": "Cerrar",
+    "methods": {
+      "efectivo": "Efectivo",
+      "transferencia": "Transferencia",
+      "tarjeta": "Tarjeta",
+      "deposito": "Depósito",
+      "otro": "Otro",
+      "": "—"
+    },
+    "reportsTitle": "Tus reportes",
+    "noReports": "Sin reportes en los últimos 90 días.",
+    "report": "Reportar una falla",
+    "reported": "reportado el {date}"
   }
 }

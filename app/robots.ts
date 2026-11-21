@@ -6,7 +6,8 @@ export default function robots(): MetadataRoute.Robots {
   // publishing localhost canonicals.
   if (!SITE_URL_CONFIGURED) return { rules: { userAgent: "*", disallow: "/" } }
   return {
-    rules: { userAgent: "*", allow: "/", disallow: "/api/" },
+    // The client portal (/mi-cuenta, WispDavor) is personal: never crawled.
+    rules: { userAgent: "*", allow: "/", disallow: ["/api/", "/mi-cuenta", "/es/mi-cuenta", "/en/mi-cuenta"] },
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,
   }

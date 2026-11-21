@@ -1,0 +1,152 @@
+{
+  "wispdavor": {
+    "meta": {
+      "title": "WispDavor · GigaFazt interno",
+      "cortes": "Cortes y reconexiones · WispDavor",
+      "portal": "Portal del cliente · WispDavor",
+      "avisos": "Avisos por WhatsApp · WispDavor",
+      "mapa": "Mapa de clientes · WispDavor"
+    },
+    "kicker": "Uso interno · Software · WispDavor",
+    "title": "WispDavor",
+    "lead": "La administración del ISP en un lugar, con los mismos datos de Clientes, Cobranza, Reportes y Despliegues: quién cortar y reconectar, el portal de cada cliente, los avisos por WhatsApp y el mapa.",
+    "back": "← WispDavor",
+    "tiles": {
+      "active": "Clientes con servicio",
+      "late": "Atrasados",
+      "cut": "Por cortar",
+      "restore": "Por reconectar",
+      "noPhone": "Sin WhatsApp"
+    },
+    "modules": {
+      "title": "Módulos",
+      "cortes": { "name": "Cortes y reconexiones", "desc": "Quién se corta (atrasados sin promesa vigente) y quién se reconecta (ya pagaron), por despliegue, con los comandos del MikroTik." },
+      "portal": { "name": "Portal del cliente", "desc": "Un enlace privado por cliente: su saldo, lo que debe y cuándo, sus pagos, sus servicios y sus reportes." },
+      "avisos": { "name": "Avisos por WhatsApp", "desc": "Recordatorios de pago, avisos de corte, reconexión y mantenimiento, por la API de WhatsApp o enlaces de un toque." },
+      "mapa": { "name": "Mapa de clientes", "desc": "Cada despliegue en el mapa con sus clientes: al corriente, atrasados y suspendidos." }
+    },
+    "existing": {
+      "title": "Ya en /interno",
+      "lead": "Lo demás que hace un sistema como Wisphub ya está en estas secciones, con los mismos datos.",
+      "links": {
+        "clientes": "Clientes y cobranza",
+        "reportes": "Reportes (tickets)",
+        "agenda": "Agenda de instalaciones",
+        "despliegues": "Despliegues",
+        "materiales": "Almacén de materiales",
+        "contratos": "Contratos",
+        "numeros": "Números del negocio",
+        "mikrotik": "Scripts del MikroTik"
+      }
+    },
+    "next": {
+      "title": "Siguientes fases",
+      "items": [
+        "Fase 2: pagos en línea (OXXO, tarjeta, SPEI) con la pasarela que elijas, y facturación electrónica (CFDI) con un PAC.",
+        "Fase 3: tráfico por cliente, fichas de hotspot y control de los routers en vivo."
+      ]
+    },
+    "noData": "Este teléfono todavía no tiene los datos: sincroniza arriba (¿Quién eres?).",
+    "cortes": {
+      "lead": "Sale de Cobranza: el pago vence el día 1 y el día 11 ya es atraso. Se corta a quien está atrasado y no tiene una promesa de pago vigente; se reconecta a quien ya no está atrasado. Los comandos son los de «Morosos» de los scripts del MikroTik.",
+      "needs": "Antes, en el MikroTik de cada despliegue debe estar instalado el script de experto «Morosos» (perfil DSX-suspendido con el aviso de pago).",
+      "needsLink": "Abrir los scripts del MikroTik",
+      "cut": "Por cortar",
+      "restore": "Por reconectar",
+      "promised": "Con promesa de pago vigente (no se cortan)",
+      "noUser": "Sin usuario PPPoE (no se pueden cortar por comando)",
+      "none": "Nadie.",
+      "site": "Despliegue",
+      "noSite": "Sin despliegue",
+      "row": "{name} · {user}",
+      "owed": "debe {amount}",
+      "promise": "promete pagar el {date}",
+      "plan": "plan {plan}",
+      "commands": "Comandos para el MikroTik de {site}",
+      "commandsNoSite": "Comandos para el MikroTik (clientes sin despliegue asignado en Clientes: pégalos en el que les corresponda)",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "markCut": "Ya los corté: marcar {n, plural, one {# servicio suspendido} other {# servicios suspendidos}} en Clientes",
+      "markRestore": "Ya los reconecté: marcar {n, plural, one {# servicio activo} other {# servicios activos}} en Clientes",
+      "marked": "Listo: actualizado en Clientes.",
+      "errors": {
+        "noPlan": "{value}: sin plan; ponle el plan (perfil del MikroTik) en Clientes.",
+        "unknownPlan": "{value}: ese plan no es un perfil del MikroTik.",
+        "badUser": "{value}: usuario PPPoE no válido."
+      },
+      "planHint": "Para reconectar, el plan del servicio en Clientes debe ser el nombre del perfil PPPoE en el MikroTik."
+    },
+    "portal": {
+      "lead": "Cada cliente puede tener un enlace privado a su portal: ve su saldo, lo que debe y cuándo, sus pagos, sus servicios y sus reportes, sin contraseña. Mándaselo por WhatsApp. Si se filtra, crea otro: el anterior deja de servir.",
+      "search": "Buscar cliente",
+      "create": "Crear enlace",
+      "recreate": "Crear uno nuevo",
+      "revoke": "Quitar enlace",
+      "confirmRevoke": "¿Quitar el enlace de {name}? Dejará de funcionar.",
+      "confirmRecreate": "¿Crear un enlace nuevo para {name}? El anterior deja de funcionar.",
+      "copy": "Copiar enlace",
+      "copied": "Copiado",
+      "send": "Mandar por WhatsApp",
+      "sendText": "Hola {name}, este es tu portal de GigaFazt: ahí ves tu saldo, tus pagos y tus reportes. Es personal, no lo compartas: {url}",
+      "seen": "{n, plural, =0 {sin abrir} one {abierto # vez} other {abierto # veces}}",
+      "noLink": "Sin enlace",
+      "needsOnline": "Se necesita conexión para crear o quitar enlaces.",
+      "error": "No se pudo (sin conexión o error del servidor).",
+      "none": "Ningún cliente coincide."
+    },
+    "avisos": {
+      "lead": "Elige el aviso y a quién. Con la API de WhatsApp configurada se mandan desde el número de la empresa; si no, cada aviso es un enlace de un toque que abre WhatsApp con el mensaje listo.",
+      "apiOn": "API de WhatsApp: configurada.",
+      "apiOff": "API de WhatsApp: sin configurar (faltan las variables en Vercel). Mientras tanto, enlaces de un toque.",
+      "template": "Aviso",
+      "templates": {
+        "recordatorio": "Recordatorio de pago",
+        "corte": "Aviso de corte",
+        "reconexion": "Servicio reconectado",
+        "mantenimiento": "Mantenimiento"
+      },
+      "audience": "A quién",
+      "audiences": {
+        "porVencer": "Por vencer (pago próximo)",
+        "atrasados": "Atrasados",
+        "reconectar": "Suspendidos que ya pagaron",
+        "activos": "Todos con servicio",
+        "despliegue": "Todos los de un despliegue"
+      },
+      "site": "Despliegue",
+      "place": "Lugar (para mantenimiento)",
+      "date": "Fecha (para mantenimiento)",
+      "detail": "Detalle (para mantenimiento)",
+      "cutDate": "Fecha límite de pago",
+      "count": "{n, plural, =0 {Nadie} one {# cliente} other {# clientes}}",
+      "noPhone": "{n, plural, one {# sin WhatsApp ni teléfono válido} other {# sin WhatsApp ni teléfono válido}} (no se les manda)",
+      "preview": "Así sale el primero:",
+      "sendAll": "Mandar a {n, plural, one {# cliente} other {# clientes}} por la API",
+      "confirmSend": "¿Mandar «{template}» a {n} clientes por WhatsApp?",
+      "sending": "Mandando…",
+      "sent": "Enviados: {ok}. Con error: {bad}.",
+      "open": "Abrir en WhatsApp",
+      "linkNote": "El enlace del portal va si el cliente ya tiene uno; si no, va la página /clientes.",
+      "setup": {
+        "title": "Para mandar por la API",
+        "steps": [
+          "En Vercel → Settings → Environment Variables (Production): WHATSAPP_TOKEN = el token permanente de un usuario del sistema de Meta, y WHATSAPP_PHONE_NUMBER_ID = el identificador del número. Nunca los pegues en el chat ni en el código.",
+          "En WhatsApp Manager → Plantillas de mensaje, crea estas 4 plantillas, categoría Utilidad, idioma Español (MEX), con estos nombres y textos exactos. Se mandan cuando Meta las aprueba.",
+          "La versión de la Graph API es v23.0; si Meta la retira, pon WHATSAPP_GRAPH_VERSION con la nueva."
+        ],
+        "variables": "Variables: {list}"
+      }
+    },
+    "mapa": {
+      "lead": "Cada despliegue en el punto de su levantamiento, con sus clientes. Verde: todos al corriente; ámbar: con atrasados; rojo: con suspendidos.",
+      "noPoint": "Sin ubicación (falta en su levantamiento)",
+      "clients": "{n, plural, one {# cliente} other {# clientes}}",
+      "late": "{n} atrasados",
+      "suspended": "{n} suspendidos",
+      "list": "Despliegues",
+      "none": "Todavía no hay despliegues.",
+      "map": "Mapa de clientes por despliegue",
+      "open": "Abrir despliegue"
+    }
+  }
+}

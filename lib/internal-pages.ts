@@ -10,6 +10,7 @@
  */
 
 import { DAVOROLT_SLUGS } from "./davorolt/catalog"
+import { WISPDAVOR_PAGES } from "./wispdavor/pages"
 
 export const INTERNAL_ROOT = "interno"
 export const INTERNAL_PAGES = ["levantamientos", "admin", "materiales", "herramientas", "equipos-telecom", "software", "guias"] as const
@@ -81,8 +82,8 @@ export function matchInternal(pathname: string): InternalMatch | null {
     const known = sub2 && SUBPAGES[page].find((p) => p === name)
     let rest3 = sub2?.[2] ?? ""
     // /interno/equipos-telecom/<mikrotik|asternos>/<guia|scripts>
-    // and /interno/software/davorolt/<tool>.
-    const third: Record<string, readonly string[]> = { mikrotik: MIKROTIK_PAGES, asternos: ASTERNOS_PAGES, davorolt: DAVOROLT_SLUGS }
+    // and /interno/software/<davorolt|wispdavor>/<page>.
+    const third: Record<string, readonly string[]> = { mikrotik: MIKROTIK_PAGES, asternos: ASTERNOS_PAGES, davorolt: DAVOROLT_SLUGS, wispdavor: WISPDAVOR_PAGES }
     if (known && third[known]) {
       const sub3 = /^\/([^/.]+)(.*)$/.exec(rest3)
       const k3 = sub3 && third[known].find((p) => p === sub3[1].toLowerCase())
