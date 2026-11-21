@@ -1,8 +1,8 @@
 /**
- * The REST connection on the server (lib/wispdavor/rest.ts has the rules): each router's settings with its passwords
- * encrypted (AES-256-GCM, key ROUTER_CRED_KEY on the host; never sent back to a browser), one HTTPS request at a time
- * with the read-only check in front, and what staff use: live view, client lookup, actions (logged like the agent's) and
- * config backups.
+ * Staff access to the routers on the server (rules in lib/wispdavor/rest.ts, API wire format in ros-api.ts): each
+ * router's settings with its passwords encrypted (AES-256-GCM, key ROUTER_CRED_KEY on the host; never sent to a
+ * browser), one operation at a time over the router's chosen mode (REST or MikroTik API over TLS) with the read-only
+ * check in front, and what staff use: live view, client lookup, actions (logged like the agent's) and config backups.
  *
  * Certificates: a publicly trusted one is checked as usual; a router's own is accepted only when its SHA-256
  * fingerprint matches the one saved, checked on the TLS connection before anything (the password) is sent.
@@ -15,7 +15,8 @@ import { decodeClient } from "../clients/model"
 import { getPool } from "../db/client"
 import { SUSPENDED_PROFILE, safe } from "./routers"
 import { setServiceStatus } from "./routers-server"
-import { EXPORT_SCRIPT, bool, isReadRequest, normalizeFingerprint, num, safePath, validHost, type RestMethod } from "./rest"
+import { EXPORT_SCRIPT, PROTOCOLS, bool, isReadOp, normalizeFingerprint, num, opProblem, opToApi, opToRest, validHost, type Op, type Protocol } from "./rest"
+import { collectReply, encodeSentence, readSentences } from "./ros-api"
 
 const TIMEOUT_MS = 8000
 
@@ -51,28 +52,35 @@ function open(sealed: string): string {
 
 // ── Settings ────────────────────────────────────────────────────────────────
 
-type Row = { router_id: string; host: string; port: number; read_user: string; read_pass: string; write_user: string; write_pass: string; fingerprint: string; read_only: boolean; updated_at: Date; updated_by: string }
+type Row = { router_id: string; protocol: string; host: string; port: number; api_port: number; read_user: string; read_pass: string; write_user: string; write_pass: string; fingerprint: string; read_only: boolean; updated_at: Date; updated_by: string }
 /** What a browser may see: no passwords, only whether they're set. */
-export type RestView = { host: string; port: number; readUser: string; writeUser: string; hasReadPass: boolean; hasWritePass: boolean; fingerprint: string; readOnly: boolean; updatedAt: string; updatedBy: string }
+export type RestView = { protocol: Protocol; host: string; port: number; apiPort: number; readUser: string; writeUser: string; hasReadPass: boolean; hasWritePass: boolean; fingerprint: string; readOnly: boolean; updatedAt: string; updatedBy: string }
 
 const row = async (routerId: string) => (await getPool().query(`select * from router_rest where router_id = $1`, [routerId])).rows[0] as Row | undefined
+const protocolOf = (p: string): Protocol => (p === "api" ? "api" : "rest")
 
 export async function restViews(): Promise<Record<string, RestView>> {
   const rows = (await getPool().query(`select * from router_rest`)).rows as Row[]
   return Object.fromEntries(
-    rows.map((r) => [r.router_id, { host: r.host, port: r.port, readUser: r.read_user, writeUser: r.write_user, hasReadPass: !!r.read_pass, hasWritePass: !!r.write_pass, fingerprint: r.fingerprint, readOnly: r.read_only, updatedAt: r.updated_at.toISOString(), updatedBy: r.updated_by }])
+    rows.map((r) => [
+      r.router_id,
+      { protocol: protocolOf(r.protocol), host: r.host, port: r.port, apiPort: r.api_port, readUser: r.read_user, writeUser: r.write_user, hasReadPass: !!r.read_pass, hasWritePass: !!r.write_pass, fingerprint: r.fingerprint, readOnly: r.read_only, updatedAt: r.updated_at.toISOString(), updatedBy: r.updated_by },
+    ])
   )
 }
 
-export type RestInput = { host?: string; port?: number; readUser?: string; readPass?: string; writeUser?: string; writePass?: string; clearWrite?: boolean; fingerprint?: string; readOnly?: boolean }
+export type RestInput = { protocol?: string; host?: string; port?: number; apiPort?: number; readUser?: string; readPass?: string; writeUser?: string; writePass?: string; clearWrite?: boolean; fingerprint?: string; readOnly?: boolean }
 
-/** Saves a router's REST settings; a blank password keeps the saved one. Answers an error code or null. */
+/** Saves a router's connection settings; a blank password keeps the saved one. Answers an error code or null. */
 export async function saveRest(routerId: string, i: RestInput, by: string): Promise<string | null> {
   const cur = await row(routerId)
+  if (i.protocol !== undefined && !(PROTOCOLS as readonly string[]).includes(i.protocol)) return "protocol-choice"
+  const protocol = protocolOf(i.protocol ?? cur?.protocol ?? "rest")
   const host = (i.host ?? cur?.host ?? "").trim().toLowerCase()
   const port = Math.round(i.port ?? cur?.port ?? 443)
+  const apiPort = Math.round(i.apiPort ?? cur?.api_port ?? 8729)
   if (host && !validHost(host)) return "host"
-  if (!(port >= 1 && port <= 65535)) return "port"
+  if (!(port >= 1 && port <= 65535) || !(apiPort >= 1 && apiPort <= 65535)) return "port"
   const fp = i.fingerprint === undefined ? (cur?.fingerprint ?? "") : i.fingerprint.trim() ? normalizeFingerprint(i.fingerprint) : ""
   if (i.fingerprint?.trim() && !fp) return "fingerprint"
   const user = (u: string | undefined, c: string) => (u === undefined ? c : u.trim().slice(0, 64))
@@ -85,15 +93,16 @@ export async function saveRest(routerId: string, i: RestInput, by: string): Prom
   const writePass = i.clearWrite ? "" : i.writePass ? seal(i.writePass.slice(0, 128)) : (cur?.write_pass ?? "")
   const readOnly = i.readOnly ?? cur?.read_only ?? true
   await getPool().query(
-    `insert into router_rest (router_id, host, port, read_user, read_pass, write_user, write_pass, fingerprint, read_only, updated_at, updated_by)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, now(), $10)
-     on conflict (router_id) do update set host = $2, port = $3, read_user = $4, read_pass = $5, write_user = $6, write_pass = $7, fingerprint = $8, read_only = $9, updated_at = now(), updated_by = $10`,
-    [routerId, host, port, readUser, readPass, writeUser, writePass, fp, readOnly, by]
+    `insert into router_rest (router_id, protocol, host, port, api_port, read_user, read_pass, write_user, write_pass, fingerprint, read_only, updated_at, updated_by)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, now(), $12)
+     on conflict (router_id) do update set protocol = $2, host = $3, port = $4, api_port = $5, read_user = $6, read_pass = $7, write_user = $8, write_pass = $9,
+       fingerprint = $10, read_only = $11, updated_at = now(), updated_by = $12`,
+    [routerId, protocol, host, port, apiPort, readUser, readPass, writeUser, writePass, fp, readOnly, by]
   )
   return null
 }
 
-// ── Requests ────────────────────────────────────────────────────────────────
+// ── Connection ──────────────────────────────────────────────────────────────
 
 export class RestError extends Error {
   constructor(public code: string, detail = "") {
@@ -107,34 +116,27 @@ function tlsConnect(host: string, port: number, fingerprint: string): Promise<TL
     const sock = connect({ host, port, servername: /^[\d.]+$/.test(host) ? undefined : host, rejectUnauthorized: !fingerprint, timeout: TIMEOUT_MS })
     const fail = (code: string, e?: unknown) => {
       sock.destroy()
-      reject(new RestError(code, e instanceof Error ? e.message.slice(0, 160) : ""))
+      reject(new RestError(code, e instanceof Error ? e.message.slice(0, 160) : typeof e === "string" ? e : ""))
     }
     sock.once("secureConnect", () => {
       if (fingerprint) {
         const got = normalizeFingerprint(sock.getPeerCertificate().fingerprint256 ?? "")
         if (got !== fingerprint) return fail("cert-mismatch", `huella recibida ${got.slice(0, 16)}…`)
       }
+      sock.setTimeout(0)
       resolve(sock)
     })
     sock.once("timeout", () => fail("timeout"))
-    sock.once("error", (e: NodeJS.ErrnoException) => fail(/CERT|SELF_SIGNED|UNABLE_TO_VERIFY|ALTNAME/.test(e.code ?? e.message) ? "cert" : e.code === "ENOTFOUND" ? "dns" : "unreachable", e))
+    // A router without a certificate offers only anonymous ciphers (manual): the handshake fails.
+    sock.once("error", (e: NodeJS.ErrnoException) => fail(/CERT|SELF_SIGNED|UNABLE_TO_VERIFY|ALTNAME/.test(e.code ?? e.message) ? "cert" : /handshake|SSL|alert/i.test(e.message) ? "tls" : e.code === "ENOTFOUND" ? "dns" : "unreachable", e))
   })
 }
 
-/**
- * One REST request to a router. Reading goes with the read user; anything else only when the router isn't in read-only
- * mode and a write user is set. Answers the parsed JSON.
- */
-export async function restCall(routerId: string, method: RestMethod, path: string, body?: unknown): Promise<unknown> {
-  const r = await row(routerId)
-  if (!r?.host) throw new RestError("not-configured")
-  if (!safePath(path.split("?")[0])) throw new RestError("bad-path")
-  const reading = isReadRequest(method, path.split("?")[0], body)
-  if (!reading && r.read_only) throw new RestError("read-only")
-  const user = reading ? r.read_user : r.write_user
-  const pass = open(reading ? r.read_pass : r.write_pass)
-  if (!user || !pass) throw new RestError(reading ? "no-read-user" : "no-write-user")
-  const sock = await tlsConnect(r.host, r.port, r.fingerprint)
+type Records = Record<string, string>[]
+
+/** One REST request; the reply as records (REST gives an array, one object, or nothing). */
+function viaRest(r: Row, user: string, pass: string, op: Op, sock: TLSSocket): Promise<Records> {
+  const { method, path, body } = opToRest(op)
   const data = body === undefined ? undefined : JSON.stringify(body)
   return new Promise((resolve, reject) => {
     const req = request(
@@ -152,7 +154,6 @@ export async function restCall(routerId: string, method: RestMethod, path: strin
         let size = 0
         res.on("data", (c: Buffer) => {
           size += c.length
-          // An export is the biggest answer; anything over 8 MB isn't one of ours.
           if (size > 8 * 1024 * 1024) req.destroy(new Error("too-big"))
           else chunks.push(c)
         })
@@ -165,9 +166,11 @@ export async function restCall(routerId: string, method: RestMethod, path: strin
             json = text
           }
           const code = res.statusCode ?? 0
+          const detail = typeof json === "object" && json && "detail" in json ? String((json as { detail: unknown }).detail).slice(0, 200) : ""
+          // Manual: 401 = wrong password or no rest-api policy; 500 "not allowed (9)" = rest-api without api.
           if (code === 401) return reject(new RestError("auth"))
-          if (code >= 400) return reject(new RestError(`http-${code}`, typeof json === "object" && json && "detail" in json ? String((json as { detail: unknown }).detail).slice(0, 200) : ""))
-          resolve(json)
+          if (code >= 400) return reject(new RestError(/not enough permissions|not allowed/.test(detail) ? "denied" : `http-${code}`, detail))
+          resolve(Array.isArray(json) ? (json as Records) : json && typeof json === "object" ? [json as Record<string, string>] : [])
         })
       }
     )
@@ -177,29 +180,107 @@ export async function restCall(routerId: string, method: RestMethod, path: strin
   })
 }
 
-const list = (v: unknown) => (Array.isArray(v) ? (v as Record<string, unknown>[]) : [])
+/** One MikroTik API session over TLS: login (plain text, inside TLS), the command, then close. */
+function viaApi(user: string, pass: string, op: Op, sock: TLSSocket): Promise<Records> {
+  return new Promise((resolve, reject) => {
+    let buf: Buffer = Buffer.alloc(0)
+    let pending: string[][] = []
+    let phase: "login" | "cmd" = "login"
+    let size = 0
+    const done = (e: RestError | null, out: Records = []) => {
+      clearTimeout(timer)
+      sock.removeAllListeners("data")
+      sock.end()
+      sock.destroy()
+      if (e) reject(e)
+      else resolve(out)
+    }
+    const timer = setTimeout(() => done(new RestError("timeout")), TIMEOUT_MS)
+    sock.on("data", (chunk: Buffer) => {
+      size += chunk.length
+      if (size > 8 * 1024 * 1024) return done(new RestError("too-big"))
+      buf = Buffer.concat([buf, chunk])
+      let read: ReturnType<typeof readSentences>
+      try {
+        read = readSentences(buf)
+      } catch {
+        return done(new RestError("protocol"))
+      }
+      buf = read.rest
+      pending = [...pending, ...read.sentences]
+      const reply = collectReply(pending)
+      if (!reply.finished) return
+      pending = []
+      if (reply.fatal) return done(new RestError("fatal", reply.fatal))
+      if (phase === "login") {
+        if (reply.trap) return done(new RestError(/invalid user name or password|not allowed/i.test(reply.trap) ? "auth" : "trap", reply.trap))
+        phase = "cmd"
+        sock.write(encodeSentence(opToApi(op)))
+        return
+      }
+      if (reply.trap) return done(new RestError(/not enough permissions|not allowed/.test(reply.trap) ? "denied" : /no such item|no such command/.test(reply.trap) ? "not-found" : "trap", reply.trap))
+      // A command with no records (execute, set) answers in !done's attributes (=ret=…).
+      done(null, reply.records.length ? reply.records : reply.done && Object.keys(reply.done).length ? [reply.done] : [])
+    })
+    sock.once("error", (e) => done(new RestError("unreachable", e.message.slice(0, 160))))
+    sock.once("close", () => done(new RestError("closed")))
+    sock.write(encodeSentence(["/login", `=name=${user}`, `=password=${pass}`]))
+  })
+}
+
+/**
+ * One operation on a router, over its chosen mode. Reading goes with the read user; anything else only when the router
+ * isn't in read-only mode and a write user is set. Answers the records.
+ */
+export async function routerCall(routerId: string, op: Op): Promise<Records> {
+  const r = await row(routerId)
+  if (!r?.host) throw new RestError("not-configured")
+  const bad = opProblem(op)
+  if (bad) throw new RestError("bad-op", bad)
+  const reading = isReadOp(op)
+  if (!reading && r.read_only) throw new RestError("read-only")
+  const user = reading ? r.read_user : r.write_user
+  const pass = open(reading ? r.read_pass : r.write_pass)
+  if (!user || !pass) throw new RestError(reading ? "no-read-user" : "no-write-user")
+  const api = protocolOf(r.protocol) === "api"
+  const sock = await tlsConnect(r.host, api ? r.api_port : r.port, r.fingerprint)
+  return api ? viaApi(user, pass, op, sock) : viaRest(r, user, pass, op, sock)
+}
+
+const first = (rs: Records) => rs[0] ?? {}
 
 // ── Live view ───────────────────────────────────────────────────────────────
 
 export type LiveView = {
+  protocol: Protocol
   resource: { board: string; version: string; uptime: string; cpu: number; memUsed: number; memTotal: number }
   interfaces: { name: string; type: string; running: boolean; disabled: boolean; rx: number; tx: number }[]
   sessions: { name: string; address: string; uptime: string; callerId: string }[]
   log: { time: string; topics: string; message: string }[]
 }
 
+const RATE_PROPS = ["name", "rx-bits-per-second", "tx-bits-per-second"]
+
+/** A test: the router's model and version (with the read user). */
+export async function testRouter(routerId: string) {
+  const rs = first(await routerCall(routerId, { kind: "print", menu: "/system/resource" }))
+  return { version: String(rs.version ?? ""), board: String(rs["board-name"] ?? "") }
+}
+
 export async function liveView(routerId: string): Promise<LiveView> {
-  const [res, ifs, act, log] = await Promise.all([restCall(routerId, "GET", "/system/resource"), restCall(routerId, "GET", "/interface"), restCall(routerId, "GET", "/ppp/active"), restCall(routerId, "GET", "/log")])
-  const rs = (res ?? {}) as Record<string, unknown>
-  const interfaces = list(ifs)
+  // One at a time: each API call is its own session, and the router caps sessions per service (max-sessions).
+  const res = first(await routerCall(routerId, { kind: "print", menu: "/system/resource" }))
+  const ifs = await routerCall(routerId, { kind: "print", menu: "/interface", proplist: ["name", "type", "running", "disabled"] })
+  const act = await routerCall(routerId, { kind: "print", menu: "/ppp/active", proplist: ["name", "address", "uptime", "caller-id"] })
+  const log = await routerCall(routerId, { kind: "print", menu: "/log", proplist: ["time", "topics", "message"] })
+  const interfaces = ifs
     .filter((i) => !String(i.type).startsWith("pppoe-in"))
     .map((i) => ({ name: String(i.name ?? ""), type: String(i.type ?? ""), running: bool(i.running), disabled: bool(i.disabled), rx: 0, tx: 0 }))
-  // Live rates of the running ones (one command for up to 12).
+  // Live rates of the running ones (one command for up to 12; "once" so it answers right away).
   const watch = interfaces.filter((i) => i.running && !i.disabled).slice(0, 12)
   if (watch.length) {
     try {
-      const rates = list(await restCall(routerId, "POST", "/interface/monitor-traffic", { interface: watch.map((i) => i.name).join(","), once: "" }))
-      for (const r of rates) {
+      for (const r of await routerCall(routerId, { kind: "cmd", menu: "/interface", cmd: "monitor-traffic", params: { interface: watch.map((i) => i.name).join(","), once: "" }, proplist: RATE_PROPS })) {
         const i = interfaces.find((x) => x.name === r.name)
         if (i) {
           i.rx = num(r["rx-bits-per-second"])
@@ -210,11 +291,13 @@ export async function liveView(routerId: string): Promise<LiveView> {
       // Rates are a bonus: the view works without them.
     }
   }
+  const r = await row(routerId)
   return {
-    resource: { board: String(rs["board-name"] ?? ""), version: String(rs.version ?? ""), uptime: String(rs.uptime ?? ""), cpu: num(rs["cpu-load"]), memUsed: num(rs["total-memory"]) - num(rs["free-memory"]), memTotal: num(rs["total-memory"]) },
+    protocol: protocolOf(r?.protocol ?? "rest"),
+    resource: { board: String(res["board-name"] ?? ""), version: String(res.version ?? ""), uptime: String(res.uptime ?? ""), cpu: num(res["cpu-load"]), memUsed: num(res["total-memory"]) - num(res["free-memory"]), memTotal: num(res["total-memory"]) },
     interfaces,
-    sessions: list(act).map((a) => ({ name: String(a.name ?? ""), address: String(a.address ?? ""), uptime: String(a.uptime ?? ""), callerId: String(a["caller-id"] ?? "") })),
-    log: list(log)
+    sessions: act.map((a) => ({ name: String(a.name ?? ""), address: String(a.address ?? ""), uptime: String(a.uptime ?? ""), callerId: String(a["caller-id"] ?? "") })),
+    log: log
       .slice(-60)
       .reverse()
       .map((l) => ({ time: String(l.time ?? ""), topics: String(l.topics ?? ""), message: String(l.message ?? "") })),
@@ -232,14 +315,12 @@ export type ClientLive = {
 
 export async function clientLive(routerId: string, user: string): Promise<ClientLive> {
   if (!safe(user)) throw new RestError("bad-user")
-  const q = `?name=${encodeURIComponent(user)}`
-  const [sec, act] = await Promise.all([restCall(routerId, "GET", `/ppp/secret${q}`), restCall(routerId, "GET", `/ppp/active${q}`)])
-  const s = list(sec)[0]
-  const a = list(act)[0]
+  const s = (await routerCall(routerId, { kind: "print", menu: "/ppp/secret", where: { name: user } }))[0]
+  const a = (await routerCall(routerId, { kind: "print", menu: "/ppp/active", where: { name: user } }))[0]
   let rate: ClientLive["rate"] = null
   if (a) {
     try {
-      const r = list(await restCall(routerId, "POST", "/interface/monitor-traffic", { interface: `<pppoe-${user}>`, once: "" }))[0]
+      const r = (await routerCall(routerId, { kind: "cmd", menu: "/interface", cmd: "monitor-traffic", params: { interface: `<pppoe-${user}>`, once: "" }, proplist: RATE_PROPS }))[0]
       // From the router's side: what it sends the client (tx) is the client's download.
       if (r) rate = { rx: num(r["rx-bits-per-second"]), tx: num(r["tx-bits-per-second"]) }
     } catch {
@@ -261,7 +342,7 @@ export type RestAction = (typeof REST_ACTIONS)[number]
 
 /** The client and service a PPPoE user belongs to (to keep Clientes in step), or null. */
 async function serviceOf(user: string): Promise<{ clientId: string; serviceId: string; plan: string } | null> {
-  const rows = (await getPool().query(`select id, data from clients where deleted_at is null and data::text like $1`, [`%${user.replace(/[%_]/g, "")}%`])).rows as { id: string; data: unknown }[]
+  const rows = (await getPool().query(`select id, data from clients where deleted_at is null and data::text like $1`, [`%${user.replace(/[%_\\]/g, "")}%`])).rows as { id: string; data: unknown }[]
   for (const r of rows) {
     const c = decodeClient(r.data)
     const s = c?.services.find((x) => x.type === "internet" && x.pppoeUser.trim() === user)
@@ -270,16 +351,11 @@ async function serviceOf(user: string): Promise<{ clientId: string; serviceId: s
   return null
 }
 
-/** A staff action on a PPPoE user, logged in the router's actions (source "rest"). Answers what was done. */
+/** A staff action on a PPPoE user, logged in the router's actions (source "rest" or "api"). Answers what was done. */
 export async function restAct(routerId: string, action: RestAction, user: string, arg: string, by: string): Promise<string> {
   if (!safe(user) || (arg && !safe(arg))) throw new RestError("bad-user")
   const svc = await serviceOf(user)
-  const secret = list(await restCall(routerId, "GET", `/ppp/secret?name=${encodeURIComponent(user)}`))[0]
-  if (!secret) throw new RestError("no-secret")
-  const id = String(secret[".id"] ?? "")
-  const kick = async () => {
-    for (const a of list(await restCall(routerId, "GET", `/ppp/active?name=${encodeURIComponent(user)}`))) await restCall(routerId, "DELETE", `/ppp/active/${String(a[".id"])}`)
-  }
+  const mode = protocolOf((await row(routerId))?.protocol ?? "rest")
   let profile = ""
   if (action === "suspend") profile = SUSPENDED_PROFILE
   if (action === "reconnect") profile = svc?.plan || arg
@@ -287,18 +363,22 @@ export async function restAct(routerId: string, action: RestAction, user: string
   if ((action === "reconnect" || action === "plan") && !safe(profile)) throw new RestError("no-plan")
   let error = ""
   try {
-    if (profile) await restCall(routerId, "PATCH", `/ppp/secret/${id}`, { profile })
-    if (action === "disable") await restCall(routerId, "PATCH", `/ppp/secret/${id}`, { disabled: "true" })
-    if (action === "enable") await restCall(routerId, "PATCH", `/ppp/secret/${id}`, { disabled: "false" })
-    if (action !== "enable") await kick()
+    const secret = (await routerCall(routerId, { kind: "print", menu: "/ppp/secret", where: { name: user }, proplist: [".id", "name"] }))[0]
+    if (!secret) throw new RestError("no-secret")
+    const id = String(secret[".id"] ?? "")
+    if (profile) await routerCall(routerId, { kind: "set", menu: "/ppp/secret", id, props: { profile } })
+    if (action === "disable" || action === "enable") await routerCall(routerId, { kind: "set", menu: "/ppp/secret", id, props: { disabled: action === "disable" ? "yes" : "no" } })
+    // Drop the session so the change applies now (not for enable: there's none).
+    if (action !== "enable")
+      for (const a of await routerCall(routerId, { kind: "print", menu: "/ppp/active", where: { name: user }, proplist: [".id"] })) await routerCall(routerId, { kind: "remove", menu: "/ppp/active", id: String(a[".id"]) })
   } catch (e) {
     error = e instanceof RestError ? e.code : "error"
     throw e
   } finally {
     const kind = profile ? "profile" : action === "kick" ? "kick" : action
     await getPool().query(
-      `insert into router_actions (router_id, kind, "user", arg1, client_id, service_id, source, status, result, created_by, sent_at, done_at) values ($1, $2, $3, $4, $5, $6, 'rest', $7, $8, $9, now(), now())`,
-      [routerId, kind, user, profile, svc?.clientId ?? "", svc?.serviceId ?? "", error ? "error" : "done", error, by]
+      `insert into router_actions (router_id, kind, "user", arg1, client_id, service_id, source, status, result, created_by, sent_at, done_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now(), now())`,
+      [routerId, kind, user, profile, svc?.clientId ?? "", svc?.serviceId ?? "", mode, error ? "error" : "done", error, by]
     )
   }
   // Suspended or back on the plan: Clientes follows (Cortes, the portal and Hoy read it).
@@ -308,10 +388,10 @@ export async function restAct(routerId: string, action: RestAction, user: string
 
 // ── Config backups ──────────────────────────────────────────────────────────
 
-/** Reads the router's configuration (/export terse, read-only) and keeps it; the last 20 per router stay. */
+/** Reads the router's configuration (/export terse through /execute as-string, read-only) and keeps the last 20. */
 export async function backupNow(routerId: string, by: string): Promise<{ id: string; size: number }> {
-  const out = (await restCall(routerId, "POST", "/execute", { script: EXPORT_SCRIPT, "as-string": "" })) as Record<string, unknown> | string | null
-  const text = typeof out === "string" ? out : typeof out?.ret === "string" ? out.ret : ""
+  const out = first(await routerCall(routerId, { kind: "cmd", menu: "", cmd: "execute", params: { script: EXPORT_SCRIPT, "as-string": "" } }))
+  const text = typeof out.ret === "string" ? out.ret : ""
   if (!text.trim()) throw new RestError("empty-export")
   const pool = getPool()
   const id = String(((await pool.query(`insert into router_backups (router_id, text, created_by) values ($1, $2, $3) returning id`, [routerId, text, by])).rows[0] as { id: string }).id)

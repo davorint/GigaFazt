@@ -735,8 +735,11 @@ export const fieldFiles = pgTable(
  */
 export const routerRest = pgTable("router_rest", {
   routerId: text("router_id").primaryKey(),
+  /** The connection mode (owner, 2026-11-21: a toggle): "rest" (www-ssl) or "api" (MikroTik API over api-ssl). */
+  protocol: text("protocol").notNull().default("rest"),
   host: text("host").notNull().default(""),
   port: integer("port").notNull().default(443),
+  apiPort: integer("api_port").notNull().default(8729),
   readUser: text("read_user").notNull().default(""),
   readPass: text("read_pass").notNull().default(""),
   writeUser: text("write_user").notNull().default(""),

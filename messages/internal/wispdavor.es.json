@@ -73,8 +73,8 @@
         "desc": "Cada mes: quién se atrasó, a quién se le avisó, a quién se suspendió y quién pagó en cada paso, con los días que tardó."
       },
       "envivo": {
-        "name": "Router en vivo (REST)",
-        "desc": "Un router a la vez por su API REST: recursos, interfaces con tráfico en vivo, sesiones PPPoE, bitácora, la sesión de un cliente con acciones y respaldos de la configuración. Solo lectura salvo que lo cambies."
+        "name": "Router en vivo (REST o API)",
+        "desc": "Un router a la vez por su API REST o la API de MikroTik: recursos, interfaces con tráfico en vivo, sesiones PPPoE, bitácora, la sesión de un cliente con acciones y respaldos de la configuración. Solo lectura salvo que lo cambies."
       }
     },
     "existing": {
@@ -348,7 +348,7 @@
       "loading": "Cargando facturas…"
     },
     "routers": {
-      "lead": "Cada MikroTik corre un script que cada 2 minutos le dice al sitio qué usuarios PPPoE tiene (perfil, desactivado, conectado, tráfico) y recibe las acciones pendientes. Para esto el router no abre ningún puerto y solo ejecuta una lista fija de comandos. Aparte, la «Conexión REST» de cada router (opcional) deja ver el router en vivo y, si quitas «Solo lectura», hacer cambios.",
+      "lead": "Cada MikroTik corre un script que cada 2 minutos le dice al sitio qué usuarios PPPoE tiene (perfil, desactivado, conectado, tráfico) y recibe las acciones pendientes. Para esto el router no abre ningún puerto y solo ejecuta una lista fija de comandos. Aparte, la «Conexión al router» (REST o API de MikroTik, opcional) deja ver el router en vivo y, si quitas «Solo lectura», hacer cambios.",
       "desired": "Lo que debe tener cada usuario sale de Clientes y Cobranza: atrasado sin promesa vigente → perfil DSX-suspendido (script «Morosos»); al corriente → su plan (el nombre del perfil PPPoE); servicio cancelado → desactivado.",
       "add": "Agregar router",
       "name": "Nombre",
@@ -390,7 +390,8 @@
       "source": {
         "auto": "automática",
         "staff": "a mano",
-        "rest": "REST"
+        "rest": "REST",
+        "api": "API"
       },
       "script": "Script del router",
       "scriptHint": "Pégalo en la terminal del MikroTik (RouterOS 7). Lleva la llave del router: guárdalo solo en el router. Si se pierde, crea una llave nueva (la anterior deja de servir).",
@@ -565,11 +566,11 @@
       }
     },
     "rest": {
-      "title": "Conexión REST",
+      "title": "Conexión al router (REST o API)",
       "badgeOff": "sin configurar",
       "badgeRead": "solo lectura",
       "badgeWrite": "lectura y escritura",
-      "lead": "El sitio entra al router por su API REST (HTTPS). Para eso el router debe ser alcanzable: IP pública (un nombre de Dynu o de /ip cloud si cambia) o una VPN. El agente sigue haciendo lo automático.",
+      "lead": "El sitio entra al router por su API REST (HTTPS) o por la API de MikroTik con TLS (api-ssl), según elijas abajo. El router debe ser alcanzable: IP pública (un nombre de Dynu o de /ip cloud si cambia) o una VPN. El agente sigue haciendo lo automático.",
       "noKey": "Falta ROUTER_CRED_KEY en Vercel: sin ella no se guardan contraseñas.",
       "readOnly": "Solo lectura",
       "readOnlyOn": "Solo se lee: el sitio usa el usuario de lectura y nunca manda cambios.",
@@ -577,8 +578,8 @@
       "confirmWrite": "¿Permitir cambios en este router desde WispDavor?",
       "host": "Dirección (nombre DDNS o IP)",
       "hostHint": "p. ej. edificio1.dynu.net",
-      "port": "Puerto HTTPS",
-      "readUser": "Usuario de lectura (grupo read)",
+      "port": "Puerto HTTPS (www-ssl)",
+      "readUser": "Usuario de lectura (grupo wispdavor-lectura)",
       "readPass": "Contraseña de lectura",
       "writeUser": "Usuario de escritura (opcional)",
       "writeHint": "Solo si vas a hacer cambios; distinto del de lectura.",
@@ -602,7 +603,7 @@
         "no-read-user": "Falta el usuario o la contraseña de lectura.",
         "no-write-user": "Falta el usuario de escritura: sin él no se puede cambiar nada.",
         "no-key": "Falta ROUTER_CRED_KEY en el servidor: no se pueden guardar contraseñas.",
-        "auth": "El router rechazó el usuario o la contraseña.",
+        "auth": "El router rechazó el usuario o la contraseña (o el grupo no tiene la política api / rest-api).",
         "cert": "El certificado del router no es de confianza: usa Let's Encrypt o pega su huella SHA-256.",
         "cert-mismatch": "La huella del certificado no coincide: el router cambió de certificado o no es el router correcto.",
         "dns": "Ese nombre no existe en el DNS (revisa el nombre de Dynu o de /ip cloud).",
@@ -620,14 +621,33 @@
         "http-400": "El router no aceptó la petición.",
         "http-404": "El router no tiene esa ruta REST (¿RouterOS 7 con el servicio www-ssl activo?).",
         "http-500": "Error en el router.",
-        "server": "Error del servidor."
-      }
+        "server": "Error del servidor.",
+        "tls": "No se pudo cifrar la conexión: ¿el servicio tiene certificado? Sin certificado www-ssl y api-ssl solo ofrecen cifrados anónimos.",
+        "denied": "El router negó el permiso: revisa las políticas del grupo (read, api y rest-api; write para cambios).",
+        "not-found": "El router no encontró ese elemento o comando.",
+        "trap": "El router respondió con un error.",
+        "fatal": "El router cerró la sesión de la API.",
+        "closed": "El router cerró la conexión.",
+        "protocol": "Respuesta de la API no válida.",
+        "bad-op": "Operación no válida.",
+        "protocol-choice": "Modo no válido."
+      },
+      "mode": "Modo de conexión",
+      "modes": {
+        "rest": "API REST",
+        "api": "API de MikroTik"
+      },
+      "modeHint": {
+        "rest": "HTTPS al servicio www-ssl (/rest). El grupo del usuario necesita rest-api y api.",
+        "api": "API de MikroTik por TLS (servicio api-ssl, puerto 8729 por defecto). La contraseña viaja dentro de TLS; la API sin cifrar (8728) no se usa. El grupo necesita api."
+      },
+      "apiPort": "Puerto API-SSL"
     },
     "envivo": {
-      "lead": "Un router a la vez por su API REST. Leer siempre está permitido; los cambios solo si el router no está en «Solo lectura» y tiene usuario de escritura. Cada cambio queda en sus acciones recientes.",
+      "lead": "Un router a la vez, por API REST o por la API de MikroTik (lo eliges en su conexión). Leer siempre está permitido; los cambios solo si el router no está en «Solo lectura» y tiene usuario de escritura. Cada cambio queda en sus acciones recientes.",
       "loading": "Cargando…",
       "loadingShort": "Cargando…",
-      "none": "Ningún router tiene conexión REST: configúrala en Routers en vivo → «Conexión REST».",
+      "none": "Ningún router tiene conexión configurada: configúrala en Routers en vivo → «Conexión al router».",
       "router": "Router",
       "refresh": "Actualizar",
       "auto": "Cada 15 s",
@@ -678,7 +698,11 @@
       "backupNow": "Respaldar ahora",
       "backupDone": "Respaldo guardado ({kb} KB).",
       "noBackups": "Todavía no hay respaldos.",
-      "log": "Bitácora (últimos 60)"
+      "log": "Bitácora (últimos 60)",
+      "via": {
+        "rest": "Por API REST",
+        "api": "Por API de MikroTik"
+      }
     }
   }
 }

@@ -2,13 +2,13 @@ import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
 import { editorOf, json, requireInterno } from "@/lib/internal-api"
 import { INTERNAL_HEADERS } from "@/lib/internal-pages"
-import { REST_ACTIONS, RestError, backupNow, backupText, backupsOf, clientLive, credKeySet, liveView, restAct, restCall, restViews, saveRest, type RestAction } from "@/lib/wispdavor/rest-server"
+import { REST_ACTIONS, RestError, backupNow, backupText, backupsOf, clientLive, credKeySet, liveView, restAct, restViews, saveRest, testRouter, type RestAction } from "@/lib/wispdavor/rest-server"
 
 const ID = /^[\w-]{6,64}$/
 const text = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : undefined)
 
 /**
- * The routers' REST connection for staff (WispDavor → Routers / En vivo). GET: the settings of every router (never
+ * The routers' staff connection, REST or MikroTik API per router (WispDavor → Routers / En vivo). GET: the settings of every router (never
  * passwords) and whether ROUTER_CRED_KEY is set; GET ?respaldo=<id>: one config backup as a text file. POST {action, id,
  * …}: save | test | live | client | act | backup | backups. Signed in only; read-only rules in lib/wispdavor/rest.ts.
  */
@@ -40,8 +40,10 @@ export async function POST(request: NextRequest) {
         const err = await saveRest(
           id,
           {
+            protocol: text(b.protocol, 10),
             host: text(b.host, 253),
             port: typeof b.port === "number" ? b.port : undefined,
+            apiPort: typeof b.apiPort === "number" ? b.apiPort : undefined,
             readUser: text(b.readUser, 64),
             readPass: text(b.readPass, 128),
             writeUser: text(b.writeUser, 64),
@@ -55,8 +57,7 @@ export async function POST(request: NextRequest) {
         return err ? json({ error: err }, 400) : json({ ok: true, rest: (await restViews())[id] })
       }
       case "test": {
-        const r = (await restCall(id, "GET", "/system/resource")) as Record<string, unknown> | null
-        return json({ ok: true, version: String(r?.version ?? ""), board: String(r?.["board-name"] ?? "") })
+        return json({ ok: true, ...(await testRouter(id)) })
       }
       case "live":
         return json({ ok: true, live: await liveView(id) })

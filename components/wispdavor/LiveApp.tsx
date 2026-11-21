@@ -151,7 +151,7 @@ export function LiveApp() {
               {t("auto")}
             </label>
           </div>
-          <p className={`rounded-lg border px-3 py-2 text-xs ${readOnly ? "border-emerald-400/30 text-emerald-200" : "border-amber-400/40 text-amber-100"}`}>{readOnly ? t("modeRead") : canWrite ? t("modeWrite") : t("modeNoWriteUser")}</p>
+          <p className={`rounded-lg border px-3 py-2 text-xs ${readOnly ? "border-emerald-400/30 text-emerald-200" : "border-amber-400/40 text-amber-100"}`}>{`${t(`via.${cfg?.protocol ?? "rest"}`)} · ${readOnly ? t("modeRead") : canWrite ? t("modeWrite") : t("modeNoWriteUser")}`}</p>
           {msg && (
             <p role="status" className="rounded-lg border border-white/15 px-3 py-2 text-sm text-zinc-100">
               {msg}
