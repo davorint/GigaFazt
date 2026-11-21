@@ -11,7 +11,8 @@
       "routers": "Routers en vivo · WispDavor",
       "trafico": "Tráfico por cliente · WispDavor",
       "hotspot": "Fichas de hotspot · WispDavor",
-      "monitoreo": "Monitoreo · WispDavor"
+      "monitoreo": "Monitoreo · WispDavor",
+      "cobranza": "Embudo de cobranza · WispDavor"
     },
     "kicker": "Uso interno · Software · WispDavor",
     "title": "WispDavor",
@@ -65,6 +66,10 @@
       "monitoreo": {
         "name": "Monitoreo y fallas",
         "desc": "Sesiones en línea, latencia y pérdida de cada carrier y de cada ONT; fallas detectadas con aviso al equipo y aviso en el portal del cliente."
+      },
+      "cobranza": {
+        "name": "Embudo de cobranza",
+        "desc": "Cada mes: quién se atrasó, a quién se le avisó, a quién se suspendió y quién pagó en cada paso, con los días que tardó."
       }
     },
     "existing": {
@@ -508,6 +513,46 @@
       "pastTitle": "Fallas de los últimos 30 días",
       "pastNone": "Ninguna.",
       "lasted": "duró {min} min"
+    },
+    "cobranza": {
+      "lead": "Sale de Cobranza y de lo que ya queda registrado: un cliente se atrasa con un mes si el día 11 no lo ha pagado. «Avisado» = recibió recordatorio o aviso de corte por WhatsApp (API o enlace de un toque) o quedó «recordado» en Cobranza; «suspendido» = su servicio quedó suspendido por adeudo (no cuenta la suspensión manual). Los días se cuentan desde el día 11.",
+      "offline": "Sin conexión con el servidor: no se ven avisos ni suspensiones, solo atrasos y pagos.",
+      "loading": "Cargando…",
+      "month": "Mes",
+      "funnelTitle": "Atrasados al {day}",
+      "step": {
+        "late": "Se atrasaron",
+        "notified": "Avisados",
+        "suspended": "Suspendidos",
+        "paid": "Pagaron",
+        "owing": "Siguen debiendo"
+      },
+      "paidSplit": "Pagaron solos: {solo} · después del aviso: {aviso} · después de la suspensión: {suspension} · dados de baja sin pagar: {gone}",
+      "median": "Tardaron en pagar (mediana): {days, plural, one {# día} other {# días}} desde el 11.",
+      "noMedian": "Nadie ha pagado ese mes todavía.",
+      "rowsTitle": "Clientes atrasados en {month}",
+      "noneLate": "Nadie se atrasó ese mes.",
+      "tag": {
+        "notified": "avisado",
+        "suspended": "suspendido"
+      },
+      "outcome": {
+        "solo": "pagó solo el {date} ({days} d)",
+        "aviso": "pagó tras el aviso el {date} ({days} d)",
+        "suspension": "pagó tras la suspensión el {date} ({days} d)",
+        "debe": "sigue debiendo",
+        "baja": "dado de baja sin pagar"
+      },
+      "monthsTitle": "Últimos 6 meses",
+      "col": {
+        "month": "Mes",
+        "late": "Atrasados",
+        "notified": "Avisados",
+        "suspended": "Suspendidos",
+        "recovered": "Recuperados",
+        "owing": "Deben",
+        "median": "Días (mediana)"
+      }
     }
   }
 }
