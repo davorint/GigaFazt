@@ -64,6 +64,18 @@
     "finish": "Terminar",
     "confirmNoSign": "¿Terminar sin la firma del cliente?",
     "doneSummary": "Terminado · {photos} fotos · firmó {signer}",
-    "reopen": "Reabrir"
+    "reopen": "Reabrir",
+    "summary": {
+      "title": "Lo que registró el técnico",
+      "arrived": "llegó {when}",
+      "done": "terminó {when}",
+      "notDone": "sin terminar",
+      "signed": "firmó {name}",
+      "notSigned": "sin firma",
+      "where": "dónde marcó la llegada",
+      "photoAlt": "Foto {name}",
+      "signatureAlt": "Firma de {name}",
+      "materials": "Anotó material usado (Materiales → En existencia, movimientos)."
+    }
   }
 }

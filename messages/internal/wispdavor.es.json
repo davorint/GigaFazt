@@ -90,6 +90,8 @@
       "title": "Siguientes pasos",
       "items": [
         "Probar el agente en un router real (los comandos de RouterOS están marcados para verificar).",
+        "Volver a pegar el script en cada router («Llave nueva») para que mande los pings del monitoreo.",
+        "Habilitar el ping en la WAN de las ONT si el monitoreo las marca todas con 100 % de pérdida.",
         "Activar Stripe y Facturama cuando abras las cuentas."
       ]
     },
@@ -509,7 +511,7 @@
       "ontsTitle": "ONT a revisar",
       "ontsHint": "Pierden pings o tardan más de {ms} ms (última hora), peores primero. Puede ser fibra sucia o doblada, el conector, la ONT o el Wi-Fi saturado del cliente.",
       "ontsNone": "Ninguna ONT con pérdida o latencia alta en la última hora.",
-      "ontRow": "{user} · {router} · {rtt} ms · pérdida {loss} · {date}",
+      "ontRow": "{name} ({user}) · {router} · {rtt} ms · pérdida {loss} · {date}",
       "pastTitle": "Fallas de los últimos 30 días",
       "pastNone": "Ninguna.",
       "lasted": "duró {min} min"

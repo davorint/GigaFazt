@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl"
 import { PickField } from "@/components/surveys/SurveyFields"
 import { localToday } from "@/lib/clients/from-lead"
 import { clientLabel } from "@/lib/clients/model"
+import { addMonths } from "@/lib/payments/model"
 import { funnelMonth, funnelMonths, type FunnelEvent, type FunnelMonth } from "@/lib/wispdavor/funnel"
 import { SERIES_COLORS } from "./LineChart"
 import { useWispData } from "./useWispData"
@@ -26,7 +27,7 @@ export function FunnelApp() {
     if (!months.length) return
     void (async () => {
       try {
-        const r = await fetch(`/api/interno/embudo?desde=${months.at(-1)}-01`, { cache: "no-store" })
+        const r = await fetch(`/api/interno/embudo?desde=${addMonths(months.at(-1) ?? "", -3)}-01`, { cache: "no-store" })
         if (!r.ok) throw new Error(String(r.status))
         setEvents(((await r.json()) as { events: FunnelEvent[] }).events)
       } catch {

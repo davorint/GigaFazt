@@ -7,7 +7,8 @@
 import type { Client } from "../clients/model"
 import { addMonths, dueDate, GRACE_DAYS, ledger, type Payment } from "../payments/model"
 
-export type FunnelEvent = { clientId: string; kind: "aviso" | "suspension"; day: string }
+/** aviso: a notice; suspension / activo: a day the client's record had its internet suspended for debt / not suspended. */
+export type FunnelEvent = { clientId: string; kind: "aviso" | "suspension" | "activo"; day: string }
 export type Outcome = "solo" | "aviso" | "suspension" | "debe" | "baja"
 export type FunnelRow = { clientId: string; notified: boolean; suspended: boolean; paidDay: string; days: number | null; outcome: Outcome }
 export type FunnelMonth = { month: string; lateDay: string; rows: FunnelRow[]; late: number; notified: number; suspended: number; paid: Record<"solo" | "aviso" | "suspension", number>; owing: number; gone: number; medianDays: number | null }
@@ -48,7 +49,9 @@ export function funnelMonth(clients: Client[], payments: Payment[], events: Funn
     const end = paidDay || today
     const ev = events.filter((e) => e.clientId === c.id && e.day <= end)
     const notified = ev.some((e) => e.kind === "aviso" && e.day >= dueDate(month))
-    const suspended = ev.some((e) => e.kind === "suspension" && e.day >= lateDay)
+    // Suspended in the window, or already suspended on the late day (the last state seen before it).
+    const before = events.filter((e) => e.clientId === c.id && e.kind !== "aviso" && e.day < lateDay).sort((a, b) => a.day.localeCompare(b.day)).at(-1)
+    const suspended = ev.some((e) => e.kind === "suspension" && e.day >= lateDay) || before?.kind === "suspension"
     const gone = !paidDay && c.services.every((s) => s.status === "cancelado")
     const outcome: Outcome = paidDay ? (suspended ? "suspension" : notified ? "aviso" : "solo") : gone ? "baja" : "debe"
     rows.push({ clientId: c.id, notified, suspended, paidDay, days: paidDay ? between(lateDay, paidDay) : null, outcome })

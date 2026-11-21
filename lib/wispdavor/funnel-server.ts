@@ -26,7 +26,16 @@ export async function funnelEvents(sinceDay: string): Promise<FunnelEvent[]> {
       group by 1, 2`,
     [sinceDay]
   )).rows as { client_id: string; day: string }[]
+  // The days it wasn't (to know whether a suspension from before was still on).
+  const active = (await pool.query(
+    `select client_id, (saved_at at time zone 'America/Mexico_City')::date::text as day from client_versions
+      where saved_at >= $1::date and jsonb_path_exists(data, '$.services[*] ? (@.type == "internet")')
+        and not jsonb_path_exists(data, '$.services[*] ? (@.type == "internet" && @.status == "suspendido" && !(@.hold == true))')
+      group by 1, 2`,
+    [sinceDay]
+  )).rows as { client_id: string; day: string }[]
   return [
+    ...active.map((r) => ({ clientId: r.client_id, kind: "activo" as const, day: r.day })),
     ...sends.map((r) => ({ clientId: r.client_id, kind: "aviso" as const, day: r.day })),
     ...reminded.filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.day)).map((r) => ({ clientId: r.client_id, kind: "aviso" as const, day: r.day })),
     ...suspended.map((r) => ({ clientId: r.client_id, kind: "suspension" as const, day: r.day })),

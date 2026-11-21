@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { loss as lossOf, ONT_SLOW_MS } from "@/lib/wispdavor/monitor"
 import type { MonitorView } from "@/lib/wispdavor/monitor-server"
+import { clientLabel } from "@/lib/clients/model"
 import { LineChart, SERIES_COLORS } from "./LineChart"
+import { useWispData } from "./useWispData"
 
 const pct = (x: number) => `${Math.round(x * 100)} %`
 const ms = (n: number) => (n >= 100 ? n.toFixed(0) : n.toFixed(1))
@@ -35,6 +37,12 @@ export function MonitorApp() {
     return () => window.clearInterval(id)
   }, [load])
   const name = (id: string) => data?.routers.find((r) => r.id === id)?.name ?? id
+  // PPPoE user → the client's name (from Clientes on this phone).
+  const d = useWispData()
+  const who = (user: string) => {
+    const c = d.clients.find((x) => x.services.some((s) => s.pppoeUser.trim() === user))
+    return c ? clientLabel(c) : "—"
+  }
   const open = data?.outages.filter((o) => !o.endedAt) ?? []
   const past = data?.outages.filter((o) => o.endedAt) ?? []
   return (
@@ -141,7 +149,7 @@ export function MonitorApp() {
             {!data.onts.length && <p className="text-sm text-zinc-400">{t("ontsNone")}</p>}
             <ul className="grid gap-1 font-mono text-xs text-zinc-200">
               {data.onts.map((o) => (
-                <li key={`${o.routerId}-${o.user}`}>{t("ontRow", { user: o.user, router: name(o.routerId), rtt: o.rtt === null ? "—" : ms(o.rtt), loss: o.loss === null ? "—" : pct(o.loss), date: when(o.at) })}</li>
+                <li key={`${o.routerId}-${o.user}`}>{t("ontRow", { name: who(o.user), user: o.user, router: name(o.routerId), rtt: o.rtt === null ? "—" : ms(o.rtt), loss: o.loss === null ? "—" : pct(o.loss), date: when(o.at) })}</li>
               ))}
             </ul>
           </section>

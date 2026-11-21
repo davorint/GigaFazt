@@ -9,6 +9,7 @@ import { AdminLinks } from "@/components/interno/AdminLinks"
 import { ReportsApp } from "@/components/reports/ReportsApp"
 import copy from "@/messages/internal/reportes.es.json"
 import mikrotik from "@/messages/internal/mikrotik.es.json"
+import tecnico from "@/messages/internal/tecnico.es.json"
 
 /**
  * /interno/admin/reportes_clientes (owner, 2026-11-18): client service problem reports, opened by staff or from the
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
 }
 
 /** The number field shared with the MikroTik tools reads its "invalid" message from there. */
-const messages = { ...copy, ...syncCopy, mikrotik: { params: { invalid: mikrotik.mikrotik.params.invalid } } }
+const messages = { tecnico: { summary: tecnico.tecnico.summary }, ...copy, ...syncCopy, mikrotik: { params: { invalid: mikrotik.mikrotik.params.invalid } } }
 
 export default async function ReportesClientesPage({ params }: PageProps<"/[locale]/interno/admin/reportes_clientes">) {
   const { locale } = await params

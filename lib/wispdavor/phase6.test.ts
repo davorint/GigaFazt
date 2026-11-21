@@ -33,6 +33,16 @@ describe("WispDavor phase 6: collections funnel", () => {
     expect(Object.fromEntries(f.rows.map((r) => [r.clientId, [r.outcome, r.days]]))).toEqual({ "cli-beto": ["solo", 2], "cli-caro": ["aviso", 9], "cli-dani": ["suspension", 22], "cli-eva": ["debe", null] })
     expect(f.medianDays).toBe(9)
   })
+  it("a suspension still on from an earlier month counts; one lifted before doesn't", () => {
+    const c = [client("fer"), client("gil")]
+    const events = [
+      { clientId: "cli-fer", kind: "suspension" as const, day: "2026-09-20" },
+      { clientId: "cli-gil", kind: "suspension" as const, day: "2026-09-20" },
+      { clientId: "cli-gil", kind: "activo" as const, day: "2026-09-28" },
+    ]
+    const f = funnelMonth(c, [], events, "2026-10", TODAY)
+    expect(Object.fromEntries(f.rows.map((r) => [r.clientId, r.suspended]))).toEqual({ "cli-fer": true, "cli-gil": false })
+  })
   it("months whose 11th has come, newest first", () => {
     expect(funnelMonths("2026-11-21", 3)).toEqual(["2026-11", "2026-10", "2026-09"])
     expect(funnelMonths("2026-11-05", 2)).toEqual(["2026-10", "2026-09"])

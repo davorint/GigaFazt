@@ -9,6 +9,7 @@ import { AgendaApp } from "@/components/agenda/AgendaApp"
 import syncCopy from "@/messages/internal/sync.es.json"
 import agenda from "@/messages/internal/agenda.es.json"
 import clientes from "@/messages/internal/clientes.es.json"
+import tecnico from "@/messages/internal/tecnico.es.json"
 
 /** /interno/admin/agenda (owner, 2026-11-19): installations and visits by day and technician. Behind the /interno password; noindex. */
 export const metadata: Metadata = {
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 }
 
-const messages = { ...clientes, ...agenda, ...syncCopy }
+const messages = { tecnico: { summary: tecnico.tecnico.summary }, ...clientes, ...agenda, ...syncCopy }
 
 export default async function AgendaPage({ params }: PageProps<"/[locale]/interno/admin/agenda">) {
   const { locale } = await params

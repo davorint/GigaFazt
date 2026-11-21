@@ -16,6 +16,7 @@ import { clientLabel } from "@/lib/clients/model"
 import { localToday } from "@/lib/clients/from-lead"
 import { whatsappHref } from "@/lib/contact"
 import { ScheduleForm, TimeField, WhoField, useTechnicians } from "./ScheduleForm"
+import { FieldSummary } from "@/components/tecnico/FieldSummary"
 
 type T = ReturnType<typeof useTranslations>
 const SMALL = "inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -223,6 +224,7 @@ function ApptRow({ t, a, open, onToggle, showDate }: { t: T; a: Appointment; ope
               </a>
             )}
           </div>
+          <FieldSummary f={a.field} />
           <RecordHistory kind="agenda" id={a.id} />
           <button type="button" onClick={() => window.confirm(t("confirmRemove")) && agendaStore.remove(a.id)} className={DANGER}>
             {t("remove")}

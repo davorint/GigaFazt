@@ -39,6 +39,7 @@ import {
 } from "@/lib/reports/model"
 import { reportsStore } from "@/lib/reports/store"
 import { AlertsBox } from "./AlertsBox"
+import { FieldSummary } from "@/components/tecnico/FieldSummary"
 
 type T = ReturnType<typeof useTranslations>
 const SMALL = "inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -451,6 +452,7 @@ function ReportEditor({ t, r, all, clients, sites }: { t: T; r: Report; all: Rep
         </section>
       )}
 
+      <FieldSummary f={r.field} />
       <RecordHistory kind="reports" id={r.id} />
       <button
         type="button"
