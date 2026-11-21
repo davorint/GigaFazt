@@ -630,7 +630,8 @@
         "closed": "El router cerró la conexión.",
         "protocol": "Respuesta de la API no válida.",
         "bad-op": "Operación no válida.",
-        "protocol-choice": "Modo no válido."
+        "protocol-choice": "Modo no válido.",
+        "key-changed": "Las contraseñas guardadas no se pueden leer: cambió ROUTER_CRED_KEY. Vuelve a escribirlas y guarda."
       },
       "mode": "Modo de conexión",
       "modes": {
@@ -702,7 +703,8 @@
       "via": {
         "rest": "Por API REST",
         "api": "Por API de MikroTik"
-      }
+      },
+      "allClients": "Este router no tiene despliegue: se muestran los clientes de todos (asígnale uno en Routers en vivo)."
     }
   }
 }

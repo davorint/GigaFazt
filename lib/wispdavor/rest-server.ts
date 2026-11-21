@@ -180,72 +180,121 @@ function viaRest(r: Row, user: string, pass: string, op: Op, sock: TLSSocket): P
   })
 }
 
-/** One MikroTik API session over TLS: login (plain text, inside TLS), the command, then close. */
-function viaApi(user: string, pass: string, op: Op, sock: TLSSocket): Promise<Records> {
-  return new Promise((resolve, reject) => {
-    let buf: Buffer = Buffer.alloc(0)
-    let pending: string[][] = []
-    let phase: "login" | "cmd" = "login"
-    let size = 0
-    const done = (e: RestError | null, out: Records = []) => {
-      clearTimeout(timer)
-      sock.removeAllListeners("data")
+const trapCode = (m: string) => (/not enough permissions|not allowed/.test(m) ? "denied" : /no such item|no such command/.test(m) ? "not-found" : "trap")
+
+/**
+ * One MikroTik API session over TLS: login once (plain text, inside TLS), then any number of commands one after the
+ * other, then close. One session per screen keeps the router's API sessions (max-sessions) and handshakes down.
+ */
+async function apiSession(host: string, port: number, fingerprint: string, user: string, pass: string) {
+  const sock = await tlsConnect(host, port, fingerprint)
+  let buf: Buffer = Buffer.alloc(0)
+  let pending: string[][] = []
+  let size = 0
+  let dead: RestError | null = null
+  let waiter: { resolve: (r: ReturnType<typeof collectReply>) => void; reject: (e: RestError) => void; timer: ReturnType<typeof setTimeout> } | null = null
+  const kill = (e: RestError) => {
+    dead ??= e
+    const w = waiter
+    waiter = null
+    if (w) {
+      clearTimeout(w.timer)
+      w.reject(e)
+    }
+    sock.destroy()
+  }
+  sock.on("data", (chunk: Buffer) => {
+    size += chunk.length
+    if (size > 8 * 1024 * 1024) return kill(new RestError("too-big"))
+    buf = Buffer.concat([buf, chunk])
+    let read: ReturnType<typeof readSentences>
+    try {
+      read = readSentences(buf)
+    } catch {
+      return kill(new RestError("protocol"))
+    }
+    buf = read.rest
+    pending = [...pending, ...read.sentences]
+    const reply = collectReply(pending)
+    if (!reply.finished) return
+    pending = []
+    size = 0
+    if (reply.fatal) return kill(new RestError("fatal", reply.fatal))
+    const w = waiter
+    waiter = null
+    if (w) {
+      clearTimeout(w.timer)
+      w.resolve(reply)
+    }
+  })
+  sock.on("error", (e) => kill(new RestError("unreachable", e.message.slice(0, 160))))
+  sock.on("close", () => kill(new RestError("closed")))
+  const send = (words: string[]) =>
+    new Promise<ReturnType<typeof collectReply>>((resolve, reject) => {
+      if (dead) return reject(dead)
+      waiter = { resolve, reject, timer: setTimeout(() => kill(new RestError("timeout")), TIMEOUT_MS) }
+      sock.write(encodeSentence(words))
+    })
+  const login = await send(["/login", `=name=${user}`, `=password=${pass}`])
+  if (login.trap) {
+    sock.destroy()
+    throw new RestError(/invalid user name or password|not allowed/i.test(login.trap) ? "auth" : "trap", login.trap)
+  }
+  return {
+    async run(op: Op): Promise<Records> {
+      const r = await send(opToApi(op))
+      if (r.trap) throw new RestError(trapCode(r.trap), r.trap)
+      // A command with no records (execute, set) answers in !done's attributes (=ret=…).
+      return r.records.length ? r.records : r.done && Object.keys(r.done).length ? [r.done] : []
+    },
+    close: () => {
       sock.end()
       sock.destroy()
-      if (e) reject(e)
-      else resolve(out)
+    },
+  }
+}
+
+type Call = (op: Op) => Promise<Records>
+
+/**
+ * A connection to a router over its chosen mode, for one screen's worth of operations. `write`: whether any of them
+ * changes something; then the router must not be in read-only mode and a write user must be set, and the write user is
+ * used; otherwise the read user, and a write slipping in is refused before it leaves.
+ */
+export async function withRouter<T>(routerId: string, write: boolean, fn: (call: Call) => Promise<T>): Promise<T> {
+  const r = await row(routerId)
+  if (!r?.host) throw new RestError("not-configured")
+  if (write && r.read_only) throw new RestError("read-only")
+  const user = write ? r.write_user : r.read_user
+  const sealed = write ? r.write_pass : r.read_pass
+  if (!user || !sealed) throw new RestError(write ? "no-write-user" : "no-read-user")
+  const pass = open(sealed)
+  // Saved but unreadable: ROUTER_CRED_KEY is missing or changed since it was saved.
+  if (!pass) throw new RestError(credKeySet() ? "key-changed" : "no-key")
+  const check = (op: Op) => {
+    const bad = opProblem(op)
+    if (bad) throw new RestError("bad-op", bad)
+    if (!write && !isReadOp(op)) throw new RestError("read-only")
+  }
+  if (protocolOf(r.protocol) === "api") {
+    const s = await apiSession(r.host, r.api_port, r.fingerprint, user, pass)
+    try {
+      return await fn(async (op) => {
+        check(op)
+        return s.run(op)
+      })
+    } finally {
+      s.close()
     }
-    const timer = setTimeout(() => done(new RestError("timeout")), TIMEOUT_MS)
-    sock.on("data", (chunk: Buffer) => {
-      size += chunk.length
-      if (size > 8 * 1024 * 1024) return done(new RestError("too-big"))
-      buf = Buffer.concat([buf, chunk])
-      let read: ReturnType<typeof readSentences>
-      try {
-        read = readSentences(buf)
-      } catch {
-        return done(new RestError("protocol"))
-      }
-      buf = read.rest
-      pending = [...pending, ...read.sentences]
-      const reply = collectReply(pending)
-      if (!reply.finished) return
-      pending = []
-      if (reply.fatal) return done(new RestError("fatal", reply.fatal))
-      if (phase === "login") {
-        if (reply.trap) return done(new RestError(/invalid user name or password|not allowed/i.test(reply.trap) ? "auth" : "trap", reply.trap))
-        phase = "cmd"
-        sock.write(encodeSentence(opToApi(op)))
-        return
-      }
-      if (reply.trap) return done(new RestError(/not enough permissions|not allowed/.test(reply.trap) ? "denied" : /no such item|no such command/.test(reply.trap) ? "not-found" : "trap", reply.trap))
-      // A command with no records (execute, set) answers in !done's attributes (=ret=…).
-      done(null, reply.records.length ? reply.records : reply.done && Object.keys(reply.done).length ? [reply.done] : [])
-    })
-    sock.once("error", (e) => done(new RestError("unreachable", e.message.slice(0, 160))))
-    sock.once("close", () => done(new RestError("closed")))
-    sock.write(encodeSentence(["/login", `=name=${user}`, `=password=${pass}`]))
+  }
+  return fn(async (op) => {
+    check(op)
+    return viaRest(r, user, pass, op, await tlsConnect(r.host, r.port, r.fingerprint))
   })
 }
 
-/**
- * One operation on a router, over its chosen mode. Reading goes with the read user; anything else only when the router
- * isn't in read-only mode and a write user is set. Answers the records.
- */
-export async function routerCall(routerId: string, op: Op): Promise<Records> {
-  const r = await row(routerId)
-  if (!r?.host) throw new RestError("not-configured")
-  const bad = opProblem(op)
-  if (bad) throw new RestError("bad-op", bad)
-  const reading = isReadOp(op)
-  if (!reading && r.read_only) throw new RestError("read-only")
-  const user = reading ? r.read_user : r.write_user
-  const pass = open(reading ? r.read_pass : r.write_pass)
-  if (!user || !pass) throw new RestError(reading ? "no-read-user" : "no-write-user")
-  const api = protocolOf(r.protocol) === "api"
-  const sock = await tlsConnect(r.host, api ? r.api_port : r.port, r.fingerprint)
-  return api ? viaApi(user, pass, op, sock) : viaRest(r, user, pass, op, sock)
-}
+/** One operation on a router (its own connection). */
+export const routerCall = (routerId: string, op: Op) => withRouter(routerId, !isReadOp(op), (call) => call(op))
 
 const first = (rs: Records) => rs[0] ?? {}
 
@@ -268,11 +317,15 @@ export async function testRouter(routerId: string) {
 }
 
 export async function liveView(routerId: string): Promise<LiveView> {
-  // One at a time: each API call is its own session, and the router caps sessions per service (max-sessions).
-  const res = first(await routerCall(routerId, { kind: "print", menu: "/system/resource" }))
-  const ifs = await routerCall(routerId, { kind: "print", menu: "/interface", proplist: ["name", "type", "running", "disabled"] })
-  const act = await routerCall(routerId, { kind: "print", menu: "/ppp/active", proplist: ["name", "address", "uptime", "caller-id"] })
-  const log = await routerCall(routerId, { kind: "print", menu: "/log", proplist: ["time", "topics", "message"] })
+  return withRouter(routerId, false, (call) => liveWith(routerId, call))
+}
+
+async function liveWith(routerId: string, call: Call): Promise<LiveView> {
+  // One after the other on one connection (the API takes one command at a time per session).
+  const res = first(await call({ kind: "print", menu: "/system/resource" }))
+  const ifs = await call({ kind: "print", menu: "/interface", proplist: ["name", "type", "running", "disabled"] })
+  const act = await call({ kind: "print", menu: "/ppp/active", proplist: ["name", "address", "uptime", "caller-id"] })
+  const log = await call({ kind: "print", menu: "/log", proplist: ["time", "topics", "message"] })
   const interfaces = ifs
     .filter((i) => !String(i.type).startsWith("pppoe-in"))
     .map((i) => ({ name: String(i.name ?? ""), type: String(i.type ?? ""), running: bool(i.running), disabled: bool(i.disabled), rx: 0, tx: 0 }))
@@ -280,7 +333,7 @@ export async function liveView(routerId: string): Promise<LiveView> {
   const watch = interfaces.filter((i) => i.running && !i.disabled).slice(0, 12)
   if (watch.length) {
     try {
-      for (const r of await routerCall(routerId, { kind: "cmd", menu: "/interface", cmd: "monitor-traffic", params: { interface: watch.map((i) => i.name).join(","), once: "" }, proplist: RATE_PROPS })) {
+      for (const r of await call({ kind: "cmd", menu: "/interface", cmd: "monitor-traffic", params: { interface: watch.map((i) => i.name).join(","), once: "" }, proplist: RATE_PROPS })) {
         const i = interfaces.find((x) => x.name === r.name)
         if (i) {
           i.rx = num(r["rx-bits-per-second"])
@@ -315,12 +368,16 @@ export type ClientLive = {
 
 export async function clientLive(routerId: string, user: string): Promise<ClientLive> {
   if (!safe(user)) throw new RestError("bad-user")
-  const s = (await routerCall(routerId, { kind: "print", menu: "/ppp/secret", where: { name: user } }))[0]
-  const a = (await routerCall(routerId, { kind: "print", menu: "/ppp/active", where: { name: user } }))[0]
+  return withRouter(routerId, false, (call) => clientWith(call, user))
+}
+
+async function clientWith(call: Call, user: string): Promise<ClientLive> {
+  const s = (await call({ kind: "print", menu: "/ppp/secret", where: { name: user } }))[0]
+  const a = (await call({ kind: "print", menu: "/ppp/active", where: { name: user } }))[0]
   let rate: ClientLive["rate"] = null
   if (a) {
     try {
-      const r = (await routerCall(routerId, { kind: "cmd", menu: "/interface", cmd: "monitor-traffic", params: { interface: `<pppoe-${user}>`, once: "" }, proplist: RATE_PROPS }))[0]
+      const r = (await call({ kind: "cmd", menu: "/interface", cmd: "monitor-traffic", params: { interface: `<pppoe-${user}>`, once: "" }, proplist: RATE_PROPS }))[0]
       // From the router's side: what it sends the client (tx) is the client's download.
       if (r) rate = { rx: num(r["rx-bits-per-second"]), tx: num(r["tx-bits-per-second"]) }
     } catch {
@@ -363,14 +420,15 @@ export async function restAct(routerId: string, action: RestAction, user: string
   if ((action === "reconnect" || action === "plan") && !safe(profile)) throw new RestError("no-plan")
   let error = ""
   try {
-    const secret = (await routerCall(routerId, { kind: "print", menu: "/ppp/secret", where: { name: user }, proplist: [".id", "name"] }))[0]
-    if (!secret) throw new RestError("no-secret")
-    const id = String(secret[".id"] ?? "")
-    if (profile) await routerCall(routerId, { kind: "set", menu: "/ppp/secret", id, props: { profile } })
-    if (action === "disable" || action === "enable") await routerCall(routerId, { kind: "set", menu: "/ppp/secret", id, props: { disabled: action === "disable" ? "yes" : "no" } })
-    // Drop the session so the change applies now (not for enable: there's none).
-    if (action !== "enable")
-      for (const a of await routerCall(routerId, { kind: "print", menu: "/ppp/active", where: { name: user }, proplist: [".id"] })) await routerCall(routerId, { kind: "remove", menu: "/ppp/active", id: String(a[".id"]) })
+    await withRouter(routerId, true, async (call) => {
+      const secret = (await call({ kind: "print", menu: "/ppp/secret", where: { name: user }, proplist: [".id", "name"] }))[0]
+      if (!secret) throw new RestError("no-secret")
+      const id = String(secret[".id"] ?? "")
+      if (profile) await call({ kind: "set", menu: "/ppp/secret", id, props: { profile } })
+      if (action === "disable" || action === "enable") await call({ kind: "set", menu: "/ppp/secret", id, props: { disabled: action === "disable" ? "yes" : "no" } })
+      // Drop the session so the change applies now (not for enable: there's none).
+      if (action !== "enable") for (const a of await call({ kind: "print", menu: "/ppp/active", where: { name: user }, proplist: [".id"] })) await call({ kind: "remove", menu: "/ppp/active", id: String(a[".id"]) })
+    })
   } catch (e) {
     error = e instanceof RestError ? e.code : "error"
     throw e

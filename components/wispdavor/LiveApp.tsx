@@ -11,7 +11,7 @@ import { bps } from "@/lib/wispdavor/rest"
 import type { ClientLive, LiveView, RestAction, RestView } from "@/lib/wispdavor/rest-server"
 import { useWispData } from "./useWispData"
 
-type Routers = { id: string; name: string }[]
+type Routers = { id: string; name: string; siteId: string }[]
 type Backup = { id: string; at: string; by: string; size: number }
 const headers = () => ({ "content-type": "application/json", "x-interno-nombre": encodeURIComponent(readState().name) })
 const when = (t: string) => new Date(t).toLocaleString("es-MX", { timeZone: "America/Mexico_City", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
@@ -96,9 +96,15 @@ export function LiveApp() {
     const h = window.setInterval(() => void refresh(), 15000)
     return () => window.clearInterval(h)
   }, [auto, refresh])
+  // The clients of this router's deployment (all of them when the router has none set).
+  const site = routers?.find((r) => r.id === id)?.siteId ?? ""
   const users = useMemo(
-    () => d.clients.flatMap((c) => c.services.filter((s) => s.type === "internet" && s.pppoeUser.trim()).map((s) => ({ value: s.pppoeUser.trim(), label: `${clientLabel(c)} · ${s.pppoeUser.trim()}`, plan: s.plan.trim() }))),
-    [d.clients]
+    () =>
+      d.clients
+        .filter((c) => !site || c.siteId === site)
+        .flatMap((c) => c.services.filter((s) => s.type === "internet" && s.status !== "cancelado" && s.pppoeUser.trim()).map((s) => ({ value: s.pppoeUser.trim(), label: `${clientLabel(c)} · ${s.pppoeUser.trim()}`, plan: s.plan.trim() })))
+        .sort((a, b) => a.label.localeCompare(b.label, "es")),
+    [d.clients, site]
   )
   const lookup = async (u: string) => {
     setUser(u)
@@ -229,6 +235,7 @@ export function LiveApp() {
             <h2 id="lv-cl" className="text-lg font-light text-foreground">
               {t("client")}
             </h2>
+            {!site && <p className="text-xs text-zinc-400">{t("allClients")}</p>}
             <PickField label={t("pickClient")} value={user} onChange={(u) => void lookup(u)} options={[{ value: "", label: "—" }, ...users.map((u) => ({ value: u.value, label: u.label }))]} />
             {client && (
               <div className="grid gap-3 text-sm">
