@@ -3,12 +3,12 @@ import { NextIntlClientProvider } from "next-intl"
 import { setRequestLocale } from "next-intl/server"
 import { notFound } from "next/navigation"
 import { AdminLinks } from "@/components/interno/AdminLinks"
-import { DavorOltApp } from "@/components/davorolt/DavorOltApp"
+import { DavorOltIndex } from "@/components/davorolt/DavorOltIndex"
 import davorolt from "@/messages/internal/davorolt.es.json"
 
 /**
  * /interno/software/davorolt (owner, 2026-11-21): command tools for the Huawei MA5608T, in the spirit of AdminOLT and
- * SmartOLT (lib/davorolt). Behind the /interno password (proxy.ts); Spanish only, noindex; works offline once opened.
+ * SmartOLT (lib/davorolt): the OLT's data and every tool, each on its own page ([tool]). Behind the /interno password (proxy.ts); Spanish only, noindex; works offline once opened.
  */
 const t = davorolt.davorolt
 
@@ -35,7 +35,7 @@ export default async function DavorOltPage({ params }: PageProps<"/[locale]/inte
         <AdminLinks current="software" />
       </section>
       <NextIntlClientProvider locale="es" messages={davorolt}>
-        <DavorOltApp />
+        <DavorOltIndex />
       </NextIntlClientProvider>
     </main>
   )

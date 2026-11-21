@@ -1,6 +1,8 @@
 {
   "davorolt": {
-    "meta": { "title": "DavorOLT · GigaFazt interno" },
+    "meta": {
+      "title": "DavorOLT · GigaFazt interno"
+    },
     "kicker": "Uso interno · Software",
     "title": "DavorOLT",
     "lead": "Las herramientas de la OLT Huawei MA5608T (V800R018): eliges la tarea, llenas los datos y sale el comando listo para pegar por SSH o Telnet. Nada se guarda en la base de datos y DavorOLT nunca se conecta a la OLT.",
@@ -51,7 +53,6 @@
       "onu": "Administrar ONUs",
       "install": "Instalación y servicios"
     },
-    "pick": "Herramienta",
     "copy": "Copiar",
     "copied": "Copiado",
     "pages": "Manual (PDF): {list}",
@@ -73,62 +74,191 @@
     },
     "infoOnly": "Esta herramienta es una explicación: no hay comando de OLT para ella.",
     "fields": {
-      "ntp": { "label": "Servidor NTP (IP, opcional)" },
-      "user": { "label": "Usuario (6 a 15 caracteres)" },
-      "info": { "label": "Dato extra (opcional, hasta 30)" },
-      "community": { "label": "Comunidad SNMP de lectura (opcional)", "hint": "8 a 32 caracteres; nunca «public»." },
-      "wgPort": { "label": "Puerto UDP de WireGuard" },
-      "wgNet": { "label": "IP del túnel en el MikroTik (con /máscara)" },
-      "peerKey": { "label": "Llave pública de tu equipo", "hint": "La da la app de WireGuard de tu laptop o teléfono." },
-      "peerIp": { "label": "IP del túnel para tu equipo" },
-      "wan": { "label": "Interfaz WAN del MikroTik" },
-      "extPort": { "label": "Puerto externo" },
-      "proto": { "label": "Acceso" },
-      "adminIp": { "label": "IP pública desde donde entras", "hint": "Solo esa IP podrá llegar a la OLT." },
-      "vlan": { "label": "VLAN" },
-      "vlanType": { "label": "Tipo" },
-      "slot": { "label": "Tarjeta (slot)" },
-      "ports": { "label": "Puertos de la tarjeta" },
-      "how": { "label": "Cómo" },
-      "server": { "label": "IP del servidor" },
-      "file": { "label": "Nombre del archivo" },
-      "slots": { "label": "Tarjetas GPON instaladas" },
-      "port": { "label": "Puerto PON", "hint": "0 a 15." },
-      "ontId": { "label": "ONT-ID", "hint": "0 a 127, libre en ese puerto." },
-      "sn": { "label": "Número de serie (SN)", "hint": "Como sale en «display ont autofind» (16 caracteres) o como la etiqueta (HWTC1A2B3C4D)." },
-      "desc": { "label": "Descripción (cliente)" },
-      "plan": { "label": "Plan" },
-      "spIndex": { "label": "Índice del service-port", "hint": "Vacío: la OLT pone el siguiente libre." },
-      "pppoeUser": { "label": "Usuario PPPoE", "hint": "Opcional al autorizar: si lo llenas, la ONU queda marcando. Sin espacios ni comillas." },
-      "pppoePass": { "label": "Contraseña PPPoE", "hint": "No se guarda en ningún lado." },
-      "iptv": { "label": "¿Lleva TV (IPTV)?", "hint": "Necesita la VLAN de IPTV en los datos de tu OLT." },
-      "iptvIndex": { "label": "Índice del service-port de TV", "hint": "Uno libre y distinto al de internet: revísalo con «display service-port all»." },
-      "state": { "label": "Estado" },
-      "toSlot": { "label": "Tarjeta nueva" },
-      "toPort": { "label": "Puerto PON nuevo" },
-      "toOntId": { "label": "ONT-ID nuevo" },
-      "newSn": { "label": "SN de la ONU nueva (para cambiar el equipo)" },
-      "ip": { "label": "IP" },
-      "mask": { "label": "Máscara" },
-      "gateway": { "label": "Puerta de enlace" },
-      "dns1": { "label": "DNS 1" },
-      "dns2": { "label": "DNS 2" },
-      "eth": { "label": "Puerto LAN de la ONU", "hint": "1 a 4." }
+      "ntp": {
+        "label": "Servidor NTP (IP, opcional)"
+      },
+      "user": {
+        "label": "Usuario (6 a 15 caracteres)"
+      },
+      "info": {
+        "label": "Dato extra (opcional, hasta 30)"
+      },
+      "community": {
+        "label": "Comunidad SNMP de lectura (opcional)",
+        "hint": "8 a 32 caracteres; nunca «public»."
+      },
+      "wgPort": {
+        "label": "Puerto UDP de WireGuard"
+      },
+      "wgNet": {
+        "label": "IP del túnel en el MikroTik (con /máscara)"
+      },
+      "peerKey": {
+        "label": "Llave pública de tu equipo",
+        "hint": "La da la app de WireGuard de tu laptop o teléfono."
+      },
+      "peerIp": {
+        "label": "IP del túnel para tu equipo"
+      },
+      "wan": {
+        "label": "Interfaz WAN del MikroTik"
+      },
+      "extPort": {
+        "label": "Puerto externo"
+      },
+      "proto": {
+        "label": "Acceso"
+      },
+      "adminIp": {
+        "label": "IP pública desde donde entras",
+        "hint": "Solo esa IP podrá llegar a la OLT."
+      },
+      "vlan": {
+        "label": "VLAN"
+      },
+      "vlanType": {
+        "label": "Tipo"
+      },
+      "slot": {
+        "label": "Tarjeta (slot)"
+      },
+      "ports": {
+        "label": "Puertos de la tarjeta"
+      },
+      "how": {
+        "label": "Cómo"
+      },
+      "server": {
+        "label": "IP del servidor"
+      },
+      "file": {
+        "label": "Nombre del archivo"
+      },
+      "slots": {
+        "label": "Tarjetas GPON instaladas"
+      },
+      "port": {
+        "label": "Puerto PON",
+        "hint": "0 a 15."
+      },
+      "ontId": {
+        "label": "ONT-ID",
+        "hint": "0 a 127, libre en ese puerto."
+      },
+      "sn": {
+        "label": "Número de serie (SN)",
+        "hint": "Como sale en «display ont autofind» (16 caracteres) o como la etiqueta (HWTC1A2B3C4D)."
+      },
+      "desc": {
+        "label": "Descripción (cliente)"
+      },
+      "plan": {
+        "label": "Plan"
+      },
+      "spIndex": {
+        "label": "Índice del service-port",
+        "hint": "Vacío: la OLT pone el siguiente libre."
+      },
+      "pppoeUser": {
+        "label": "Usuario PPPoE",
+        "hint": "Opcional al autorizar: si lo llenas, la ONU queda marcando. Sin espacios ni comillas."
+      },
+      "pppoePass": {
+        "label": "Contraseña PPPoE",
+        "hint": "No se guarda en ningún lado."
+      },
+      "iptv": {
+        "label": "¿Lleva TV (IPTV)?",
+        "hint": "Necesita la VLAN de IPTV en los datos de tu OLT."
+      },
+      "iptvIndex": {
+        "label": "Índice del service-port de TV",
+        "hint": "Uno libre y distinto al de internet: revísalo con «display service-port all»."
+      },
+      "state": {
+        "label": "Estado"
+      },
+      "toSlot": {
+        "label": "Tarjeta nueva"
+      },
+      "toPort": {
+        "label": "Puerto PON nuevo"
+      },
+      "toOntId": {
+        "label": "ONT-ID nuevo"
+      },
+      "newSn": {
+        "label": "SN de la ONU nueva (para cambiar el equipo)"
+      },
+      "ip": {
+        "label": "IP"
+      },
+      "mask": {
+        "label": "Máscara"
+      },
+      "gateway": {
+        "label": "Puerta de enlace"
+      },
+      "dns1": {
+        "label": "DNS 1"
+      },
+      "dns2": {
+        "label": "DNS 2"
+      },
+      "eth": {
+        "label": "Puerto LAN de la ONU",
+        "hint": "1 a 4."
+      },
+      "routerPort": {
+        "label": "Puerto del MikroTik hacia la OLT"
+      }
     },
     "options": {
-      "vlanType": { "smart": "smart (servicio de clientes)", "standard": "standard (administración)" },
-      "ports": { "8": "8 (GPBD)", "16": "16 (GPFD)" },
-      "how": { "ftp": "FTP", "tftp": "TFTP", "dhcp": "DHCP", "static": "IP fija" },
-      "proto": { "ssh": "SSH (puerto 22)", "telnet": "Telnet (puerto 23)" },
-      "slots": { "1": "Solo la del slot 1", "0": "Solo la del slot 0", "01": "Las dos (slots 0 y 1)" },
-      "iptv": { "no": "No", "si": "Sí" },
-      "state": { "activate": "Activar", "deactivate": "Desactivar (cortar)", "on": "Encendido", "off": "Apagado" },
-      "slot": { "0": "0", "1": "1" },
-      "toSlot": { "0": "0", "1": "1" }
+      "vlanType": {
+        "smart": "smart (servicio de clientes)",
+        "standard": "standard (administración)"
+      },
+      "ports": {
+        "8": "8 (GPBD)",
+        "16": "16 (GPFD)"
+      },
+      "how": {
+        "ftp": "FTP",
+        "tftp": "TFTP",
+        "dhcp": "DHCP",
+        "static": "IP fija"
+      },
+      "proto": {
+        "ssh": "SSH (puerto 22)",
+        "telnet": "Telnet (puerto 23)"
+      },
+      "slots": {
+        "1": "Solo la del slot 1",
+        "0": "Solo la del slot 0",
+        "01": "Las dos (slots 0 y 1)"
+      },
+      "iptv": {
+        "no": "No",
+        "si": "Sí"
+      },
+      "state": {
+        "activate": "Activar",
+        "deactivate": "Desactivar (cortar)",
+        "on": "Encendido",
+        "off": "Apagado"
+      },
+      "slot": {
+        "0": "0",
+        "1": "1"
+      },
+      "toSlot": {
+        "0": "0",
+        "1": "1"
+      }
     },
     "tools": {
       "inicial": {
-        "name": "Configuración inicial OLT nueva",
+        "name": "Configuración Inicial OLT Nueva - Huawei",
         "desc": "Nombre, hora de México, VLAN e IP de administración por el uplink y su ruta.",
         "notes": [
           "De fábrica entra con usuario root y contraseña admin (manual p. 55): cámbiala al terminar (Recomendaciones de seguridad).",
@@ -146,7 +276,7 @@
         ]
       },
       "acceso": {
-        "name": "Agregar OLT (acceso remoto)",
+        "name": "Agregar OLT",
         "desc": "SSH con usuario y contraseña, y SNMP de lectura para monitorear.",
         "notes": [
           "Telnet manda la contraseña sin cifrar: usa SSH y entra por WireGuard o con la redirección limitada a tu IP.",
@@ -154,7 +284,7 @@
         ]
       },
       "sinIp": {
-        "name": "Conectar OLT sin IP pública",
+        "name": "Conectar OLT Sin IP Pública",
         "desc": "Un túnel WireGuard en el MikroTik del despliegue para llegar a la OLT desde fuera.",
         "notes": [
           "En tu laptop o teléfono: instala WireGuard, crea un túnel, copia su llave pública aquí. En el túnel pon como Endpoint la IP pública del MikroTik y como AllowedIPs la red de administración de la OLT.",
@@ -165,9 +295,9 @@
         "name": "Redirección de puertos Huawei",
         "desc": "Un puerto del MikroTik que lleva a la OLT, solo desde tu IP.",
         "notes": [
-          "Configuraciones en Mikrotik: estos comandos van en el MikroTik, no en la OLT.",
+          "Estos comandos van en el MikroTik del despliegue, no en la OLT.",
           "Nunca abras 22 o 23 a todo internet: la lista davorolt-admin deja pasar solo tu IP.",
-          "Necesita IP pública en el MikroTik; si no hay, usa «Conectar OLT sin IP pública»."
+          "Necesita IP pública en el MikroTik; si no hay, usa «Conectar OLT Sin IP Pública»."
         ]
       },
       "vlan": {
@@ -180,20 +310,26 @@
       "pon": {
         "name": "Habilitar PON",
         "desc": "Activa el descubrimiento de ONUs en cada puerto de una tarjeta GPON.",
-        "notes": ["Sin esto, una ONU nueva no aparece en «ONU's no autorizadas»."]
+        "notes": [
+          "Sin esto, una ONU nueva no aparece en «ONU's no autorizadas»."
+        ]
       },
       "uplink": {
-        "name": "Habilitar puerto uplink",
+        "name": "Habilitar puerto Uplink",
         "desc": "Pasa todas las VLAN de tus datos por el uplink y revisa su estado.",
-        "notes": ["En el MA5608T el uplink está en la tarjeta de control (slot 2 o 3). El estado del puerto debe salir activo."]
+        "notes": [
+          "En el MA5608T el uplink está en la tarjeta de control (slot 2 o 3). El estado del puerto debe salir activo."
+        ]
       },
       "tarjeta": {
-        "name": "Confirmar tarjeta - Huawei",
+        "name": "Confirmar Tarjeta - Huawei",
         "desc": "Confirma las tarjetas nuevas (Auto_find) y revisa que queden Normal.",
-        "notes": ["Una tarjeta recién puesta sale como Auto_find hasta confirmarla (manual p. 98)."]
+        "notes": [
+          "Una tarjeta recién puesta sale como Auto_find hasta confirmarla (manual p. 98)."
+        ]
       },
       "seguridad": {
-        "name": "Recomendaciones de seguridad",
+        "name": "Recomendaciones de Seguridad",
         "desc": "Contraseña de root, protecciones contra suplantación y ataques.",
         "notes": [
           "Cambia la contraseña de root («terminal user password» la pide) y usa tu propio usuario administrador.",
@@ -204,7 +340,7 @@
         ]
       },
       "perfiles": {
-        "name": "Crear perfiles de línea (Line profiles)",
+        "name": "Crear perfiles de Línea (Line profiles)",
         "desc": "Para cada plan: perfil DBA, perfil de línea y, si aplica, tabla de tráfico; y el perfil de servicio.",
         "notes": [
           "Se crean desde el ID 10, en el orden de tus planes. Si cambias los planes, vuelve a generarlos.",
@@ -214,10 +350,12 @@
       "backup": {
         "name": "Backup - OLT Huawei",
         "desc": "Guarda, respalda la configuración a un servidor y deja el guardado automático cada día.",
-        "notes": ["Necesitas un servidor FTP o TFTP que la OLT alcance (por ejemplo en la red de administración)."]
+        "notes": [
+          "Necesitas un servidor FTP o TFTP que la OLT alcance (por ejemplo en la red de administración)."
+        ]
       },
       "todo": {
-        "name": "Aplicar configuración inicial",
+        "name": "Aplicar Configuración Inicial",
         "desc": "Todo junto para una OLT nueva: inicial, tarjetas, VLAN, PON, perfiles e IPTV.",
         "notes": [
           "Revísalo antes de pegar. Los comandos de IGMP preguntan (y/n): responde y.",
@@ -236,20 +374,26 @@
       "preautorizar": {
         "name": "Pre-autorizar ONU",
         "desc": "La das de alta con su SN antes de conectarla; queda en línea al enchufarla.",
-        "notes": ["Igual que Autorizar, pero con «ont add» (manual p. 206)."]
+        "notes": [
+          "Igual que Autorizar, pero con «ont add» (manual p. 206)."
+        ]
       },
       "eliminar": {
         "name": "Eliminar ONU",
         "desc": "Quita sus service-ports y la borra de la OLT.",
-        "notes": ["El cliente se queda sin servicio. Para cortar sin borrar usa «Habilitar/Deshabilitar ONU»."]
+        "notes": [
+          "El cliente se queda sin servicio. Para cortar sin borrar usa «Habilitar/Deshabilitar ONU»."
+        ]
       },
       "reiniciar": {
         "name": "Reiniciar ONU",
         "desc": "Reinicia la ONU desde la OLT.",
-        "notes": ["El cliente pierde el servicio mientras reinicia."]
+        "notes": [
+          "El cliente pierde el servicio mientras reinicia."
+        ]
       },
       "plan": {
-        "name": "Cambiar de plan de velocidad a ONU",
+        "name": "Cambiar de Plan de Velocidad a ONU",
         "desc": "Le pone el perfil de línea del plan nuevo y rehace su service-port.",
         "notes": [
           "El índice actual sale con el primer comando (display service-port).",
@@ -257,8 +401,8 @@
         ]
       },
       "detalles": {
-        "name": "Ver detalles de ONU",
-        "desc": "Estado, niveles ópticos, WAN, capacidades y service-ports. Incluye las herramientas de detalles de ONU.",
+        "name": "Ver Detalles de ONU",
+        "desc": "Estado, niveles ópticos, WAN, capacidades y service-ports de una ONU.",
         "notes": [
           "En «display ont info»: Control flag active, Run state online, Config state normal y Match state match (manual p. 610).",
           "Potencia que recibe la ONU: GPON clase B+ trabaja entre −8 y −27 dBm (ITU-T G.984.2). Cerca de −27 ya es poco margen."
@@ -274,53 +418,61 @@
         "desc": "Cambia la descripción (el nombre del cliente).",
         "notes": []
       },
-      "mover": {
-        "name": "Cambiar ONU de puerto o de slot",
-        "desc": "La quita de donde está y la da de alta en otro puerto o tarjeta de la misma OLT.",
-        "notes": ["Sirve para «Cambiar ONU de puerto» y «Cambiar ONU de slot»."]
-      },
       "verConfig": {
-        "name": "Ver configuración de la ONU",
+        "name": "Ver Configuración de la ONU",
         "desc": "Lo que la OLT tiene configurado para esa ONU.",
         "notes": []
       },
       "autorizadas": {
-        "name": "Lista de ONU's autorizadas",
+        "name": "Lista de ONU's Autorizadas",
         "desc": "Las ONUs dadas de alta en una tarjeta o en un puerto.",
         "notes": []
       },
       "noAutorizadas": {
-        "name": "Lista de ONU's no autorizadas",
+        "name": "Lista de ONU's No Autorizadas",
         "desc": "Las ONUs conectadas que esperan alta, con su SN.",
-        "notes": ["Sin puerto: todas las de la OLT."]
+        "notes": [
+          "Sin puerto: todas las de la OLT."
+        ]
       },
       "migrar": {
-        "name": "Cómo migrar una ONU a otra OLT",
+        "name": "Cómo Migrar Una ONU A Otra OLT",
         "desc": "La borra de una OLT y la da de alta en otra, con su plan.",
-        "notes": ["Pega el bloque 1 en la OLT de origen y el 2 en la de destino. Los perfiles del plan deben existir también en la de destino."]
+        "notes": [
+          "Pega el bloque 1 en la OLT de origen y el 2 en la de destino. Los perfiles del plan deben existir también en la de destino."
+        ]
       },
       "porSn": {
-        "name": "Editar ONU por número de serie (SN)",
+        "name": "Editar ONU por Número de Serie (SN)",
         "desc": "Encuentra dónde está una ONU por su SN y, si cambiaste el equipo, le pone el SN nuevo.",
-        "notes": ["Para cambiar el SN llena tarjeta, puerto y ONT-ID con lo que salga del primer comando."]
+        "notes": [
+          "Para cambiar el SN llena tarjeta, puerto y ONT-ID con lo que salga del primer comando."
+        ]
       },
       "catv": {
-        "name": "Habilitar/Deshabilitar puerto CATV",
+        "name": "Habilitar/Deshabilitar Puerto CATV",
         "desc": "Enciende o apaga el puerto de TV por RF de la ONU.",
-        "notes": ["Solo ONUs con puerto CATV. La TV de GigaFazt es IPTV, así que normalmente no se usa."]
+        "notes": [
+          "Solo ONUs con puerto CATV. La TV de GigaFazt es IPTV, así que normalmente no se usa."
+        ]
       },
       "reiniciarPon": {
-        "name": "Reiniciar puerto PON",
+        "name": "Reiniciar Puerto PON",
         "desc": "Apaga y enciende un puerto PON.",
-        "notes": ["Todas las ONUs de ese puerto pierden el servicio mientras vuelve."]
+        "notes": [
+          "Todas las ONUs de ese puerto pierden el servicio mientras vuelve.",
+          "Es el comando de Huawei (tu MA5608T); el de ZTE no aplica."
+        ]
       },
       "importar": {
-        "name": "Cómo importar ONU's (inventario)",
+        "name": "Cómo importar ONU's (inventario de la OLT)",
         "desc": "Lo que en AdminOLT es «importar»: sacar de la OLT todo lo que ya tiene (ONUs, service-ports, configuración).",
-        "notes": ["Copia la salida a un archivo para tener el inventario; DavorOLT no guarda registros."]
+        "notes": [
+          "Copia la salida a un archivo para tener el inventario; DavorOLT no guarda registros."
+        ]
       },
       "wifi": {
-        "name": "WiFi remoto en ONUs",
+        "name": "WiFi remoto en ONUs (2.4 GHz y 5 GHz)",
         "desc": "Cambiar red y contraseña Wi-Fi a distancia.",
         "notes": [
           "El manual no trae ningún comando de OLT para el Wi-Fi de la ONU. AdminOLT y SmartOLT lo hacen por TR-069 con un servidor ACS (como GenieACS).",
@@ -328,7 +480,7 @@
         ]
       },
       "otraMarca": {
-        "name": "¿Puedo migrar mi ONU a una OLT de otra marca?",
+        "name": "¿Puedo migrar mi ONU de una OLT a otra OLT (diferentes marcas)?",
         "desc": "Qué funciona y qué no.",
         "notes": [
           "Por el estándar GPON (ITU-T G.984 y G.988), otra OLT puede autorizarla por SN y darle servicio en puente.",
@@ -345,7 +497,7 @@
         ]
       },
       "pasos": {
-        "name": "Pasos para instalar un cliente",
+        "name": "Pasos para Instalar un Cliente",
         "desc": "El orden completo.",
         "notes": [
           "1. Crea el usuario PPPoE del cliente en el gateway (MikroTik o AsterNOS).",
@@ -359,50 +511,59 @@
       "pppoe": {
         "name": "Configurar WAN PPPoE en ONU Huawei",
         "desc": "La ONU (en modo router) marca PPPoE en la VLAN de su plan.",
-        "notes": ["El usuario y la contraseña no se guardan. Deben ser los mismos del gateway."]
+        "notes": [
+          "El usuario y la contraseña no se guardan. Deben ser los mismos del gateway."
+        ]
       },
       "estatica": {
-        "name": "Configurar WAN IP estática ONU Huawei",
+        "name": "Configurar WAN IP Estática ONU Huawei",
         "desc": "La ONU (router) con una IP fija en su WAN.",
         "notes": []
       },
       "estaticaPuente": {
-        "name": "Configurar WAN IP estática ONU Huawei modo bridge",
+        "name": "Configurar WAN IP Estática ONU Huawei Modo Bridge",
         "desc": "La ONU en puente: su puerto LAN en la VLAN del plan, la IP fija la pone el router del cliente.",
         "notes": []
       },
       "dhcp": {
-        "name": "Configuración WAN IP (DHCP)",
+        "name": "Configuración WAN IP",
         "desc": "La ONU (router) toma su IP por DHCP en la VLAN del plan.",
-        "notes": ["Equivale a la «Configuración WAN IP» de AdminOLT."]
+        "notes": [
+          "Equivale a la «Configuración WAN IP» de AdminOLT."
+        ]
       },
       "gestion": {
-        "name": "Configuración avanzada ONU Huawei (IP de administración)",
+        "name": "Configuración avanzada ONU Huawei",
         "desc": "Una IP de administración para la ONU en su propia VLAN.",
-        "notes": ["Sirve para llegar a la ONU desde la red de administración (o, más adelante, para TR-069)."]
+        "notes": [
+          "Sirve para llegar a la ONU desde la red de administración (o, más adelante, para TR-069)."
+        ]
       },
       "eth": {
-        "name": "Configurar puertos ETH",
+        "name": "Configurar Puertos ETH",
         "desc": "Enciende o apaga un puerto LAN de la ONU y, si quieres, le pone una VLAN.",
         "notes": []
       },
       "planesPrioridad": {
-        "name": "Crear planes de velocidad ONU Huawei (Line profile Priority)",
+        "name": "Crear Planes de velocidad ONU Huawei (Line profile Priority)",
         "desc": "La velocidad de cada plan la pone la OLT: tabla de tráfico (bajada y subida) y DBA (subida).",
-        "notes": ["Una sola VLAN de internet para todos los planes."]
+        "notes": [
+          "Una sola VLAN de internet para todos los planes."
+        ]
       },
       "planesVlan": {
-        "name": "Crear planes de velocidad ONU Huawei (Line profile VLAN)",
+        "name": "Crear Planes de velocidad ONU Huawei (Line profile VLAN)",
         "desc": "Cada plan en su VLAN; la velocidad la pone el gateway (AsterNOS o MikroTik).",
-        "notes": ["Coincide con el diseño de AsterNOS: VLAN, servidor PPPoE y pool por plan."]
+        "notes": [
+          "Coincide con el diseño de AsterNOS: VLAN, servidor PPPoE y pool por plan."
+        ]
       },
       "iptv": {
         "name": "Triple Play ONU Huawei (IPTV)",
         "desc": "La VLAN de multicast con IGMP proxy (una vez por OLT) y la TV de cada ONU.",
         "notes": [
           "El decodificador va en el puerto LAN de IPTV de tus datos.",
-          "Los comandos de IGMP preguntan (y/n): responde y. Cambiar la versión de IGMP borra los programas fijos de esa VLAN (manual p. 643).",
-          "Triple Play CATV: la TV de GigaFazt es IPTV; para CATV solo hace falta encender el puerto (Habilitar/Deshabilitar puerto CATV)."
+          "Los comandos de IGMP preguntan (y/n): responde y. Cambiar la versión de IGMP borra los programas fijos de esa VLAN (manual p. 643)."
         ]
       },
       "ipv6": {
@@ -414,12 +575,61 @@
         ]
       },
       "xml": {
-        "name": "Configuración WAN IP XML (AdminOLT)",
+        "name": "Configuración WAN IP XML",
         "desc": "Qué es y qué usar en su lugar.",
         "notes": [
           "AdminOLT manda a la ONU un archivo de configuración. Aquí la WAN se configura con comandos de OMCI: usa «Configurar WAN PPPoE», «WAN IP estática» o «WAN IP (DHCP)»."
         ]
+      },
+      "mikrotik": {
+        "desc": "El lado del MikroTik para administrar la OLT: la VLAN de administración en el puerto que va a la OLT y la puerta de enlace que usa la OLT.",
+        "notes": [
+          "El puerto es el del MikroTik conectado al uplink de la OLT.",
+          "La IP que se pone en el MikroTik es la puerta de enlace de los datos de tu OLT; la de la OLT queda en su misma red.",
+          "El PPPoE de los clientes lo arma /interno/equipos-telecom/mikrotik/scripts."
+        ],
+        "name": "Configuraciones en Mikrotik"
+      },
+      "puerto": {
+        "desc": "La quita de su puerto PON y la da de alta en otro puerto de la misma tarjeta, con su plan.",
+        "notes": [
+          "El SN no cambia; el ONT-ID nuevo debe estar libre en el puerto nuevo."
+        ],
+        "name": "Cambiar ONU de Puerto"
+      },
+      "slot": {
+        "desc": "La quita de su tarjeta y la da de alta en un puerto de la otra tarjeta GPON, con su plan.",
+        "notes": [
+          "En el MA5608T las tarjetas GPON van en los slots 0 y 1.",
+          "Los perfiles del plan son de toda la OLT: sirven en las dos tarjetas."
+        ],
+        "name": "Cambiar ONU de Slot"
+      },
+      "herramientas": {
+        "desc": "Las revisiones de una ONU: potencia óptica, estado de sus puertos LAN, WAN, versión y alarmas.",
+        "notes": [
+          "Potencia que recibe la ONU: GPON clase B+ trabaja entre −8 y −27 dBm (ITU-T G.984.2).",
+          "Para reiniciarla usa «Reiniciar ONU»."
+        ],
+        "name": "Herramientas en Detalles de ONU"
+      },
+      "catvTriple": {
+        "desc": "TV por RF sobre la fibra: necesita un transmisor óptico de CATV y un combinador WDM junto a la OLT, y ONUs con puerto CATV.",
+        "notes": [
+          "La TV de GigaFazt es IPTV (Triple Play ONU Huawei (IPTV)); esto aplica solo si algún día se usa CATV.",
+          "Desde la OLT solo se enciende el puerto CATV de la ONU; la señal de video no pasa por la OLT."
+        ],
+        "name": "Triple Play ONU Huawei (CATV)"
       }
-    }
+    },
+    "index": {
+      "title": "Herramientas",
+      "count": "{n} herramientas, cada una en su página.",
+      "open": "Abrir"
+    },
+    "back": "← Todas las herramientas",
+    "using": "Con los datos de {name}: VLAN de administración {vlan}, uplink 0/{slot}/{port}, {plans}.",
+    "usingEdit": "Cambiar los datos",
+    "notFound": "Esa herramienta no existe."
   }
 }

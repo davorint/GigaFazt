@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 import { DEFAULT_SETTINGS, decodeSettings, settingsIssues, type OltSettings } from "./settings"
 import { TOOLS, profilesBlock, readSn, run, toolById, type Out, type Values } from "./tools"
+import { CATALOG, DAVOROLT_SLUGS } from "./catalog"
+import copy from "../../messages/internal/davorolt.es.json"
+import { matchInternal } from "../internal-pages"
 
 const S: OltSettings = { ...DEFAULT_SETTINGS }
 const code = (id: string, v: Values, s = S) => {
@@ -19,7 +22,7 @@ describe("DavorOLT (owner, 2026-11-21)", () => {
 
   it("every tool is in a group, has unique id; info-only ones have no builder", () => {
     expect(new Set(TOOLS.map((t) => t.id)).size).toBe(TOOLS.length)
-    expect(TOOLS.filter((t) => !t.build).map((t) => t.id)).toEqual(["wifi", "otraMarca", "pasos", "ipv6", "xml"])
+    expect(TOOLS.filter((t) => !t.build).map((t) => t.id).sort()).toEqual(["ipv6", "otraMarca", "pasos", "wifi", "xml"])
   })
 
   it("profiles: speed on the OLT (traffic table per plan) or VLAN per plan (unlimited), IPTV gem, router service profile", () => {
@@ -78,7 +81,7 @@ describe("DavorOLT review fixes (2026-11-21)", () => {
     expect(run(toolById("autorizar")!, { ...base, spIndex: "20" }, S)).toEqual({ error: "field", field: "iptvIndex" })
   })
   it("moving keeps TV; changing plan of a bridge moves its service profile and VLAN", () => {
-    expect(code("mover", { ...base, toSlot: "0", toPort: "1", toOntId: "2" })).toContain("igmp user add service-port 20")
+    expect(code("slot", { ...base, toSlot: "0", toPort: "1", toOntId: "2" })).toContain("igmp user add service-port 20")
     const c = code("plan", { slot: "1", port: "3", ontId: "5", plan: "2", spIndex: "7" }, { ...S, ontMode: "bridge", planMode: "vlan" })
     expect(c).toContain(" ont modify 3 5 ont-lineprofile-id 12 ont-srvprofile-id 12\n ont port native-vlan 3 5 eth 1 vlan 1000")
   })
@@ -86,5 +89,30 @@ describe("DavorOLT review fixes (2026-11-21)", () => {
     const c = code("todo", { slots: "0", ports: "8", ntp: "" })
     expect(c).toContain(" port 7 ont-auto-find enable")
     expect(c).not.toContain(" port 8 ont-auto-find enable")
+  })
+})
+
+describe("DavorOLT: one tool per topic, each on its own page (owner, 2026-11-21)", () => {
+  it("the 49 topics of the list, each with its tool, its copy and a unique address", () => {
+    expect(CATALOG).toHaveLength(49)
+    expect(new Set(DAVOROLT_SLUGS).size).toBe(49)
+    for (const c of CATALOG) {
+      expect(toolById(c.id), c.id).toBeDefined()
+      expect(copy.davorolt.tools[c.id as keyof typeof copy.davorolt.tools]?.name, c.id).toBeTruthy()
+    }
+    expect(TOOLS.map((x) => x.id).sort()).toEqual(CATALOG.map((c) => c.id).sort())
+    expect(CATALOG[0].slug).toBe("configuracion-inicial")
+    expect(CATALOG[48].slug).toBe("wan-ipv6")
+  })
+  it("port and slot are separate tools; port stays on the card and must change", () => {
+    const base = { slot: "1", port: "3", ontId: "5", sn: "HWTC1A2B3C4D", plan: "0", iptv: "no", toOntId: "6" }
+    expect(code("puerto", { ...base, toPort: "4" })).toContain("interface gpon 0/1\n ont add 4 6 sn-auth")
+    expect(run(toolById("puerto")!, { ...base, toPort: "3" }, S)).toEqual({ error: "field", field: "toPort" })
+    expect(code("slot", { ...base, toSlot: "0", toPort: "3" })).toContain("interface gpon 0/0\n ont add 3 6 sn-auth")
+  })
+  it("MikroTik side of the OLT management, and any capitalization of a tool address", () => {
+    expect(code("mikrotik", { routerPort: "ether2" })).toContain("/interface vlan add name=olt-admin vlan-id=10 interface=ether2")
+    expect(code("mikrotik", { routerPort: "ether2" })).toContain("/ip address add address=192.168.10.1/24 interface=olt-admin")
+    expect(matchInternal("/Interno/Software/DavorOLT/Autorizar-ONU")).toEqual({ rewriteTo: "/es/interno/software/davorolt/autorizar-onu", open: false })
   })
 })

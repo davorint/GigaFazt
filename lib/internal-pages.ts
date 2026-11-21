@@ -9,6 +9,8 @@
  * route; any capitalization (/INTERNO/Equipos-Telecom/OLT-Huawei) maps to the lowercase route.
  */
 
+import { DAVOROLT_SLUGS } from "./davorolt/catalog"
+
 export const INTERNAL_ROOT = "interno"
 export const INTERNAL_PAGES = ["levantamientos", "admin", "materiales", "herramientas", "equipos-telecom", "software", "guias"] as const
 /** The guides (/interno/guias/<page>, owner 2026-11-21). */
@@ -79,7 +81,8 @@ export function matchInternal(pathname: string): InternalMatch | null {
     const known = sub2 && SUBPAGES[page].find((p) => p === name)
     let rest3 = sub2?.[2] ?? ""
     // /interno/equipos-telecom/<mikrotik|asternos>/<guia|scripts>
-    const third: Record<string, readonly string[]> = { mikrotik: MIKROTIK_PAGES, asternos: ASTERNOS_PAGES }
+    // and /interno/software/davorolt/<tool>.
+    const third: Record<string, readonly string[]> = { mikrotik: MIKROTIK_PAGES, asternos: ASTERNOS_PAGES, davorolt: DAVOROLT_SLUGS }
     if (known && third[known]) {
       const sub3 = /^\/([^/.]+)(.*)$/.exec(rest3)
       const k3 = sub3 && third[known].find((p) => p === sub3[1].toLowerCase())

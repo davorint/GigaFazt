@@ -4,12 +4,11 @@ import { useId, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Input } from "@/components/ui/input"
 import { CopyButton } from "@/components/mikrotik/CopyButton"
-import { useOpenParam } from "@/components/interno/useOpenParam"
 import { DEFAULT_SETTINGS, FIRST_ID, PLAN_MODES, settingsIssues, type OltSettings } from "@/lib/davorolt/settings"
-import { GROUPS, TOOLS, run, toolById, type Field, type Tool, type Values } from "@/lib/davorolt/tools"
-import { saveOltSettings, useOltSettings } from "./useOltSettings"
+import { run, type Field, type Tool, type Values } from "@/lib/davorolt/tools"
+import { saveOltSettings } from "./useOltSettings"
 
-type T = ReturnType<typeof useTranslations>
+export type T = ReturnType<typeof useTranslations>
 const SELECT =
   "h-10 w-full rounded-md border border-input bg-white/[0.03] px-3 text-base text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
 const LABEL = "font-mono text-xs text-zinc-300"
@@ -91,42 +90,8 @@ function NumIn({ label, value, onChange, min, max }: { label: string; value: num
   )
 }
 
-/**
- * /interno/software/davorolt (owner, 2026-11-21): the OLT's data, then one tool at a time (?t=<tool>), its form and the
- * commands to paste. Nothing leaves the browser; passwords typed in a form are never saved.
- */
-export function DavorOltApp() {
-  const t = useTranslations("davorolt")
-  const { settings, persisted, loaded, fresh } = useOltSettings()
-  const [toolId, setToolId] = useOpenParam("t")
-  if (!loaded) return null
-  const tool = toolById(toolId ?? "") ?? TOOLS[0]
-  return (
-    <div className="mt-6 grid gap-8">
-      <Settings t={t} s={settings} persisted={persisted} open={fresh} />
-      <section aria-labelledby="dvo-tool" className="grid gap-4">
-        <SelectIn
-          label={t("pick")}
-          value={tool.id}
-          onChange={(id) => setToolId(id)}
-          options={GROUPS.flatMap((g) => TOOLS.filter((x) => x.group === g).map((x) => ({ value: x.id, label: `${t(`groups.${g}`)} · ${t(`tools.${x.id}.name`)}` })))}
-        />
-        <div className="grid gap-1">
-          <p className="font-mono text-xs text-zinc-400">{t(`groups.${tool.group}`)}</p>
-          <h2 id="dvo-tool" className="text-2xl font-light text-foreground">
-            {t(`tools.${tool.id}.name`)}
-          </h2>
-          <p className="text-sm text-zinc-300">{t(`tools.${tool.id}.desc`)}</p>
-        </div>
-        {/* A fresh form for each tool (its own values). */}
-        <ToolForm key={tool.id} t={t} tool={tool} s={settings} />
-      </section>
-      <p className="text-xs leading-relaxed text-zinc-400">{t("source")}</p>
-    </div>
-  )
-}
-
-function ToolForm({ t, tool, s }: { t: T; tool: Tool; s: OltSettings }) {
+/** A tool's form, its notes and the commands it writes (nothing typed here is saved). */
+export function ToolForm({ t, tool, s }: { t: T; tool: Tool; s: OltSettings }) {
   const [v, setV] = useState<Values>(() => Object.fromEntries(tool.fields.map((f) => [f.key, f.def ?? ""])))
   const notes = t.raw(`tools.${tool.id}.notes`) as string[]
   const result = run(tool, v, s)
@@ -207,8 +172,8 @@ function ToolForm({ t, tool, s }: { t: T; tool: Tool; s: OltSettings }) {
   )
 }
 
-/** Open the first time (to fill them in); folded afterwards, so the tools come first. */
-function Settings({ t, s, persisted, open }: { t: T; s: OltSettings; persisted: boolean; open: boolean }) {
+/** The OLT's data: open the first time (to fill them in); folded afterwards, so the tools come first. */
+export function Settings({ t, s, persisted, open }: { t: T; s: OltSettings; persisted: boolean; open: boolean }) {
   const up = (p: Partial<OltSettings>) => saveOltSettings({ ...s, ...p })
   const issues = settingsIssues(s)
   return (

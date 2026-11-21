@@ -10,9 +10,6 @@
  */
 import { FIRST_ID, NO_LIMIT_TABLE, MAX_ONT_ID, MAX_PON_PORT, oltKbps, parseCidr, isIp, type OltSettings } from "./settings"
 
-export const GROUPS = ["setup", "onu", "install"] as const
-export type GroupId = (typeof GROUPS)[number]
-
 export type FieldKind = "text" | "number" | "select" | "secret" | "plan"
 export type Field = { key: string; kind: FieldKind; options?: readonly string[]; def?: string; optional?: boolean }
 export type Values = Record<string, string>
@@ -21,7 +18,8 @@ export type Block = { label?: string; code: string }
 export type Out = { blocks: Block[]; answers?: { prompt: string; value: string }[]; verify: string[]; pages: number[] }
 export type Result = Out | { error: string; field?: string }
 
-export type Tool = { id: string; group: GroupId; fields: Field[]; build?: (v: Values, s: OltSettings) => Result }
+/** A tool; its place, address and group are in lib/davorolt/catalog.ts. */
+export type Tool = { id: string; fields: Field[]; build?: (v: Values, s: OltSettings) => Result }
 
 /** Index of the traffic table for IPTV (unlimited, priority 4; manual p642 uses index 8). */
 export const IPTV_TABLE = 9
@@ -181,6 +179,15 @@ function register(v: Values, s: OltSettings, how: "confirm" | "add", l: Loc): { 
 
 const ok = (code: string[], pages: number[], verify: string[] = [], more: Partial<Out> = {}): Out => ({ blocks: [{ code: code.join("\n") }], pages, verify, ...more })
 
+/** Takes an ONU off its port and adds it on another port (same card) or card of the same OLT. */
+function moveTo(v: Values, s: OltSettings, slotOf: (from: Loc) => number): Out {
+  const from = where(v)
+  const to = { slot: slotOf(from), port: n(v, "toPort", 0, MAX_PON_PORT), ont: n(v, "toOntId", 0, MAX_ONT_ID) }
+  if (to.slot === from.slot && to.port === from.port) throw new Bad("toPort")
+  const r = register(v, s, "add", to)
+  return ok(["config", ...removeLines(from), ...r.code], [206, 609, 612], [...REMOVE_VERIFY, ...r.verify])
+}
+
 /** Runs a builder; a bad field comes back as which one. */
 export function run(tool: Tool, v: Values, s: OltSettings): Result | null {
   if (!tool.build) return null
@@ -201,7 +208,6 @@ export const TOOLS: Tool[] = [
   // Configuración inicial de la OLT
   {
     id: "inicial",
-    group: "setup",
     fields: [{ key: "ntp", kind: "text", optional: true }],
     build: (v, s) => {
       const m = parseCidr(s.mgmtAddress)
@@ -228,7 +234,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "usuario",
-    group: "setup",
     fields: [{ key: "user", kind: "text" }, { key: "info", kind: "text", optional: true }],
     build: (v) => {
       const user = (v.user ?? "").trim()
@@ -249,7 +254,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "acceso",
-    group: "setup",
     fields: [{ key: "user", kind: "text" }, { key: "community", kind: "text", optional: true }],
     build: (v) => {
       const user = (v.user ?? "").trim()
@@ -263,7 +267,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "sinIp",
-    group: "setup",
     fields: [{ key: "wgPort", kind: "number", def: "13231" }, { key: "wgNet", kind: "text", def: "10.99.0.1/24" }, { key: "peerKey", kind: "text" }, { key: "peerIp", kind: "text", def: "10.99.0.2" }],
     build: (v) => {
       const port = n(v, "wgPort", 1024, 65535)
@@ -290,7 +293,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "redireccion",
-    group: "setup",
     fields: [{ key: "wan", kind: "text", def: "ether1" }, { key: "extPort", kind: "number", def: "2222" }, { key: "proto", kind: "select", options: ["ssh", "telnet"], def: "ssh" }, { key: "adminIp", kind: "text" }],
     build: (v, s) => {
       const m = parseCidr(s.mgmtAddress)
@@ -317,8 +319,30 @@ export const TOOLS: Tool[] = [
     },
   },
   {
+    id: "mikrotik",
+    fields: [{ key: "routerPort", kind: "text", def: "ether2" }],
+    build: (v, s) => {
+      const m = parseCidr(s.mgmtAddress)
+      if (!m || !isIp(s.mgmtGateway)) return { error: "settings" }
+      const port = (v.routerPort ?? "").trim()
+      if (!/^[\w.-]{1,40}$/.test(port)) throw new Bad("routerPort")
+      return {
+        blocks: [
+          {
+            label: "mikrotik",
+            code: [
+              `/interface vlan add name=olt-admin vlan-id=${s.mgmtVlan} interface=${port} comment="DavorOLT: administración de la OLT"`,
+              `/ip address add address=${s.mgmtGateway}/${m.prefix} interface=olt-admin comment="DavorOLT"`,
+            ].join("\n"),
+          },
+        ],
+        pages: [],
+        verify: [],
+      }
+    },
+  },
+  {
     id: "vlan",
-    group: "setup",
     fields: [{ key: "vlan", kind: "number" }, { key: "vlanType", kind: "select", options: ["smart", "standard"], def: "smart" }],
     build: (v, s) => {
       const id = n(v, "vlan", 2, 4094)
@@ -327,7 +351,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "pon",
-    group: "setup",
     fields: [SLOT, { key: "ports", kind: "select", options: ["8", "16"], def: "16" }],
     build: (v) => {
       const slot = n(v, "slot", 0, 1)
@@ -337,7 +360,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "uplink",
-    group: "setup",
     fields: [],
     build: (_v, s) =>
       ok(
@@ -352,10 +374,9 @@ export const TOOLS: Tool[] = [
         [60, 100, 612]
       ),
   },
-  { id: "tarjeta", group: "setup", fields: [], build: () => ok(["config", "display board 0", "board confirm 0", "display board 0", "save"], [98, 99]) },
+  { id: "tarjeta", fields: [], build: () => ok(["config", "display board 0", "board confirm 0", "display board 0", "save"], [98, 99]) },
   {
     id: "seguridad",
-    group: "setup",
     fields: [],
     build: () =>
       ok(
@@ -364,10 +385,9 @@ export const TOOLS: Tool[] = [
         ["security anti-macspoofing / anti-ipspoofing / anti-macduplicate / anti-dos / anti-ipattack"]
       ),
   },
-  { id: "perfiles", group: "setup", fields: [], build: (_v, s) => ok(["config", ...profilesBlock(s), "save"], [607, 608, 609, 611, 612, 1772]) },
+  { id: "perfiles", fields: [], build: (_v, s) => ok(["config", ...profilesBlock(s), "save"], [607, 608, 609, 611, 612, 1772]) },
   {
     id: "backup",
-    group: "setup",
     fields: [{ key: "how", kind: "select", options: ["ftp", "tftp"], def: "ftp" }, { key: "server", kind: "text" }, { key: "file", kind: "text", def: "olt-config.txt" }],
     build: (v) => {
       const server = ip(v, "server")
@@ -382,7 +402,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "todo",
-    group: "setup",
     fields: [{ key: "slots", kind: "select", options: ["1", "0", "01"], def: "1" }, { key: "ports", kind: "select", options: ["8", "16"], def: "16" }, { key: "ntp", kind: "text", optional: true }],
     build: (v, s) => {
       const base = TOOLS.find((t) => t.id === "inicial")!.build!(v, s)
@@ -408,7 +427,6 @@ export const TOOLS: Tool[] = [
   // Administrar ONUs
   {
     id: "autorizar",
-    group: "onu",
     fields: REGISTER_FIELDS,
     build: (v, s) => {
       const r = register(v, s, "confirm", where(v))
@@ -417,17 +435,15 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "preautorizar",
-    group: "onu",
     fields: REGISTER_FIELDS,
     build: (v, s) => {
       const r = register(v, s, "add", where(v))
       return ok(r.code, [206, 609, 612], r.verify)
     },
   },
-  { id: "eliminar", group: "onu", fields: LOC, build: (v) => ok(["config", ...removeLines(where(v)), "save"], [], REMOVE_VERIFY) },
+  { id: "eliminar", fields: LOC, build: (v) => ok(["config", ...removeLines(where(v)), "save"], [], REMOVE_VERIFY) },
   {
     id: "reiniciar",
-    group: "onu",
     fields: LOC,
     build: (v) => {
       const l = where(v)
@@ -436,7 +452,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "plan",
-    group: "onu",
     fields: [...LOC, PLAN, { key: "spIndex", kind: "number" }],
     build: (v, s) => {
       const l = where(v)
@@ -463,7 +478,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "detalles",
-    group: "onu",
     fields: LOC,
     build: (v) => {
       const l = where(v)
@@ -476,7 +490,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "activar",
-    group: "onu",
     fields: [...LOC, { key: "state", kind: "select", options: ["activate", "deactivate"], def: "deactivate" }],
     build: (v) => {
       const l = where(v)
@@ -485,7 +498,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "editar",
-    group: "onu",
     fields: [...LOC, { key: "desc", kind: "text" }],
     build: (v) => {
       const l = where(v)
@@ -493,19 +505,17 @@ export const TOOLS: Tool[] = [
     },
   },
   {
-    id: "mover",
-    group: "onu",
-    fields: [...LOC, { key: "toSlot", kind: "select", options: ["0", "1"], def: "1" }, { key: "toPort", kind: "number" }, { key: "toOntId", kind: "number" }, SN, { key: "desc", kind: "text", optional: true }, PLAN, SP, ...TV_FIELDS],
-    build: (v, s) => {
-      const from = where(v)
-      const to = { slot: n(v, "toSlot", 0, 1), port: n(v, "toPort", 0, MAX_PON_PORT), ont: n(v, "toOntId", 0, MAX_ONT_ID) }
-      const r = register(v, s, "add", to)
-      return ok(["config", ...removeLines(from), ...r.code], [206, 609, 612], [...REMOVE_VERIFY, ...r.verify])
-    },
+    id: "puerto",
+    fields: [...LOC, { key: "toPort", kind: "number" }, { key: "toOntId", kind: "number" }, SN, { key: "desc", kind: "text", optional: true }, PLAN, SP, ...TV_FIELDS],
+    build: (v, s) => moveTo(v, s, (from) => from.slot),
+  },
+  {
+    id: "slot",
+    fields: [...LOC, { key: "toSlot", kind: "select", options: ["0", "1"], def: "0" }, { key: "toPort", kind: "number" }, { key: "toOntId", kind: "number" }, SN, { key: "desc", kind: "text", optional: true }, PLAN, SP, ...TV_FIELDS],
+    build: (v, s) => moveTo(v, s, () => n(v, "toSlot", 0, 1)),
   },
   {
     id: "verConfig",
-    group: "onu",
     fields: LOC,
     build: (v) => {
       const l = where(v)
@@ -513,8 +523,19 @@ export const TOOLS: Tool[] = [
     },
   },
   {
+    id: "herramientas",
+    fields: LOC,
+    build: (v) => {
+      const l = where(v)
+      return ok(
+        ["config", `interface gpon 0/${l.slot}`, ` display ont optical-info ${l.port} ${l.ont}`, ` display ont port state ${l.port} ${l.ont} eth-port all`, ` display ont wan-info ${l.port} ${l.ont}`, ` display ont version ${l.port} ${l.ont}`, " quit", `display ont alarm-state ${fsp(l)} ${l.ont}`],
+        [],
+        ["display ont optical-info", "display ont port state … eth-port all", "display ont wan-info", "display ont version", "display ont alarm-state"]
+      )
+    },
+  },
+  {
     id: "autorizadas",
-    group: "onu",
     fields: [SLOT, { key: "port", kind: "number", optional: true }],
     build: (v) => {
       const slot = n(v, "slot", 0, 1)
@@ -524,7 +545,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "noAutorizadas",
-    group: "onu",
     fields: [SLOT, { key: "port", kind: "number", optional: true }],
     build: (v) => {
       const slot = n(v, "slot", 0, 1)
@@ -534,7 +554,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "migrar",
-    group: "onu",
     fields: [...LOC, { key: "toSlot", kind: "select", options: ["0", "1"], def: "1" }, { key: "toPort", kind: "number" }, { key: "toOntId", kind: "number" }, SN, { key: "desc", kind: "text", optional: true }, PLAN, SP, ...TV_FIELDS],
     build: (v, s) => {
       const from = where(v)
@@ -545,7 +564,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "porSn",
-    group: "onu",
     fields: [SN, { key: "slot", kind: "select", options: ["0", "1"], def: "1", optional: true }, { key: "port", kind: "number", optional: true }, { key: "ontId", kind: "number", optional: true }, { key: "newSn", kind: "text", optional: true }],
     build: (v) => {
       const serial = sn(v)
@@ -561,7 +579,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "catv",
-    group: "onu",
     fields: [...LOC, { key: "state", kind: "select", options: ["on", "off"], def: "on" }],
     build: (v) => {
       const l = where(v)
@@ -570,7 +587,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "reiniciarPon",
-    group: "onu",
     fields: [SLOT, PORT],
     build: (v) => {
       const slot = n(v, "slot", 0, 1)
@@ -580,17 +596,15 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "importar",
-    group: "onu",
     fields: [],
     build: () => ok(["config", "display board 0", "display ont info 0 all", "display service-port all", "display current-configuration"], [98], ["display ont info 0 all", "display current-configuration"]),
   },
-  { id: "wifi", group: "onu", fields: [] },
-  { id: "otraMarca", group: "onu", fields: [] },
+  { id: "wifi", fields: [] },
+  { id: "otraMarca", fields: [] },
 
   // Instalación y servicios
   {
     id: "instalar",
-    group: "install",
     fields: [SLOT, { key: "port", kind: "number", optional: true }],
     build: (v) => {
       const slot = n(v, "slot", 0, 1)
@@ -598,10 +612,9 @@ export const TOOLS: Tool[] = [
       return ok(["config", `interface gpon 0/${slot}`, ` display ont autofind ${port ?? "all"}`, " quit"], [609], port === null ? ["display ont autofind all"] : [])
     },
   },
-  { id: "pasos", group: "install", fields: [] },
+  { id: "pasos", fields: [] },
   {
     id: "pppoe",
-    group: "install",
     fields: [...LOC, PLAN, { key: "pppoeUser", kind: "text" }, { key: "pppoePass", kind: "secret" }],
     build: (v, s) => {
       const l = where(v)
@@ -611,7 +624,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "estatica",
-    group: "install",
     fields: [...LOC, PLAN, { key: "ip", kind: "text" }, { key: "mask", kind: "text", def: "255.255.255.248" }, { key: "gateway", kind: "text" }, { key: "dns1", kind: "text", def: "1.1.1.1" }, { key: "dns2", kind: "text", def: "8.8.8.8" }],
     build: (v, s) => {
       const l = where(v)
@@ -625,7 +637,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "estaticaPuente",
-    group: "install",
     fields: [...LOC, PLAN, { key: "eth", kind: "number", def: "1" }],
     build: (v, s) => {
       const l = where(v)
@@ -635,7 +646,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "dhcp",
-    group: "install",
     fields: [...LOC, PLAN],
     build: (v, s) => {
       const l = where(v)
@@ -649,7 +659,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "gestion",
-    group: "install",
     fields: [...LOC, { key: "vlan", kind: "number" }, { key: "how", kind: "select", options: ["dhcp", "static"], def: "dhcp" }, { key: "ip", kind: "text", optional: true }, { key: "mask", kind: "text", optional: true }],
     build: (v) => {
       const l = where(v)
@@ -660,7 +669,6 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "eth",
-    group: "install",
     fields: [...LOC, { key: "eth", kind: "number", def: "1" }, { key: "state", kind: "select", options: ["on", "off"], def: "on" }, { key: "vlan", kind: "number", optional: true }],
     build: (v) => {
       const l = where(v)
@@ -673,11 +681,10 @@ export const TOOLS: Tool[] = [
       )
     },
   },
-  { id: "planesPrioridad", group: "install", fields: [], build: (_v, s) => ok(["config", ...profilesBlock(s, "priority"), "save"], [607, 608, 611, 612, 1772]) },
-  { id: "planesVlan", group: "install", fields: [], build: (_v, s) => ok(["config", ...profilesBlock(s, "vlan"), ...s.plans.flatMap((p) => [`vlan ${p.vlan} smart`, `port vlan ${p.vlan} 0/${s.uplinkSlot} ${s.uplinkPort}`]), "save"], [607, 608, 612, 1772]) },
+  { id: "planesPrioridad", fields: [], build: (_v, s) => ok(["config", ...profilesBlock(s, "priority"), "save"], [607, 608, 611, 612, 1772]) },
+  { id: "planesVlan", fields: [], build: (_v, s) => ok(["config", ...profilesBlock(s, "vlan"), ...s.plans.flatMap((p) => [`vlan ${p.vlan} smart`, `port vlan ${p.vlan} 0/${s.uplinkSlot} ${s.uplinkPort}`]), "save"], [607, 608, 612, 1772]) },
   {
     id: "iptv",
-    group: "install",
     fields: [...LOC, { key: "iptvIndex", kind: "number" }],
     build: (v, s) => {
       if (!s.iptvVlan) return { error: "noIptv" }
@@ -693,8 +700,16 @@ export const TOOLS: Tool[] = [
       }
     },
   },
-  { id: "ipv6", group: "install", fields: [] },
-  { id: "xml", group: "install", fields: [] },
+  {
+    id: "catvTriple",
+    fields: [...LOC],
+    build: (v) => {
+      const l = where(v)
+      return ok(["config", `interface gpon 0/${l.slot}`, ` ont port attribute ${l.port} ${l.ont} catv 1 operational-state on`, " quit", "save"], [652], ["ont port attribute … catv 1 operational-state"])
+    },
+  },
+  { id: "ipv6", fields: [] },
+  { id: "xml", fields: [] },
 ]
 
 /** IPTV once per OLT (manual p641–644): its traffic table, VLAN on the uplink, multicast VLAN with IGMP proxy. */
