@@ -19,17 +19,18 @@ export function SignaturePad({ label, clearLabel, onChange }: { label: string; c
     c.height = Math.round(c.clientHeight * scale)
     const g = c.getContext("2d")
     if (!g) return
-    g.scale(scale, scale)
     g.fillStyle = "#ffffff"
     g.fillRect(0, 0, c.width, c.height)
-    g.lineWidth = 2.5
+    g.lineWidth = 2.5 * scale
     g.lineCap = "round"
     g.lineJoin = "round"
     g.strokeStyle = "#111111"
   }, [])
+  // In the bitmap's own pixels: stays under the finger even if the box changed size (the phone turned).
   const at = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const box = e.currentTarget.getBoundingClientRect()
-    return [e.clientX - box.left, e.clientY - box.top] as const
+    const c = e.currentTarget
+    const box = c.getBoundingClientRect()
+    return [((e.clientX - box.left) * c.width) / box.width, ((e.clientY - box.top) * c.height) / box.height] as const
   }
   const finish = () => {
     if (!drawing.current) return
@@ -40,11 +41,8 @@ export function SignaturePad({ label, clearLabel, onChange }: { label: string; c
     const c = ref.current
     const g = c?.getContext("2d")
     if (!c || !g) return
-    g.save()
-    g.setTransform(1, 0, 0, 1, 0, 0)
     g.fillStyle = "#ffffff"
     g.fillRect(0, 0, c.width, c.height)
-    g.restore()
     setEmpty(true)
     onChange(null)
   }

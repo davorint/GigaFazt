@@ -86,13 +86,14 @@ export async function sweepSilent() {
 /** The open outage of a deployment, for its clients' portal (null = none). */
 export async function siteOutage(siteId: string): Promise<{ since: string } | null> {
   if (!siteId) return null
-  const row = (await getPool().query(`select started_at from outages where site_id = $1 and ended_at is null order by started_at limit 1`, [siteId])).rows[0] as { started_at: Date } | undefined
+  const row = (await getPool().query(`select o.started_at from outages o join routers r on r.id = o.router_id where o.site_id = $1 and o.ended_at is null order by o.started_at limit 1`, [siteId])).rows[0] as { started_at: Date } | undefined
   return row ? { since: row.started_at.toISOString() } : null
 }
 
 /** Lines for the daily summary: outages still open. */
 export async function outageDigest(): Promise<string[]> {
-  const rows = (await getPool().query(`select r.name, o.kind, o.started_at from outages o join routers r on r.id = o.router_id where o.ended_at is null order by o.started_at`)).rows as { name: string; kind: OutageKind; started_at: Date }[]
+  // A silent router is already in the routers' lines of the summary (routerDigest): not listed twice.
+  const rows = (await getPool().query(`select r.name, o.kind, o.started_at from outages o join routers r on r.id = o.router_id where o.ended_at is null and o.kind <> 'router' order by o.started_at`)).rows as { name: string; kind: OutageKind; started_at: Date }[]
   if (!rows.length) return []
   return [`🚨 Fallas abiertas: ${rows.length}`, ...rows.slice(0, 10).map((x) => `• ${x.name}: ${KIND_TEXT[x.kind]} desde ${mx(x.started_at)}`)]
 }

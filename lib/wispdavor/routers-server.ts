@@ -51,11 +51,15 @@ export async function updateRouter(id: string, p: Partial<Pick<Router, "name" | 
   const cur = toRouter(r)
   const n = { ...cur, ...p }
   await getPool().query(`update routers set name = $2, auto = $3, pppoe = $4, hotspot = $5, site_id = $6 where id = $1`, [id, n.name, n.auto, n.pppoe, n.hotspot, n.siteId])
+  // An open outage follows the router to its deployment (the portal banner shows in the right building).
+  if (n.siteId !== cur.siteId) await getPool().query(`update outages set site_id = $2 where router_id = $1 and ended_at is null`, [id, n.siteId])
 }
 
 export async function deleteRouter(id: string) {
   const pool = getPool()
-  for (const t of ["router_actions", "router_users"]) await pool.query(`delete from ${t} where router_id = $1`, [id])
+  for (const t of ["router_actions", "router_users", "router_metrics"]) await pool.query(`delete from ${t} where router_id = $1`, [id])
+  // Its open outage ends with it (else its building's clients would see the banner for good); history stays.
+  await pool.query(`update outages set ended_at = now() where router_id = $1 and ended_at is null`, [id])
   await pool.query(`delete from routers where id = $1`, [id])
 }
 

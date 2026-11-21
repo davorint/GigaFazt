@@ -13,6 +13,7 @@ const EXISTING: [string, string][] = [
   ["clientes", "/interno/admin/clientes"],
   ["reportes", "/interno/admin/reportes_clientes"],
   ["agenda", "/interno/admin/agenda"],
+  ["tecnico", "/interno/tecnico"],
   ["despliegues", "/interno/admin/despliegues"],
   ["materiales", "/interno/materiales/en-existencia"],
   ["contratos", "/interno/admin/legal/contratos"],

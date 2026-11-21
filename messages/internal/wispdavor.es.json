@@ -83,7 +83,8 @@
         "materiales": "Almacén de materiales",
         "contratos": "Contratos",
         "numeros": "Números del negocio",
-        "mikrotik": "Scripts del MikroTik"
+        "mikrotik": "Scripts del MikroTik",
+        "tecnico": "Técnico (campo)"
       }
     },
     "next": {
