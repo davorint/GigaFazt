@@ -11,7 +11,7 @@ import { bps } from "@/lib/wispdavor/rest"
 import type { ClientLive, LiveView, RestAction, RestView } from "@/lib/wispdavor/rest-server"
 import { useWispData } from "./useWispData"
 
-type Routers = { id: string; name: string; siteId: string }[]
+type Routers = { id: string; name: string; siteId: string; auto: boolean; pppoe: boolean }[]
 type Backup = { id: string; at: string; by: string; size: number }
 const headers = () => ({ "content-type": "application/json", "x-interno-nombre": encodeURIComponent(readState().name) })
 const when = (t: string) => new Date(t).toLocaleString("es-MX", { timeZone: "America/Mexico_City", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
@@ -276,6 +276,8 @@ export function LiveApp() {
                 )}
                 {client.secret && (
                   <div className="grid gap-2">
+                    {canWrite && routers.find((r) => r.id === id)?.auto && routers.find((r) => r.id === id)?.pppoe && <p className="text-xs text-amber-200">{t("autoNote")}</p>}
+                    {canWrite && <p className="text-xs text-zinc-400">{t("suspendHold")}</p>}
                     {!canWrite && <p className="text-xs text-zinc-400">{!canChange ? tr("adminOnly") : readOnly ? t("actsLocked") : t("modeNoWriteUser")}</p>}
                     <div className="flex flex-wrap gap-2">
                       <button type="button" disabled={!canWrite || busy} onClick={() => void act("suspend")} className={DANGER}>

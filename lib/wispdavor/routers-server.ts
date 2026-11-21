@@ -249,6 +249,21 @@ export async function agentVisit(r: Router, body: string): Promise<string> {
 }
 
 /** A service's status in Clientes, saved like a phone's edit (history, sync) once the router applied it. */
+/**
+ * A service suspended by hand from Router en vivo while the client owes nothing: a manual hold (owner, 2026-11-21: not
+ * charged, never reconnected by itself), so neither the automatic switch nor Cortes undoes it.
+ */
+export async function setServiceHold(clientId: string, serviceId: string) {
+  const row = (await getPool().query(`select data, version from clients where id = $1 and deleted_at is null`, [clientId])).rows[0] as { data: unknown; version: number } | undefined
+  const c = row ? decodeClient(row.data) : null
+  if (!row || !c) return
+  const s = c.services.find((x) => x.id === serviceId)
+  if (!s || s.status === "cancelado" || (s.status === "suspendido" && s.hold)) return
+  c.id = clientId
+  const next = { ...c, services: c.services.map((x) => (x.id === serviceId ? { ...withHold({ ...x, status: "suspendido" as const }, true, todayInMexico()), status: "suspendido" as const } : x)), updatedAt: new Date().toISOString() }
+  await sync("clients", Number.MAX_SAFE_INTEGER - 1, [{ id: clientId, baseVersion: row.version, data: next, deleted: false, editedAt: next.updatedAt }], "Router (WispDavor)")
+}
+
 export async function setServiceStatus(clientId: string, serviceId: string, status: "activo" | "suspendido") {
   const row = (await getPool().query(`select data, version from clients where id = $1 and deleted_at is null`, [clientId])).rows[0] as { data: unknown; version: number } | undefined
   const c = row ? decodeClient(row.data) : null

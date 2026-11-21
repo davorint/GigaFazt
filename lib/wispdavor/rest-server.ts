@@ -13,8 +13,10 @@ import { request } from "node:https"
 import { connect, type TLSSocket } from "node:tls"
 import { decodeClient } from "../clients/model"
 import { getPool } from "../db/client"
-import { SUSPENDED_PROFILE, safe } from "./routers"
-import { setServiceStatus } from "./routers-server"
+import { todayInMexico } from "../lead"
+import { loadClient, loadPayments } from "./db-server"
+import { SUSPENDED_PROFILE, desiredUsers, safe } from "./routers"
+import { setServiceHold, setServiceStatus } from "./routers-server"
 import { EXPORT_SCRIPT, PROTOCOLS, bool, isReadOp, normalizeFingerprint, num, opProblem, opToApi, opToRest, validHost, type Op, type Protocol } from "./rest"
 import { collectReply, encodeSentence, readSentences } from "./ros-api"
 
@@ -421,8 +423,20 @@ export async function restAct(routerId: string, action: RestAction, user: string
   if (action === "reconnect") profile = svc?.plan || arg
   if (action === "plan") profile = arg
   if ((action === "reconnect" || action === "plan") && !safe(profile)) throw new RestError("no-plan")
+  // What Clientes and Cobranza say this user should be (the agent's rules), and whether the router is on automatic:
+  // a change against them would be undone at its next report, so it's refused with what to do instead.
+  const auto = (((await getPool().query(`select auto and pppoe as auto from routers where id = $1`, [routerId])).rows[0] as { auto: boolean } | undefined)?.auto) ?? false
+  const client = svc ? await loadClient(svc.clientId) : null
+  const desired = client ? desiredUsers([client], await loadPayments(client.id), todayInMexico()).find((d) => d.user === user) : undefined
   let error = ""
   try {
+    if (auto && desired) {
+      if (action === "reconnect" && desired.suspended && !(client?.services.find((s) => s.id === svc?.serviceId)?.hold)) throw new RestError("auto-late")
+      // A new plan would also lift a suspension the agent keeps: refused while suspended too.
+      if (action === "plan" && !desired.disabled && (desired.suspended || profile !== desired.plan)) throw new RestError("auto-plan")
+      if (action === "disable" && !desired.disabled) throw new RestError("auto-disable")
+      if (action === "enable" && desired.disabled) throw new RestError("auto-enable")
+    }
     await withRouter(routerId, true, async (call) => {
       const secret = (await call({ kind: "print", menu: "/ppp/secret", where: { name: user }, proplist: [".id", "name"] }))[0]
       if (!secret) throw new RestError("no-secret")
@@ -442,8 +456,13 @@ export async function restAct(routerId: string, action: RestAction, user: string
       [routerId, kind, user, profile, svc?.clientId ?? "", svc?.serviceId ?? "", mode, error ? "error" : "done", error, by]
     )
   }
-  // Suspended or back on the plan: Clientes follows (Cortes, the portal and Hoy read it).
-  if (svc && (action === "suspend" || action === "reconnect")) await setServiceStatus(svc.clientId, svc.serviceId, action === "suspend" ? "suspendido" : "activo")
+  // Suspended or back on the plan: Clientes follows (Cortes, the portal and Hoy read it). Suspending someone who owes
+  // nothing is a manual hold (not for debt): not charged, and nothing reconnects them by itself.
+  if (svc && action === "suspend") {
+    if (desired && !desired.suspended) await setServiceHold(svc.clientId, svc.serviceId)
+    else await setServiceStatus(svc.clientId, svc.serviceId, "suspendido")
+  }
+  if (svc && action === "reconnect") await setServiceStatus(svc.clientId, svc.serviceId, "activo")
   return profile ? `${action}:${profile}` : action
 }
 

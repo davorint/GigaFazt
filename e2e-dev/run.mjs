@@ -26,6 +26,10 @@ const SCENARIOS = [
     "rest-api.cjs",
     [/== rest ==/, /== api ==/, /API connections for the live view: 1/, /act read-only: 403 read-only[\s\S]*act read-only: 403 read-only/, /act suspend: 200 suspend:DSX-suspendido[\s\S]*act suspend: 200 suspend:DSX-suspendido/, /toggle shows API selected: true/, /after click, saved protocol: rest/, /probar disabled when unsaved: true/, /after a timer refresh, view still there: true/, /overflow: 0 errors: \[\]/],
   ],
+  [
+    "conflicts.cjs",
+    [/auto, late: reconnect: 409 auto-late/, /auto: plan 500M: 409 auto-plan/, /auto: disable: 409 auto-disable/, /auto: kick: 200 kick/, /auto, paid: suspend: 200 suspend:DSX-suspendido/, /Clientes: \{"status":"suspendido","hold":true,"holdOpen":true\}/, /auto, held: reconnect: 200 reconnect:200M/, /Clientes: \{"status":"activo","hold":false\}/, /manual, late: reconnect: 200 reconnect:200M/, /debt suspension, no hold\): \{"status":"suspendido","hold":false\}/],
+  ],
   ["outbox-portal.cjs", [/back online: stored files: 1 linked to the job: 1 banner gone: true/, /reports: \["Solicitud de cambio de plan/, /pdf: .* %PDF-1\.4 .* accents: true/, /errors: \[\]/]],
 ]
 

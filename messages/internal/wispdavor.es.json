@@ -640,7 +640,11 @@
         "bad-op": "Operación no válida.",
         "protocol-choice": "Modo no válido.",
         "key-changed": "Las contraseñas guardadas no se pueden leer: cambió ROUTER_CRED_KEY. Vuelve a escribirlas y guarda.",
-        "admin-only": "Solo un administrador puede hacer cambios en los routers (Equipo → Usuarios y accesos)."
+        "admin-only": "Solo un administrador puede hacer cambios en los routers (Equipo → Usuarios y accesos).",
+        "auto-late": "Está atrasado y el router está en «Automático»: lo volvería a cortar. Registra su pago o una promesa de pago en Cobranza y se reconecta solo.",
+        "auto-plan": "El router está en «Automático» y regresaría al plan de Clientes. Cambia el plan en Clientes: el router lo sigue solo.",
+        "auto-disable": "El router está en «Automático» y lo volvería a activar. Para dejarlo sin servicio, cancela el servicio en Clientes o usa «Suspender».",
+        "auto-enable": "El servicio está cancelado en Clientes y el router está en «Automático»: lo volvería a desactivar. Reactívalo en Clientes."
       },
       "mode": "Modo de conexión",
       "modes": {
@@ -716,7 +720,9 @@
         "api": "Por API de MikroTik"
       },
       "allClients": "Este router no tiene despliegue: se muestran los clientes de todos (asígnale uno en Routers en vivo).",
-      "notInClients": "{user} (sin cliente en WispDavor)"
+      "notInClients": "{user} (sin cliente en WispDavor)",
+      "suspendHold": "Suspender a alguien al corriente es una suspensión manual: no se le cobra y nada lo reconecta solo (se quita con «Reconectar» o en Clientes).",
+      "autoNote": "Este router está en «Automático»: lo que no coincida con Clientes y Cobranza se rechaza aquí, porque el router lo desharía en su siguiente reporte."
     }
   }
 }

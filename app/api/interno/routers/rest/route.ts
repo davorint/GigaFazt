@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (e) {
     // The router's answer as a code the page explains (read-only, auth, cert, unreachable…).
-    if (e instanceof RestError) return json({ error: e.code, detail: e.message === e.code ? "" : e.message }, e.code === "read-only" || e.code === "no-write-user" ? 403 : 502)
+    if (e instanceof RestError) return json({ error: e.code, detail: e.message === e.code ? "" : e.message }, e.code === "read-only" || e.code === "no-write-user" ? 403 : e.code.startsWith("auto-") ? 409 : 502)
     return json({ error: "server", detail: e instanceof Error ? e.message.slice(0, 160) : "error" }, 500)
   }
 }

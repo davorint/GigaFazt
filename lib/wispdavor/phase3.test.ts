@@ -176,3 +176,20 @@ describe("Report rate per router (owner, 2026-11-21: 2, 5 or 10 minutes)", () =>
     expect(agentScript({ ...base, pollMinutes: 10 })).toContain("interval=10m")
   })
 })
+
+describe("Agent script robustness (2026-11-21 review)", () => {
+  const s = agentScript({ url: "https://www.gigafazt.com/api/routers/agente", routerId: "rt-000001", key: "k".repeat(32) })
+  it("each item is read inside its own :do (a client gone between find and get doesn't stop the report)", () => {
+    expect(s).toContain(":do { :set rx [/interface get ($i->0) rx-byte]")
+    expect(s).toContain(":local ad [/ppp active get $x address]")
+    expect(s.split(String.fromCharCode(10)).some((l, i, a) => l.trim() === ":do {" && a[i + 1]?.trim() === ":local x ($act->$j)")).toBe(true)
+    expect(s).toContain(":do { :set gs [:tostr [/ip route get $g gateway]] } on-error={}")
+  })
+  it("a report rebuilt without traffic still carries the gateway and voucher lines", () => {
+    expect(s).toContain(":set out ($wdDone . $gl . $hl)")
+  })
+  it("an action line never has an empty field in the middle", () => {
+    expect(actionLine({ id: 9, kind: "voucher", user: "abc12345", arg1: "WD-x", arg2: "", arg3: "60m", arg4: "0" })).toBeNull()
+    expect(actionLine({ id: 9, kind: "profile", user: "ana", arg1: "200M", arg2: "", arg3: "", arg4: "" })).toBe("9,profile,ana,200M")
+  })
+})
