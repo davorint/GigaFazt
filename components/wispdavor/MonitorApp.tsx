@@ -89,14 +89,34 @@ export function MonitorApp() {
                     </div>
                     {ips.length > 0 && (
                       <div className="grid gap-1">
-                        <h3 className="text-sm text-zinc-200">{t("carriersChart")}</h3>
-                        <LineChart
-                          times={times}
-                          series={ips.map((ip, i) => ({ label: ip, color: SERIES_COLORS[i], values: pts.map((p) => p.gateways.find((g) => g.ip === ip)?.rtt ?? null) }))}
-                          label={t("carriersChart")}
-                          unit="ms"
-                          fmt={ms}
-                        />
+                        {/* Latency only when the router can run flood-ping (device-mode traffic-gen); else the loss. */}
+                        {pts.some((p) => p.gateways.some((g) => g.rtt !== null)) ? (
+                          <>
+                            <h3 className="text-sm text-zinc-200">{t("carriersChart")}</h3>
+                            <LineChart
+                              times={times}
+                              series={ips.map((ip, i) => ({ label: ip, color: SERIES_COLORS[i], values: pts.map((p) => p.gateways.find((g) => g.ip === ip)?.rtt ?? null) }))}
+                              label={t("carriersChart")}
+                              unit="ms"
+                              fmt={ms}
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <h3 className="text-sm text-zinc-200">{t("lossChart")}</h3>
+                            <p className="text-xs text-zinc-400">{t("noLatency")}</p>
+                            <LineChart
+                              times={times}
+                              series={ips.map((ip, i) => ({ label: ip, color: SERIES_COLORS[i], values: pts.map((p) => {
+                                const g = p.gateways.find((x) => x.ip === ip)
+                                return g ? Math.round(lossOf(g) * 100) : null
+                              }) }))}
+                              label={t("lossChart")}
+                              unit="%"
+                              fmt={(n) => n.toFixed(0)}
+                            />
+                          </>
+                        )}
                         <ul className="grid gap-0.5 font-mono text-xs text-zinc-300">
                           {ips.map((ip) => {
                             const g = last?.gateways.find((x) => x.ip === ip)

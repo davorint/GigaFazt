@@ -84,7 +84,8 @@ export function opToApi(op: Op): string[] {
   if (op.kind === "set") return [`${op.menu}/set`, `=.id=${op.id}`, ...attrs(op.props)]
   if (op.kind === "remove") return [`${op.menu}/remove`, `=.id=${op.id}`]
   if (op.kind === "add") return [`${op.menu}/add`, ...attrs(op.props)]
-  return [`${op.menu}/${op.cmd}`, ...attrs(op.params), ...props(op.proplist)]
+  // .proplist is documented for print only: commands go without it over the API.
+  return [`${op.menu}/${op.cmd}`, ...attrs(op.params)]
 }
 
 /** A hostname (Dynu, MikroTik cloud, any DNS name) or an IPv4 address. */
@@ -96,22 +97,31 @@ export function normalizeFingerprint(s: string): string {
   return /^[0-9a-f]{64}$/.test(hex) ? hex : ""
 }
 
-/** The RouterOS commands to set a router up for the site, shown in WispDavor (owner to run them in the terminal). */
+/**
+ * The RouterOS commands to set a router up for the site, shown in WispDavor (owner to run them in the terminal). Per the
+ * MikroTik manual (7.26): /certificate enable-ssl-certificate is obsolete (add-acme replaces it); a Let's Encrypt
+ * certificate for your own name needs the www service on port 80 reachable from the internet while it's issued and
+ * renewed (at 80 % of its validity), which also exposes the WebFig login, so a self-signed certificate pinned by its
+ * fingerprint is the default here; services take the certificate by name; without one, www-ssl and api-ssl only offer
+ * anonymous ciphers.
+ */
 export function setupCommands(o: { restPort: number; apiPort: number; dnsName: string }): string {
   const dns = o.dnsName || "router.ejemplo.dynu.net"
   return [
     "# WispDavor: acceso REST y API (RouterOS 7). Corre esto en la terminal del router.",
-    "# 1) Certificado (sin certificado www-ssl y api-ssl solo ofrecen cifrados anónimos y no conectan):",
-    "#    Let's Encrypt para el nombre DDNS (necesita el puerto 80 abierto mientras se emite) …",
-    `/certificate enable-ssl-certificate dns-name=${dns}`,
-    "#    … o uno propio (luego copia su huella SHA-256 en WispDavor):",
-    `# /certificate add name=wispdavor common-name=${dns} days-valid=3650 key-size=2048; /certificate sign wispdavor`,
-    "# /certificate print detail where name=wispdavor   (campo fingerprint)",
-    "# 2) Servicios con certificado, en puertos no estándar; HTTP y API sin cifrar apagados.",
-    `/ip service set www-ssl disabled=no port=${o.restPort} certificate=[/certificate find where common-name="${dns}"]`,
-    `/ip service set api-ssl disabled=no port=${o.apiPort} certificate=[/certificate find where common-name="${dns}"]`,
-    "/ip service set www disabled=yes",
+    "# 1) Certificado propio (no abre ningún puerto). Luego copia su huella en WispDavor:",
+    `/certificate add name=wispdavor common-name=${dns} days-valid=3650 key-size=2048`,
+    "/certificate sign wispdavor",
+    "/certificate print detail where name=wispdavor",
+    "#    (campo fingerprint: pégalo en «Huella SHA-256». VERIFICAR que sean 64 caracteres hexadecimales.)",
+    "#    Alternativa Let's Encrypt (deja el servicio www en el puerto 80 abierto a internet para emitir y renovar):",
+    `#    /certificate add-acme name=wispdavor domain-names=${dns}`,
+    "# 2) Servicios cifrados con ese certificado, en puertos no estándar; los sin cifrar, apagados.",
+    `/ip service set www-ssl disabled=no port=${o.restPort} certificate=wispdavor`,
+    `/ip service set api-ssl disabled=no port=${o.apiPort} certificate=wispdavor`,
     "/ip service set api disabled=yes",
+    "/ip service set www disabled=yes",
+    "#    (con Let's Encrypt, en lugar de apagar www: /ip service set www disabled=no port=80)",
     "# 3) Grupos propios (los grupos read/write/full de fábrica incluyen reboot y sensitive: no los uses).",
     "/user group add name=wispdavor-lectura policy=read,api,rest-api",
     "/user group add name=wispdavor-escritura policy=read,write,api,rest-api",

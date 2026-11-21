@@ -192,7 +192,8 @@ async function apiSession(host: string, port: number, fingerprint: string, user:
   let pending: string[][] = []
   let size = 0
   let dead: RestError | null = null
-  let waiter: { resolve: (r: ReturnType<typeof collectReply>) => void; reject: (e: RestError) => void; timer: ReturnType<typeof setTimeout> } | null = null
+  let waiter: { tag: string; resolve: (r: ReturnType<typeof collectReply>) => void; reject: (e: RestError) => void; timer: ReturnType<typeof setTimeout> } | null = null
+  let nextTag = 0
   const kill = (e: RestError) => {
     dead ??= e
     const w = waiter
@@ -215,7 +216,8 @@ async function apiSession(host: string, port: number, fingerprint: string, user:
     }
     buf = read.rest
     pending = [...pending, ...read.sentences]
-    const reply = collectReply(pending)
+    // Each command has its own .tag: replies to anything else (a late one) are left out.
+    const reply = collectReply(pending, waiter?.tag ?? "")
     if (!reply.finished) return
     pending = []
     size = 0
@@ -232,8 +234,9 @@ async function apiSession(host: string, port: number, fingerprint: string, user:
   const send = (words: string[]) =>
     new Promise<ReturnType<typeof collectReply>>((resolve, reject) => {
       if (dead) return reject(dead)
-      waiter = { resolve, reject, timer: setTimeout(() => kill(new RestError("timeout")), TIMEOUT_MS) }
-      sock.write(encodeSentence(words))
+      const tag = String(++nextTag)
+      waiter = { tag, resolve, reject, timer: setTimeout(() => kill(new RestError("timeout")), TIMEOUT_MS) }
+      sock.write(encodeSentence([...words, `.tag=${tag}`]))
     })
   const login = await send(["/login", `=name=${user}`, `=password=${pass}`])
   if (login.trap) {

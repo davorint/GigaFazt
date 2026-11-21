@@ -62,10 +62,19 @@ export function readSentences(buf: Buffer): { sentences: string[][]; rest: Buffe
 
 export type ApiReply = { records: Record<string, string>[]; done: Record<string, string> | null; trap: string; fatal: string }
 
-/** The replies to one command, from its sentences (up to and including !done, or a !fatal). */
-export function collectReply(sentences: string[][]): ApiReply & { finished: boolean } {
+/** A reply sentence's .tag ("" when it has none). */
+export const tagOf = (s: string[]) => s.find((w) => w.startsWith(".tag="))?.slice(5) ?? ""
+
+/**
+ * The replies to one command, from its sentences (up to and including !done, or a !fatal). With `tag`, only the
+ * sentences carrying it count (manual: every reply to a tagged sentence carries its .tag; !done is always the last
+ * reply, so a print with no items, answered "!empty" then "!done", ends at the !done and nothing is left behind).
+ */
+export function collectReply(sentences: string[][], tag?: string): ApiReply & { finished: boolean } {
   const out: ApiReply & { finished: boolean } = { records: [], done: null, trap: "", fatal: "", finished: false }
   for (const s of sentences) {
+    // A !fatal closes the connection whatever the tag; other replies belong to their own command.
+    if (tag !== undefined && s[0] !== "!fatal" && tagOf(s) !== tag) continue
     const attrs: Record<string, string> = {}
     for (const w of s.slice(1)) {
       if (!w.startsWith("=")) continue

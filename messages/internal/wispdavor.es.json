@@ -401,7 +401,7 @@
       "confirmRemove": "¿Quitar {name}? Se borran sus acciones y su estado (no toca el router).",
       "copy": "Copiar",
       "copied": "Copiado",
-      "verify": "VERIFICAR: el script se probó solo en el sitio; pruébalo primero en un router con pocos clientes. Para que la conexión HTTPS funcione, el router debe confiar en el certificado del sitio (RouterOS 7: certificados del sistema).",
+      "verify": "VERIFICAR: el script se probó solo en el sitio; pruébalo primero en un router con pocos clientes. Para que la conexión HTTPS funcione, el router debe confiar en el certificado del sitio (RouterOS 7: certificados del sistema). El agente usa fetch y scheduler: revisa /system/device-mode print (el modo home los apaga; los CCR y la serie 1100 vienen en advanced, donde sí están).",
       "error": "No se pudo (sin conexión o error del servidor).",
       "neon": "Cada router se reporta cada 2 minutos: la base de datos (Neon) queda encendida todo el día, lo que usa horas de cómputo de tu plan.",
       "unmanaged": "No se manejan ({n}): corrígelos en Clientes",
@@ -448,7 +448,7 @@
       "unit": "Mbps promedio por intervalo"
     },
     "hotspot": {
-      "lead": "Fichas para el Wi-Fi de áreas comunes. Los planes y precios los defines tú. El router con hotspot recibe las fichas solo (con su agente) y reporta cuándo se usan.",
+      "lead": "Fichas para el Wi-Fi de áreas comunes. Los planes y precios los defines tú. El router con hotspot recibe las fichas solo (con su agente) y reporta cuándo se usan. El hotspot necesita el router en modo advanced de /system/device-mode (los modos home y basic lo apagan).",
       "plans": "Planes de fichas",
       "planName": "Nombre",
       "minutes": "Tiempo (minutos, 0 = sin límite)",
@@ -492,7 +492,7 @@
     },
     "monitoreo": {
       "lead": "Cada router mide en cada reporte (cada 2 minutos) la latencia y pérdida de sus carriers (la puerta de enlace de cada ruta por defecto) y, por turnos, la de las ONT conectadas. Una falla se abre cuando las sesiones de un router caen de golpe a la mitad o menos de lo que había en la última media hora, cuando ningún carrier responde, o cuando el router deja de reportarse; el equipo recibe aviso y los clientes de ese despliegue ven un aviso en su portal. Los cortes automáticos siguen igual.",
-      "verify": "VERIFICAR en tu router: el formato de avg-rtt de flood-ping, y que las ONT respondan ping en su WAN (muchas Huawei lo bloquean de fábrica; si todas salen con 100 % de pérdida, es eso). Con un solo router, si deja de reportarse nadie lo nota hasta el resumen diario.",
+      "verify": "La latencia sale de flood-ping, que necesita la función traffic-gen de /system/device-mode (apagada de fábrica en todos los modos; activarla pide confirmar en el router con el botón o apagándolo). Sin ella el agente usa ping normal: se ve la pérdida pero no la latencia. VERIFICAR también que las ONT respondan ping en su WAN (muchas Huawei lo bloquean de fábrica; si todas salen con 100 % de pérdida, es eso). Con un solo router, si deja de reportarse nadie lo nota hasta el resumen diario.",
       "error": "No se pudo cargar el monitoreo (sin conexión o sin base de datos).",
       "loading": "Cargando monitoreo…",
       "openTitle": "Fallas abiertas",
@@ -523,7 +523,9 @@
       "ontRow": "{name} ({user}) · {router} · {rtt} ms · pérdida {loss} · {date}",
       "pastTitle": "Fallas de los últimos 30 días",
       "pastNone": "Ninguna.",
-      "lasted": "duró {min} min"
+      "lasted": "duró {min} min",
+      "lossChart": "Pérdida a cada carrier (24 h)",
+      "noLatency": "Sin latencia: este router no puede usar flood-ping (traffic-gen apagado en /system/device-mode), así que solo se mide la pérdida con ping normal."
     },
     "cobranza": {
       "lead": "Sale de Cobranza y de lo que ya queda registrado: un cliente se atrasa con un mes si el día 11 no lo ha pagado. «Avisado» = recibió recordatorio o aviso de corte por WhatsApp (API o enlace de un toque) o quedó «recordado» en Cobranza; «suspendido» = su servicio quedó suspendido por adeudo (no cuenta la suspensión manual). Los días se cuentan desde el día 11.",

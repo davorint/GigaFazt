@@ -47,6 +47,10 @@ describe("Router access: what counts as reading (read-only mode, REST and API al
     expect(s).toContain("policy=read,api,rest-api")
     expect(s).not.toMatch(/group=read\b/)
     expect(s).not.toContain(",policy")
+    // Manual 7.26: enable-ssl-certificate is obsolete (add-acme); services take the certificate by name.
+    expect(s).not.toContain("enable-ssl-certificate")
+    expect(s).toContain("certificate=wispdavor")
+    expect(s).toContain("/certificate sign wispdavor")
   })
 })
 
@@ -69,5 +73,16 @@ describe("MikroTik API wire format (manual: Developer guides → API)", () => {
     expect(collectReply([["!re", "=name=ana", "=comment=a=b"], ["!done"]])).toMatchObject({ records: [{ name: "ana", comment: "a=b" }], finished: true, trap: "" })
     expect(collectReply([["!trap", "=message=invalid user name or password (6)"], ["!done"]])).toMatchObject({ trap: "invalid user name or password (6)", finished: true })
     expect(collectReply([["!done", "=ret=*12"]]).done).toEqual({ ret: "*12" })
+  })
+  it("tags: a command's reply ends at its own !done; an empty print (!empty then !done) leaves nothing behind", () => {
+    const late = [["!re", "=name=old", ".tag=1"], ["!done", ".tag=1"]]
+    const mine = [["!empty", ".tag=2"], ["!done", ".tag=2"]]
+    const r = collectReply([...late, ...mine], "2")
+    expect(r).toMatchObject({ records: [], finished: true })
+    expect(collectReply([["!empty", ".tag=3"]], "3").finished).toBe(false)
+    expect(collectReply([["!fatal", "session terminated"]], "4")).toMatchObject({ finished: true, fatal: "session terminated" })
+  })
+  it("over the API, .proplist goes on print only (the manual documents it there)", () => {
+    expect(opToApi({ kind: "cmd", menu: "/interface", cmd: "monitor-traffic", params: { interface: "ether1", once: "" }, proplist: ["name"] })).toEqual(["/interface/monitor-traffic", "=interface=ether1", "=once="])
   })
 })

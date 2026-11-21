@@ -20,7 +20,12 @@ describe("WispDavor phase 4: pings in the report", () => {
   it("the agent script pings carriers and ONTs and still balances its braces", () => {
     const s = agentScript({ url: "https://www.gigafazt.com/api/routers/agente", routerId: "rt-000001", key: "k".repeat(32) })
     expect(s).toContain("/tool flood-ping address=$ip count=5")
-    expect(s).toContain(":local stop ($wdOi + 100)")
+    // flood-ping needs device-mode traffic-gen (off by default): the plain ping counts replies instead.
+    expect(s).toContain(":set rcv [/ping $ip count=5 interval=200ms]")
+    expect(s).toContain(":set rcv [/ping $ad count=2 interval=100ms]")
+    // Only documented flood-ping parameters (address, count, size, timeout).
+    expect(s.split("\n").filter((l) => l.includes("flood-ping") && l.includes("interval="))).toEqual([])
+    expect(s).toContain(":local stop ($wdOi + 40)")
     expect(s).not.toContain("${")
     const body = s.slice(s.indexOf("source={") + "source=".length, s.lastIndexOf("/system scheduler")).replace(/"(?:[^"\\]|\\.)*"/g, "")
     let depth = 0

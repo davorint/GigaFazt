@@ -8,11 +8,13 @@
  * Report lines (added to lib/wispdavor/routers.ts parseReport):
  *   g;ip;sent;received;avgRtt     a carrier gateway (each default route's gateway, every visit)
  *   o;user;sent;received;avgRtt   a connected client's ONT (its PPPoE address), up to ONT_SLICE per visit in turn
- * avgRtt comes from RouterOS's flood-ping (VERIFICAR its format on the owner's router: a number of ms or a time).
+ * avgRtt comes from flood-ping (a time, per the manual) when the router's device-mode allows traffic-gen (off by default
+ * in every mode); otherwise the plain ping only counts replies and avgRtt is empty (loss without latency).
  */
 
-/** ONTs pinged per visit (every 2 minutes); the router goes round all connected ones in turn. */
-export const ONT_SLICE = 100
+/** ONTs pinged per visit (every 2 minutes); the router goes round all connected ones in turn. Kept low: a plain ping
+ * that gets no reply waits, and a visit must end well within 2 minutes. */
+export const ONT_SLICE = 40
 /** Sessions dropping to this share of the last half hour's peak (with at least MIN_SESSIONS) open an outage. */
 export const DROP_TO = 0.5
 /** An outage of sessions ends when they're back to this share of the peak before it. */
