@@ -87,7 +87,8 @@ async function markPaid(rowId: string, paymentIntentId: string, amountReceived: 
       | undefined
     if (row && row.status !== "paid") {
       const amount = amountReceived ?? row.amount
-      const pay = await addPayment({ clientId: row.client_id, amount, date: todayInMexico(), method: cobranzaMethod(row.kind), reference: `Stripe ${paymentIntentId}`, notes: EDITOR }, EDITOR)
+      // The id comes from Stripe's payment: if this step runs again (a retry after a failure below), it's the same record.
+      const pay = await addPayment({ id: `stripe-${paymentIntentId || rowId}`.slice(0, 64), clientId: row.client_id, amount, date: todayInMexico(), method: cobranzaMethod(row.kind), reference: `Stripe ${paymentIntentId}`, notes: EDITOR }, EDITOR)
       await c.query(`update online_payments set status = 'paid', paid_at = now(), payment_intent_id = $2, payment_id = $3, amount = $4 where id = $1`, [rowId, paymentIntentId, pay.id, amount])
       done = { clientId: row.client_id, kind: row.kind, amount }
     }
@@ -130,8 +131,10 @@ async function message(cl: Client, template: TemplateId, amount: number) {
   await sendTemplate(to, template, values, { clientId: cl.id, by: EDITOR }).catch(() => undefined)
 }
 
-async function markFailed(rowId: string, status: "failed" | "expired", error = "") {
-  await getPool().query(`update online_payments set status = $2, error = $3 where id = $1 and status <> 'paid'`, [rowId, status, error.slice(0, 300)])
+/** True when this call is the one that marked it (so only one message goes to the client). */
+async function markFailed(rowId: string, status: "failed" | "expired", error = ""): Promise<boolean> {
+  const r = await getPool().query(`update online_payments set status = $2, error = $3 where id = $1 and status not in ('paid', 'failed', 'expired')`, [rowId, status, error.slice(0, 300)])
+  return (r.rowCount ?? 0) > 0
 }
 
 /** What the webhook does with each event it receives (others are ignored). */
@@ -146,9 +149,11 @@ export async function handleEvent(event: Stripe.Event) {
       return
     }
     case "checkout.session.async_payment_failed":
-      return markFailed(event.data.object.id, "failed")
+      await markFailed(event.data.object.id, "failed")
+      return
     case "checkout.session.expired":
-      return markFailed(event.data.object.id, "expired")
+      await markFailed(event.data.object.id, "expired")
+      return
     case "payment_intent.succeeded": {
       const pi = event.data.object
       if (pi.metadata?.kind === "autopay") await markPaid(pi.id, pi.id, pi.amount_received / 100)
@@ -157,7 +162,8 @@ export async function handleEvent(event: Stripe.Event) {
     case "payment_intent.payment_failed": {
       const pi = event.data.object
       if (pi.metadata?.kind !== "autopay") return
-      await markFailed(pi.id, "failed", pi.last_payment_error?.message ?? "")
+      // The auto-pay run marks (and messages) its own declines; the webhook only does when it got there first.
+      if (!(await markFailed(pi.id, "failed", pi.last_payment_error?.message ?? ""))) return
       const cl = await loadClient(pi.metadata.client_id ?? "")
       if (cl) await message(cl, "cobroFallido", pi.amount / 100)
       return
@@ -191,13 +197,14 @@ export async function runAutopay(today = todayInMexico()): Promise<AutopayRun> {
       // A decline (card error) comes back as an exception with the PaymentIntent in it.
       const err = e as { raw?: { payment_intent?: { id?: string } }; message?: string }
       const id = err.raw?.payment_intent?.id ?? `autopay-fail-${cl.id}-${today}`
-      await getPool().query(`insert into online_payments (id, client_id, kind, amount, status, payment_intent_id, error) values ($1, $2, 'autopay', $3, 'failed', $1, $4) on conflict (id) do update set status = 'failed', error = excluded.error`, [
+      // Inserted as failed only if the webhook didn't record it first (then it already messaged the client).
+      const r = await getPool().query(`insert into online_payments (id, client_id, kind, amount, status, payment_intent_id, error) values ($1, $2, 'autopay', $3, 'failed', $1, $4) on conflict (id) do nothing`, [
         id,
         cl.id,
         owed,
         (err.message ?? "error").slice(0, 300),
       ])
-      await message(cl, "cobroFallido", owed)
+      if ((r.rowCount ?? 0) > 0) await message(cl, "cobroFallido", owed)
       out.failed++
     }
   }

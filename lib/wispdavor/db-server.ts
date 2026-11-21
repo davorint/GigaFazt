@@ -36,12 +36,15 @@ export async function portalAddress(clientId: string): Promise<string> {
   return r ? `${SITE_URL}/mi-cuenta#${r.token}` : `${SITE_URL}/clientes`
 }
 
-/** A payment added to Cobranza the same way a phone adds one (decoded, versioned, synced). */
+/**
+ * A payment added to Cobranza the same way a phone adds one (decoded, versioned, synced). With a fixed id (an online
+ * payment's), adding it again is the same record, never a second payment ("saved" or "kept-server" both mean it's there).
+ */
 export async function addPayment(p: Partial<Payment> & { clientId: string; amount: number; date: string }, editor: string): Promise<Payment> {
   const pay = newPayment({ ...p, by: editor, updatedAt: new Date().toISOString() })
   const r = await sync("payments", Number.MAX_SAFE_INTEGER - 1, [{ id: pay.id, baseVersion: null, data: pay, deleted: false, editedAt: pay.updatedAt }], editor)
   const out = r.results[0]
-  if (!out || out.outcome !== "saved") throw new Error(`payment not saved: ${JSON.stringify(out)}`)
+  if (!out || (out.outcome !== "saved" && out.outcome !== "kept-server")) throw new Error(`payment not saved: ${JSON.stringify(out)}`)
   return pay
 }
 

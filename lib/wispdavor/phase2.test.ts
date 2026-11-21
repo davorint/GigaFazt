@@ -100,7 +100,8 @@ describe("WispDavor phase 2: Stripe flow (mocked)", () => {
     onlineRow = { client_id: "cli-0001", kind: "spei", amount: 396, status: "pending" }
     await handleEvent(event)
     expect(addPayment).toHaveBeenCalledTimes(1)
-    expect(addPayment.mock.calls[0][0]).toMatchObject({ clientId: "cli-0001", amount: 396, method: "transferencia", reference: "Stripe pi_1" })
+    // A fixed id from Stripe's payment: a retry after a failure is the same Cobranza record, not a second one.
+    expect(addPayment.mock.calls[0][0]).toMatchObject({ id: "stripe-pi_1", clientId: "cli-0001", amount: 396, method: "transferencia", reference: "Stripe pi_1" })
     onlineRow = { ...onlineRow, status: "paid" }
     await handleEvent(event)
     expect(addPayment).toHaveBeenCalledTimes(1)

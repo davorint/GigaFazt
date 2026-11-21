@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { clientIp, ipHash } from "@/lib/reports/limits"
 import { PAY_KINDS } from "@/lib/wispdavor/online"
 import { clientForToken } from "@/lib/wispdavor/portal-server"
+import { SITE_URL, SITE_URL_CONFIGURED } from "@/lib/site"
 import { startCheckout, stripeConfigured } from "@/lib/wispdavor/stripe-server"
 
 const HEADERS = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow", "Referrer-Policy": "no-referrer" }
@@ -28,7 +29,8 @@ export async function POST(request: Request) {
     if (!found) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: HEADERS })
     if (found.kind === "limited") return NextResponse.json({ error: "too_many" }, { status: 429, headers: HEADERS })
     if (found.kind === "no-match") return NextResponse.json({ error: "no_match" }, { status: 404, headers: HEADERS })
-    const origin = new URL(request.url).origin
+    // Back to the site's own address (the request's only when the site address isn't set, e.g. local).
+    const origin = SITE_URL_CONFIGURED ? SITE_URL : new URL(request.url).origin
     const r = await startCheckout(found.client, kind, b.saveCard === true, `${origin}/mi-cuenta#${token}`)
     if ("error" in r) return NextResponse.json({ error: r.error }, { status: 409, headers: HEADERS })
     return NextResponse.json({ ok: true, url: r.url }, { headers: HEADERS })
