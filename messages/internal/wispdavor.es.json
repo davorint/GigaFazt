@@ -12,7 +12,8 @@
       "trafico": "Tráfico por cliente · WispDavor",
       "hotspot": "Fichas de hotspot · WispDavor",
       "monitoreo": "Monitoreo · WispDavor",
-      "cobranza": "Embudo de cobranza · WispDavor"
+      "cobranza": "Embudo de cobranza · WispDavor",
+      "envivo": "Router en vivo · WispDavor"
     },
     "kicker": "Uso interno · Software · WispDavor",
     "title": "WispDavor",
@@ -70,6 +71,10 @@
       "cobranza": {
         "name": "Embudo de cobranza",
         "desc": "Cada mes: quién se atrasó, a quién se le avisó, a quién se suspendió y quién pagó en cada paso, con los días que tardó."
+      },
+      "envivo": {
+        "name": "Router en vivo (REST)",
+        "desc": "Un router a la vez por su API REST: recursos, interfaces con tráfico en vivo, sesiones PPPoE, bitácora, la sesión de un cliente con acciones y respaldos de la configuración. Solo lectura salvo que lo cambies."
       }
     },
     "existing": {
@@ -343,7 +348,7 @@
       "loading": "Cargando facturas…"
     },
     "routers": {
-      "lead": "Cada MikroTik corre un script que cada 2 minutos le dice al sitio qué usuarios PPPoE tiene (perfil, desactivado, conectado, tráfico) y recibe las acciones pendientes. El router no abre ningún puerto y solo ejecuta una lista fija de comandos.",
+      "lead": "Cada MikroTik corre un script que cada 2 minutos le dice al sitio qué usuarios PPPoE tiene (perfil, desactivado, conectado, tráfico) y recibe las acciones pendientes. Para esto el router no abre ningún puerto y solo ejecuta una lista fija de comandos. Aparte, la «Conexión REST» de cada router (opcional) deja ver el router en vivo y, si quitas «Solo lectura», hacer cambios.",
       "desired": "Lo que debe tener cada usuario sale de Clientes y Cobranza: atrasado sin promesa vigente → perfil DSX-suspendido (script «Morosos»); al corriente → su plan (el nombre del perfil PPPoE); servicio cancelado → desactivado.",
       "add": "Agregar router",
       "name": "Nombre",
@@ -384,7 +389,8 @@
       },
       "source": {
         "auto": "automática",
-        "staff": "a mano"
+        "staff": "a mano",
+        "rest": "REST"
       },
       "script": "Script del router",
       "scriptHint": "Pégalo en la terminal del MikroTik (RouterOS 7). Lleva la llave del router: guárdalo solo en el router. Si se pierde, crea una llave nueva (la anterior deja de servir).",
@@ -412,7 +418,8 @@
         "enable": "activar",
         "hsprofile": "perfil de hotspot",
         "voucher": "ficha",
-        "unvoucher": "quitar ficha"
+        "unvoucher": "quitar ficha",
+        "kick": "desconectar sesión"
       },
       "waiting": "Esperando el primer reporte del router: pega su script en el MikroTik."
     },
@@ -556,6 +563,122 @@
         "owing": "Deben",
         "median": "Días (mediana)"
       }
+    },
+    "rest": {
+      "title": "Conexión REST",
+      "badgeOff": "sin configurar",
+      "badgeRead": "solo lectura",
+      "badgeWrite": "lectura y escritura",
+      "lead": "El sitio entra al router por su API REST (HTTPS). Para eso el router debe ser alcanzable: IP pública (un nombre de Dynu o de /ip cloud si cambia) o una VPN. El agente sigue haciendo lo automático.",
+      "noKey": "Falta ROUTER_CRED_KEY en Vercel: sin ella no se guardan contraseñas.",
+      "readOnly": "Solo lectura",
+      "readOnlyOn": "Solo se lee: el sitio usa el usuario de lectura y nunca manda cambios.",
+      "readOnlyOff": "Se permiten cambios con el usuario de escritura (suspender, reconectar, cambiar plan, desconectar).",
+      "confirmWrite": "¿Permitir cambios en este router desde WispDavor?",
+      "host": "Dirección (nombre DDNS o IP)",
+      "hostHint": "p. ej. edificio1.dynu.net",
+      "port": "Puerto HTTPS",
+      "readUser": "Usuario de lectura (grupo read)",
+      "readPass": "Contraseña de lectura",
+      "writeUser": "Usuario de escritura (opcional)",
+      "writeHint": "Solo si vas a hacer cambios; distinto del de lectura.",
+      "writePass": "Contraseña de escritura",
+      "passKept": "Guardada (cifrada). Déjala vacía para conservarla.",
+      "fingerprint": "Huella SHA-256 del certificado (si no es de Let's Encrypt)",
+      "fingerprintHint": "/certificate print detail → fingerprint. Vacía = certificado público.",
+      "save": "Guardar",
+      "saved": "Guardado.",
+      "test": "Probar conexión",
+      "testing": "Probando…",
+      "testOk": "Conectado: {board} · RouterOS {version}",
+      "clearWrite": "Quitar usuario de escritura",
+      "setup": "Comandos para preparar el router",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "errors": {
+        "offline": "Sin conexión con el sitio.",
+        "not-configured": "Este router no tiene conexión REST configurada.",
+        "read-only": "El router está en «Solo lectura»: no se mandó ningún cambio.",
+        "no-read-user": "Falta el usuario o la contraseña de lectura.",
+        "no-write-user": "Falta el usuario de escritura: sin él no se puede cambiar nada.",
+        "no-key": "Falta ROUTER_CRED_KEY en el servidor: no se pueden guardar contraseñas.",
+        "auth": "El router rechazó el usuario o la contraseña.",
+        "cert": "El certificado del router no es de confianza: usa Let's Encrypt o pega su huella SHA-256.",
+        "cert-mismatch": "La huella del certificado no coincide: el router cambió de certificado o no es el router correcto.",
+        "dns": "Ese nombre no existe en el DNS (revisa el nombre de Dynu o de /ip cloud).",
+        "unreachable": "No se pudo llegar al router (sin IP pública, puerto cerrado o firewall).",
+        "timeout": "El router no respondió a tiempo.",
+        "host": "Dirección no válida.",
+        "port": "Puerto no válido.",
+        "fingerprint": "Huella no válida (64 caracteres hexadecimales, SHA-256).",
+        "user": "Usuario no válido.",
+        "same-user": "El usuario de escritura debe ser distinto del de lectura.",
+        "bad-user": "Usuario PPPoE no válido.",
+        "no-secret": "Ese usuario PPPoE no existe en este router.",
+        "no-plan": "Falta el plan (nombre del perfil) para reconectar o cambiar.",
+        "empty-export": "El router no devolvió la configuración (VERIFICAR que el usuario de lectura pueda correr /export por REST).",
+        "http-400": "El router no aceptó la petición.",
+        "http-404": "El router no tiene esa ruta REST (¿RouterOS 7 con el servicio www-ssl activo?).",
+        "http-500": "Error en el router.",
+        "server": "Error del servidor."
+      }
+    },
+    "envivo": {
+      "lead": "Un router a la vez por su API REST. Leer siempre está permitido; los cambios solo si el router no está en «Solo lectura» y tiene usuario de escritura. Cada cambio queda en sus acciones recientes.",
+      "loading": "Cargando…",
+      "loadingShort": "Cargando…",
+      "none": "Ningún router tiene conexión REST: configúrala en Routers en vivo → «Conexión REST».",
+      "router": "Router",
+      "refresh": "Actualizar",
+      "auto": "Cada 15 s",
+      "modeRead": "Solo lectura: se puede ver todo, no se manda ningún cambio.",
+      "modeWrite": "Cambios permitidos en este router.",
+      "modeNoWriteUser": "Cambios permitidos, pero falta el usuario de escritura.",
+      "resource": "Router",
+      "board": "Modelo · versión",
+      "uptime": "Encendido",
+      "cpu": "CPU",
+      "memory": "Memoria",
+      "interfaces": "Interfaces",
+      "ifName": "Nombre",
+      "ifType": "Tipo",
+      "ifState": "Estado",
+      "ifRx": "Entra",
+      "ifTx": "Sale",
+      "running": "arriba",
+      "down": "abajo",
+      "disabled": "desactivada",
+      "sessions": "Sesiones PPPoE ({n})",
+      "filter": "Filtrar",
+      "client": "Cliente",
+      "pickClient": "Cliente (usuario PPPoE)",
+      "noSecret": "Ese usuario no existe en este router.",
+      "profile": "Perfil",
+      "state": "Estado",
+      "online": "conectado",
+      "offline": "desconectado",
+      "address": "IP",
+      "sessionUptime": "Conectado hace",
+      "rate": "Ahora",
+      "lastOut": "Última desconexión",
+      "actsLocked": "Solo lectura: las acciones están bloqueadas. Quita «Solo lectura» en la conexión REST del router para usarlas.",
+      "acts": {
+        "suspend": "Suspender",
+        "reconnect": "Reconectar a su plan",
+        "plan": "Cambiar plan",
+        "kick": "Desconectar sesión",
+        "disable": "Desactivar",
+        "enable": "Activar"
+      },
+      "newPlan": "Plan (perfil)",
+      "confirmAct": "¿{action} a {user}?",
+      "actDone": "Hecho: {action} · {user}.",
+      "backups": "Respaldos de la configuración",
+      "backupsHint": "/export terse por REST (sin contraseñas). Se guardan los últimos 20 de cada router.",
+      "backupNow": "Respaldar ahora",
+      "backupDone": "Respaldo guardado ({kb} KB).",
+      "noBackups": "Todavía no hay respaldos.",
+      "log": "Bitácora (últimos 60)"
     }
   }
 }

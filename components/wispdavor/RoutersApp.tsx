@@ -10,6 +10,7 @@ import { siteLabel } from "@/lib/sites/model"
 import { readState } from "@/lib/sync/state"
 import type { Desired, Diff, Unmanaged } from "@/lib/wispdavor/routers"
 import { useWispData } from "./useWispData"
+import { RestPanel } from "./RestPanel"
 
 type T = ReturnType<typeof useTranslations>
 type ActionRow = { id: string; kind: string; user: string; arg1: string; source: string; status: string; result: string; created_at: string; created_by: string }
@@ -150,6 +151,7 @@ function RouterCard({
       </div>
       <p className="font-mono text-xs text-zinc-400">{[r.pppoe ? t("pppoe") : "", r.hotspot ? t("hotspot") : "", t("users", { n: r.users })].filter(Boolean).join(" · ")}</p>
       {r.pppoe && !r.siteId && <p className="rounded-lg border border-amber-400/30 px-3 py-2 text-xs text-amber-100">{t("noSiteWarn")}</p>}
+      <RestPanel routerId={r.id} />
       <details className="rounded-xl border border-white/10 p-3">
         <summary className="cursor-pointer text-sm text-zinc-200">{t("edit")}</summary>
         <div className="mt-3 grid gap-3">

@@ -57,7 +57,7 @@ export async function updateRouter(id: string, p: Partial<Pick<Router, "name" | 
 
 export async function deleteRouter(id: string) {
   const pool = getPool()
-  for (const t of ["router_actions", "router_users", "router_metrics"]) await pool.query(`delete from ${t} where router_id = $1`, [id])
+  for (const t of ["router_actions", "router_users", "router_metrics", "router_rest", "router_backups"]) await pool.query(`delete from ${t} where router_id = $1`, [id])
   // Its open outage ends with it (else its building's clients would see the banner for good); history stays.
   await pool.query(`update outages set ended_at = now() where router_id = $1 and ended_at is null`, [id])
   await pool.query(`delete from routers where id = $1`, [id])
@@ -240,7 +240,7 @@ export async function agentVisit(r: Router, body: string): Promise<string> {
 }
 
 /** A service's status in Clientes, saved like a phone's edit (history, sync) once the router applied it. */
-async function setServiceStatus(clientId: string, serviceId: string, status: "activo" | "suspendido") {
+export async function setServiceStatus(clientId: string, serviceId: string, status: "activo" | "suspendido") {
   const row = (await getPool().query(`select data, version from clients where id = $1 and deleted_at is null`, [clientId])).rows[0] as { data: unknown; version: number } | undefined
   const c = row ? decodeClient(row.data) : null
   if (!row || !c) return

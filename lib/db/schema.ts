@@ -725,3 +725,37 @@ export const fieldFiles = pgTable(
   },
   (t) => [index("field_files_ref_idx").on(t.refKind, t.refId)]
 )
+
+/**
+ * How the site reaches a router's REST API (owner, 2026-11-21: "connect to the routers via the REST API" + "READ ONLY
+ * mode"): address and port (a DDNS name such as Dynu, MikroTik's cloud name, or a VPN address), a read-only RouterOS
+ * user (group "read", always used for reading) and an optional write user, their passwords encrypted with
+ * ROUTER_CRED_KEY (never sent back), the router's certificate fingerprint when it isn't publicly trusted, and the
+ * "Solo lectura" switch (on by default: no change is ever sent).
+ */
+export const routerRest = pgTable("router_rest", {
+  routerId: text("router_id").primaryKey(),
+  host: text("host").notNull().default(""),
+  port: integer("port").notNull().default(443),
+  readUser: text("read_user").notNull().default(""),
+  readPass: text("read_pass").notNull().default(""),
+  writeUser: text("write_user").notNull().default(""),
+  writePass: text("write_pass").notNull().default(""),
+  fingerprint: text("fingerprint").notNull().default(""),
+  readOnly: boolean("read_only").notNull().default(true),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedBy: text("updated_by").notNull().default(""),
+})
+
+/** Copies of a router's configuration (/export over REST), the last 20 per router. */
+export const routerBackups = pgTable(
+  "router_backups",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    routerId: text("router_id").notNull(),
+    text: text("text").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdBy: text("created_by").notNull().default(""),
+  },
+  (t) => [index("router_backups_router_idx").on(t.routerId, t.createdAt)]
+)
