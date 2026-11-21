@@ -143,6 +143,11 @@ export function PortalApp({ pay }: { pay: ReactNode }) {
             {t(`online.back.${back}`)}
           </p>
         )}
+        {v.outage && (
+          <p role="status" className="rounded-xl border border-amber-400/40 p-4 text-sm text-amber-100">
+            {t("outage", { since: new Date(v.outage.since).toLocaleString(locale === "en" ? "en-US" : "es-MX", { timeZone: "America/Mexico_City", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) })}
+          </p>
+        )}
         <section aria-labelledby="pt-balance" className={`${CARD} ${tone}`}>
           <h2 id="pt-balance" className={H2}>
             {t("balanceTitle")}

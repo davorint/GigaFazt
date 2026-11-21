@@ -17,6 +17,7 @@ import { hit, underLimit } from "../reports/limits"
 import { reportCode, type ReportCategory, type ReportStatus } from "../reports/model"
 import { newId } from "../survey/id"
 import { amountToCharge, type PayKind } from "./online"
+import { siteOutage } from "./monitor-server"
 
 export const PORTAL_READS_PER_HOUR = 60
 /** 24 random bytes as base64url: 32 characters. */
@@ -61,6 +62,8 @@ export type PortalView = {
   today: string
   /** Online payment (phase 2), null when Stripe isn't set up on the host. */
   online: { amount: number; methods: PayKind[]; autopay: { active: boolean; brand: string; last4: string } } | null
+  /** An outage open in the client's deployment (phase 4): the portal shows a banner. */
+  outage: { since: string } | null
 }
 export type PortalLookup = { kind: "ok"; view: PortalView } | { kind: "no-match" } | { kind: "limited" } | null
 export type TokenLookup = { kind: "ok"; client: Client; payments: Payment[] } | { kind: "no-match" } | { kind: "limited" } | null
@@ -112,7 +115,7 @@ export async function portalView(token: string, sender: string, online: (c: Clie
   }))
   const today = todayInMexico()
   const v = view(client, payments, reports, today)
-  return { kind: "ok", view: { ...v, online: await online(client, amountToCharge(v.balance)) } }
+  return { kind: "ok", view: { ...v, online: await online(client, amountToCharge(v.balance)), outage: await siteOutage(client.siteId).catch(() => null) } }
 }
 
 /** What the portal shows of a client (pure, for tests). */
@@ -131,5 +134,6 @@ export function view(client: Client, payments: Payment[], reports: PortalView["r
     reports,
     today,
     online: null,
+    outage: null,
   }
 }

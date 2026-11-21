@@ -1464,6 +1464,7 @@
       },
       "secure": "You pay on Stripe's secure page; GigaFazt never sees or keeps your card details.",
       "ahead": "You're paid up. If you like, pay next month ahead: {amount}"
-    }
+    },
+    "outage": "Since {since} there's a network outage in your building. We're already working on it; no need to report it."
   }
 }

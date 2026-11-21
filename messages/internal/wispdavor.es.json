@@ -10,7 +10,8 @@
       "facturas": "Facturas (CFDI) · WispDavor",
       "routers": "Routers en vivo · WispDavor",
       "trafico": "Tráfico por cliente · WispDavor",
-      "hotspot": "Fichas de hotspot · WispDavor"
+      "hotspot": "Fichas de hotspot · WispDavor",
+      "monitoreo": "Monitoreo · WispDavor"
     },
     "kicker": "Uso interno · Software · WispDavor",
     "title": "WispDavor",
@@ -60,6 +61,10 @@
       "hotspot": {
         "name": "Fichas de hotspot",
         "desc": "Planes de fichas para el Wi-Fi de áreas comunes (tiempo o datos, velocidad, precio) y fichas imprimibles."
+      },
+      "monitoreo": {
+        "name": "Monitoreo y fallas",
+        "desc": "Sesiones en línea, latencia y pérdida de cada carrier y de cada ONT; fallas detectadas con aviso al equipo y aviso en el portal del cliente."
       }
     },
     "existing": {
@@ -468,6 +473,41 @@
       "remove": "Quitar del router",
       "confirmRemove": "¿Quitar la ficha {code} del router? Deja de funcionar.",
       "removed": "La ficha se quita en el siguiente reporte del router."
+    },
+    "monitoreo": {
+      "lead": "Cada router mide en cada reporte (cada 2 minutos) la latencia y pérdida de sus carriers (la puerta de enlace de cada ruta por defecto) y, por turnos, la de las ONT conectadas. Una falla se abre cuando las sesiones de un router caen de golpe a la mitad o menos de lo que había en la última media hora, cuando ningún carrier responde, o cuando el router deja de reportarse; el equipo recibe aviso y los clientes de ese despliegue ven un aviso en su portal. Los cortes automáticos siguen igual.",
+      "verify": "VERIFICAR en tu router: el formato de avg-rtt de flood-ping, y que las ONT respondan ping en su WAN (muchas Huawei lo bloquean de fábrica; si todas salen con 100 % de pérdida, es eso). Con un solo router, si deja de reportarse nadie lo nota hasta el resumen diario.",
+      "error": "No se pudo cargar el monitoreo (sin conexión o sin base de datos).",
+      "loading": "Cargando monitoreo…",
+      "openTitle": "Fallas abiertas",
+      "noOpen": "Ninguna falla abierta.",
+      "since": "desde {date} ({min} min)",
+      "kinds": {
+        "sesiones": "se cayeron las sesiones",
+        "carrier": "ningún carrier responde",
+        "router": "el router dejó de reportarse"
+      },
+      "noRouters": "Todavía no hay routers: agrégalos en Routers en vivo.",
+      "online": "{n} de {total} en línea",
+      "seen": "último reporte {date}",
+      "never": "nunca se ha reportado",
+      "noData": "Sin datos de las últimas 24 horas (el script de esta versión manda los pings: vuelve a pegarlo con «Llave nueva» si es de antes).",
+      "sessionsChart": "Sesiones PPPoE en línea (24 h)",
+      "sessions": "En línea",
+      "sessionsUnit": "sesiones",
+      "carriersChart": "Latencia a cada carrier (24 h)",
+      "gatewayNow": "{ip}: {rtt} ms · pérdida {loss}",
+      "gatewayMissing": "{ip}: sin dato en el último reporte",
+      "table": "Ver como tabla (últimos 24 registros)",
+      "time": "Hora",
+      "lossShort": "pérdida",
+      "ontsTitle": "ONT a revisar",
+      "ontsHint": "Pierden pings o tardan más de {ms} ms (última hora), peores primero. Puede ser fibra sucia o doblada, el conector, la ONT o el Wi-Fi saturado del cliente.",
+      "ontsNone": "Ninguna ONT con pérdida o latencia alta en la última hora.",
+      "ontRow": "{user} · {router} · {rtt} ms · pérdida {loss} · {date}",
+      "pastTitle": "Fallas de los últimos 30 días",
+      "pastNone": "Ninguna.",
+      "lasted": "duró {min} min"
     }
   }
 }

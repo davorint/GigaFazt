@@ -589,6 +589,10 @@ export const routerUsers = pgTable(
     rxLast: bigint("rx_last", { mode: "number" }).notNull().default(0),
     txLast: bigint("tx_last", { mode: "number" }).notNull().default(0),
     seenAt: timestamp("seen_at", { withTimezone: true }).notNull().defaultNow(),
+    /** Phase 4: the client's ONT answering the router's ping (latency in ms, loss 0–1, when); null = never pinged. */
+    ontRtt: doublePrecision("ont_rtt"),
+    ontLoss: doublePrecision("ont_loss"),
+    ontAt: timestamp("ont_at", { withTimezone: true }),
   },
   (t) => [uniqueIndex("router_users_pk").on(t.routerId, t.user)]
 )
@@ -660,4 +664,40 @@ export const vouchers = pgTable(
     soldAt: timestamp("sold_at", { withTimezone: true }),
   },
   (t) => [index("vouchers_router_idx").on(t.routerId, t.status)]
+)
+
+/**
+ * WispDavor phase 4 (monitoring, owner 2026-11-21): per router and 5-minute bucket, the PPPoE sessions online and each
+ * carrier gateway's ping ([{ip, sent, received, rtt}]). Kept 14 days.
+ */
+export const routerMetrics = pgTable(
+  "router_metrics",
+  {
+    routerId: text("router_id").notNull(),
+    bucket: timestamp("bucket", { withTimezone: true }).notNull(),
+    online: integer("online"),
+    gateways: jsonb("gateways").notNull().default(sql`'[]'::jsonb`),
+  },
+  (t) => [uniqueIndex("router_metrics_pk").on(t.routerId, t.bucket), index("router_metrics_bucket_idx").on(t.bucket)]
+)
+
+/**
+ * Outages (phase 4): a router's sessions dropping at once ("sesiones"), every carrier gateway unreachable ("carrier") or
+ * the router no longer reporting ("router"). Open while ended_at is null; the team is alerted when one opens and ends,
+ * and the clients of its deployment see a banner in their portal.
+ */
+export const outages = pgTable(
+  "outages",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    routerId: text("router_id").notNull(),
+    siteId: text("site_id").notNull().default(""),
+    kind: text("kind").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    baseline: integer("baseline").notNull().default(0),
+    low: integer("low").notNull().default(0),
+    detail: text("detail").notNull().default(""),
+  },
+  (t) => [index("outages_open_idx").on(t.siteId, t.endedAt), index("outages_router_idx").on(t.routerId, t.endedAt)]
 )

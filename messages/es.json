@@ -1464,6 +1464,7 @@
       },
       "secure": "El pago se hace en la página segura de Stripe; GigaFazt no ve ni guarda los datos de tu tarjeta.",
       "ahead": "Estás al corriente. Si quieres, paga tu siguiente mes por adelantado: {amount}"
-    }
+    },
+    "outage": "Desde el {since} hay una falla en la red de tu edificio. Ya estamos trabajando en ella; no hace falta que la reportes."
   }
 }

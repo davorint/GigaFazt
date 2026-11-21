@@ -15,6 +15,7 @@ import { alertChannels, sendText } from "@/lib/reports/notify"
 import { decodeMove, decodeUnit, type Move, type Unit } from "@/lib/stock/model"
 import { decodeTool, type Tool } from "@/lib/tools/model"
 import { getPool } from "@/lib/db/client"
+import { outageDigest } from "@/lib/wispdavor/monitor-server"
 import { routerDigest } from "@/lib/wispdavor/routers-server"
 import { decodeContract, type Contract } from "@/lib/contracts/model"
 import { decodeProvider, type Provider } from "@/lib/providers/model"
@@ -56,7 +57,7 @@ async function run() {
     day
   )
   // WispDavor's routers (quiet ones, failed actions) join the summary; a failure here never stops the summary.
-  const routers = await routerDigest().catch(() => [] as string[])
+  const routers = [...(await outageDigest().catch(() => [] as string[])), ...(await routerDigest().catch(() => [] as string[]))]
   const base = digestText(s, day, `${SITE_URL}/interno`)
   const text = routers.length ? [base ?? `📋 Resumen GigaFazt · ${day}`, "", ...routers, ...(base ? [] : ["", `${SITE_URL}/interno/software/wispdavor/routers`])].join("\n") : base
   if (!text) return json({ ok: true, sent: false, reason: "all-clear" })

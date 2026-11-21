@@ -127,6 +127,13 @@
       "when": 1795276474528,
       "tag": "0017_wispdavor_routers",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795280682457,
+      "tag": "0018_wispdavor_monitoreo",
+      "breakpoints": true
     }
   ]
 }

@@ -10,6 +10,7 @@ import { todayInMexico } from "../lead"
 import { decodePayment, type Payment } from "../payments/model"
 import { sync } from "../sync/server"
 import { newId } from "../survey/id"
+import { recordHealth, sweepSilent } from "./monitor-server"
 import { MAX_ACTIONS, RESEND_MINUTES, SUSPENDED_PROFILE, actionLine, desiredUsers, diffRouter, parseReport, safe, unmanagedUsers, type Action, type ActionKind, type Desired, type Diff, type Unmanaged } from "./routers"
 
 export type Router = { id: string; siteId: string; name: string; pppoe: boolean; hotspot: boolean; auto: boolean; lastSeenAt: string; createdAt: string }
@@ -200,6 +201,14 @@ export async function agentVisit(r: Router, body: string): Promise<string> {
     )
   // Users no longer on the router (deleted there) leave WispDavor's copy too, so they show as missing again.
   if (users.length) await pool.query(`delete from router_users where router_id = $1 and not ("user" = any($2::text[]))`, [r.id, users.map((s) => s.user)])
+
+  // Phase 4: sessions online, carrier and ONT pings, outages; a failure here never stops the router's actions.
+  try {
+    await recordHealth({ id: r.id, name: r.name, siteId: r.siteId }, bucket, full.length ? full.filter((s) => s.active).length : null, report.gateways, report.onts)
+    await sweepSilent()
+  } catch (e) {
+    console.error("[routers] monitoring failed", e instanceof Error ? e.message.slice(0, 200) : "")
+  }
   for (const h of report.hotspot) await pool.query(`update vouchers set uptime = $2, bytes = $3, status = case when $3 > 0 and status <> 'removed' then 'used' else status end where code = $1 and router_id = $4`, [h.name, h.uptime, h.bytes, r.id])
 
   // The automatic switch: the differences become actions by themselves.
@@ -267,6 +276,8 @@ export async function trafficRetention(): Promise<{ hourly: number; deleted5m: n
   }
   const dh = await pool.query(`delete from traffic_hourly where hour < now() - interval '90 days'`)
   const da = await pool.query(`delete from router_actions where status in ('done', 'error') and created_at < now() - interval '90 days'`)
+  // Phase 4: sessions and carrier pings kept 14 days (outages stay).
+  await pool.query(`delete from router_metrics where bucket < now() - interval '14 days'`)
   return { hourly: moved.rowCount ?? 0, deleted5m: d5.rowCount ?? 0, deletedHourly: dh.rowCount ?? 0, deletedActions: da.rowCount ?? 0 }
 }
 

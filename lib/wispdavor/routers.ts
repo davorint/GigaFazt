@@ -11,6 +11,8 @@
  *   S;user;profile;disabled                the same without traffic, when the report would pass fetch's 64 KB
  *   h;name;uptime;bytes                    a hotspot user WispDavor added (comment "WispDavor")
  *   d;actionId;ok|err                      the result of an action received earlier
+ *   g;ip;sent;received;avgRtt              a carrier gateway's ping (phase 4, lib/wispdavor/monitor.ts)
+ *   o;user;sent;received;avgRtt            a connected client's ONT ping (phase 4, a slice per visit)
  * Action lines back: "id,kind,user,arg1,arg2,arg3,arg4" (commas: the router splits them with :toarray, so values are
  * checked to never contain one). Kinds: profile (set the secret's profile and drop the session), create, disable,
  * enable, hsprofile (hotspot user profile with a rate limit), voucher, unvoucher.
@@ -22,6 +24,7 @@
  */
 import type { Client } from "../clients/model"
 import { ledger, type Payment } from "../payments/model"
+import { ONT_SLICE, parsePing, type GatewayPing, type OntPing } from "./monitor"
 
 export const SUSPENDED_PROFILE = "DSX-suspendido"
 export const MAX_ACTIONS = 20
@@ -38,7 +41,7 @@ export const safe = (s: string) => SAFE.test(s)
 /** stateOnly: from a report too big for traffic ("S;user;profile;disabled"): connection and counters are left as they were. */
 export type Secret = { user: string; profile: string; disabled: boolean; active: boolean; rx: number; tx: number; stateOnly?: boolean }
 export type HotspotUse = { name: string; uptime: string; bytes: number }
-export type Report = { secrets: Secret[]; hotspot: HotspotUse[]; done: { id: number; ok: boolean }[] }
+export type Report = { secrets: Secret[]; hotspot: HotspotUse[]; done: { id: number; ok: boolean }[]; gateways: GatewayPing[]; onts: OntPing[] }
 
 const num = (s: string) => {
   const n = Number(s)
@@ -47,13 +50,19 @@ const num = (s: string) => {
 
 /** The router's report, line by line; anything malformed is skipped. */
 export function parseReport(text: string): Report {
-  const out: Report = { secrets: [], hotspot: [], done: [] }
+  const out: Report = { secrets: [], hotspot: [], done: [], gateways: [], onts: [] }
   for (const raw of text.split(/\r?\n/).slice(0, 20000)) {
     const f = raw.split(";")
     if (f[0] === "s" && f.length >= 7 && f[1]) out.secrets.push({ user: f[1].slice(0, 64), profile: f[2].slice(0, 64), disabled: f[3] === "true" || f[3] === "yes", active: f[4] === "1", rx: num(f[5]), tx: num(f[6]) })
     else if (f[0] === "S" && f.length >= 4 && f[1]) out.secrets.push({ user: f[1].slice(0, 64), profile: f[2].slice(0, 64), disabled: f[3] === "true" || f[3] === "yes", active: false, rx: 0, tx: 0, stateOnly: true })
     else if (f[0] === "h" && f.length >= 4 && f[1]) out.hotspot.push({ name: f[1].slice(0, 64), uptime: f[2].slice(0, 32), bytes: num(f[3]) })
     else if (f[0] === "d" && f.length >= 3 && /^\d+$/.test(f[1])) out.done.push({ id: Number(f[1]), ok: f[2] === "ok" })
+    else if ((f[0] === "g" || f[0] === "o") && f.length >= 5 && f[1]) {
+      const ping = parsePing(f[2], f[3], f[4])
+      if (!ping) continue
+      if (f[0] === "g" && /^[\d.]{7,15}$/.test(f[1]) && out.gateways.length < 32) out.gateways.push({ ip: f[1], ...ping })
+      if (f[0] === "o" && safe(f[1])) out.onts.push({ user: f[1].slice(0, 64), ...ping })
+    }
   }
   return out
 }
@@ -175,6 +184,36 @@ export function agentScript(o: { url: string; routerId: string; key: string }): 
     "}",
     ':foreach h in=[/ip hotspot user find where comment="WispDavor"] do={',
     '  :set out ($out . "h;" . [/ip hotspot user get $h name] . ";" . [/ip hotspot user get $h uptime] . ";" . ([/ip hotspot user get $h bytes-in] + [/ip hotspot user get $h bytes-out]) . "\\n")',
+    "}",
+    "# Phase 4: each default route's gateway (the carriers), 5 pings; flood-ping reports sent/received/avg-rtt.",
+    ':local gws ""',
+    ":foreach g in=[/ip route find where dst-address=0.0.0.0/0] do={",
+    "  :local ip [:toip [:tostr [/ip route get $g gateway]]]",
+    '  :if ([:typeof $ip] = "ip" and [:typeof [:find $gws ("," . $ip . ",")]] = "nil") do={',
+    '    :set gws ($gws . "," . $ip . ",")',
+    "    :local rcv 0",
+    '    :local avg ""',
+    "    :do { /tool flood-ping address=$ip count=5 interval=100ms timeout=500ms do={ :set rcv $received; :set avg $\"avg-rtt\" } } on-error={}",
+    '    :set out ($out . "g;" . $ip . ";5;" . $rcv . ";" . $avg . "\\n")',
+    "  }",
+    "}",
+    `# Phase 4: the connected clients' ONTs (their PPPoE address), ${ONT_SLICE} per visit in turn, 2 pings each.`,
+    ":global wdOi",
+    ':if ([:typeof $wdOi] != "num") do={ :set wdOi 0 }',
+    ':local act [/ppp active find where service="pppoe"]',
+    ":local na [:len $act]",
+    ":if ($na > 0) do={",
+    "  :if ($wdOi >= $na) do={ :set wdOi 0 }",
+    `  :local stop ($wdOi + ${ONT_SLICE})`,
+    "  :if ($stop > $na) do={ :set stop $na }",
+    "  :for j from=$wdOi to=($stop - 1) do={",
+    "    :local x ($act->$j)",
+    "    :local rcv 0",
+    '    :local avg ""',
+    "    :do { /tool flood-ping address=[/ppp active get $x address] count=2 interval=50ms timeout=250ms do={ :set rcv $received; :set avg $\"avg-rtt\" } } on-error={}",
+    '    :set out ($out . "o;" . [/ppp active get $x name] . ";2;" . $rcv . ";" . $avg . "\\n")',
+    "  }",
+    "  :set wdOi $stop",
     "}",
     "# fetch sends at most 64 KB (MikroTik docs): a bigger report goes without traffic, which is the part that can wait.",
     ":if ([:len $out] > 60000) do={",
