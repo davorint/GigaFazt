@@ -104,7 +104,9 @@ export async function routerDiff(r: Router): Promise<{ changes: Diff[]; missing:
 export async function queueDiffs(routerId: string, changes: Diff[], source: "auto" | "staff", by: string): Promise<number> {
   const pool = getPool()
   const busy = new Set(
-    ((await pool.query(`select "user" from router_actions where router_id = $1 and (status = 'pending' or (status = 'sent' and sent_at > now() - interval '${RESEND_MINUTES} minutes'))`, [routerId])).rows as { user: string }[]).map((x) => x.user)
+    // Pending, recently sent, or failed in the last day (e.g. a plan that isn't a profile on the router): not again by
+    // itself every 2 minutes; staff see the failure in the log and fix the plan or send it by hand.
+    ((await pool.query(`select "user" from router_actions where router_id = $1 and (status = 'pending' or (status = 'sent' and sent_at > now() - interval '${RESEND_MINUTES} minutes') or (status = 'error' and source = 'auto' and done_at > now() - interval '1 day'))`, [routerId])).rows as { user: string }[]).map((x) => x.user)
   )
   let n = 0
   for (const d of changes) {

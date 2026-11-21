@@ -104,7 +104,7 @@ export function InvoicesApp() {
               <span className="text-zinc-100">
                 {clientLabel(c)} <span className="font-mono text-xs text-zinc-400">{`${c.fiscal.rfc} · ${p.date} · ${mxn(p.amount)} · ${p.method}`}</span>
               </span>
-              <button type="button" disabled={!canIssue || busy === p.id} onClick={() => action(p.id, { action: "issue", paymentId: p.id }, t("issue"))} className={`${SMALL} disabled:opacity-40`}>
+              <button type="button" disabled={!canIssue || busy === p.id} onClick={() => action(p.id, { action: "issue", paymentId: p.id }, t("issuedOk"))} className={`${SMALL} disabled:opacity-40`}>
                 {busy === p.id ? t("issuing") : t("issue")}
               </button>
             </li>

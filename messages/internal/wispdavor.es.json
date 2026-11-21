@@ -316,7 +316,8 @@
           "En Vercel → Settings → Environment Variables (Production): FACTURAMA_USER y FACTURAMA_PASSWORD (tu usuario y contraseña de Facturama) y, mientras pruebas, FACTURAMA_SANDBOX = 1. Nunca los pegues en el chat ni en el código.",
           "Llena arriba los datos de las facturas con tu contador (código postal, serie, clave de producto)."
         ]
-      }
+      },
+      "issuedOk": "Factura timbrada."
     },
     "routers": {
       "lead": "Cada MikroTik corre un script que cada 2 minutos le dice al sitio qué usuarios PPPoE tiene (perfil, desactivado, conectado, tráfico) y recibe las acciones pendientes. El router no abre ningún puerto y solo ejecuta una lista fija de comandos.",
