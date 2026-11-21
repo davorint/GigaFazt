@@ -13,7 +13,7 @@ import { DAVOROLT_SLUGS } from "./davorolt/catalog"
 import { WISPDAVOR_PAGES } from "./wispdavor/pages"
 
 export const INTERNAL_ROOT = "interno"
-export const INTERNAL_PAGES = ["levantamientos", "admin", "materiales", "herramientas", "equipos-telecom", "software", "guias"] as const
+export const INTERNAL_PAGES = ["levantamientos", "admin", "tecnico", "materiales", "herramientas", "equipos-telecom", "software", "guias"] as const
 /** The guides (/interno/guias/<page>, owner 2026-11-21). */
 export const GUIDE_PAGES = ["utp"] as const
 /** The software pages (/interno/software/<page>, owner 2026-11-21). */

@@ -6,6 +6,7 @@
  * Synced like the other sections (kind "agenda", table `appointments`). `decodeAppointment` never throws.
  */
 import { newId } from "../survey/id"
+import { decodeField, emptyField, type FieldWork } from "../field/model"
 
 export const APPT_KINDS = ["instalacion", "visita", "otro"] as const
 export type ApptKind = (typeof APPT_KINDS)[number]
@@ -32,13 +33,15 @@ export type Appointment = {
   phone: string
   address: string
   notes: string
+  /** What the technician recorded on the job (phase 5, lib/field/model.ts). */
+  field: FieldWork
   by: string
   createdAt: string
   updatedAt: string
 }
 
 export function newAppointment(p: Partial<Appointment> = {}): Appointment {
-  return { id: newId(), kind: "instalacion", date: "", time: "", who: "", status: "pendiente", clientId: "", leadId: "", reportId: "", siteId: "", name: "", phone: "", address: "", notes: "", by: "", createdAt: new Date().toISOString(), updatedAt: "", ...p }
+  return { id: newId(), kind: "instalacion", date: "", time: "", who: "", status: "pendiente", clientId: "", leadId: "", reportId: "", siteId: "", name: "", phone: "", address: "", notes: "", field: emptyField(), by: "", createdAt: new Date().toISOString(), updatedAt: "", ...p }
 }
 
 /** Still to do (not done, not cancelled). */
@@ -91,6 +94,7 @@ export function decodeAppointment(v: unknown): Appointment | null {
     phone: str(v.phone, 40),
     address: str(v.address, 300),
     notes: str(v.notes, 2000),
+    field: decodeField(v.field),
     by: str(v.by, 60),
     createdAt: typeof v.createdAt === "string" ? v.createdAt.slice(0, 40) : "",
     updatedAt: typeof v.updatedAt === "string" ? v.updatedAt.slice(0, 40) : "",

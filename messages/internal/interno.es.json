@@ -16,6 +16,10 @@
         "name": "Administración",
         "desc": "Despliegues con sus cuartos de telecom, clientes y solicitudes, proveedores y la lista maestra de materiales con precios."
       },
+      "tecnico": {
+        "name": "Técnico",
+        "desc": "Tus instalaciones y visitas del día: llegada, fotos, material usado, firma del cliente y terminar."
+      },
       "materiales": {
         "name": "Materiales",
         "desc": "Los materiales que tenemos (existencias, movimientos y equipos por número de serie) y la lista maestra con sus opciones de compra y precios.",

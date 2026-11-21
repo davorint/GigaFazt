@@ -701,3 +701,27 @@ export const outages = pgTable(
   },
   (t) => [index("outages_open_idx").on(t.siteId, t.endedAt), index("outages_router_idx").on(t.routerId, t.endedAt)]
 )
+
+/**
+ * Field photos and client signatures (WispDavor phase 5, Técnico view): one row per file, for a job (an appointment or
+ * a report). Kept like the contracts' files: in the private Blob store on the host (`campo/<ref>/<id>`), in `bytes`
+ * without one; served only to a signed-in session.
+ */
+export const fieldFiles = pgTable(
+  "field_files",
+  {
+    id: text("id").primaryKey(),
+    refKind: text("ref_kind").notNull(),
+    refId: text("ref_id").notNull(),
+    kind: text("kind").notNull().default("foto"),
+    name: text("name").notNull().default(""),
+    mime: text("mime").notNull(),
+    size: integer("size").notNull(),
+    bytes: bytea("bytes"),
+    blobPath: text("blob_path").notNull().default(""),
+    uploadedAt: timestamp("uploaded_at", { withTimezone: true }).notNull().defaultNow(),
+    uploadedBy: text("uploaded_by").notNull().default(""),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [index("field_files_ref_idx").on(t.refKind, t.refId)]
+)

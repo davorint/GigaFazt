@@ -9,6 +9,7 @@
  * and reach the phones on their next sync.
  */
 import { newId } from "../survey/id"
+import { decodeField, emptyField, type FieldWork } from "../field/model"
 
 export const REPORT_CATEGORIES = ["sin-servicio", "lento", "intermitente", "wifi", "tv", "equipo", "otro"] as const
 export type ReportCategory = (typeof REPORT_CATEGORIES)[number]
@@ -46,6 +47,8 @@ export type Report = {
   notes: ReportNote[]
   /** Public form: when the person accepted the privacy notice (LFPDPPP: consent must be provable). "" for staff reports. */
   consentAt: string
+  /** What the technician recorded on the visit (phase 5, lib/field/model.ts). */
+  field: FieldWork
   by: string
   updatedAt: string
 }
@@ -75,6 +78,7 @@ export function newReport(p: Partial<Report> = {}): Report {
     resolvedAt: "",
     notes: [],
     consentAt: "",
+    field: emptyField(),
     by: "",
     updatedAt: "",
     ...p,
@@ -183,6 +187,7 @@ export function decodeReport(v: unknown): Report | null {
           .map((n) => ({ id: id(n.id) || newId(), at: iso(n.at), by: str(n.by, 60), text: str(n.text, 2000) }))
       : [],
     consentAt: iso(v.consentAt),
+    field: decodeField(v.field),
     by: str(v.by, 60),
     updatedAt: typeof v.updatedAt === "string" ? v.updatedAt.slice(0, 40) : "",
   }
