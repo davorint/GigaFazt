@@ -16,6 +16,7 @@ import { decodePayment, ledger, type Payment, type PayStatus } from "../payments
 import { hit, underLimit } from "../reports/limits"
 import { reportCode, type ReportCategory, type ReportStatus } from "../reports/model"
 import { newId } from "../survey/id"
+import { amountToCharge, type PayKind } from "./online"
 
 export const PORTAL_READS_PER_HOUR = 60
 /** 24 random bytes as base64url: 32 characters. */
@@ -58,19 +59,27 @@ export type PortalView = {
   payments: { date: string; amount: number; method: string; reference: string }[]
   reports: { code: string; category: ReportCategory; status: ReportStatus; createdAt: string; resolvedAt: string }[]
   today: string
+  /** Online payment (phase 2), null when Stripe isn't set up on the host. */
+  online: { amount: number; methods: PayKind[]; autopay: { active: boolean; brand: string; last4: string } } | null
 }
 export type PortalLookup = { kind: "ok"; view: PortalView } | { kind: "no-match" } | { kind: "limited" } | null
+export type TokenLookup = { kind: "ok"; client: Client; payments: Payment[] } | { kind: "no-match" } | { kind: "limited" } | null
 
-/** The portal of the client a token belongs to (null without a database). */
-export async function portalView(token: string, sender: string): Promise<PortalLookup> {
+/** The client a portal token belongs to, with their payments (rate-limited per sender; null without a database). */
+export async function clientForToken(token: string, sender: string, count = true): Promise<TokenLookup> {
   if (!hasDatabase()) return null
   const pool = getPool()
   if (!(await underLimit(pool, `p:${sender}`, PORTAL_READS_PER_HOUR))) return { kind: "limited" }
   await hit(pool, `p:${sender}`)
   if (!TOKEN.test(token)) return { kind: "no-match" }
-  const link = (await pool.query(`update portal_links set last_seen_at = now(), seen_count = seen_count + 1 where token = $1 and revoked_at is null returning client_id`, [token])).rows[0] as
-    | { client_id: string }
-    | undefined
+  const link = (
+    await pool.query(
+      count
+        ? `update portal_links set last_seen_at = now(), seen_count = seen_count + 1 where token = $1 and revoked_at is null returning client_id`
+        : `select client_id from portal_links where token = $1 and revoked_at is null`,
+      [token]
+    )
+  ).rows[0] as { client_id: string } | undefined
   if (!link) return { kind: "no-match" }
   const found = (await pool.query(`select id, data from clients where id = $1 and deleted_at is null`, [link.client_id])).rows[0] as { id: string; data: unknown } | undefined
   const client = found ? decodeClient(found.data) : null
@@ -80,6 +89,15 @@ export async function portalView(token: string, sender: string): Promise<PortalL
     .map((r) => decodePayment(r.data))
     .filter((p): p is Payment => p !== null)
     .map((p) => ({ ...p, clientId: client.id }))
+  return { kind: "ok", client, payments }
+}
+
+/** The portal of the client a token belongs to (null without a database). */
+export async function portalView(token: string, sender: string, online: (c: Client, amount: number) => Promise<PortalView["online"]> = async () => null): Promise<PortalLookup> {
+  const found = await clientForToken(token, sender)
+  if (!found || found.kind !== "ok") return found
+  const { client, payments } = found
+  const pool = getPool()
   const reports = (
     (await pool.query(`select id, data from reports where deleted_at is null and client_id = $1 and created_at > now() - interval '90 days' order by created_at desc limit 10`, [client.id])).rows as {
       id: string
@@ -93,7 +111,8 @@ export async function portalView(token: string, sender: string): Promise<PortalL
     resolvedAt: String(data.resolvedAt ?? ""),
   }))
   const today = todayInMexico()
-  return { kind: "ok", view: view(client, payments, reports, today) }
+  const v = view(client, payments, reports, today)
+  return { kind: "ok", view: { ...v, online: await online(client, amountToCharge(v.balance)) } }
 }
 
 /** What the portal shows of a client (pure, for tests). */
@@ -111,5 +130,6 @@ export function view(client: Client, payments: Payment[], reports: PortalView["r
       .map((p) => ({ date: p.date, amount: p.amount, method: p.method, reference: p.reference })),
     reports,
     today,
+    online: null,
   }
 }

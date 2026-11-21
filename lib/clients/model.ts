@@ -96,9 +96,15 @@ export type Client = {
   notes: string
   /** The website request it came from, if any. */
   leadId: string
+  /** Data for the client's CFDI (WispDavor → Facturas, owner 2026-11-21: "Only who asks"); empty = no invoice asked. */
+  fiscal: Fiscal
   createdAt: string
   updatedAt: string
 }
+
+/** What a CFDI needs of its receiver (SAT CFDI 4.0): RFC, name as in the tax certificate, regime, postal code, use. */
+export type Fiscal = { rfc: string; name: string; regime: string; zip: string; use: string; email: string }
+export const emptyFiscal = (): Fiscal => ({ rfc: "", name: "", regime: "", zip: "", use: "", email: "" })
 
 export const DEFAULT_ONT = "EG8145B7-50"
 
@@ -155,6 +161,7 @@ export function newClient(p: Partial<Client> = {}): Client {
     remindedAt: "",
     notes: "",
     leadId: "",
+    fiscal: emptyFiscal(),
     createdAt: now,
     updatedAt: now,
     ...p,
@@ -243,6 +250,7 @@ export function decodeClient(v: unknown): Client | null {
     remindedAt: date(v.remindedAt),
     notes: str(v.notes, 4000),
     leadId: str(v.leadId, 64),
+    fiscal: decodeFiscal(v.fiscal),
     createdAt: iso(v.createdAt),
     updatedAt: iso(v.updatedAt),
   }
@@ -410,4 +418,18 @@ export function setPrice(s: Service, monthly: number | null, currentMonth: strin
   const charged = before !== null && (!s.start || s.start.slice(0, 7) < currentMonth || (s.start.slice(0, 7) === currentMonth && Number(s.start.slice(8, 10)) <= 15))
   if (!charged || before === monthly) return { ...s, monthly, priceHistory: hist }
   return { ...s, monthly, priceHistory: [...hist, { until: currentMonth, monthly: before }] }
+}
+
+/** A client's fiscal data as stored: upper-case RFC (12 or 13), codes as digits/letters, never throws. */
+export function decodeFiscal(v: unknown): Fiscal {
+  const o = v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {}
+  const s = (x: unknown, max: number) => (typeof x === "string" ? x.trim().slice(0, max) : "")
+  return {
+    rfc: s(o.rfc, 13).toUpperCase(),
+    name: s(o.name, 254).toUpperCase(),
+    regime: s(o.regime, 3),
+    zip: s(o.zip, 5),
+    use: s(o.use, 4).toUpperCase(),
+    email: s(o.email, 200),
+  }
 }

@@ -1,15 +1,17 @@
 /**
  * WhatsApp notices (WispDavor → Avisos, owner 2026-11-21: "WhatsApp Cloud API", API number ready, templates "Not yet").
  *
- * A business starts a WhatsApp conversation only with a template Meta approved. These four are written here for the
+ * A business starts a WhatsApp conversation only with a template Meta approved. These templates are written here for the
  * owner to submit in WhatsApp Manager (category Utility, language Spanish (MEX) = es_MX) with these exact names and
  * variables in this order; their text below is what we submit and what the wa.me fallback sends, so both say the same.
  * Until the keys are on the host (WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID) or a template is approved, each notice is a
  * one-tap wa.me link instead (lib/wispdavor/whatsapp-server.ts sends through the API).
  */
 
-export const TEMPLATE_IDS = ["recordatorio", "corte", "reconexion", "mantenimiento"] as const
+export const TEMPLATE_IDS = ["recordatorio", "corte", "reconexion", "mantenimiento", "pagoRecibido", "cobroFallido"] as const
 export type TemplateId = (typeof TEMPLATE_IDS)[number]
+/** The ones staff send from Avisos; the others go by themselves (payments). */
+export const MANUAL_TEMPLATES = ["recordatorio", "corte", "reconexion", "mantenimiento"] as const satisfies readonly TemplateId[]
 
 export type Template = {
   /** The name in Meta's WhatsApp Manager. */
@@ -42,6 +44,17 @@ export const TEMPLATES: Record<TemplateId, Template> = {
     name: "gigafazt_mantenimiento",
     params: ["nombre", "lugar", "fecha", "detalle"],
     body: "Hola {{1}}, te avisamos que habrá mantenimiento en la red de {{2}} el {{3}}. {{4}} Gracias por tu paciencia.",
+  },
+  // Phase 2 (online payments): sent by themselves when a payment arrives or a card charge fails.
+  pagoRecibido: {
+    name: "gigafazt_pago_recibido",
+    params: ["nombre", "monto", "enlace"],
+    body: "Hola {{1}}, recibimos tu pago de {{2}}. ¡Gracias! Consulta tu cuenta aquí: {{3}}",
+  },
+  cobroFallido: {
+    name: "gigafazt_cobro_fallido",
+    params: ["nombre", "monto", "enlace"],
+    body: "Hola {{1}}, no pudimos cobrar {{2}} a tu tarjeta. Actualízala o paga de otra forma aquí: {{3}}",
   },
 }
 

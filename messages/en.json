@@ -1441,6 +1441,28 @@
     "reportsTitle": "Your reports",
     "noReports": "No reports in the last 90 days.",
     "report": "Report a problem",
-    "reported": "reported on {date}"
+    "reported": "reported on {date}",
+    "online": {
+      "title": "Pay online",
+      "amount": "Total to pay: {amount}",
+      "card": "Card",
+      "oxxo": "Cash at OXXO",
+      "spei": "Bank transfer (SPEI)",
+      "oxxoHint": "We give you a reference to pay at any OXXO; it's valid for {days} days.",
+      "speiHint": "We give you a CLABE account just for you; your transfers are recorded automatically.",
+      "save": "Save my card and charge automatically every month (on the 1st)",
+      "going": "Opening the secure payment…",
+      "error": "We couldn't open the payment. Try again in a moment.",
+      "nothing": "You have nothing to pay right now.",
+      "autopayOn": "Auto-pay is on with {brand} ending {last4}: charged on the 1st of each month.",
+      "autopayOff": "Turn off auto-pay",
+      "autopayConfirm": "Turn off auto-pay? Your card is removed and you'll pay each month yourself.",
+      "autopayDone": "Done: no more automatic charges.",
+      "back": {
+        "ok": "Thank you. Card payments show up in a few minutes; OXXO and transfers as soon as they arrive.",
+        "cancelado": "The payment wasn't made. You can try again anytime."
+      },
+      "secure": "You pay on Stripe's secure page; GigaFazt never sees or keeps your card details."
+    }
   }
 }

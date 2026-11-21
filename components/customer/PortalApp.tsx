@@ -2,12 +2,87 @@
 
 import { useEffect, useState, type ReactNode } from "react"
 import { useLocale, useTranslations } from "next-intl"
+import { OXXO_DAYS } from "@/lib/wispdavor/online"
 import type { PortalView } from "@/lib/wispdavor/portal-server"
 
 type State = { kind: "loading" } | { kind: "error"; code: "noToken" | "nomatch" | "busy" | "error" } | { kind: "ok"; view: PortalView }
 
 const CARD = "grid content-start gap-3 rounded-2xl border border-white/10 p-5"
 const H2 = "text-xl font-normal tracking-tight text-foreground"
+
+/**
+ * Paying online (WispDavor phase 2, Stripe): card, OXXO or SPEI on Stripe's secure page for the amount the server
+ * computes; the card can be saved for auto-pay (day 1), which the client can turn off here.
+ */
+function OnlinePay({ online, money }: { online: NonNullable<PortalView["online"]>; money: (n: number) => string }) {
+  const t = useTranslations("portal.online")
+  const [state, setState] = useState<"idle" | "going" | "error" | "off">("idle")
+  const [save, setSave] = useState(false)
+  const go = async (kind: "card" | "oxxo" | "spei") => {
+    setState("going")
+    try {
+      const r = await fetch("/api/mi-cuenta/pagar", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: tokenFromHash(), kind, saveCard: kind === "card" && save }) })
+      const b = (await r.json().catch(() => ({}))) as { url?: string }
+      if (!r.ok || !b.url) throw new Error(String(r.status))
+      window.location.assign(b.url)
+    } catch {
+      setState("error")
+    }
+  }
+  const stop = async () => {
+    if (!window.confirm(t("autopayConfirm"))) return
+    try {
+      const r = await fetch("/api/mi-cuenta/domiciliacion", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: tokenFromHash() }) })
+      setState(r.ok ? "off" : "error")
+    } catch {
+      setState("error")
+    }
+  }
+  const BTN = "inline-flex min-h-11 items-center rounded-full border border-white/15 px-4 text-sm text-foreground hover:bg-white/5 disabled:opacity-50"
+  return (
+    <section aria-labelledby="pt-online" className={CARD}>
+      <h2 id="pt-online" className={H2}>
+        {t("title")}
+      </h2>
+      {online.amount <= 0 ? (
+        <p className="text-sm text-muted-foreground">{t("nothing")}</p>
+      ) : (
+        <>
+          <p className="text-foreground">{t("amount", { amount: money(online.amount) })}</p>
+          <div className="flex flex-wrap gap-2">
+            {online.methods.map((m) => (
+              <button key={m} type="button" disabled={state === "going"} onClick={() => go(m as "card" | "oxxo" | "spei")} className={BTN}>
+                {t(m)}
+              </button>
+            ))}
+          </div>
+          {online.methods.includes("card") && !online.autopay.active && (
+            <label className="flex min-h-10 items-center gap-2 text-sm text-foreground">
+              <input type="checkbox" checked={save} onChange={(e) => setSave(e.target.checked)} className="size-5 accent-white" />
+              {t("save")}
+            </label>
+          )}
+          <ul className="grid gap-1 text-xs text-muted-foreground">
+            {online.methods.includes("oxxo") && <li>{t("oxxoHint", { days: OXXO_DAYS })}</li>}
+            <li>{t("speiHint")}</li>
+            <li>{t("secure")}</li>
+          </ul>
+        </>
+      )}
+      {online.autopay.active && state !== "off" && (
+        <div className="grid gap-2">
+          <p className="text-sm text-emerald-100">{t("autopayOn", { brand: online.autopay.brand.toUpperCase(), last4: online.autopay.last4 })}</p>
+          <button type="button" onClick={stop} className={`${BTN} w-fit`}>
+            {t("autopayOff")}
+          </button>
+        </div>
+      )}
+      {state === "off" && <p role="status" className="text-sm text-foreground">{t("autopayDone")}</p>}
+      {state === "going" && <p role="status" className="text-sm text-muted-foreground">{t("going")}</p>}
+      {state === "error" && <p role="alert" className="text-sm text-amber-100">{t("error")}</p>}
+    </section>
+  )
+}
 
 /** The token from the address's #fragment (never sent to the server in the address, logs or referrers). */
 const tokenFromHash = () => decodeURIComponent(window.location.hash.replace(/^#/, "").replace(/^k=/, "")).trim()
@@ -45,6 +120,7 @@ export function PortalApp({ pay }: { pay: ReactNode }) {
   if (state.kind === "error") return <p role="alert" className="rounded-xl border border-amber-400/30 p-4 text-amber-100">{t(state.code)}</p>
   const v = state.view
   const b = v.balance
+  const back = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("pago") : null
   const tone = b.status === "atrasado" ? "border-red-400/40" : b.status === "por-vencer" ? "border-amber-300/40" : "border-emerald-400/30"
   return (
     <div className="grid gap-6">
@@ -54,6 +130,11 @@ export function PortalApp({ pay }: { pay: ReactNode }) {
           <p className="text-muted-foreground">{v.place}</p>
           <p className="text-xs text-muted-foreground">{t("private")}</p>
         </div>
+        {(back === "ok" || back === "cancelado") && (
+          <p role="status" className={`rounded-xl border p-4 text-sm ${back === "ok" ? "border-emerald-400/30 text-emerald-100" : "border-white/15 text-foreground"}`}>
+            {t(`online.back.${back}`)}
+          </p>
+        )}
         <section aria-labelledby="pt-balance" className={`${CARD} ${tone}`}>
           <h2 id="pt-balance" className={H2}>
             {t("balanceTitle")}
@@ -79,6 +160,7 @@ export function PortalApp({ pay }: { pay: ReactNode }) {
           </dl>
           {b.lateMonths.length > 0 && <p className="text-sm text-red-200">{`${t("lateMonths")}: ${b.lateMonths.map(month).join(", ")}`}</p>}
         </section>
+        {v.online && <OnlinePay online={v.online} money={money} />}
         {pay}
         <section aria-labelledby="pt-services" className={CARD}>
           <h2 id="pt-services" className={H2}>

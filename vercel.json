@@ -2,6 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     { "path": "/api/interno/resumen", "schedule": "0 14 * * *" },
-    { "path": "/api/interno/respaldo-auto", "schedule": "0 9 * * 1" }
+    { "path": "/api/interno/respaldo-auto", "schedule": "0 9 * * 1" },
+    { "path": "/api/interno/cobro-automatico", "schedule": "0 15 * * *" }
   ]
 }

@@ -13,7 +13,7 @@ import { ledger } from "@/lib/payments/model"
 import { siteLabel } from "@/lib/sites/model"
 import { readState } from "@/lib/sync/state"
 import { cutLists } from "@/lib/wispdavor/cortes"
-import { MAX_PER_SEND, TEMPLATES, TEMPLATE_IDS, fill, waNumber, type TemplateId } from "@/lib/wispdavor/whatsapp"
+import { MANUAL_TEMPLATES, MAX_PER_SEND, TEMPLATES, TEMPLATE_IDS, fill, waNumber, type TemplateId } from "@/lib/wispdavor/whatsapp"
 import { portalUrl } from "./PortalAdmin"
 import { useWispData } from "./useWispData"
 
@@ -109,7 +109,7 @@ export function NoticesApp() {
       <p className="text-sm text-zinc-300">{t("lead")}</p>
       {api !== null && <p className={`text-xs ${api ? "text-emerald-300" : "text-amber-200"}`}>{api ? t("apiOn") : t("apiOff")}</p>}
       <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <PickField label={t("template")} value={template} onChange={setTemplate} options={TEMPLATE_IDS.map((x) => ({ value: x, label: t(`templates.${x}`) }))} />
+        <PickField label={t("template")} value={template} onChange={setTemplate} options={MANUAL_TEMPLATES.map((x) => ({ value: x, label: t(`templates.${x}`) }))} />
         <PickField label={t("audience")} value={audience} onChange={setAudience} options={AUDIENCES.map((x) => ({ value: x, label: t(`audiences.${x}`) }))} />
         {audience === "despliegue" && <PickField label={t("site")} value={site} onChange={setSite} options={[{ value: "", label: "—" }, ...d.sites.map((s) => ({ value: s.id, label: siteLabel(s) }))]} />}
         {template === "corte" && <DateField label={t("cutDate")} value={cutDate} onChange={setCutDate} />}

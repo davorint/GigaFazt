@@ -496,3 +496,64 @@ export const whatsappSends = pgTable(
   },
   (t) => [index("whatsapp_sends_client_idx").on(t.clientId), index("whatsapp_sends_sent_idx").on(t.sentAt)]
 )
+
+/** WispDavor settings that aren't secrets (CFDI defaults…), one row per key; keys and secrets stay in the host's env. */
+export const wispSettings = pgTable("wisp_settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedBy: text("updated_by").notNull().default(""),
+})
+
+/**
+ * A client's Stripe customer (owner, 2026-11-21: Stripe for card, OXXO, SPEI and card auto-pay): the customer keeps the
+ * client's SPEI CLABE and the saved card; `autopay` = charge the saved card on days 1, 5 and 9 (lib/wispdavor/online.ts).
+ */
+export const stripeCustomers = pgTable("stripe_customers", {
+  clientId: text("client_id").primaryKey(),
+  customerId: text("customer_id").notNull().unique(),
+  autopay: boolean("autopay").notNull().default(false),
+  paymentMethodId: text("payment_method_id").notNull().default(""),
+  cardBrand: text("card_brand").notNull().default(""),
+  cardLast4: text("card_last4").notNull().default(""),
+  cardFunding: text("card_funding").notNull().default(""),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+/** Every online payment started (Checkout) or charged (auto-pay), and what came of it; `paymentId` = the Cobranza record. */
+export const onlinePayments = pgTable(
+  "online_payments",
+  {
+    id: text("id").primaryKey(),
+    clientId: text("client_id").notNull(),
+    kind: text("kind").notNull(),
+    amount: doublePrecision("amount").notNull(),
+    status: text("status").notNull(),
+    paymentIntentId: text("payment_intent_id").notNull().default(""),
+    paymentId: text("payment_id").notNull().default(""),
+    error: text("error").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+  },
+  (t) => [index("online_payments_client_idx").on(t.clientId), index("online_payments_pi_idx").on(t.paymentIntentId)]
+)
+
+/** CFDIs issued through Facturama (owner: "Only who asks"), one per payment at most while active. */
+export const cfdis = pgTable(
+  "cfdis",
+  {
+    id: text("id").primaryKey(),
+    clientId: text("client_id").notNull(),
+    paymentId: text("payment_id").notNull().default(""),
+    uuid: text("uuid").notNull().default(""),
+    serie: text("serie").notNull().default(""),
+    folio: text("folio").notNull().default(""),
+    total: doublePrecision("total").notNull(),
+    receiverRfc: text("receiver_rfc").notNull(),
+    status: text("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdBy: text("created_by").notNull().default(""),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+  },
+  (t) => [index("cfdis_client_idx").on(t.clientId), index("cfdis_payment_idx").on(t.paymentId)]
+)

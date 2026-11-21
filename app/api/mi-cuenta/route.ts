@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { clientIp, ipHash } from "@/lib/reports/limits"
+import { methodsFor } from "@/lib/wispdavor/online"
 import { portalView } from "@/lib/wispdavor/portal-server"
+import { autopayOf, stripeConfigured } from "@/lib/wispdavor/stripe-server"
 
 const HEADERS = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow", "Referrer-Policy": "no-referrer" }
 
@@ -19,7 +21,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400, headers: HEADERS })
   }
   try {
-    const r = await portalView(token, ipHash(clientIp(request.headers)))
+    // Online payment only when Stripe is set up on the host (phase 2).
+    const online = stripeConfigured() ? async (c: { id: string }, amount: number) => ({ amount, methods: methodsFor(amount), autopay: await autopayOf(c.id) }) : undefined
+    const r = await portalView(token, ipHash(clientIp(request.headers)), online)
     if (!r) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: HEADERS })
     if (r.kind === "limited") return NextResponse.json({ error: "too_many" }, { status: 429, headers: HEADERS })
     if (r.kind === "no-match") return NextResponse.json({ error: "no_match" }, { status: 404, headers: HEADERS })
