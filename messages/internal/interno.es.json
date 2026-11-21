@@ -50,6 +50,19 @@
           }
         }
       },
+      "guias": {
+        "name": "Guías",
+        "desc": "Consultas rápidas para el trabajo en campo: el orden de colores del cable UTP.",
+        "kicker": "Uso interno · Guías",
+        "lead": "Consultas rápidas para el trabajo en campo.",
+        "metaTitle": "Guías · GigaFazt interno",
+        "pages": {
+          "utp": {
+            "name": "Cable UTP",
+            "desc": "Orden de colores T568B y T568A pin por pin, cable directo o cruzado, cómo ponchar y qué pares usa cada velocidad."
+          }
+        }
+      },
       "software": {
         "name": "Software",
         "desc": "DavorOLT y WispDavor.",

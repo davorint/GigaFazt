@@ -22,6 +22,7 @@ const GROUPS = [
       ["/interno/admin/usuarios", "usuarios"],
       ["/interno/equipos-telecom", "equipos-telecom"],
       ["/interno/software", "software"],
+      ["/interno/guias", "guias"],
     ],
   },
 ] as const

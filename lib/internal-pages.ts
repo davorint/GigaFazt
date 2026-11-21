@@ -10,7 +10,9 @@
  */
 
 export const INTERNAL_ROOT = "interno"
-export const INTERNAL_PAGES = ["levantamientos", "admin", "materiales", "herramientas", "equipos-telecom", "software"] as const
+export const INTERNAL_PAGES = ["levantamientos", "admin", "materiales", "herramientas", "equipos-telecom", "software", "guias"] as const
+/** The guides (/interno/guias/<page>, owner 2026-11-21). */
+export const GUIDE_PAGES = ["utp"] as const
 /** The software pages (/interno/software/<page>, owner 2026-11-21). */
 export const SOFTWARE_PAGES = ["davorolt", "wispdavor"] as const
 /** The tool pages (/interno/herramientas/<page>). */
@@ -69,8 +71,8 @@ export function matchInternal(pathname: string): InternalMatch | null {
     }
     if (sub2 && known) after = `/${known}${rest3}`
   }
-  // Under /interno/equipos-telecom, /interno/herramientas, /interno/materiales and /interno/software too, by its lowercase name only.
-  const SUBPAGES: Record<string, readonly string[]> = { "equipos-telecom": TELECOM_PAGES, herramientas: TOOL_PAGES, materiales: MATERIAL_PAGES, software: SOFTWARE_PAGES }
+  // Under /interno/equipos-telecom, /interno/herramientas, /interno/materiales, /interno/software and /interno/guias too, by its lowercase name only.
+  const SUBPAGES: Record<string, readonly string[]> = { "equipos-telecom": TELECOM_PAGES, herramientas: TOOL_PAGES, materiales: MATERIAL_PAGES, software: SOFTWARE_PAGES, guias: GUIDE_PAGES }
   if (page && SUBPAGES[page]) {
     const sub2 = /^\/([^/.]+)(.*)$/.exec(after)
     const name = sub2?.[1].toLowerCase() ?? ""

@@ -139,3 +139,9 @@ describe("Software (owner, 2026-11-21)", () => {
     expect(matchInternal("/interno/software/WispDavor")).toEqual({ rewriteTo: "/es/interno/software/wispdavor", open: false })
   })
 })
+
+describe("Guías (owner, 2026-11-21)", () => {
+  it("routes: /interno/guias/utp in any case", () => {
+    expect(matchInternal("/Interno/Guias/UTP")).toEqual({ rewriteTo: "/es/interno/guias/utp", open: false })
+  })
+})

@@ -1,0 +1,44 @@
+{
+  "guias": {
+    "utp": {
+      "meta": { "title": "Cable UTP: orden de colores · GigaFazt interno" },
+      "kicker": "Uso interno · Guías",
+      "title": "Cable UTP: orden de colores",
+      "lead": "Para ponchar RJ45 sin dudar: T568B y T568A pin por pin. Mira el conector con los contactos hacia ti y el clip hacia atrás: el pin 1 queda a la izquierda.",
+      "pin": "Pin",
+      "names": {
+        "naranja": "naranja",
+        "verde": "verde",
+        "azul": "azul",
+        "cafe": "café",
+        "white": "Blanco/{color}"
+      },
+      "standardB": "T568B (el más usado)",
+      "standardA": "T568A",
+      "difference": "La única diferencia: en T568A el par naranja y el verde cambian de lugar (pines 1-2 ↔ 3-6). Azul y café quedan igual en los dos.",
+      "which": {
+        "title": "¿Qué cable hago?",
+        "straight": "Directo (el normal): el mismo estándar en las dos puntas, B y B. Sirve para casi todo: router, switch, ONT, computadora, cámara, access point.",
+        "cross": "Cruzado: A en una punta y B en la otra. Los equipos actuales lo detectan solos (Auto-MDI-X), así que casi nunca hace falta.",
+        "same": "Usa el mismo estándar en toda la instalación: conectores, jacks y patch panel. Los jacks y patch panels traen marcadas las dos opciones (A y B): sigue la que corresponde."
+      },
+      "crimp": {
+        "title": "Al ponchar",
+        "steps": [
+          "Pela unos 3 cm de forro sin cortar los hilos.",
+          "Destuerce lo mínimo: máximo 13 mm sin trenzar (½ pulgada); en Cat 6, entre menos, mejor.",
+          "Acomoda los 8 hilos en orden, planos, y córtalos parejos.",
+          "Mete los hilos hasta el fondo del conector: cada uno debe tocar la punta. El forro queda dentro del conector, bajo la pestaña.",
+          "Revisa el orden con el conector de frente antes de ponchar.",
+          "Ya ponchado, prueba con el tester: deben encender los 8 en orden, del 1 con 1 al 8 con 8."
+        ]
+      },
+      "pairs": {
+        "title": "Qué pares se usan",
+        "fast": "10/100 Mbps: solo los pines 1-2 y 3-6 (pares naranja y verde). Por eso un cable mal hecho en azul o café a veces «funciona» pero se queda en 100 Mbps.",
+        "giga": "1 Gbps o más: los 4 pares. Si un enlace sale en 100 Mbps en lugar de 1 Gbps, revisa el ponchado.",
+        "poe": "PoE: el modo A lleva la energía por 1-2 y 3-6, el modo B por 4-5 y 7-8; el PoE de 4 pares (PoE++) por los cuatro."
+      }
+    }
+  }
+}
