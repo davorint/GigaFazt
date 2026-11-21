@@ -1,4 +1,5 @@
 /** A short name for any synced record, for the history and "Borrados recientemente" lists. */
+import { decodeContract } from "../contracts/model"
 import { clientLabel, decodeClient } from "../clients/model"
 import { decodeItem } from "../materials/catalog"
 import { decodeNote } from "../notes/model"
@@ -69,6 +70,10 @@ export function recordLabel(kind: SyncKind, data: unknown): string {
     case "porcobrar": {
       const r = decodeReceivable(data)
       return r ? `${r.dueDate || "—"} · ${r.payer || "—"} · $${r.amount}` : "—"
+    }
+    case "contratos": {
+      const c = decodeContract(data)
+      return c ? `${c.title || "—"} · ${c.kind}${c.endDate ? ` · ${c.endDate}` : ""}` : "—"
     }
     case "agenda": {
       const a = decodeAppointment(data)

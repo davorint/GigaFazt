@@ -56,6 +56,10 @@ export function digestText(s: Today, today: string, link: string): string | null
     out.push("", `🏢 Acuerdos con edificios por renovar: ${s.agreements.length}`)
     out.push(...list(s.agreements, (a) => `${a.label} · ${a.ended ? "terminó" : "termina"} ${a.end}`))
   }
+  if (s.contracts.length) {
+    out.push("", `📑 Contratos por renovar o vencidos: ${s.contracts.length}`)
+    out.push(...list(s.contracts, (c) => `${c.label} · ${c.ended ? "terminó" : "termina"} ${c.end}`))
+  }
   if (s.pinned.length) {
     out.push("", `📌 Notas fijadas: ${s.pinned.length}`)
     out.push(...list(s.pinned, (n) => n.title))

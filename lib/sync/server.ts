@@ -32,6 +32,7 @@ import { buyLabel, decodeToolBuy } from "../toolbuys/model"
 import { decodeAppointment } from "../agenda/model"
 import { decodePayable } from "../finance/payables"
 import { decodeReceivable } from "../finance/receivables"
+import { decodeContract } from "../contracts/model"
 import { getPool } from "../db/client"
 import { MAX_RECORDS, type Change, type Outcome, type Remote, type SyncKind, type SyncResponse } from "./protocol"
 
@@ -225,6 +226,17 @@ export const SPECS: Record<SyncKind, KindSpec> = {
       if (!r) return null
       const d = { ...r, id }
       return { data: d, cols: { payer: d.payer.slice(0, 200), client_id: d.clientId, amount: d.amount, due_date: d.dueDate } }
+    },
+  },
+  contratos: {
+    table: "contracts",
+    versions: "contract_versions",
+    fk: "contract_id",
+    read: (id, data) => {
+      const c = decodeContract(data)
+      if (!c) return null
+      const d = { ...c, id }
+      return { data: d, cols: { kind: d.kind, title: d.title.slice(0, 200), end_date: d.endDate } }
     },
   },
 }

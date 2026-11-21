@@ -6,7 +6,7 @@
     "kicker": "Interno · Administración",
     "title": "Acuerdos con edificios",
     "lead": "Cada acuerdo con un edificio y en qué va: los vencidos y los que hay que renovar o negociar primero. Los términos se editan en cada despliegue (Acuerdo con el edificio).",
-    "hint": "Por vencer: dentro del aviso previo del acuerdo (o 60 días antes del fin si no se anotó). Los de renovación automática pasan solos al siguiente año.",
+    "hint": "Por vencer: dentro del aviso previo del acuerdo (o 60 días antes del fin si no se anotó). Los de renovación automática pasan solos al siguiente año. La copia firmada va en Contratos, tipo Edificio, con su despliegue.",
     "none": "Todavía no hay despliegues.",
     "cost": "Costo al mes (edificios)",
     "status": {
@@ -26,6 +26,8 @@
       "no": "no se renueva"
     },
     "monthly": "{amount} al mes",
-    "increase": "aumento anual {pct} %"
+    "increase": "aumento anual {pct} %",
+    "signed": "contrato firmado en el registro",
+    "unsigned": "sin contrato firmado en el registro"
   }
 }

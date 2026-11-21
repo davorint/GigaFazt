@@ -7,6 +7,8 @@
  * - Herramientas: tools in use (quantity > 0) with an alert (service overdue, counter at its limit, damaged, lost…).
  * - Materiales: items below their minimum in the warehouse.
  * - Notas: open pinned notes.
+ * - Contratos: contracts ended or within their notice period (building contracts tied to a deployment go with its
+ *   agreement, already listed).
  * - Cuentas: bills overdue or due within BILLS_SOON_DAYS, one-off charges overdue, and PPD payments still without their
  *   complemento de pago (both ways).
  */
@@ -22,6 +24,8 @@ import type { Payable } from "../finance/payables"
 import { agreementStatus, siteLabel, type Site } from "../sites/model"
 import type { Receivable } from "../finance/receivables"
 import { balanceOf, complementPending, isOpenDoc } from "../finance/common"
+import { contractStatus, datesFromSite, type Contract } from "../contracts/model"
+import { providerName, type Provider } from "../providers/model"
 
 export type TodayInput = {
   reports: Report[]
@@ -35,6 +39,8 @@ export type TodayInput = {
   payables?: Payable[]
   receivables?: Receivable[]
   sites?: Site[]
+  contracts?: Contract[]
+  providers?: Provider[]
 }
 
 export type Today = {
@@ -51,6 +57,8 @@ export type Today = {
   complements: { id: string; side: "pagar" | "cobrar"; label: string; deadline: string }[]
   /** Building agreements ended or within their notice period (renew or negotiate). */
   agreements: { id: string; label: string; end: string; ended: boolean }[]
+  /** Contracts (Legal → Contratos) ended or within their notice period. */
+  contracts: { id: string; label: string; end: string; ended: boolean }[]
 }
 
 /** Days ahead a bill shows on "Hoy" before it's due. */
@@ -117,6 +125,13 @@ export function todaySummary(d: TodayInput, today: string, now = Date.now()): To
     .map(({ s, a }) => ({ id: s.id, label: siteLabel(s), end: a.end, ended: a.status === "vencido" }))
     .sort((a, b) => a.end.localeCompare(b.end))
 
+  const contracts = (d.contracts ?? [])
+    .filter((c) => !c.ended && !datesFromSite(c))
+    .map((c) => ({ c, a: contractStatus(c, [], today) }))
+    .filter(({ a }) => a.status === "vencido" || a.status === "por-vencer")
+    .map(({ c, a }) => ({ id: c.id, label: [c.title, contractParty(c, d)].filter(Boolean).join(" · ") || "—", end: a.end, ended: a.status === "vencido" }))
+    .sort((a, b) => a.end.localeCompare(b.end))
+
   return {
     reports: { fresh, urgent, stale, open: open.length },
     payments: { late, lateAmount: collectionStats(d.clients, d.payments, today).lateAmount },
@@ -127,8 +142,17 @@ export function todaySummary(d: TodayInput, today: string, now = Date.now()): To
     charges,
     complements,
     agreements,
+    contracts,
   }
 }
 
+/** Who a contract is with, from the lists when it points at one. */
+function contractParty(c: Contract, d: TodayInput): string {
+  const client = c.kind === "cliente" && c.clientId ? d.clients.find((x) => x.id === c.clientId) : undefined
+  const site = c.kind === "edificio" && c.siteId ? d.sites?.find((x) => x.id === c.siteId) : undefined
+  const p = (c.kind === "carrier" || c.kind === "proveedor") && c.providerId ? d.providers?.find((x) => x.id === c.providerId) : undefined
+  return client ? clientLabel(client) : site ? siteLabel(site) : p ? providerName(p) : c.party
+}
+
 /** Nothing to look at today. */
-export const allClear = (t: Today) => !t.reports.open && !t.payments.late.length && !t.tools.length && !t.lowStock.length && !t.pinned.length && !t.bills.length && !t.charges.length && !t.complements.length && !t.agreements.length
+export const allClear = (t: Today) => !t.reports.open && !t.payments.late.length && !t.tools.length && !t.lowStock.length && !t.pinned.length && !t.bills.length && !t.charges.length && !t.complements.length && !t.agreements.length && !t.contracts.length

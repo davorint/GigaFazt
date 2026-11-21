@@ -60,7 +60,8 @@
         "toolbuys": "Compras de herramientas",
         "agenda": "Agenda",
         "porpagar": "Cuentas por pagar",
-        "porcobrar": "Cuentas por cobrar"
+        "porcobrar": "Cuentas por cobrar",
+        "contratos": "Contratos"
       }
     },
     "rejected": {
@@ -90,7 +91,8 @@
         "toolbuys": "Opción de compra",
         "agenda": "Cita de la agenda",
         "porpagar": "Cuenta por pagar",
-        "porcobrar": "Cuenta por cobrar"
+        "porcobrar": "Cuenta por cobrar",
+        "contratos": "Contrato"
       }
     },
     "signinHint": "Tu sesión ya no es válida (te dieron de baja, o ya hay cuentas del equipo y entraste con la contraseña compartida). Lo que cambiaste queda guardado en este teléfono.",

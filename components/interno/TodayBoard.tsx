@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { localToday } from "@/lib/clients/from-lead"
 import { clientsServerSnapshot, clientsSnapshot, subscribeClients } from "@/lib/clients/store"
 import { searchAll, SEARCH_KINDS, type Hit } from "@/lib/interno/search"
+import { contractsStore } from "@/lib/contracts/store"
 import { SERIOUS, allClear, todaySummary } from "@/lib/interno/today"
 import { mxn } from "@/lib/materials/catalog"
 import { catalogServerSnapshot, catalogSnapshot, subscribeCatalog } from "@/lib/materials/store"
@@ -39,7 +40,8 @@ function useData() {
   const notes = useSyncExternalStore(notesStore.subscribe, notesStore.snapshot, notesStore.serverSnapshot).list
   const payables = useSyncExternalStore(payablesStore.subscribe, payablesStore.snapshot, payablesStore.serverSnapshot).list
   const receivables = useSyncExternalStore(receivablesStore.subscribe, receivablesStore.snapshot, receivablesStore.serverSnapshot).list
-  return { loaded: clients.loaded, clients: clients.list, sites, tools, providers, items, surveys, reports, payments, moves, units, notes, payables, receivables }
+  const contracts = useSyncExternalStore(contractsStore.subscribe, contractsStore.snapshot, contractsStore.serverSnapshot).list
+  return { loaded: clients.loaded, clients: clients.list, sites, tools, providers, items, surveys, reports, payments, moves, units, notes, payables, receivables, contracts }
 }
 
 /** One card per thing that needs attention; nothing when its count is 0 (those go in the "En orden" line). */
@@ -125,6 +127,7 @@ export function TodayBoard() {
     [t("charges.title"), s.charges.length],
     [t("complements.title"), s.complements.length],
     [t("agreements.title"), s.agreements.length],
+    [t("contracts.title"), s.contracts.length],
   ]
     .filter(([, n]) => !n)
     .map(([label]) => String(label))
@@ -222,10 +225,16 @@ export function TodayBoard() {
                 s.complements.length - 4
               )}
             </Card>
-            <Card title={t("agreements.title")} href={`${A}/acuerdos`} open={t("open")} count={s.agreements.length} tone={s.agreements.some((a) => a.ended) ? "red" : s.agreements.length ? "amber" : "ok"}>
+            <Card title={t("agreements.title")} href={`${A}/legal/contratos?vista=edificios`} open={t("open")} count={s.agreements.length} tone={s.agreements.some((a) => a.ended) ? "red" : s.agreements.length ? "amber" : "ok"}>
               {list(
                 s.agreements.slice(0, 4).map((a) => ({ key: a.id, text: t(a.ended ? "agreements.ended" : "agreements.soon", { label: a.label, date: a.end }), href: `${A}/despliegues?d=${a.id}` })),
                 s.agreements.length - 4
+              )}
+            </Card>
+            <Card title={t("contracts.title")} href={`${A}/legal/contratos`} open={t("open")} count={s.contracts.length} tone={s.contracts.some((c) => c.ended) ? "red" : s.contracts.length ? "amber" : "ok"}>
+              {list(
+                s.contracts.slice(0, 4).map((c) => ({ key: c.id, text: t(c.ended ? "contracts.ended" : "contracts.soon", { label: c.label, date: c.end }), href: `${A}/legal/contratos?k=${c.id}` })),
+                s.contracts.length - 4
               )}
             </Card>
             <Card title={t("notes.title")} href={`${A}/notas`} open={t("open")} count={s.pinned.length} tone={s.pinned.length ? "amber" : "ok"}>

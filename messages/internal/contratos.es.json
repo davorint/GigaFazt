@@ -1,0 +1,113 @@
+{
+  "contratos": {
+    "meta": {
+      "title": "Contratos · GigaFazt interno"
+    },
+    "kicker": "Interno · Administración · Legal",
+    "title": "Contratos",
+    "lead": "Cada contrato del negocio con su copia firmada: clientes, edificios, carriers y proveedores, el equipo y lo demás. Los que están por vencer salen en Hoy.",
+    "views": {
+      "label": "Ver",
+      "contratos": "Contratos",
+      "edificios": "Acuerdos con edificios"
+    },
+    "tiles": {
+      "active": "Vigentes",
+      "soon": "Por vencer",
+      "ended": "Vencidos",
+      "unsigned": "Sin copia firmada",
+      "unsignedHint": "de los vigentes",
+      "monthly": "Al mes (vigentes)"
+    },
+    "add": "Agregar contrato",
+    "addSubmit": "Agregar",
+    "addHint": "Con quién, fechas y la copia firmada se llenan al abrirlo.",
+    "titleField": "Qué es",
+    "titlePlaceholder": "Servicio 500M, renta de azotea, enlace 1 Gbps…",
+    "kind": "Tipo",
+    "kinds": {
+      "cliente": "Cliente",
+      "edificio": "Edificio",
+      "carrier": "Carrier",
+      "proveedor": "Proveedor",
+      "equipo": "Equipo de trabajo",
+      "otro": "Otro"
+    },
+    "allKinds": "Todos los tipos",
+    "show": "Mostrar",
+    "shows": {
+      "activos": "Vigentes y por vencer",
+      "atencion": "Por vencer y vencidos",
+      "terminados": "Terminados",
+      "todos": "Todos"
+    },
+    "search": "Buscar",
+    "empty": "No hay contratos con estos filtros.",
+    "status": {
+      "vencido": "Vencido",
+      "por-vencer": "Por vencer",
+      "sin-fecha": "Sin fecha de fin",
+      "renovado": "Renovado solo",
+      "vigente": "Vigente",
+      "terminado": "Terminado"
+    },
+    "noTitle": "Sin nombre",
+    "ends": "termina el {date}",
+    "noEnd": "sin fecha de fin",
+    "filesCount": "{n, plural, =0 {sin copia firmada} one {# archivo} other {# archivos}}",
+    "party": "Con quién",
+    "client": "Cliente",
+    "noClient": "No está en Clientes",
+    "site": "Despliegue (edificio)",
+    "noSite": "No está en Despliegues",
+    "provider": "Proveedor",
+    "noProvider": "No está en Proveedores",
+    "partyName": "Nombre de la otra parte",
+    "number": "Número o folio",
+    "signedDate": "Firmado el",
+    "startDate": "Empieza",
+    "endDate": "Termina",
+    "renewal": "Renovación",
+    "renewals": {
+      "": "Sin definir",
+      "automatica": "Automática (cada año)",
+      "negociar": "Hay que negociar",
+      "no": "No se renueva"
+    },
+    "noticeDays": "Aviso previo",
+    "noticeHint": "Días antes del fin para renovar o avisar. Vacío: {n} días.",
+    "days": "días",
+    "monthly": "Monto al mes",
+    "monthlyHint": "Con IVA. Vacío si no tiene.",
+    "fromSite": "Las fechas, la renovación y el aviso de este contrato son los del acuerdo del despliegue: {status}.",
+    "fromSiteEdit": "Cambiarlos en Despliegues",
+    "fromSiteNoEnd": "sin fecha de fin anotada",
+    "notes": "Notas",
+    "endedBox": "Terminado o cancelado (ya no avisa)",
+    "remove": "Borrar contrato",
+    "confirmRemove": "¿Borrar este contrato? Queda en «Borrados recientemente» por 90 días.",
+    "files": {
+      "title": "Copia firmada",
+      "hint": "PDF o fotos (JPG, PNG, WebP), hasta {max} cada uno. Las fotos grandes se achican en el teléfono antes de subir. Se necesita señal para subir y para abrir.",
+      "add": "Subir archivo",
+      "uploading": "Subiendo {name}…",
+      "open": "Abrir",
+      "download": "Descargar",
+      "remove": "Quitar",
+      "confirmRemove": "¿Quitar «{name}» de este contrato?",
+      "none": "Todavía no hay copia firmada.",
+      "meta": "{size} · {date}{by, select, none {} other { · {by}}}",
+      "errors": {
+        "too-big": "«{name}» pesa más de {max}. Si es PDF, guárdalo más ligero (o escanéalo a menor resolución).",
+        "bad-type": "«{name}» no es PDF ni foto (JPG, PNG, WebP).",
+        "empty": "«{name}» está vacío.",
+        "offline": "Sin señal: no se pudo subir «{name}». Vuelve a intentar con conexión.",
+        "signin": "Tu sesión terminó: entra de nuevo para subir archivos.",
+        "no-database": "El sitio no tiene base de datos conectada: no se pueden guardar archivos.",
+        "server": "No se pudo subir «{name}» (error del servidor).",
+        "full": "Este contrato ya tiene {n} archivos, el máximo.",
+        "remove": "No se pudo quitar el archivo (sin señal o error). Vuelve a intentar."
+      }
+    }
+  }
+}

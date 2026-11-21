@@ -15,6 +15,8 @@ import { alertChannels, sendText } from "@/lib/reports/notify"
 import { decodeMove, decodeUnit, type Move, type Unit } from "@/lib/stock/model"
 import { decodeTool, type Tool } from "@/lib/tools/model"
 import { getPool } from "@/lib/db/client"
+import { decodeContract, type Contract } from "@/lib/contracts/model"
+import { decodeProvider, type Provider } from "@/lib/providers/model"
 import { SITE_URL } from "@/lib/site"
 
 /**
@@ -47,6 +49,8 @@ async function run() {
       payables: await rows<Payable>("payables", decodePayable),
       receivables: await rows<Receivable>("receivables", decodeReceivable),
       sites: await rows<Site>("sites", decodeSite),
+      contracts: await rows<Contract>("contracts", decodeContract),
+      providers: await rows<Provider>("providers", decodeProvider),
     },
     day
   )

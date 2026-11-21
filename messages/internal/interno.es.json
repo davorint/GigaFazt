@@ -169,9 +169,18 @@
           "name": "Cuentas por cobrar",
           "desc": "Todo lo que nos deben: cargos de proyectos y equipo, y las mensualidades pendientes de Cobranza, con antigüedad y facturas (CFDI)."
         },
-        "acuerdos": {
-          "name": "Acuerdos con edificios",
-          "desc": "Cada acuerdo con un edificio: cuándo termina, cómo se renueva, con cuánto aviso, renta y aumento anual. Avisa en Hoy antes de que venza."
+        "legal": {
+          "name": "Legal",
+          "desc": "Los contratos del negocio con sus copias firmadas: clientes, edificios, carriers y proveedores, equipo y demás. Avisa en Hoy antes de que venzan.",
+          "kicker": "Interno · Administración · Legal",
+          "lead": "Lo legal del negocio en un lugar. Por ahora, los contratos.",
+          "metaTitle": "Legal · GigaFazt interno",
+          "pages": {
+            "contratos": {
+              "name": "Contratos",
+              "desc": "Cada contrato firmado: con quién, desde y hasta cuándo, cómo se renueva, el aviso previo y la copia firmada (PDF o foto). Incluye los acuerdos con edificios."
+            }
+          }
         }
       }
     },
@@ -250,6 +259,11 @@
       },
       "agreements": {
         "title": "Acuerdos con edificios",
+        "soon": "{label} · termina el {date}",
+        "ended": "{label} · terminó el {date}"
+      },
+      "contracts": {
+        "title": "Contratos por renovar",
         "soon": "{label} · termina el {date}",
         "ended": "{label} · terminó el {date}"
       }

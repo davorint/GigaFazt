@@ -4,7 +4,7 @@
  * (olt-huawei) and the calculators and simulators (calculadora); /interno/herramientas the tools we have (en-existencia)
  * and their buying options (compras), /interno/materiales the stock (en-existencia) and the master list with its buying
  * options (compras) (owner, 2026-11-20; old addresses are gone, no redirects); /interno/admin the admin
- * pages. Behind a password (lib/internal-auth.ts; the sign-in page /interno/entrar
+ * pages (legal: /interno/admin/legal/contratos, owner 2026-11-21). Behind a password (lib/internal-auth.ts; the sign-in page /interno/entrar
  * is the only one open), never linked from the public site, not in the sitemap and noindex. Served from the Spanish
  * route; any capitalization (/INTERNO/Equipos-Telecom/OLT-Huawei) maps to the lowercase route.
  */
@@ -22,9 +22,11 @@ export const MIKROTIK_PAGES = ["guia", "scripts"] as const
 /** The AsterNOS pages (/interno/equipos-telecom/asternos/<page>, owner 2026-11-20). */
 export const ASTERNOS_PAGES = ["guia", "scripts", "simulador"] as const
 /** The admin area's pages (/interno/admin/<page>). */
-export const ADMIN_PAGES = ["notas", "despliegues", "clientes", "reportes_clientes", "proveedores", "agenda", "numeros", "usuarios", "cuentas-por-pagar", "cuentas-por-cobrar", "acuerdos"] as const
+export const ADMIN_PAGES = ["notas", "despliegues", "clientes", "reportes_clientes", "proveedores", "agenda", "numeros", "usuarios", "cuentas-por-pagar", "cuentas-por-cobrar", "legal"] as const
+/** The legal pages (/interno/admin/legal/<page>, owner 2026-11-21; building agreements are part of contratos). */
+export const LEGAL_PAGES = ["contratos"] as const
 /** Other spellings of an admin page. */
-const ADMIN_ALIASES: Record<string, (typeof ADMIN_PAGES)[number]> = { notes: "notas", "post-it": "notas", postits: "notas", deployments: "despliegues", "reportes-clientes": "reportes_clientes", reportes: "reportes_clientes", reports: "reportes_clientes", calendario: "agenda", citas: "agenda", "números": "numeros", negocio: "numeros", numbers: "numeros", "por-pagar": "cuentas-por-pagar", "por-cobrar": "cuentas-por-cobrar", "cuentas-pagar": "cuentas-por-pagar", "cuentas-cobrar": "cuentas-por-cobrar", pagar: "cuentas-por-pagar", cobrar: "cuentas-por-cobrar", contratos: "acuerdos", edificios: "acuerdos", agreements: "acuerdos" }
+const ADMIN_ALIASES: Record<string, (typeof ADMIN_PAGES)[number]> = { notes: "notas", "post-it": "notas", postits: "notas", deployments: "despliegues", "reportes-clientes": "reportes_clientes", reportes: "reportes_clientes", reports: "reportes_clientes", calendario: "agenda", citas: "agenda", "números": "numeros", negocio: "numeros", numbers: "numeros", "por-pagar": "cuentas-por-pagar", "por-cobrar": "cuentas-por-cobrar", "cuentas-pagar": "cuentas-por-pagar", "cuentas-cobrar": "cuentas-por-cobrar", pagar: "cuentas-por-pagar", cobrar: "cuentas-por-cobrar" }
 /** The sign-in page: the only internal page served without the password. */
 export const LOGIN_PAGE = "entrar"
 export const LOGIN_PATH = `/${INTERNAL_ROOT}/${LOGIN_PAGE}`
@@ -56,7 +58,14 @@ export function matchInternal(pathname: string): InternalMatch | null {
     const sub2 = /^\/([^/.]+)(.*)$/.exec(after)
     const name = sub2?.[1].toLowerCase() ?? ""
     const known = sub2 && ((ADMIN_PAGES as readonly string[]).find((p) => p === name) ?? ADMIN_ALIASES[name])
-    if (sub2 && known) after = `/${known}${sub2[2]}`
+    let rest3 = sub2?.[2] ?? ""
+    // /interno/admin/legal/<page>
+    if (known === "legal") {
+      const sub3 = /^\/([^/.]+)(.*)$/.exec(rest3)
+      const k3 = sub3 && LEGAL_PAGES.find((p) => p === sub3[1].toLowerCase())
+      if (sub3 && k3) rest3 = `/${k3}${sub3[2]}`
+    }
+    if (sub2 && known) after = `/${known}${rest3}`
   }
   // Under /interno/equipos-telecom, /interno/herramientas and /interno/materiales too, by its lowercase name only.
   const SUBPAGES: Record<string, readonly string[]> = { "equipos-telecom": TELECOM_PAGES, herramientas: TOOL_PAGES, materiales: MATERIAL_PAGES }

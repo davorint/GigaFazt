@@ -6,6 +6,7 @@ import { sitesServerSnapshot, sitesSnapshot, subscribeSites } from "@/lib/sites/
 import { agreementStatus, siteCost, siteLabel, type AgreementStatus } from "@/lib/sites/model"
 import { localToday } from "@/lib/clients/from-lead"
 import { mxn } from "@/lib/materials/catalog"
+import { contractsStore } from "@/lib/contracts/store"
 
 const TONE: Record<AgreementStatus, string> = {
   vencido: "border-red-400/40 text-red-200",
@@ -17,13 +18,16 @@ const TONE: Record<AgreementStatus, string> = {
 const ORDER: AgreementStatus[] = ["vencido", "por-vencer", "sin-fecha", "renovado", "vigente"]
 
 /**
- * /interno/admin/acuerdos (owner, 2026-11-19): every building agreement with where it stands, the ones to renew or
- * negotiate first. The terms are edited on each deployment (Despliegues → Acuerdo con el edificio).
+ * Acuerdos con edificios (owner, 2026-11-19; a view of Legal → Contratos since 2026-11-21): every building agreement with
+ * where it stands, the ones to renew or negotiate first, and whether its signed contract is in the register. The terms
+ * are edited on each deployment (Despliegues → Acuerdo con el edificio).
  */
 export function AgreementsApp() {
   const t = useTranslations("acuerdos")
   const sites = useSyncExternalStore(subscribeSites, sitesSnapshot, sitesServerSnapshot)
+  const contracts = useSyncExternalStore(contractsStore.subscribe, contractsStore.snapshot, contractsStore.serverSnapshot).list
   if (!sites.loaded) return null
+  const signed = (id: string) => contracts.some((c) => c.kind === "edificio" && c.siteId === id && !c.ended && c.files.length > 0)
   const today = localToday()
   const rows = sites.list
     .map((s) => ({ s, a: agreementStatus(s, today) }))
@@ -61,6 +65,7 @@ export function AgreementsApp() {
                   t(`renewal.${s.renewal || "none"}`),
                   siteCost(s) ? t("monthly", { amount: mxn(siteCost(s)) }) : "",
                   s.rentIncreasePct !== null ? t("increase", { pct: s.rentIncreasePct }) : "",
+                  signed(s.id) ? t("signed") : t("unsigned"),
                 ]
                   .filter(Boolean)
                   .join(" · ")}

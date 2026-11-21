@@ -13,7 +13,7 @@
  * Leads come from the public form: personal data, behind the /interno password, with a status the team changes.
  */
 import { sql } from "drizzle-orm"
-import { bigint, bigserial, boolean, date, doublePrecision, index, integer, jsonb, numeric, pgSequence, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { bigint, bigserial, boolean, customType, date, doublePrecision, index, integer, jsonb, numeric, pgSequence, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 
 /** One counter for every change in every shared table: what a phone asks for when it syncs. */
 export const syncRev = pgSequence("sync_rev", { startWith: 1 })
@@ -415,3 +415,45 @@ export const receivables = pgTable(
   (t) => [index("receivables_rev_idx").on(t.rev), index("receivables_due_idx").on(t.dueDate)]
 )
 export const receivableVersions = versions("receivable_versions", "receivable_id")
+
+// ── Contratos (/interno/admin/legal/contratos) ──────────────────────────────
+
+export const contracts = pgTable(
+  "contracts",
+  {
+    id: text("id").primaryKey(),
+    kind: text("kind").notNull().default("otro"),
+    title: text("title").notNull().default(""),
+    endDate: text("end_date").notNull().default(""),
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("contracts_rev_idx").on(t.rev), index("contracts_end_idx").on(t.endDate)]
+)
+export const contractVersions = versions("contract_versions", "contract_id")
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" })
+
+/**
+ * The signed copies of the contracts (owner, 2026-11-21: uploaded to the site): PDF or photos, at most
+ * lib/contracts/files.ts MAX_BYTES each. The bytes go to the private Vercel Blob store (`blob_path`) when the host has
+ * one, else here (`bytes`, local and dev); either way they're served only behind the /interno sign-in
+ * (lib/contracts/storage.ts). Not synced to the phones (they're listed in the contract's record), not in the JSON backup.
+ */
+export const contractFiles = pgTable(
+  "contract_files",
+  {
+    id: text("id").primaryKey(),
+    contractId: text("contract_id").notNull(),
+    name: text("name").notNull().default(""),
+    mime: text("mime").notNull(),
+    size: integer("size").notNull(),
+    bytes: bytea("bytes"),
+    /** Pathname in the Blob store ("" = the bytes are in `bytes`). */
+    blobPath: text("blob_path").notNull().default(""),
+    uploadedAt: timestamp("uploaded_at", { withTimezone: true }).notNull().defaultNow(),
+    uploadedBy: text("uploaded_by").notNull().default(""),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [index("contract_files_contract_idx").on(t.contractId)]
+)
