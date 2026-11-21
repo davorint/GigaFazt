@@ -7,7 +7,10 @@
       "avisos": "Avisos por WhatsApp · WispDavor",
       "mapa": "Mapa de clientes · WispDavor",
       "pagos": "Pagos en línea · WispDavor",
-      "facturas": "Facturas (CFDI) · WispDavor"
+      "facturas": "Facturas (CFDI) · WispDavor",
+      "routers": "Routers en vivo · WispDavor",
+      "trafico": "Tráfico por cliente · WispDavor",
+      "hotspot": "Fichas de hotspot · WispDavor"
     },
     "kicker": "Uso interno · Software · WispDavor",
     "title": "WispDavor",
@@ -45,6 +48,18 @@
       "facturas": {
         "name": "Facturas (CFDI)",
         "desc": "Facturas a quien la pida, timbradas con Facturama: datos fiscales del cliente, facturar un pago, PDF/XML, enviar por correo y cancelar."
+      },
+      "routers": {
+        "name": "Routers en vivo",
+        "desc": "Cada MikroTik se reporta cada 2 minutos y aplica cortes, reconexiones y cambios de plan; automático con interruptor por router, o a mano."
+      },
+      "trafico": {
+        "name": "Tráfico por cliente",
+        "desc": "Bajada y subida de cada usuario PPPoE: cada 5 minutos los últimos 7 días, por hora hasta 90 días."
+      },
+      "hotspot": {
+        "name": "Fichas de hotspot",
+        "desc": "Planes de fichas para el Wi-Fi de áreas comunes (tiempo o datos, velocidad, precio) y fichas imprimibles."
       }
     },
     "existing": {
@@ -62,9 +77,10 @@
       }
     },
     "next": {
-      "title": "Siguientes fases",
+      "title": "Siguientes pasos",
       "items": [
-        "Fase 3: tráfico por cliente, fichas de hotspot y control de los routers en vivo."
+        "Probar el agente en un router real (los comandos de RouterOS están marcados para verificar).",
+        "Activar Stripe y Facturama cuando abras las cuentas."
       ]
     },
     "noData": "Este teléfono todavía no tiene los datos: sincroniza arriba (¿Quién eres?).",
@@ -301,6 +317,123 @@
           "Llena arriba los datos de las facturas con tu contador (código postal, serie, clave de producto)."
         ]
       }
+    },
+    "routers": {
+      "lead": "Cada MikroTik corre un script que cada 2 minutos le dice al sitio qué usuarios PPPoE tiene (perfil, desactivado, conectado, tráfico) y recibe las acciones pendientes. El router no abre ningún puerto y solo ejecuta una lista fija de comandos.",
+      "desired": "Lo que debe tener cada usuario sale de Clientes y Cobranza: atrasado sin promesa vigente → perfil DSX-suspendido (script «Morosos»); al corriente → su plan (el nombre del perfil PPPoE); servicio cancelado → desactivado.",
+      "add": "Agregar router",
+      "name": "Nombre",
+      "site": "Despliegue",
+      "noSite": "Sin despliegue",
+      "roles": "Qué hace",
+      "pppoe": "PPPoE de clientes",
+      "hotspot": "Hotspot de áreas comunes",
+      "create": "Agregar",
+      "none": "Todavía no hay routers.",
+      "online": "en línea",
+      "offline": "sin reportarse",
+      "never": "nunca se ha reportado",
+      "lastSeen": "último reporte {when}",
+      "users": "{n} usuarios PPPoE",
+      "auto": "Automático",
+      "autoHint": "Encendido: las diferencias se mandan solas (cortar, reconectar, cambiar plan). Apagado: las mandas tú.",
+      "changes": "Diferencias con Clientes ({n})",
+      "noChanges": "El router está igual que Clientes.",
+      "change": {
+        "profile": "{user}: perfil → {profile}",
+        "disable": "{user}: desactivar (servicio cancelado)",
+        "enable": "{user}: activar"
+      },
+      "send": "Mandar al router",
+      "sent": "En cola: {n}.",
+      "missing": "Usuarios por crear en el router ({n})",
+      "missingHint": "Crear un usuario necesita una contraseña que también va en la ONU: al crearlo se muestra una vez para que la pongas en la ONU (Configurar WAN PPPoE en DavorOLT).",
+      "createUser": "Crear en el router",
+      "password": "Contraseña de {user}: {password} (cópiala ahora; no se vuelve a mostrar)",
+      "actions": "Acciones recientes",
+      "noActions": "Sin acciones.",
+      "status": {
+        "pending": "en cola",
+        "sent": "enviada",
+        "done": "hecha",
+        "error": "falló"
+      },
+      "source": {
+        "auto": "automática",
+        "staff": "a mano"
+      },
+      "script": "Script del router",
+      "scriptHint": "Pégalo en la terminal del MikroTik (RouterOS 7). Lleva la llave del router: guárdalo solo en el router. Si se pierde, crea una llave nueva (la anterior deja de servir).",
+      "rotate": "Llave nueva",
+      "confirmRotate": "¿Crear una llave nueva para {name}? El router deja de reportarse hasta que pegues el script nuevo.",
+      "remove": "Quitar router",
+      "confirmRemove": "¿Quitar {name}? Se borran sus acciones y su estado (no toca el router).",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "verify": "VERIFICAR: el script se probó solo en el sitio; pruébalo primero en un router con pocos clientes. Para que la conexión HTTPS funcione, el router debe confiar en el certificado del sitio (RouterOS 7: certificados del sistema).",
+      "error": "No se pudo (sin conexión o error del servidor).",
+      "neon": "Cada router se reporta cada 2 minutos: la base de datos (Neon) queda encendida todo el día, lo que usa horas de cómputo de tu plan."
+    },
+    "trafico": {
+      "lead": "La bajada y la subida de cada usuario PPPoE, según lo que reporta su router. Cada 5 minutos los últimos 7 días; por hora hasta 90 días.",
+      "client": "Cliente (usuario PPPoE)",
+      "pick": "Elige un cliente",
+      "range": "Periodo",
+      "ranges": {
+        "1": "24 horas",
+        "7": "7 días",
+        "30": "30 días",
+        "90": "90 días"
+      },
+      "down": "Bajada",
+      "up": "Subida",
+      "total": "Total: bajada {down}, subida {up}",
+      "empty": "Sin datos de tráfico para este periodo (el router de su despliegue todavía no se reporta o el cliente no se conectó).",
+      "top": "Los que más bajaron (7 días)",
+      "topEmpty": "Todavía no hay tráfico reportado.",
+      "table": "Ver por día",
+      "day": "Día",
+      "chart": "Tráfico de {user}: bajada y subida",
+      "error": "No se pudo cargar.",
+      "unit": "Mbps promedio por intervalo"
+    },
+    "hotspot": {
+      "lead": "Fichas para el Wi-Fi de áreas comunes. Los planes y precios los defines tú. El router con hotspot recibe las fichas solo (con su agente) y reporta cuándo se usan.",
+      "plans": "Planes de fichas",
+      "planName": "Nombre",
+      "minutes": "Tiempo (minutos, 0 = sin límite)",
+      "mb": "Datos (MB, 0 = sin límite)",
+      "rate": "Velocidad (subida/bajada, ej. 5M/10M)",
+      "price": "Precio (MXN)",
+      "active": "Activo",
+      "addPlan": "Agregar plan",
+      "removePlan": "Quitar",
+      "savePlans": "Guardar planes",
+      "saved": "Guardado.",
+      "planIssues": {
+        "name": "falta el nombre",
+        "limit": "pon tiempo o datos",
+        "rate": "velocidad como 5M/10M"
+      },
+      "generate": "Crear fichas",
+      "router": "Router con hotspot",
+      "noRouter": "Primero agrega un router con «Hotspot de áreas comunes» (Routers en vivo).",
+      "plan": "Plan",
+      "count": "Cuántas",
+      "created": "Creadas: {n}. El router las recibe en su siguiente reporte.",
+      "print": "Imprimir fichas",
+      "vouchers": "Fichas",
+      "none": "Todavía no hay fichas.",
+      "user": "Usuario",
+      "pass": "Contraseña",
+      "statuses": {
+        "pending": "en cola",
+        "ready": "en el router",
+        "used": "usada"
+      },
+      "sold": "Vendida",
+      "error": "No se pudo (sin conexión o error del servidor).",
+      "cardTitle": "Wi-Fi GigaFazt"
     }
   }
 }

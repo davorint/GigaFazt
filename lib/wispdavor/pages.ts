@@ -3,7 +3,8 @@
  * /interno/software/wispdavor and one subfolder per module. Phase 1: cortes (cut-offs and reconnections), portal
  * (clients' private links), avisos (WhatsApp notices), mapa (clients by deployment). No imports: lib/internal-pages
  * reads these to canonicalize addresses. Phase 2: pagos (Stripe: card, OXXO, SPEI, card auto-pay) and facturas (CFDI with
- * Facturama).
+ * Facturama). Phase 3: routers (live control: each MikroTik pulls its actions), trafico (traffic per client), hotspot
+ * (common-area Wi-Fi vouchers).
  */
-export const WISPDAVOR_PAGES = ["cortes", "portal", "avisos", "mapa", "pagos", "facturas"] as const
+export const WISPDAVOR_PAGES = ["cortes", "portal", "avisos", "mapa", "pagos", "facturas", "routers", "trafico", "hotspot"] as const
 export type WispPage = (typeof WISPDAVOR_PAGES)[number]

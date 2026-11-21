@@ -3,6 +3,6 @@
   "crons": [
     { "path": "/api/interno/resumen", "schedule": "0 14 * * *" },
     { "path": "/api/interno/respaldo-auto", "schedule": "0 9 * * 1" },
-    { "path": "/api/interno/cobro-automatico", "schedule": "0 15 * * *" }
+    { "path": "/api/interno/wispdavor-diario", "schedule": "0 15 * * *" }
   ]
 }

@@ -4,7 +4,7 @@ import { json } from "@/lib/internal-api"
 import { runAutopay, stripeConfigured } from "@/lib/wispdavor/stripe-server"
 
 /**
- * GET /api/interno/cobro-automatico: the daily card auto-pay run (vercel.json cron, 15:00 UTC = 9:00 in Mexico City),
+ * GET /api/interno/cobro-automatico: card auto-pay on its own (the daily cron runs it inside /api/interno/wispdavor-diario),
  * allowed with `Authorization: Bearer <CRON_SECRET>`. Charges only on days 1, 5 and 9 (lib/wispdavor/online.ts).
  */
 export async function GET(request: NextRequest) {

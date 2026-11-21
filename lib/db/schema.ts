@@ -13,7 +13,7 @@
  * Leads come from the public form: personal data, behind the /interno password, with a status the team changes.
  */
 import { sql } from "drizzle-orm"
-import { bigint, bigserial, boolean, customType, date, doublePrecision, index, integer, jsonb, numeric, pgSequence, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { bigint, bigserial, boolean, customType, date, doublePrecision, index, integer, jsonb, numeric, pgSequence, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core"
 
 /** One counter for every change in every shared table: what a phone asks for when it syncs. */
 export const syncRev = pgSequence("sync_rev", { startWith: 1 })
@@ -556,4 +556,108 @@ export const cfdis = pgTable(
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
   },
   (t) => [index("cfdis_client_idx").on(t.clientId), index("cfdis_payment_idx").on(t.paymentId)]
+)
+
+// ── WispDavor phase 3: routers, traffic, hotspot ─────────────────────────────
+
+/**
+ * A MikroTik that pulls its actions (owner, 2026-11-21: "Router pulls"): its own key (only the SHA-256 kept), the
+ * deployment, what it does (PPPoE and/or common-area hotspot) and the automatic switch.
+ */
+export const routers = pgTable("routers", {
+  id: text("id").primaryKey(),
+  siteId: text("site_id").notNull().default(""),
+  name: text("name").notNull(),
+  pppoe: boolean("pppoe").notNull().default(true),
+  hotspot: boolean("hotspot").notNull().default(false),
+  auto: boolean("auto").notNull().default(false),
+  keyHash: text("key_hash").notNull(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  createdBy: text("created_by").notNull().default(""),
+})
+
+/** What a router last said it has: each PPPoE user (profile, disabled, connected) and its traffic counters. */
+export const routerUsers = pgTable(
+  "router_users",
+  {
+    routerId: text("router_id").notNull(),
+    user: text("user").notNull(),
+    profile: text("profile").notNull().default(""),
+    disabled: boolean("disabled").notNull().default(false),
+    active: boolean("active").notNull().default(false),
+    rxLast: bigint("rx_last", { mode: "number" }).notNull().default(0),
+    txLast: bigint("tx_last", { mode: "number" }).notNull().default(0),
+    seenAt: timestamp("seen_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("router_users_pk").on(t.routerId, t.user)]
+)
+
+/** Actions for a router, from staff or automatic; the router reports each one done or failed. */
+export const routerActions = pgTable(
+  "router_actions",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    routerId: text("router_id").notNull(),
+    kind: text("kind").notNull(),
+    user: text("user").notNull().default(""),
+    arg1: text("arg1").notNull().default(""),
+    arg2: text("arg2").notNull().default(""),
+    arg3: text("arg3").notNull().default(""),
+    arg4: text("arg4").notNull().default(""),
+    clientId: text("client_id").notNull().default(""),
+    serviceId: text("service_id").notNull().default(""),
+    source: text("source").notNull().default("staff"),
+    status: text("status").notNull().default("pending"),
+    result: text("result").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdBy: text("created_by").notNull().default(""),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    doneAt: timestamp("done_at", { withTimezone: true }),
+  },
+  (t) => [index("router_actions_router_idx").on(t.routerId, t.status)]
+)
+
+/** Traffic per PPPoE user: 5-minute buckets kept 7 days, then hourly kept 90 days (owner's choice). Bytes. */
+export const traffic5m = pgTable(
+  "traffic_5m",
+  {
+    routerId: text("router_id").notNull(),
+    user: text("user").notNull(),
+    bucket: timestamp("bucket", { withTimezone: true }).notNull(),
+    down: bigint("down", { mode: "number" }).notNull().default(0),
+    up: bigint("up", { mode: "number" }).notNull().default(0),
+  },
+  (t) => [uniqueIndex("traffic_5m_pk").on(t.routerId, t.user, t.bucket), index("traffic_5m_bucket_idx").on(t.bucket)]
+)
+export const trafficHourly = pgTable(
+  "traffic_hourly",
+  {
+    routerId: text("router_id").notNull(),
+    user: text("user").notNull(),
+    hour: timestamp("hour", { withTimezone: true }).notNull(),
+    down: bigint("down", { mode: "number" }).notNull().default(0),
+    up: bigint("up", { mode: "number" }).notNull().default(0),
+  },
+  (t) => [uniqueIndex("traffic_hourly_pk").on(t.routerId, t.user, t.hour), index("traffic_hourly_hour_idx").on(t.hour)]
+)
+
+/** Common-area Wi-Fi vouchers (owner: plans and prices set in WispDavor); the plans live in wisp_settings ("hotspot"). */
+export const vouchers = pgTable(
+  "vouchers",
+  {
+    code: text("code").primaryKey(),
+    password: text("password").notNull(),
+    routerId: text("router_id").notNull(),
+    planId: text("plan_id").notNull(),
+    planName: text("plan_name").notNull(),
+    price: doublePrecision("price"),
+    status: text("status").notNull().default("pending"),
+    uptime: text("uptime").notNull().default(""),
+    bytes: bigint("bytes", { mode: "number" }).notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdBy: text("created_by").notNull().default(""),
+    soldAt: timestamp("sold_at", { withTimezone: true }),
+  },
+  (t) => [index("vouchers_router_idx").on(t.routerId, t.status)]
 )
