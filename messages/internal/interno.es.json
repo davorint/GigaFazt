@@ -50,6 +50,26 @@
           }
         }
       },
+      "software": {
+        "name": "Software",
+        "desc": "DavorOLT y WispDavor.",
+        "kicker": "Uso interno · Software",
+        "lead": "El software propio: DavorOLT y WispDavor.",
+        "metaTitle": "Software · GigaFazt interno",
+        "empty": "Sección nueva, todavía sin contenido.",
+        "pages": {
+          "davorolt": {
+            "name": "DavorOLT",
+            "desc": "Sección de DavorOLT.",
+            "metaTitle": "DavorOLT · GigaFazt interno"
+          },
+          "wispdavor": {
+            "name": "WispDavor",
+            "desc": "Sección de WispDavor.",
+            "metaTitle": "WispDavor · GigaFazt interno"
+          }
+        }
+      },
       "equipos-telecom": {
         "name": "Equipos de Telecom",
         "desc": "Routers MikroTik, AsterNOS y OLT Huawei: las guías de cada despliegue, los scripts, la base de conocimiento de la OLT y las calculadoras.",

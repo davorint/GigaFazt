@@ -132,3 +132,10 @@ describe("/interno password", () => {
     for (const x of ["https://evil.example", "//evil.example", "/es/planes", "/interno/../x", "/interno/olt?x", null]) expect(auth.safeNext(x)).toBe("/interno")
   })
 })
+
+describe("Software (owner, 2026-11-21)", () => {
+  it("routes: /interno/software/<davorolt|wispdavor> in any case", () => {
+    expect(matchInternal("/INTERNO/Software/DavorOLT")).toEqual({ rewriteTo: "/es/interno/software/davorolt", open: false })
+    expect(matchInternal("/interno/software/WispDavor")).toEqual({ rewriteTo: "/es/interno/software/wispdavor", open: false })
+  })
+})
