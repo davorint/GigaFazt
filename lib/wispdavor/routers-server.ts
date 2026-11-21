@@ -161,36 +161,46 @@ export async function agentVisit(r: Router, body: string): Promise<string> {
   const bucket = new Date(Math.floor(Date.now() / BUCKET_MS) * BUCKET_MS)
   const prev = new Map((await routerState(r.id)).map((x) => [x.user, x]))
   const counters = new Map(((await pool.query(`select "user", rx_last, tx_last from router_users where router_id = $1`, [r.id])).rows as { user: string; rx_last: string; tx_last: string }[]).map((x) => [x.user, x]))
-  for (const s of report.secrets) {
-    if (!safe(s.user)) continue
-    if (s.stateOnly) {
-      // Plan and disabled only; connection and counters stay as last reported (no traffic is lost or counted twice).
-      await pool.query(
-        `insert into router_users (router_id, "user", profile, disabled, seen_at) values ($1, $2, $3, $4, now())
-         on conflict (router_id, "user") do update set profile = excluded.profile, disabled = excluded.disabled, seen_at = now()`,
-        [r.id, s.user, s.profile, s.disabled]
-      )
-      continue
-    }
+  // One query per kind for the whole report (a router can have hundreds of users; one query each would be slow).
+  // One row per user (a repeated name would make the batched upsert fail): the last line wins.
+  const users = [...new Map(report.secrets.filter((s) => safe(s.user)).map((s) => [s.user, s])).values()]
+  const stateOnly = users.filter((s) => s.stateOnly)
+  const full = users.filter((s) => !s.stateOnly)
+  if (stateOnly.length)
+    // Plan and disabled only; connection and counters stay as last reported (no traffic is lost or counted twice).
+    await pool.query(
+      `insert into router_users (router_id, "user", profile, disabled, seen_at)
+         select $1, u, p, d, now() from unnest($2::text[], $3::text[], $4::boolean[]) as x(u, p, d)
+       on conflict (router_id, "user") do update set profile = excluded.profile, disabled = excluded.disabled, seen_at = now()`,
+      [r.id, stateOnly.map((s) => s.user), stateOnly.map((s) => s.profile), stateOnly.map((s) => s.disabled)]
+    )
+  const traffic: { user: string; down: number; up: number }[] = []
+  for (const s of full) {
     const c = counters.get(s.user)
     const rxLast = Number(c?.rx_last ?? 0)
     const txLast = Number(c?.tx_last ?? 0)
     const up = s.active ? (s.rx >= rxLast ? s.rx - rxLast : s.rx) : 0
     const down = s.active ? (s.tx >= txLast ? s.tx - txLast : s.tx) : 0
-    await pool.query(
-      `insert into router_users (router_id, "user", profile, disabled, active, rx_last, tx_last, seen_at) values ($1, $2, $3, $4, $5, $6, $7, now())
-       on conflict (router_id, "user") do update set profile = excluded.profile, disabled = excluded.disabled, active = excluded.active, rx_last = excluded.rx_last, tx_last = excluded.tx_last, seen_at = now()`,
-      [r.id, s.user, s.profile, s.disabled, s.active, s.active ? s.rx : 0, s.active ? s.tx : 0]
-    )
     // The first report of a session has no earlier counter to subtract from: it isn't counted as traffic.
-    if ((up > 0 || down > 0) && prev.has(s.user))
-      await pool.query(
-        `insert into traffic_5m (router_id, "user", bucket, down, up) values ($1, $2, $3, $4, $5)
-         on conflict (router_id, "user", bucket) do update set down = traffic_5m.down + excluded.down, up = traffic_5m.up + excluded.up`,
-        [r.id, s.user, bucket, down, up]
-      )
+    if ((up > 0 || down > 0) && prev.has(s.user)) traffic.push({ user: s.user, down, up })
   }
-  for (const h of report.hotspot) await pool.query(`update vouchers set uptime = $2, bytes = $3, status = case when $3 > 0 then 'used' else status end where code = $1 and router_id = $4`, [h.name, h.uptime, h.bytes, r.id])
+  if (full.length)
+    await pool.query(
+      `insert into router_users (router_id, "user", profile, disabled, active, rx_last, tx_last, seen_at)
+         select $1, u, p, d, a, rx, tx, now() from unnest($2::text[], $3::text[], $4::boolean[], $5::boolean[], $6::bigint[], $7::bigint[]) as x(u, p, d, a, rx, tx)
+       on conflict (router_id, "user") do update set profile = excluded.profile, disabled = excluded.disabled, active = excluded.active, rx_last = excluded.rx_last, tx_last = excluded.tx_last, seen_at = now()`,
+      [r.id, full.map((s) => s.user), full.map((s) => s.profile), full.map((s) => s.disabled), full.map((s) => s.active), full.map((s) => String(s.active ? s.rx : 0)), full.map((s) => String(s.active ? s.tx : 0))]
+    )
+  if (traffic.length)
+    await pool.query(
+      `insert into traffic_5m (router_id, "user", bucket, down, up)
+         select $1, u, $2, dn, upl from unnest($3::text[], $4::bigint[], $5::bigint[]) as x(u, dn, upl)
+       on conflict (router_id, "user", bucket) do update set down = traffic_5m.down + excluded.down, up = traffic_5m.up + excluded.up`,
+      [r.id, bucket, traffic.map((x) => x.user), traffic.map((x) => String(x.down)), traffic.map((x) => String(x.up))]
+    )
+  // Users no longer on the router (deleted there) leave WispDavor's copy too, so they show as missing again.
+  if (users.length) await pool.query(`delete from router_users where router_id = $1 and not ("user" = any($2::text[]))`, [r.id, users.map((s) => s.user)])
+  for (const h of report.hotspot) await pool.query(`update vouchers set uptime = $2, bytes = $3, status = case when $3 > 0 and status <> 'removed' then 'used' else status end where code = $1 and router_id = $4`, [h.name, h.uptime, h.bytes, r.id])
 
   // The automatic switch: the differences become actions by themselves.
   if (r.auto && r.pppoe && report.secrets.length) {

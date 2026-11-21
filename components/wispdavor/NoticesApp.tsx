@@ -36,7 +36,7 @@ const payBy = (today: string) => {
   return d.toISOString().slice(0, 10)
 }
 /** The notice that fits each audience (still changeable). */
-const TEMPLATE_FOR: Partial<Record<Audience, TemplateId>> = { porVencer: "recordatorio", atrasados: "corte", reconectar: "reconexion" }
+const TEMPLATE_FOR: Partial<Record<Audience, TemplateId>> = { porVencer: "recordatorio", atrasados: "corte" }
 
 /** /interno/software/wispdavor/avisos: notices by WhatsApp, through the Cloud API when configured, else one-tap links. */
 export function NoticesApp() {
@@ -172,6 +172,7 @@ export function NoticesApp() {
         {(template === "recordatorio" || template === "corte") && <p className="text-xs text-zinc-400">{t("linkNote")}</p>}
       </div>
       {incomplete && <p className="text-xs text-amber-200">{t("incomplete")}</p>}
+      {template === "reconexion" && <p className="text-xs text-amber-200">{t("reconexionWarn")}</p>}
       {api && ready.length > 0 && (
         <div className="grid gap-2">
           <button type="button" disabled={state === "sending"} onClick={send} className={`${PRIMARY} disabled:opacity-50`}>

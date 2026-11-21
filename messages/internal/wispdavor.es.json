@@ -112,7 +112,10 @@
         "badUser": "{value}: usuario PPPoE no válido."
       },
       "planHint": "Para reconectar, el plan del servicio en Clientes debe ser el nombre del perfil PPPoE en el MikroTik. Las suspensiones manuales (Clientes → «Suspensión manual») nunca aparecen para reconectar.",
-      "autoRouter": "Este despliegue tiene su router en «Automático»: corta y reconecta solo; no hace falta pegar estos comandos."
+      "autoRouter": "Este despliegue tiene su router en «Automático»: corta y reconecta solo; no hace falta pegar estos comandos.",
+      "tellTitle": "Avísales que ya tienen servicio",
+      "tell": "Avisar por WhatsApp",
+      "noPhone": "sin WhatsApp"
     },
     "portal": {
       "lead": "Cada cliente puede tener un enlace privado a su portal: ve su saldo, lo que debe y cuándo, sus pagos, sus servicios y sus reportes, sin contraseña. Mándaselo por WhatsApp. Si se filtra, crea otro: el anterior deja de servir.",
@@ -178,7 +181,8 @@
         "variables": "Variables: {list}"
       },
       "incomplete": "Llena el lugar, la fecha y el detalle del mantenimiento para poder mandarlo.",
-      "failedList": "No se mandaron: {list}. Revisa su número o mándales el enlace de un toque."
+      "failedList": "No se mandaron: {list}. Revisa su número o mándales el enlace de un toque.",
+      "reconexionWarn": "Este aviso dice «tu servicio ya está activo»: mándalo solo a quien ya reconectaste. Cortes te lo ofrece al marcar «reconectados»."
     },
     "mapa": {
       "lead": "Cada despliegue en el punto de su levantamiento, con sus clientes. Verde: todos al corriente; ámbar: con atrasados; rojo: con suspendidos.",

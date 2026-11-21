@@ -9,6 +9,8 @@ import { saveClients } from "@/lib/clients/store"
 import { mxn } from "@/lib/materials/catalog"
 import { siteLabel } from "@/lib/sites/model"
 import { bySite, cutCommands, cutLists, markServices, type CutRow } from "@/lib/wispdavor/cortes"
+import { fill, waNumber } from "@/lib/wispdavor/whatsapp"
+import { whatsappHref } from "@/lib/contact"
 import { useWispData } from "./useWispData"
 
 
@@ -17,6 +19,8 @@ export function CutsApp() {
   const t = useTranslations("wispdavor.cortes")
   const d = useWispData()
   const [done, setDone] = useState("")
+  // Just marked as reconnected: one tap to tell each one on WhatsApp ("tu servicio ya está activo" is true now).
+  const [restored, setRestored] = useState<CutRow[]>([])
   // Deployments whose router is on "Automático" (WispDavor → Routers): there the router cuts and reconnects by itself.
   const [autoSites, setAutoSites] = useState<Set<string>>(new Set())
   useEffect(() => {
@@ -40,6 +44,7 @@ export function CutsApp() {
   const mark = (rows: CutRow[], status: "suspendido" | "activo", key: string) => {
     saveClients(markServices(d.clients, rows, status))
     setDone(key)
+    if (status === "activo") setRestored((x) => [...x.filter((r) => !rows.some((y) => y.serviceId === r.serviceId)), ...rows])
   }
   const group = (rows: CutRow[], action: "suspend" | "restore", title: string) => (
     <section aria-label={title} className="grid gap-4">
@@ -103,6 +108,30 @@ export function CutsApp() {
       </div>
       {group(lists.cut, "suspend", t("cut"))}
       {group(lists.restore, "restore", t("restore"))}
+      {restored.length > 0 && (
+        <section aria-label={t("tellTitle")} className="grid gap-2 rounded-xl border border-emerald-400/30 p-4">
+          <h2 className="text-base font-medium text-zinc-100">{t("tellTitle")}</h2>
+          <ul className="grid gap-2">
+            {restored.map((r) => {
+              const c = d.clients.find((x) => x.id === r.clientId)
+              const phone = c ? waNumber(c.whatsapp || c.phone) : ""
+              const first = c?.name.trim().split(/\s+/)[0] || ""
+              return (
+                <li key={r.serviceId} className="flex flex-wrap items-center justify-between gap-2 text-sm text-zinc-200">
+                  {r.name}
+                  {phone ? (
+                    <a href={whatsappHref(phone, fill("reconexion", [first]))} target="_blank" rel="noopener noreferrer" className={SMALL}>
+                      {t("tell")}
+                    </a>
+                  ) : (
+                    <span className="text-xs text-amber-200">{t("noPhone")}</span>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
       <Plain title={t("promised")} rows={lists.promised} extra={(r) => t("promise", { date: r.promise })} />
       <Plain title={t("noUser")} rows={lists.noUser} extra={(r) => (r.owed > 0 ? t("owed", { amount: mxn(r.owed) }) : "")} />
     </div>
