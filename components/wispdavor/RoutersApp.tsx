@@ -8,13 +8,13 @@ import { PickField } from "@/components/surveys/SurveyFields"
 import { DANGER, PRIMARY, SMALL } from "@/components/finance/FinParts"
 import { siteLabel } from "@/lib/sites/model"
 import { readState } from "@/lib/sync/state"
-import type { Desired, Diff, Unmanaged } from "@/lib/wispdavor/routers"
+import { DEFAULT_POLL, POLL_CHOICES, pollOf, type Desired, type Diff, type PollMinutes, type Unmanaged } from "@/lib/wispdavor/routers"
 import { useWispData } from "./useWispData"
 import { RestPanel } from "./RestPanel"
 
 type T = ReturnType<typeof useTranslations>
 type ActionRow = { id: string; kind: string; user: string; arg1: string; source: string; status: string; result: string; created_at: string; created_by: string }
-type RouterRow = { id: string; siteId: string; name: string; pppoe: boolean; hotspot: boolean; auto: boolean; lastSeenAt: string; online: boolean; users: number; changes: Diff[]; missing: Desired[]; unmanaged: Unmanaged[]; actions: ActionRow[] }
+type RouterRow = { id: string; siteId: string; name: string; pppoe: boolean; hotspot: boolean; auto: boolean; pollMinutes: PollMinutes; lastSeenAt: string; online: boolean; users: number; changes: Diff[]; missing: Desired[]; unmanaged: Unmanaged[]; actions: ActionRow[] }
 
 const headers = () => ({ "content-type": "application/json", "x-interno-nombre": encodeURIComponent(readState().name) })
 const STATUS_TONE: Record<string, string> = { done: "text-emerald-300", error: "text-red-300", sent: "text-amber-200", pending: "text-zinc-300" }
@@ -27,7 +27,7 @@ export function RoutersApp() {
   const [error, setError] = useState(false)
   const [script, setScript] = useState<{ id: string; text: string } | null>(null)
   const [msg, setMsg] = useState("")
-  const [form, setForm] = useState({ name: "", siteId: "", pppoe: true, hotspot: false })
+  const [form, setForm] = useState({ name: "", siteId: "", pppoe: true, hotspot: false, pollMinutes: DEFAULT_POLL as PollMinutes })
   const load = useCallback(async () => {
     try {
       const r = await fetch("/api/interno/routers", { cache: "no-store" })
@@ -57,7 +57,7 @@ export function RoutersApp() {
     const b = await post({ action: "create", ...form })
     if (b) {
       setScript({ id: String((b.router as { id: string }).id), text: String(b.script) })
-      setForm({ name: "", siteId: "", pppoe: true, hotspot: false })
+      setForm({ name: "", siteId: "", pppoe: true, hotspot: false, pollMinutes: DEFAULT_POLL })
       await load()
     }
   }
@@ -86,6 +86,7 @@ export function RoutersApp() {
         <div className="grid items-start gap-3 sm:grid-cols-2">
           <TextField label={t("name")} value={form.name} onChange={(name) => setForm((f) => ({ ...f, name: name.slice(0, 60) }))} />
           <PickField label={t("site")} value={form.siteId} onChange={(siteId) => setForm((f) => ({ ...f, siteId }))} options={[{ value: "", label: t("noSite") }, ...d.sites.map((s) => ({ value: s.id, label: siteLabel(s) }))]} />
+          <PickField label={t("poll")} value={String(form.pollMinutes)} onChange={(v) => setForm((f) => ({ ...f, pollMinutes: pollOf(v) }))} options={POLL_CHOICES.map((m) => ({ value: String(m), label: t("pollOption", { m }) }))} hint={t("pollHint")} />
         </div>
         <fieldset className="flex flex-wrap gap-4 text-sm text-zinc-200">
           <legend className="mb-1 font-mono text-xs text-zinc-300">{t("roles")}</legend>
@@ -149,7 +150,7 @@ function RouterCard({
           {r.lastSeenAt ? `${online ? t("online") : t("offline")} · ${t("lastSeen", { when })}` : t("never")}
         </span>
       </div>
-      <p className="font-mono text-xs text-zinc-400">{[r.pppoe ? t("pppoe") : "", r.hotspot ? t("hotspot") : "", t("users", { n: r.users })].filter(Boolean).join(" · ")}</p>
+      <p className="font-mono text-xs text-zinc-400">{[r.pppoe ? t("pppoe") : "", r.hotspot ? t("hotspot") : "", t("users", { n: r.users }), t("every", { m: r.pollMinutes })].filter(Boolean).join(" · ")}</p>
       {r.pppoe && !r.siteId && <p className="rounded-lg border border-amber-400/30 px-3 py-2 text-xs text-amber-100">{t("noSiteWarn")}</p>}
       <RestPanel routerId={r.id} />
       <details className="rounded-xl border border-white/10 p-3">
@@ -163,6 +164,17 @@ function RouterCard({
               await reload()
             }}
             options={[{ value: "", label: t("noSite") }, ...sites]}
+          />
+          <PickField
+            label={t("poll")}
+            value={String(r.pollMinutes)}
+            onChange={async (v) => {
+              await post({ action: "update", id: r.id, pollMinutes: pollOf(v) })
+              setMsg(t("pollChanged"))
+              await reload()
+            }}
+            options={POLL_CHOICES.map((m) => ({ value: String(m), label: t("pollOption", { m }) }))}
+            hint={t("pollHint")}
           />
           <div className="flex flex-wrap gap-4 text-sm text-zinc-200">
             {(["pppoe", "hotspot"] as const).map((k) => (

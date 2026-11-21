@@ -571,6 +571,8 @@ export const routers = pgTable("routers", {
   pppoe: boolean("pppoe").notNull().default(true),
   hotspot: boolean("hotspot").notNull().default(false),
   auto: boolean("auto").notNull().default(false),
+  /** How often its agent reports, in minutes: 2, 5 or 10 (owner, 2026-11-21: per router; new ones 5, fewer database wake-ups). */
+  pollMinutes: integer("poll_minutes").notNull().default(5),
   keyHash: text("key_hash").notNull(),
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

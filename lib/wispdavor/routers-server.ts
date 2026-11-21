@@ -11,9 +11,9 @@ import { decodePayment, type Payment } from "../payments/model"
 import { sync } from "../sync/server"
 import { newId } from "../survey/id"
 import { recordHealth, sweepSilent } from "./monitor-server"
-import { MAX_ACTIONS, RESEND_MINUTES, SUSPENDED_PROFILE, actionLine, desiredUsers, diffRouter, parseReport, safe, unmanagedUsers, type Action, type ActionKind, type Desired, type Diff, type Unmanaged } from "./routers"
+import { MAX_ACTIONS, SUSPENDED_PROFILE, pollOf, resendMinutes, type PollMinutes, actionLine, desiredUsers, diffRouter, parseReport, safe, unmanagedUsers, type Action, type ActionKind, type Desired, type Diff, type Unmanaged } from "./routers"
 
-export type Router = { id: string; siteId: string; name: string; pppoe: boolean; hotspot: boolean; auto: boolean; lastSeenAt: string; createdAt: string }
+export type Router = { id: string; siteId: string; name: string; pppoe: boolean; hotspot: boolean; auto: boolean; pollMinutes: PollMinutes; lastSeenAt: string; createdAt: string }
 
 const sha = (s: string) => createHash("sha256").update(s).digest("hex")
 const toRouter = (r: Record<string, unknown>): Router => ({
@@ -23,6 +23,7 @@ const toRouter = (r: Record<string, unknown>): Router => ({
   pppoe: r.pppoe === true,
   hotspot: r.hotspot === true,
   auto: r.auto === true,
+  pollMinutes: pollOf(r.poll_minutes),
   lastSeenAt: r.last_seen_at instanceof Date ? r.last_seen_at.toISOString() : "",
   createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : "",
 })
@@ -32,9 +33,9 @@ export async function listRouters(): Promise<Router[]> {
 }
 
 /** A new router and its key (shown once: only its hash is kept). */
-export async function createRouter(p: { siteId: string; name: string; pppoe: boolean; hotspot: boolean }, by: string): Promise<{ router: Router; key: string }> {
+export async function createRouter(p: { siteId: string; name: string; pppoe: boolean; hotspot: boolean; pollMinutes?: PollMinutes }, by: string): Promise<{ router: Router; key: string }> {
   const key = randomBytes(24).toString("base64url")
-  const r = await getPool().query(`insert into routers (id, site_id, name, pppoe, hotspot, key_hash, created_by) values ($1, $2, $3, $4, $5, $6, $7) returning *`, [newId(), p.siteId, p.name, p.pppoe, p.hotspot, sha(key), by])
+  const r = await getPool().query(`insert into routers (id, site_id, name, pppoe, hotspot, poll_minutes, key_hash, created_by) values ($1, $2, $3, $4, $5, $6, $7, $8) returning *`, [newId(), p.siteId, p.name, p.pppoe, p.hotspot, pollOf(p.pollMinutes), sha(key), by])
   return { router: toRouter(r.rows[0] as Record<string, unknown>), key }
 }
 
@@ -45,12 +46,12 @@ export async function rotateKey(id: string): Promise<string> {
   return key
 }
 
-export async function updateRouter(id: string, p: Partial<Pick<Router, "name" | "auto" | "pppoe" | "hotspot" | "siteId">>) {
+export async function updateRouter(id: string, p: Partial<Pick<Router, "name" | "auto" | "pppoe" | "hotspot" | "siteId" | "pollMinutes">>) {
   const r = (await getPool().query(`select * from routers where id = $1`, [id])).rows[0] as Record<string, unknown> | undefined
   if (!r) return
   const cur = toRouter(r)
   const n = { ...cur, ...p }
-  await getPool().query(`update routers set name = $2, auto = $3, pppoe = $4, hotspot = $5, site_id = $6 where id = $1`, [id, n.name, n.auto, n.pppoe, n.hotspot, n.siteId])
+  await getPool().query(`update routers set name = $2, auto = $3, pppoe = $4, hotspot = $5, site_id = $6, poll_minutes = $7 where id = $1`, [id, n.name, n.auto, n.pppoe, n.hotspot, n.siteId, pollOf(n.pollMinutes)])
   // An open outage follows the router to its deployment (the portal banner shows in the right building).
   if (n.siteId !== cur.siteId) await getPool().query(`update outages set site_id = $2 where router_id = $1 and ended_at is null`, [id, n.siteId])
 }
@@ -106,12 +107,12 @@ export async function routerDiff(r: Router): Promise<{ changes: Diff[]; missing:
 }
 
 /** Differences become actions (skipping a user with one already pending or recently sent). */
-export async function queueDiffs(routerId: string, changes: Diff[], source: "auto" | "staff", by: string): Promise<number> {
+export async function queueDiffs(routerId: string, changes: Diff[], source: "auto" | "staff", by: string, poll: PollMinutes = 2): Promise<number> {
   const pool = getPool()
   const busy = new Set(
     // Pending, recently sent, or failed in the last day (e.g. a plan that isn't a profile on the router): not again by
-    // itself every 2 minutes; staff see the failure in the log and fix the plan or send it by hand.
-    ((await pool.query(`select "user" from router_actions where router_id = $1 and (status = 'pending' or (status = 'sent' and sent_at > now() - interval '${RESEND_MINUTES} minutes') or (status = 'error' and source = 'auto' and done_at > now() - interval '1 day'))`, [routerId])).rows as { user: string }[]).map((x) => x.user)
+    // itself on every report; staff see the failure in the log and fix the plan or send it by hand.
+    ((await pool.query(`select "user" from router_actions where router_id = $1 and (status = 'pending' or (status = 'sent' and sent_at > now() - interval '${resendMinutes(poll)} minutes') or (status = 'error' and source = 'auto' and done_at > now() - interval '1 day'))`, [routerId])).rows as { user: string }[]).map((x) => x.user)
   )
   let n = 0
   for (const d of changes) {
@@ -179,7 +180,7 @@ export async function agentVisit(r: Router, body: string): Promise<string> {
        on conflict (router_id, "user") do update set profile = excluded.profile, disabled = excluded.disabled, seen_at = now()`,
       [r.id, stateOnly.map((s) => s.user), stateOnly.map((s) => s.profile), stateOnly.map((s) => s.disabled)]
     )
-  const traffic: { user: string; down: number; up: number }[] = []
+  const traffic: { user: string; bucket: Date; down: number; up: number }[] = []
   for (const s of full) {
     const c = counters.get(s.user)
     const rxLast = Number(c?.rx_last ?? 0)
@@ -187,7 +188,15 @@ export async function agentVisit(r: Router, body: string): Promise<string> {
     const up = s.active ? (s.rx >= rxLast ? s.rx - rxLast : s.rx) : 0
     const down = s.active ? (s.tx >= txLast ? s.tx - txLast : s.tx) : 0
     // The first report of a session has no earlier counter to subtract from: it isn't counted as traffic.
-    if ((up > 0 || down > 0) && prev.has(s.user)) traffic.push({ user: s.user, down, up })
+    const before = prev.get(s.user)
+    if ((up > 0 || down > 0) && before) {
+      // The time since this user's last report, in 5-minute slots (1 to 3): a 10-minute report fills two slots.
+      const slots = Math.min(3, Math.max(1, Math.round((Date.now() - before.seen_at.getTime()) / BUCKET_MS)))
+      for (let i = 0; i < slots; i++) {
+        const share = (n: number) => (i === 0 ? n - Math.floor(n / slots) * (slots - 1) : Math.floor(n / slots))
+        traffic.push({ user: s.user, bucket: new Date(bucket.getTime() - i * BUCKET_MS), down: share(down), up: share(up) })
+      }
+    }
   }
   if (full.length)
     await pool.query(
@@ -199,9 +208,9 @@ export async function agentVisit(r: Router, body: string): Promise<string> {
   if (traffic.length)
     await pool.query(
       `insert into traffic_5m (router_id, "user", bucket, down, up)
-         select $1, u, $2, dn, upl from unnest($3::text[], $4::bigint[], $5::bigint[]) as x(u, dn, upl)
+         select $1, u, b, dn, upl from unnest($2::text[], $3::timestamptz[], $4::bigint[], $5::bigint[]) as x(u, b, dn, upl)
        on conflict (router_id, "user", bucket) do update set down = traffic_5m.down + excluded.down, up = traffic_5m.up + excluded.up`,
-      [r.id, bucket, traffic.map((x) => x.user), traffic.map((x) => String(x.down)), traffic.map((x) => String(x.up))]
+      [r.id, traffic.map((x) => x.user), traffic.map((x) => x.bucket.toISOString()), traffic.map((x) => String(x.down)), traffic.map((x) => String(x.up))]
     )
   // Users no longer on the router (deleted there) leave WispDavor's copy too, so they show as missing again.
   if (users.length) await pool.query(`delete from router_users where router_id = $1 and not ("user" = any($2::text[]))`, [r.id, users.map((s) => s.user)])
@@ -218,12 +227,12 @@ export async function agentVisit(r: Router, body: string): Promise<string> {
   // The automatic switch: the differences become actions by themselves.
   if (r.auto && r.pppoe && report.secrets.length) {
     const { changes } = await routerDiff(r)
-    await queueDiffs(r.id, changes, "auto", "WispDavor")
+    await queueDiffs(r.id, changes, "auto", "WispDavor", r.pollMinutes)
   }
 
   // The next actions: pending ones, and sent ones the router never reported back.
   const next = (await pool.query(
-    `select id, kind, "user", arg1, arg2, arg3, arg4 from router_actions where router_id = $1 and (status = 'pending' or (status = 'sent' and sent_at < now() - interval '${RESEND_MINUTES} minutes')) order by id limit ${MAX_ACTIONS}`,
+    `select id, kind, "user", arg1, arg2, arg3, arg4 from router_actions where router_id = $1 and (status = 'pending' or (status = 'sent' and sent_at < now() - interval '${resendMinutes(r.pollMinutes)} minutes')) order by id limit ${MAX_ACTIONS}`,
     [r.id]
   )).rows as { id: string; kind: ActionKind; user: string; arg1: string; arg2: string; arg3: string; arg4: string }[]
   const lines: string[] = []

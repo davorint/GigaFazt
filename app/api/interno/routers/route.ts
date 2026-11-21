@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server"
 import { getPool, hasDatabase } from "@/lib/db/client"
 import { editorOf, json, requireInterno } from "@/lib/internal-api"
 import { SITE_URL, SITE_URL_CONFIGURED } from "@/lib/site"
-import { agentScript, randomCode, safe } from "@/lib/wispdavor/routers"
+import { agentScript, isOnline, pollOf, randomCode, safe } from "@/lib/wispdavor/routers"
 import { createRouter, deleteRouter, listRouters, queueAction, queueDiffs, rotateKey, routerDiff, updateRouter } from "@/lib/wispdavor/routers-server"
 
 const ID = /^[\w-]{6,64}$/
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     // ?basico=1: just the routers (deployment, roles, automatic, online), for Cortes and others; no differences computed.
     if (request.nextUrl.searchParams.get("basico")) {
       const now = Date.now()
-      return json({ ok: true, routers: (await listRouters()).map((r) => ({ ...r, online: !!r.lastSeenAt && now - Date.parse(r.lastSeenAt) < 6 * 60 * 1000 })) })
+      return json({ ok: true, routers: (await listRouters()).map((r) => ({ ...r, online: isOnline(r.lastSeenAt, r.pollMinutes, now) })) })
     }
     const pool = getPool()
     const out = []
@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
       const diff = await routerDiff(r)
       const actions = (await pool.query(`select id, kind, "user", arg1, source, status, result, created_at, created_by, done_at from router_actions where router_id = $1 order by id desc limit 40`, [r.id])).rows
       const users = Number(((await pool.query(`select count(*) from router_users where router_id = $1`, [r.id])).rows[0] as { count: string }).count)
-      // Online: reported within the last 3 polls (POLL_MINUTES = 2).
-      const online = !!r.lastSeenAt && Date.now() - Date.parse(r.lastSeenAt) < 6 * 60 * 1000
+      // Online: reported within its last 3 intervals.
+      const online = isOnline(r.lastSeenAt, r.pollMinutes)
       out.push({ ...r, online, users, changes: diff.changes, missing: diff.missing, unmanaged: diff.unmanaged, actions })
     }
     return json({ ok: true, routers: out })
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-type Body = { action?: unknown; id?: unknown; siteId?: unknown; name?: unknown; pppoe?: unknown; hotspot?: unknown; auto?: unknown; user?: unknown; profile?: unknown; clientId?: unknown; serviceId?: unknown }
+type Body = { pollMinutes?: unknown; action?: unknown; id?: unknown; siteId?: unknown; name?: unknown; pppoe?: unknown; hotspot?: unknown; auto?: unknown; user?: unknown; profile?: unknown; clientId?: unknown; serviceId?: unknown }
 const text = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "")
 
 export async function POST(request: NextRequest) {
@@ -55,11 +55,15 @@ export async function POST(request: NextRequest) {
     if (b.action === "create") {
       const name = text(b.name, 60)
       if (!name) return json({ error: "name" }, 400)
-      const { router, key } = await createRouter({ siteId: text(b.siteId, 64), name, pppoe: b.pppoe !== false, hotspot: b.hotspot === true }, by)
-      return json({ ok: true, router, script: agentScript({ url: agentUrl(request), routerId: router.id, key }) })
+      const { router, key } = await createRouter({ siteId: text(b.siteId, 64), name, pppoe: b.pppoe !== false, hotspot: b.hotspot === true, pollMinutes: pollOf(b.pollMinutes) }, by)
+      return json({ ok: true, router, script: agentScript({ url: agentUrl(request), routerId: router.id, key, pollMinutes: router.pollMinutes }) })
     }
     if (!ID.test(id)) return json({ error: "bad-id" }, 400)
-    if (b.action === "rotate") return json({ ok: true, script: agentScript({ url: agentUrl(request), routerId: id, key: await rotateKey(id) }) })
+    if (b.action === "rotate") {
+      // The new script carries the router's report rate (changing the rate takes a new script).
+      const r = (await listRouters()).find((x) => x.id === id)
+      return json({ ok: true, script: agentScript({ url: agentUrl(request), routerId: id, key: await rotateKey(id), pollMinutes: r?.pollMinutes }) })
+    }
     if (b.action === "update") {
       await updateRouter(id, {
         ...(typeof b.name === "string" ? { name: text(b.name, 60) } : {}),
@@ -67,6 +71,7 @@ export async function POST(request: NextRequest) {
         ...(typeof b.pppoe === "boolean" ? { pppoe: b.pppoe } : {}),
         ...(typeof b.hotspot === "boolean" ? { hotspot: b.hotspot } : {}),
         ...(typeof b.siteId === "string" ? { siteId: text(b.siteId, 64) } : {}),
+        ...(b.pollMinutes !== undefined ? { pollMinutes: pollOf(b.pollMinutes) } : {}),
       })
       return json({ ok: true })
     }
@@ -78,7 +83,7 @@ export async function POST(request: NextRequest) {
     if (!router) return json({ error: "not-found" }, 404)
     if (b.action === "send") {
       const { changes } = await routerDiff(router)
-      return json({ ok: true, queued: await queueDiffs(id, changes, "staff", by) })
+      return json({ ok: true, queued: await queueDiffs(id, changes, "staff", by, router.pollMinutes) })
     }
     if (b.action === "createUser") {
       const user = text(b.user, 64)

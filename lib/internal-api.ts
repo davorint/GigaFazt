@@ -62,7 +62,11 @@ export function json(body: unknown, status = 200): NextResponse {
  * equal length); never allowed when CRON_SECRET isn't set.
  */
 export function cronAuthorized(request: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET
+  return bearerAuthorized(request, process.env.CRON_SECRET)
+}
+
+/** `Authorization: Bearer <secret>`, compared in constant time; never allowed without a secret. */
+export function bearerAuthorized(request: NextRequest, secret: string | undefined): boolean {
   if (!secret) return false
   const h = (s: string) => createHash("sha256").update(s).digest()
   return timingSafeEqual(h(request.headers.get("authorization") ?? ""), h(`Bearer ${secret}`))

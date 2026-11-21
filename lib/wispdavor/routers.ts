@@ -28,9 +28,21 @@ import { ONT_SLICE, parsePing, type GatewayPing, type OntPing } from "./monitor"
 
 export const SUSPENDED_PROFILE = "DSX-suspendido"
 export const MAX_ACTIONS = 20
-export const POLL_MINUTES = 2
+/**
+ * How often a router's agent reports (owner, 2026-11-21: a choice per router, 2, 5 or 10 minutes; new ones 5 so the
+ * database sleeps more). What hangs on it scales with it: silent after 3 missed reports, resent after about 2.
+ */
+export const POLL_CHOICES = [2, 5, 10] as const
+export type PollMinutes = (typeof POLL_CHOICES)[number]
+export const DEFAULT_POLL: PollMinutes = 5
+export const pollOf = (v: unknown): PollMinutes => (POLL_CHOICES as readonly number[]).includes(Number(v)) ? (Number(v) as PollMinutes) : DEFAULT_POLL
+/** A router that hasn't reported for 3 of its intervals counts as silent (offline). */
+export const silentMinutes = (p: PollMinutes) => 3 * p
+/** An action sent but not reported done is sent again after about 2 intervals (never sooner than 10 minutes). */
+export const resendMinutes = (p: PollMinutes) => Math.max(10, 2 * p + 2)
+/** Online: reported within 3 intervals. */
+export const isOnline = (lastSeenAt: string, p: PollMinutes, now = Date.now()) => !!lastSeenAt && now - Date.parse(lastSeenAt) < silentMinutes(p) * 60000
 /** An action not reported back within this is sent again (the router may have missed it). */
-export const RESEND_MINUTES = 10
 export const ACTION_KINDS = ["profile", "create", "disable", "enable", "hsprofile", "voucher", "unvoucher"] as const
 export type ActionKind = (typeof ACTION_KINDS)[number]
 
@@ -154,11 +166,12 @@ export function randomCode(len: number, rand: (n: number) => number = (n) => Mat
 }
 
 /**
- * The RouterOS 7 script for a router: runs every POLL_MINUTES (scheduler "wispdavor"), reports and applies actions.
+ * The RouterOS 7 script for a router: runs every `pollMinutes` (scheduler "wispdavor"), reports and applies actions.
  * Values from the site are only ever used as values of fixed commands (never :parse), so nothing it receives can run
  * as code. The key is in the script: whoever reads the router's config can impersonate it (only toward WispDavor).
  */
-export function agentScript(o: { url: string; routerId: string; key: string }): string {
+export function agentScript(o: { url: string; routerId: string; key: string; pollMinutes?: PollMinutes }): string {
+  const poll = o.pollMinutes ?? DEFAULT_POLL
   const lines = [
     "# WispDavor: agente del router (RouterOS 7). Reporta usuarios PPPoE, tráfico y fichas de hotspot; aplica acciones.",
     "# HTTPS checked (check-certificate=yes) against RouterOS 7's built-in trusted certificates: /certificate settings",
@@ -268,7 +281,7 @@ export function agentScript(o: { url: string; routerId: string; key: string }): 
     "}",
     "}",
     "}",
-    `/system scheduler add name=wispdavor interval=${POLL_MINUTES}m on-event=wispdavor policy=read,write,test start-time=startup comment="WispDavor"`,
+    `/system scheduler add name=wispdavor interval=${poll}m on-event=wispdavor policy=read,write,test start-time=startup comment="WispDavor"`,
   ]
   return lines.join("\n")
 }

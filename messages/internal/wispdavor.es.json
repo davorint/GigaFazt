@@ -54,7 +54,7 @@
       },
       "routers": {
         "name": "Routers en vivo",
-        "desc": "Cada MikroTik se reporta cada 2 minutos y aplica cortes, reconexiones y cambios de plan; automático con interruptor por router, o a mano."
+        "desc": "Cada MikroTik se reporta cada 2, 5 o 10 minutos (lo eliges por router) y aplica cortes, reconexiones y cambios de plan; automático con interruptor por router, o a mano."
       },
       "trafico": {
         "name": "Tráfico por cliente",
@@ -348,7 +348,7 @@
       "loading": "Cargando facturas…"
     },
     "routers": {
-      "lead": "Cada MikroTik corre un script que cada 2 minutos le dice al sitio qué usuarios PPPoE tiene (perfil, desactivado, conectado, tráfico) y recibe las acciones pendientes. Para esto el router no abre ningún puerto y solo ejecuta una lista fija de comandos. Aparte, la «Conexión al router» (REST o API de MikroTik, opcional) deja ver el router en vivo y, si quitas «Solo lectura», hacer cambios.",
+      "lead": "Cada MikroTik corre un script que cada pocos minutos (2, 5 o 10, lo eliges por router) le dice al sitio qué usuarios PPPoE tiene (perfil, desactivado, conectado, tráfico) y recibe las acciones pendientes. Para esto el router no abre ningún puerto y solo ejecuta una lista fija de comandos. Aparte, la «Conexión al router» (REST o API de MikroTik, opcional) deja ver el router en vivo y, si quitas «Solo lectura», hacer cambios.",
       "desired": "Lo que debe tener cada usuario sale de Clientes y Cobranza: atrasado sin promesa vigente → perfil DSX-suspendido (script «Morosos»); al corriente → su plan (el nombre del perfil PPPoE); servicio cancelado → desactivado.",
       "add": "Agregar router",
       "name": "Nombre",
@@ -403,7 +403,7 @@
       "copied": "Copiado",
       "verify": "VERIFICAR: el script se probó solo en el sitio; pruébalo primero en un router con pocos clientes. Para que la conexión HTTPS funcione, el router debe confiar en el certificado del sitio (RouterOS 7: certificados del sistema). El agente usa fetch y scheduler: revisa /system/device-mode print (el modo home los apaga; los CCR y la serie 1100 vienen en advanced, donde sí están).",
       "error": "No se pudo (sin conexión o error del servidor).",
-      "neon": "Cada router se reporta cada 2 minutos: la base de datos (Neon) queda encendida todo el día, lo que usa horas de cómputo de tu plan.",
+      "neon": "La base de datos (Neon) se apaga tras 5 minutos sin uso. Con reportes cada 2 o 5 minutos casi no llega a apagarse (usa horas de cómputo todo el día); cada 10 minutos descansa más o menos la mitad del tiempo.",
       "unmanaged": "No se manejan ({n}): corrígelos en Clientes",
       "unmanagedReason": {
         "user": "el usuario PPPoE tiene espacios o signos que el router no acepta",
@@ -422,7 +422,12 @@
         "unvoucher": "quitar ficha",
         "kick": "desconectar sesión"
       },
-      "waiting": "Esperando el primer reporte del router: pega su script en el MikroTik."
+      "waiting": "Esperando el primer reporte del router: pega su script en el MikroTik.",
+      "poll": "Reporta cada",
+      "pollOption": "{m} minutos",
+      "pollHint": "Más seguido = cortes, reconexiones y fallas detectados antes. Cada 10 minutos la base de datos descansa cerca de la mitad del tiempo; cada 2 o 5 casi nada.",
+      "pollChanged": "Cambiado. Para que el router lo use, pega su script nuevo: «Llave nueva».",
+      "every": "cada {m} min"
     },
     "trafico": {
       "lead": "La bajada y la subida de cada usuario PPPoE, según lo que reporta su router. Cada 5 minutos los últimos 7 días; por hora hasta 90 días.",
@@ -491,7 +496,7 @@
       "removed": "La ficha se quita en el siguiente reporte del router."
     },
     "monitoreo": {
-      "lead": "Cada router mide en cada reporte (cada 2 minutos) la latencia y pérdida de sus carriers (la puerta de enlace de cada ruta por defecto) y, por turnos, la de las ONT conectadas. Una falla se abre cuando las sesiones de un router caen de golpe a la mitad o menos de lo que había en la última media hora, cuando ningún carrier responde, o cuando el router deja de reportarse; el equipo recibe aviso y los clientes de ese despliegue ven un aviso en su portal. Los cortes automáticos siguen igual.",
+      "lead": "Cada router mide en cada reporte (cada 2, 5 o 10 minutos, según el router) la latencia y pérdida de sus carriers (la puerta de enlace de cada ruta por defecto) y, por turnos, la de las ONT conectadas. Una falla se abre cuando las sesiones de un router caen de golpe a la mitad o menos de lo que había en la última media hora, cuando ningún carrier responde, o cuando el router deja de reportarse; el equipo recibe aviso y los clientes de ese despliegue ven un aviso en su portal. Los cortes automáticos siguen igual.",
       "verify": "La latencia sale de flood-ping, que necesita la función traffic-gen de /system/device-mode (apagada de fábrica en todos los modos; activarla pide confirmar en el router con el botón o apagándolo). Sin ella el agente usa ping normal: se ve la pérdida pero no la latencia. VERIFICAR también que las ONT respondan ping en su WAN (muchas Huawei lo bloquean de fábrica; si todas salen con 100 % de pérdida, es eso). Con un solo router, si deja de reportarse nadie lo nota hasta el resumen diario.",
       "error": "No se pudo cargar el monitoreo (sin conexión o sin base de datos).",
       "loading": "Cargando monitoreo…",

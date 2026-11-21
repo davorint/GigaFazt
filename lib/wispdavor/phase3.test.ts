@@ -78,7 +78,7 @@ describe("WispDavor phase 3: what goes to the router is safe", () => {
     expect(s).not.toContain(":parse")
     expect(s).toContain("check-certificate=yes")
     expect(s).toContain("Bearer rt-000001.")
-    expect(s).toContain("/system scheduler add name=wispdavor interval=2m")
+    expect(s).toContain("/system scheduler add name=wispdavor interval=5m")
   })
 })
 
@@ -155,5 +155,24 @@ describe("Manual holds aren't charged (owner, 2026-11-21)", () => {
     const off = withHold(open, false, "2026-11-21")
     expect(off.holds).toEqual([{ from: "2026-10-15", to: "2026-11-21" }])
     expect(withHold(withHold(svc("x"), true, TODAY), false, TODAY).holds).toEqual([])
+  })
+})
+
+describe("Report rate per router (owner, 2026-11-21: 2, 5 or 10 minutes)", () => {
+  it("silent after 3 intervals, resent after about 2 (never under 10 min), default 5", async () => {
+    const { DEFAULT_POLL, isOnline, pollOf, resendMinutes, silentMinutes } = await import("./routers")
+    expect([pollOf(2), pollOf("10"), pollOf(7), pollOf(undefined)]).toEqual([2, 10, DEFAULT_POLL, DEFAULT_POLL])
+    expect(DEFAULT_POLL).toBe(5)
+    expect([silentMinutes(2), silentMinutes(5), silentMinutes(10)]).toEqual([6, 15, 30])
+    expect([resendMinutes(2), resendMinutes(5), resendMinutes(10)]).toEqual([10, 12, 22])
+    const now = Date.parse("2026-11-21T12:00:00Z")
+    expect(isOnline("2026-11-21T11:50:00Z", 5, now)).toBe(true)
+    expect(isOnline("2026-11-21T11:50:00Z", 2, now)).toBe(false)
+    expect(isOnline("", 10, now)).toBe(false)
+  })
+  it("the agent script's scheduler takes the router's rate", () => {
+    const base = { url: "https://www.gigafazt.com/api/routers/agente", routerId: "rt-000001", key: "k".repeat(32) }
+    expect(agentScript(base)).toContain("interval=5m")
+    expect(agentScript({ ...base, pollMinutes: 10 })).toContain("interval=10m")
   })
 })

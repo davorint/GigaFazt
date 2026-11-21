@@ -132,14 +132,14 @@ async function afterPaid(clientId: string, kind: PayKind, amount: number, paymen
 
 /**
  * After a payment, whether a suspended client comes back: "late" (still owes, or a manual hold), "auto" (its
- * deployment has a router on automatic that reported in the last 6 minutes) or "manual" (staff reconnect).
+ * deployment has a router on automatic that reported within 3 of its intervals) or "manual" (staff reconnect).
  */
 async function reconnection(cl: Client): Promise<"auto" | "manual" | "late"> {
   const desired = desiredUsers([cl], await loadPayments(cl.id), todayInMexico())
   if (!desired.length) return "manual"
   if (desired.some((d) => d.suspended)) return "late"
   if (!cl.siteId) return "manual"
-  const r = await getPool().query(`select 1 from routers where site_id = $1 and auto and pppoe and last_seen_at > now() - interval '6 minutes' limit 1`, [cl.siteId])
+  const r = await getPool().query(`select 1 from routers where site_id = $1 and auto and pppoe and last_seen_at > now() - make_interval(mins => 3 * poll_minutes) limit 1`, [cl.siteId])
   return (r.rowCount ?? 0) > 0 ? "auto" : "manual"
 }
 

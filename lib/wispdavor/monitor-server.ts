@@ -7,7 +7,7 @@ import "server-only"
 import { getPool } from "../db/client"
 import { sendText } from "../reports/notify"
 import { SITE_URL } from "../site"
-import { SILENT_MINUTES, loss, outageStep, type GatewayPing, type OntPing, type OpenOutage, type OutageKind } from "./monitor"
+import { loss, outageStep, type GatewayPing, type OntPing, type OpenOutage, type OutageKind } from "./monitor"
 
 type RouterRef = { id: string; name: string; siteId: string }
 
@@ -62,25 +62,29 @@ export async function recordHealth(r: RouterRef, bucket: Date, online: number | 
 }
 
 /**
- * Routers that stopped reporting: silent over SILENT_MINUTES after reporting within the last day open a "router"
- * outage (its next visit ends it). Runs on every router's visit, so with a single router nothing notices it going
- * silent until the daily summary (no frequent cron on the host).
+ * Routers that stopped reporting: silent for 3 of their intervals (lib/wispdavor/routers.ts silentMinutes) after
+ * reporting within the last day open a "router" outage (its next visit ends it). Runs on every router's visit and from
+ * /api/interno/vigia (an outside pinger every 5 minutes, so a single router going silent is noticed too).
  */
-export async function sweepSilent() {
+export async function sweepSilent(): Promise<number> {
   const pool = getPool()
+  let opened = 0
   const quiet = (await pool.query(
     `select r.id, r.name, r.site_id from routers r
-      where r.last_seen_at < now() - ($1 || ' minutes')::interval and r.last_seen_at > now() - interval '1 day'
-        and not exists (select 1 from outages o where o.router_id = r.id and o.ended_at is null)`,
-    [String(SILENT_MINUTES)]
+      where r.last_seen_at < now() - make_interval(mins => 3 * r.poll_minutes) and r.last_seen_at > now() - interval '1 day'
+        and not exists (select 1 from outages o where o.router_id = r.id and o.ended_at is null)`
   )).rows as { id: string; name: string; site_id: string }[]
   for (const q of quiet) {
     const made = await pool.query(
       `insert into outages (router_id, site_id, kind) select $1, $2, 'router' where not exists (select 1 from outages where router_id = $1 and ended_at is null)`,
       [q.id, q.site_id]
     )
-    if ((made.rowCount ?? 0) > 0) await sendText("caida", `🚨 ${q.name}: ${KIND_TEXT.router} · ${mx(new Date())}\n${LINK}`).catch(() => undefined)
+    if ((made.rowCount ?? 0) > 0) {
+      opened++
+      await sendText("caida", `🚨 ${q.name}: ${KIND_TEXT.router} · ${mx(new Date())}\n${LINK}`).catch(() => undefined)
+    }
   }
+  return opened
 }
 
 /** The open outage of a deployment, for its clients' portal (null = none). */

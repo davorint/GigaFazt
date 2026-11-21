@@ -20,8 +20,6 @@ export const DROP_TO = 0.5
 /** An outage of sessions ends when they're back to this share of the peak before it. */
 export const RECOVER_TO = 0.8
 export const MIN_SESSIONS = 5
-/** A router silent this long (having reported in the last day) is an outage. */
-export const SILENT_MINUTES = 6
 /** An ONT is flagged when its latency passes this or it loses pings. */
 export const ONT_SLOW_MS = 50
 
