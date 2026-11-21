@@ -99,7 +99,15 @@ export function PortalApp({ pay }: { pay: ReactNode }) {
   const locale = useLocale()
   const [state, setState] = useState<State>({ kind: "loading" })
   const [receipt, setReceipt] = useState<PortalView["payments"][number] | null>(null)
+  const [back, setBack] = useState<string | null>(null)
   useEffect(() => {
+    // Back from Stripe (?pago=ok|cancelado): the message shows once; the address keeps only the #token.
+    const q = new URLSearchParams(window.location.search).get("pago")
+    if (q) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reads the address once when the page opens
+      setBack(q)
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.hash}`)
+    }
     const token = tokenFromHash()
     void (async () => {
       if (!token) return setState({ kind: "error", code: "noToken" })
@@ -121,7 +129,6 @@ export function PortalApp({ pay }: { pay: ReactNode }) {
   if (state.kind === "error") return <p role="alert" className="rounded-xl border border-amber-400/30 p-4 text-amber-100">{t(state.code)}</p>
   const v = state.view
   const b = v.balance
-  const back = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("pago") : null
   const tone = b.status === "atrasado" ? "border-red-400/40" : b.status === "por-vencer" ? "border-amber-300/40" : "border-emerald-400/30"
   return (
     <div className="grid gap-6">

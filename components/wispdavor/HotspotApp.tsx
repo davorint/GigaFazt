@@ -58,7 +58,8 @@ export function HotspotApp() {
   }
   /** The unsold, unused vouchers as printable cards in a window of their own. */
   const print = () => {
-    const list = (data?.vouchers ?? []).filter((v) => !v.sold_at && v.status !== "used")
+    // Unsold, unused vouchers; only the router and plan chosen above when one is chosen.
+    const list = (data?.vouchers ?? []).filter((v) => !v.sold_at && v.status !== "used" && (!gen.routerId || v.router_id === gen.routerId) && (!gen.planId || v.plan_id === gen.planId))
     const w = window.open("", "_blank")
     if (!w) return
     const cards = list
@@ -143,9 +144,12 @@ export function HotspotApp() {
             {t("vouchers")}
           </h2>
           {!!data?.vouchers.length && (
-            <button type="button" onClick={print} className={SMALL}>
-              {t("print")}
-            </button>
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-zinc-400">{t("printHint")}</span>
+              <button type="button" onClick={print} className={SMALL}>
+                {t("print")}
+              </button>
+            </span>
           )}
         </div>
         {data && !data.vouchers.length && <p className="text-sm text-zinc-400">{t("none")}</p>}

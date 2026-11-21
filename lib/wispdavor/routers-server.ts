@@ -242,3 +242,21 @@ export async function trafficRetention(): Promise<{ hourly: number; deleted5m: n
   const da = await pool.query(`delete from router_actions where status in ('done', 'error') and created_at < now() - interval '90 days'`)
   return { hourly: moved.rowCount ?? 0, deleted5m: d5.rowCount ?? 0, deletedHourly: dh.rowCount ?? 0, deletedActions: da.rowCount ?? 0 }
 }
+
+/**
+ * WispDavor lines for the team's daily summary: routers that stopped reporting for over an hour (their automatic cuts
+ * and reconnections stop with them) and router actions that failed in the last day. Empty when all is fine.
+ */
+export async function routerDigest(): Promise<string[]> {
+  const pool = getPool()
+  const quiet = (await pool.query(`select name, last_seen_at from routers where last_seen_at is null or last_seen_at < now() - interval '1 hour' order by name`)).rows as { name: string; last_seen_at: Date | null }[]
+  const failed = Number(((await pool.query(`select count(*) from router_actions where status = 'error' and done_at > now() - interval '1 day'`)).rows[0] as { count: string }).count)
+  const out: string[] = []
+  if (quiet.length) {
+    out.push(`📡 Routers sin reportarse: ${quiet.length} (sus cortes y reconexiones automáticas están detenidos)`)
+    for (const r of quiet.slice(0, 10)) out.push(`• ${r.name}${r.last_seen_at ? ` · último reporte ${r.last_seen_at.toISOString().slice(0, 16).replace("T", " ")} UTC` : " · nunca se ha reportado"}`)
+  }
+  if (failed) out.push(`⚠️ Acciones de router que fallaron (24 h): ${failed} — WispDavor → Routers`)
+  return out
+}
+

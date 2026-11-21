@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { CopyButton } from "@/components/mikrotik/CopyButton"
 import { SMALL } from "@/components/finance/FinParts"
@@ -17,6 +17,20 @@ export function CutsApp() {
   const t = useTranslations("wispdavor.cortes")
   const d = useWispData()
   const [done, setDone] = useState("")
+  // Deployments whose router is on "Automático" (WispDavor → Routers): there the router cuts and reconnects by itself.
+  const [autoSites, setAutoSites] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    void (async () => {
+      try {
+        const r = await fetch("/api/interno/routers?basico=1", { cache: "no-store" })
+        if (!r.ok) return
+        const b = (await r.json()) as { routers: { siteId: string; auto: boolean; pppoe: boolean }[] }
+        setAutoSites(new Set(b.routers.filter((x) => x.auto && x.pppoe && x.siteId).map((x) => x.siteId)))
+      } catch {
+        // Offline: Cortes works the same without this note.
+      }
+    })()
+  }, [])
   if (!d.loaded) return null
   const lists = cutLists(d.clients, d.payments, localToday())
   const siteName = (id: string) => {
@@ -48,6 +62,7 @@ export function CutsApp() {
                 </li>
               ))}
             </ul>
+            {autoSites.has(site) && <p className="text-xs text-emerald-300">{t("autoRouter")}</p>}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-zinc-300">{site ? t("commands", { site: siteName(site) }) : t("commandsNoSite")}</p>
               {cmd.script && <CopyButton text={cmd.script} label={t("copy")} done={t("copied")} />}

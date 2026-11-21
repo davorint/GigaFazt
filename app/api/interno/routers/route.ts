@@ -20,6 +20,11 @@ export async function GET(request: NextRequest) {
   if (denied) return denied
   if (!hasDatabase()) return json({ error: "no-database" }, 503)
   try {
+    // ?basico=1: just the routers (deployment, roles, automatic, online), for Cortes and others; no differences computed.
+    if (request.nextUrl.searchParams.get("basico")) {
+      const now = Date.now()
+      return json({ ok: true, routers: (await listRouters()).map((r) => ({ ...r, online: !!r.lastSeenAt && now - Date.parse(r.lastSeenAt) < 6 * 60 * 1000 })) })
+    }
     const pool = getPool()
     const out = []
     for (const r of await listRouters()) {

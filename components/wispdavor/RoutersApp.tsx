@@ -105,7 +105,7 @@ export function RoutersApp() {
       <ul className="grid gap-4">
         {rows?.map((r) => (
           <li key={r.id}>
-            <RouterCard t={t} r={r} siteName={siteName(r.siteId)} script={script?.id === r.id ? script.text : ""} post={post} reload={load} setScript={(text) => setScript({ id: r.id, text })} setMsg={setMsg} />
+            <RouterCard t={t} r={r} siteName={siteName(r.siteId)} sites={d.sites.map((s) => ({ value: s.id, label: siteLabel(s) }))} script={script?.id === r.id ? script.text : ""} post={post} reload={load} setScript={(text) => setScript({ id: r.id, text })} setMsg={setMsg} />
           </li>
         ))}
       </ul>
@@ -117,6 +117,7 @@ function RouterCard({
   t,
   r,
   siteName,
+  sites,
   script,
   post,
   reload,
@@ -126,6 +127,7 @@ function RouterCard({
   t: T
   r: RouterRow
   siteName: string
+  sites: { value: string; label: string }[]
   script: string
   post: (b: object) => Promise<Record<string, unknown> | null>
   reload: () => Promise<void>
@@ -147,7 +149,39 @@ function RouterCard({
         </span>
       </div>
       <p className="font-mono text-xs text-zinc-400">{[r.pppoe ? t("pppoe") : "", r.hotspot ? t("hotspot") : "", t("users", { n: r.users })].filter(Boolean).join(" · ")}</p>
+      {r.pppoe && !r.siteId && <p className="rounded-lg border border-amber-400/30 px-3 py-2 text-xs text-amber-100">{t("noSiteWarn")}</p>}
+      <details className="rounded-xl border border-white/10 p-3">
+        <summary className="cursor-pointer text-sm text-zinc-200">{t("edit")}</summary>
+        <div className="mt-3 grid gap-3">
+          <PickField
+            label={t("site")}
+            value={r.siteId}
+            onChange={async (siteId) => {
+              await post({ action: "update", id: r.id, siteId })
+              await reload()
+            }}
+            options={[{ value: "", label: t("noSite") }, ...sites]}
+          />
+          <div className="flex flex-wrap gap-4 text-sm text-zinc-200">
+            {(["pppoe", "hotspot"] as const).map((k) => (
+              <label key={k} className="flex min-h-10 items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={r[k]}
+                  onChange={async (e) => {
+                    await post({ action: "update", id: r.id, [k]: e.target.checked })
+                    await reload()
+                  }}
+                  className="size-5 accent-white"
+                />
+                {t(k)}
+              </label>
+            ))}
+          </div>
+        </div>
+      </details>
       {r.pppoe && (
+        <div className="grid gap-1">
         <label className="flex min-h-10 items-center gap-2 text-sm text-zinc-200">
           <input
             type="checkbox"
@@ -158,13 +192,17 @@ function RouterCard({
             }}
             className="size-5 accent-white"
           />
-          {t("auto")} <span className="text-xs text-zinc-400">{t("autoHint")}</span>
+          {t("auto")}
         </label>
+        <p className="text-xs text-zinc-400">{t("autoHint")}</p>
+        </div>
       )}
-      {r.pppoe && (
+      {/* Without a deployment there's nothing to compare (the warning above says so). */}
+      {r.pppoe && r.siteId && (
         <section aria-label={t("changes", { n: r.changes.length })} className="grid gap-2">
           <h3 className="text-sm font-medium text-zinc-200">{t("changes", { n: r.changes.length })}</h3>
-          {!r.changes.length && <p className="text-xs text-zinc-400">{t("noChanges")}</p>}
+          {/* Before its first report the router's state is unknown: "the same as Clientes" would be wrong. */}
+          {!r.changes.length && <p className="text-xs text-zinc-400">{r.lastSeenAt ? t("noChanges") : t("waiting")}</p>}
           <ul className="grid gap-1 font-mono text-xs text-zinc-300">
             {r.changes.slice(0, 50).map((c) => (
               <li key={`${c.kind}-${c.user}`}>{t(`change.${c.kind}`, { user: c.user, profile: c.profile })}</li>
@@ -238,7 +276,7 @@ function RouterCard({
         <ul className="mt-2 grid gap-1 font-mono text-xs text-zinc-300">
           {r.actions.map((a) => (
             <li key={a.id}>
-              {a.created_at.slice(0, 16).replace("T", " ")} · {a.kind} {a.user} {a.arg1} · <span className={STATUS_TONE[a.status] ?? ""}>{t.has(`status.${a.status}`) ? t(`status.${a.status}`) : a.status}</span> · {t.has(`source.${a.source}`) ? t(`source.${a.source}`) : a.source}
+              {a.created_at.slice(0, 16).replace("T", " ")} · {t.has(`kinds.${a.kind}`) ? t(`kinds.${a.kind}`) : a.kind} {a.user} {a.arg1} · <span className={STATUS_TONE[a.status] ?? ""}>{t.has(`status.${a.status}`) ? t(`status.${a.status}`) : a.status}</span> · {t.has(`source.${a.source}`) ? t(`source.${a.source}`) : a.source}
               {a.result ? ` · ${a.result}` : ""}
             </li>
           ))}

@@ -82,6 +82,7 @@ export function PortalAdmin() {
                   {l ? (
                     <>
                       <CopyButton getText={() => portalUrl(l.token)} label={t("copy")} done={t("copied")} />
+                      {!phone && <span className="self-center text-xs text-amber-200">{t("noPhone")}</span>}
                       {phone && (
                         <a href={whatsappHref(phone, t("sendText", { name: c.name.trim().split(/\s+/)[0] ?? "", url: portalUrl(l.token) }))} target="_blank" rel="noopener noreferrer" className={SMALL}>
                           {t("send")}

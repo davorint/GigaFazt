@@ -111,7 +111,8 @@
         "unknownPlan": "{value}: ese plan no es un perfil del MikroTik.",
         "badUser": "{value}: usuario PPPoE no válido."
       },
-      "planHint": "Para reconectar, el plan del servicio en Clientes debe ser el nombre del perfil PPPoE en el MikroTik."
+      "planHint": "Para reconectar, el plan del servicio en Clientes debe ser el nombre del perfil PPPoE en el MikroTik.",
+      "autoRouter": "Este despliegue tiene su router en «Automático»: corta y reconecta solo; no hace falta pegar estos comandos."
     },
     "portal": {
       "lead": "Cada cliente puede tener un enlace privado a su portal: ve su saldo, lo que debe y cuándo, sus pagos, sus servicios y sus reportes, sin contraseña. Mándaselo por WhatsApp. Si se filtra, crea otro: el anterior deja de servir.",
@@ -129,7 +130,8 @@
       "noLink": "Sin enlace",
       "needsOnline": "Se necesita conexión para crear o quitar enlaces.",
       "error": "No se pudo (sin conexión o error del servidor).",
-      "none": "Ningún cliente coincide."
+      "none": "Ningún cliente coincide.",
+      "noPhone": "Sin WhatsApp ni teléfono válido: copia el enlace y mándalo por otro medio."
     },
     "avisos": {
       "lead": "Elige el aviso y a quién. Con la API de WhatsApp configurada se mandan desde el número de la empresa; si no, cada aviso es un enlace de un toque que abre WhatsApp con el mensaje listo.",
@@ -165,7 +167,7 @@
       "sending": "Mandando…",
       "sent": "Enviados: {ok}. Con error: {bad}.",
       "open": "Abrir en WhatsApp",
-      "linkNote": "El enlace del portal va si el cliente ya tiene uno; si no, va la página /clientes.",
+      "linkNote": "El enlace del portal va si el cliente ya tiene uno; si no, va la página /clientes. Los recordatorios y avisos de corte quedan anotados en Cobranza como recordatorio del día.",
       "setup": {
         "title": "Para mandar por la API",
         "steps": [
@@ -175,7 +177,8 @@
         ],
         "variables": "Variables: {list}"
       },
-      "incomplete": "Llena el lugar, la fecha y el detalle del mantenimiento para poder mandarlo."
+      "incomplete": "Llena el lugar, la fecha y el detalle del mantenimiento para poder mandarlo.",
+      "failedList": "No se mandaron: {list}. Revisa su número o mándales el enlace de un toque."
     },
     "mapa": {
       "lead": "Cada despliegue en el punto de su levantamiento, con sus clientes. Verde: todos al corriente; ámbar: con atrasados; rojo: con suspendidos.",
@@ -379,7 +382,20 @@
       "unmanagedReason": {
         "user": "el usuario PPPoE tiene espacios o signos que el router no acepta",
         "plan": "el plan está vacío o no es un nombre de perfil válido (sin espacios), p. ej. 200M"
-      }
+      },
+      "noSiteWarn": "Sin despliegue: este router no sabe qué clientes son suyos y no maneja ninguno. Elige su despliegue.",
+      "edit": "Despliegue y funciones",
+      "save": "Guardar",
+      "kinds": {
+        "profile": "cambiar perfil",
+        "create": "crear usuario",
+        "disable": "desactivar",
+        "enable": "activar",
+        "hsprofile": "perfil de hotspot",
+        "voucher": "ficha",
+        "unvoucher": "quitar ficha"
+      },
+      "waiting": "Esperando el primer reporte del router: pega su script en el MikroTik."
     },
     "trafico": {
       "lead": "La bajada y la subida de cada usuario PPPoE, según lo que reporta su router. Cada 5 minutos los últimos 7 días; por hora hasta 90 días.",
@@ -440,7 +456,8 @@
       },
       "sold": "Vendida",
       "error": "No se pudo (sin conexión o error del servidor).",
-      "cardTitle": "Wi-Fi GigaFazt"
+      "cardTitle": "Wi-Fi GigaFazt",
+      "printHint": "Imprime las fichas sin vender del router y plan elegidos arriba (o todas si no eliges)."
     }
   }
 }

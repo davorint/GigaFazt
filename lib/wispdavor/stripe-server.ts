@@ -39,7 +39,9 @@ async function customerFor(c: Client): Promise<string> {
   const pool = getPool()
   const row = (await pool.query(`select customer_id from stripe_customers where client_id = $1`, [c.id])).rows[0] as { customer_id: string } | undefined
   if (row) return row.customer_id
-  const cu = await stripe().customers.create({ name: c.name || undefined, email: c.email || undefined, metadata: { client_id: c.id } }, { idempotencyKey: `customer-${c.id}` })
+  // A malformed email would make Stripe refuse the customer (and the client's payment): only a valid one is sent.
+  const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email.trim()) ? c.email.trim() : undefined
+  const cu = await stripe().customers.create({ name: c.name || undefined, email, metadata: { client_id: c.id } }, { idempotencyKey: `customer-${c.id}` })
   await pool.query(`insert into stripe_customers (client_id, customer_id) values ($1, $2) on conflict (client_id) do nothing`, [c.id, cu.id])
   return ((await pool.query(`select customer_id from stripe_customers where client_id = $1`, [c.id])).rows[0] as { customer_id: string }).customer_id
 }

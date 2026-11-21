@@ -7,6 +7,7 @@ import { DateField, PickField } from "@/components/surveys/SurveyFields"
 import { PRIMARY, SMALL } from "@/components/finance/FinParts"
 import { localToday } from "@/lib/clients/from-lead"
 import { clientLabel, type Client } from "@/lib/clients/model"
+import { saveClients } from "@/lib/clients/store"
 import { whatsappHref } from "@/lib/contact"
 import { mxn } from "@/lib/materials/catalog"
 import { ledger } from "@/lib/payments/model"
@@ -53,6 +54,7 @@ export function NoticesApp() {
   const [links, setLinks] = useState<Link[]>([])
   const [state, setState] = useState<"idle" | "sending" | "done">("idle")
   const [result, setResult] = useState({ ok: 0, bad: 0 })
+  const [failed, setFailed] = useState<string[]>([])
   useEffect(() => {
     void (async () => {
       try {
@@ -97,11 +99,20 @@ export function NoticesApp() {
   const incomplete = template === "mantenimiento" && (!place.trim() || !date || !detail.trim())
   const ready = incomplete ? [] : rows.filter((r) => r.phone)
   const missing = rows.length - ready.length
+  /** Payment notices count as Cobranza's reminder of today (its reminder walk then skips these clients). */
+  const markReminded = (ids: string[]) => {
+    if (template !== "recordatorio" && template !== "corte") return
+    const now = new Date().toISOString()
+    const changed = d.clients.filter((c) => ids.includes(c.id) && c.remindedAt !== today).map((c) => ({ ...c, remindedAt: today, updatedAt: now }))
+    if (changed.length) saveClients(changed)
+  }
   const send = async () => {
     if (!window.confirm(t("confirmSend", { template: t(`templates.${template}`), n: ready.length }))) return
     setState("sending")
     let ok = 0
     let bad = 0
+    const sentIds: string[] = []
+    const failedIds: string[] = []
     for (let i = 0; i < ready.length; i += MAX_PER_SEND) {
       const batch = ready.slice(i, i + MAX_PER_SEND)
       try {
@@ -110,14 +121,17 @@ export function NoticesApp() {
           headers: { "content-type": "application/json", "x-interno-nombre": encodeURIComponent(readState().name) },
           body: JSON.stringify({ template, items: batch.map((x) => ({ clientId: x.c.id, phone: x.phone, values: x.values })) }),
         })
-        const b = (await r.json().catch(() => ({}))) as { results?: { ok: boolean }[] }
+        const b = (await r.json().catch(() => ({}))) as { results?: { clientId: string; ok: boolean }[] }
         const res = b.results ?? []
-        ok += res.filter((x) => x.ok).length
-        bad += batch.length - res.filter((x) => x.ok).length
+        for (const x of batch) (res.find((y) => y.clientId === x.c.id)?.ok ? sentIds : failedIds).push(x.c.id)
       } catch {
-        bad += batch.length
+        failedIds.push(...batch.map((x) => x.c.id))
       }
     }
+    ok = sentIds.length
+    bad = failedIds.length
+    markReminded(sentIds)
+    setFailed(failedIds)
     setResult({ ok, bad })
     setState("done")
   }
@@ -164,6 +178,9 @@ export function NoticesApp() {
             {state === "sending" ? t("sending") : t("sendAll", { n: ready.length })}
           </button>
           {state === "done" && <p role="status" className="text-sm text-zinc-200">{t("sent", { ok: result.ok, bad: result.bad })}</p>}
+          {state === "done" && failed.length > 0 && (
+            <p className="text-xs text-amber-200">{t("failedList", { list: failed.map((id) => clientLabel(d.clients.find((c) => c.id === id) ?? ({ name: id } as Client))).join(", ") })}</p>
+          )}
         </div>
       )}
       {api === false && ready.length > 0 && (
@@ -171,7 +188,7 @@ export function NoticesApp() {
           {ready.map((r) => (
             <li key={r.c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 p-3">
               <span className="text-sm text-zinc-200">{clientLabel(r.c)}</span>
-              <a href={whatsappHref(r.phone!, fill(template, r.values))} target="_blank" rel="noopener noreferrer" className={SMALL}>
+              <a href={whatsappHref(r.phone!, fill(template, r.values))} target="_blank" rel="noopener noreferrer" onClick={() => markReminded([r.c.id])} className={SMALL}>
                 {t("open")}
               </a>
             </li>
