@@ -20,6 +20,7 @@ import { movesStore, unitsStore } from "@/lib/stock/store"
 import { subscribeSurveys, surveysServerSnapshot, surveysSnapshot } from "@/lib/survey/store"
 import { subscribeSync, syncServerSnapshot, syncSnapshot } from "@/lib/sync/engine"
 import { subscribeTools, toolsServerSnapshot, toolsSnapshot } from "@/lib/tools/store"
+import { DownloadFiles } from "./DownloadFiles"
 
 const A = "/interno/admin"
 const LINK = "text-sm text-zinc-100 underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none rounded"
@@ -281,6 +282,7 @@ export function SessionActions() {
         <a href="/api/interno/respaldo" download className={SMALL}>
           {t("backup")}
         </a>
+        <DownloadFiles />
         <button type="button" onClick={wipe} className="inline-flex min-h-9 w-fit items-center rounded-full border border-red-400/30 px-3 text-xs text-red-200 hover:bg-red-400/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
           {t("wipe")}
         </button>

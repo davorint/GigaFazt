@@ -309,9 +309,19 @@
       "title": "Este teléfono",
       "backup": "Descargar respaldo completo",
       "wipe": "Salir y borrar los datos de este teléfono",
-      "hint": "El respaldo trae todo lo de la base de datos (clientes, pagos, reportes, despliegues, herramientas, inventario, levantamientos, notas y solicitudes del sitio): guárdalo en un lugar seguro, tiene datos personales. «Salir y borrar» quita de este navegador todo lo que guardan las herramientas internas; úsalo si el teléfono se pierde o deja de ser del equipo.",
+      "hint": "El respaldo trae todo lo de la base de datos (clientes, pagos, reportes, despliegues, herramientas, inventario, levantamientos, notas y solicitudes del sitio): guárdalo en un lugar seguro, tiene datos personales. «Salir y borrar» quita de este navegador todo lo que guardan las herramientas internas; úsalo si el teléfono se pierde o deja de ser del equipo. Los archivos (copias firmadas de contratos, fotos y firmas del técnico) no van en ese respaldo: «Descargar archivos» los junta en un zip.",
       "confirmWipe": "¿Borrar de este teléfono todos los datos de las herramientas internas y salir? Siguen en la base de datos.",
-      "confirmWipePending": "Hay {n, plural, one {# cambio} other {# cambios}} sin enviar que se perderán. ¿Borrar de todos modos los datos de este teléfono y salir?"
+      "confirmWipePending": "Hay {n, plural, one {# cambio} other {# cambios}} sin enviar que se perderán. ¿Borrar de todos modos los datos de este teléfono y salir?",
+      "files": {
+        "button": "Descargar archivos (contratos y fotos)",
+        "listing": "Buscando archivos…",
+        "none": "No hay archivos guardados.",
+        "big": "Son {size}: el teléfono los junta en un zip y puede tardar o quedarse sin memoria. ¿Seguir?",
+        "progress": "Descargando {i} de {n}…",
+        "done": "Listo: {n, plural, one {# archivo} other {# archivos}} ({size}).",
+        "partial": "Se descargaron {ok} de {n}; los demás no se pudieron leer (inténtalo otra vez con señal).",
+        "error": "No se pudo obtener la lista (sin conexión o sin base de datos)."
+      }
     },
     "toolsTitle": "Todas las secciones"
   }
