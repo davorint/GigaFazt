@@ -14,7 +14,7 @@ const H2 = "text-xl font-normal tracking-tight text-foreground"
  * Paying online (WispDavor phase 2, Stripe): card, OXXO or SPEI on Stripe's secure page for the amount the server
  * computes; the card can be saved for auto-pay (day 1), which the client can turn off here.
  */
-function OnlinePay({ online, money }: { online: NonNullable<PortalView["online"]>; money: (n: number) => string }) {
+function OnlinePay({ online, money, ahead }: { online: NonNullable<PortalView["online"]>; money: (n: number) => string; ahead: boolean }) {
   const t = useTranslations("portal.online")
   const [state, setState] = useState<"idle" | "going" | "error" | "off">("idle")
   const [save, setSave] = useState(false)
@@ -48,7 +48,8 @@ function OnlinePay({ online, money }: { online: NonNullable<PortalView["online"]
         <p className="text-sm text-muted-foreground">{t("nothing")}</p>
       ) : (
         <>
-          <p className="text-foreground">{t("amount", { amount: money(online.amount) })}</p>
+          {/* Nothing owed: the payment is next month's, ahead of time (lib/wispdavor/online.ts amountToCharge). */}
+          <p className="text-foreground">{ahead ? t("ahead", { amount: money(online.amount) }) : t("amount", { amount: money(online.amount) })}</p>
           <div className="flex flex-wrap gap-2">
             {online.methods.map((m) => (
               <button key={m} type="button" disabled={state === "going"} onClick={() => go(m as "card" | "oxxo" | "spei")} className={BTN}>
@@ -160,7 +161,7 @@ export function PortalApp({ pay }: { pay: ReactNode }) {
           </dl>
           {b.lateMonths.length > 0 && <p className="text-sm text-red-200">{`${t("lateMonths")}: ${b.lateMonths.map(month).join(", ")}`}</p>}
         </section>
-        {v.online && <OnlinePay online={v.online} money={money} />}
+        {v.online && <OnlinePay online={v.online} money={money} ahead={b.owed <= 0.005} />}
         {pay}
         <section aria-labelledby="pt-services" className={CARD}>
           <h2 id="pt-services" className={H2}>

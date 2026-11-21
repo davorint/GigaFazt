@@ -174,7 +174,8 @@
           "La versión de la Graph API es v23.0; si Meta la retira, pon WHATSAPP_GRAPH_VERSION con la nueva."
         ],
         "variables": "Variables: {list}"
-      }
+      },
+      "incomplete": "Llena el lugar, la fecha y el detalle del mantenimiento para poder mandarlo."
     },
     "mapa": {
       "lead": "Cada despliegue en el punto de su levantamiento, con sus clientes. Verde: todos al corriente; ámbar: con atrasados; rojo: con suspendidos.",
@@ -373,7 +374,12 @@
       "copied": "Copiado",
       "verify": "VERIFICAR: el script se probó solo en el sitio; pruébalo primero en un router con pocos clientes. Para que la conexión HTTPS funcione, el router debe confiar en el certificado del sitio (RouterOS 7: certificados del sistema).",
       "error": "No se pudo (sin conexión o error del servidor).",
-      "neon": "Cada router se reporta cada 2 minutos: la base de datos (Neon) queda encendida todo el día, lo que usa horas de cómputo de tu plan."
+      "neon": "Cada router se reporta cada 2 minutos: la base de datos (Neon) queda encendida todo el día, lo que usa horas de cómputo de tu plan.",
+      "unmanaged": "No se manejan ({n}): corrígelos en Clientes",
+      "unmanagedReason": {
+        "user": "el usuario PPPoE tiene espacios o signos que el router no acepta",
+        "plan": "el plan está vacío o no es un nombre de perfil válido (sin espacios), p. ej. 200M"
+      }
     },
     "trafico": {
       "lead": "La bajada y la subida de cada usuario PPPoE, según lo que reporta su router. Cada 5 minutos los últimos 7 días; por hora hasta 90 días.",

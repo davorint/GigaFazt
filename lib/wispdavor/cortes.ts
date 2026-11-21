@@ -32,7 +32,8 @@ export function cutLists(clients: Client[], payments: Payment[], today: string):
         else out.cut.push(r)
       }
     } else {
-      for (const s of internet(c, "suspendido")) {
+      // A manual hold isn't a debt suspension: it isn't reconnected here.
+      for (const s of internet(c, "suspendido").filter((x) => !x.hold)) {
         const r = row(s)
         if (!r.user) out.noUser.push(r)
         else out.restore.push(r)

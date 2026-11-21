@@ -7,7 +7,7 @@
  * cash/OXXO 01, transfer/SPEI 03, credit card 04, debit card 28, other 99; method PUE (paid in one go).
  */
 import type { Client, Fiscal } from "../clients/model"
-import type { Payment } from "../payments/model"
+import { addMonths, billingStart, chargeFor, type Payment } from "../payments/model"
 
 export type CfdiSettings = {
   /** The issuer's postal code (lugar de expedición). */
@@ -54,10 +54,47 @@ export function paymentForm(p: Pick<Payment, "method">, cardFunding = ""): strin
 
 const round2 = (x: number) => Math.round(x * 100) / 100
 
-/** The month a payment pays, as "noviembre 2026" (its date's month). */
-const monthName = (date: string) => new Date(`${date.slice(0, 7)}-15T12:00:00`).toLocaleDateString("es-MX", { month: "long", year: "numeric" })
+const monthName = (m: string) => new Date(`${m}-15T12:00:00`).toLocaleDateString("es-MX", { month: "long", year: "numeric" })
 
-export function cfdiBody(c: Client, p: Payment, s: CfdiSettings, opts: { folio?: string; cardFunding?: string } = {}) {
+/**
+ * The months a payment pays (owner, 2026-11-21: "Months the payment covers"), the way Cobranza applies payments: all of
+ * the client's payments in date order fill the months from the billing start, oldest first.
+ */
+export function monthsCovered(c: Client, payments: Payment[], paymentId: string, today: string): string[] {
+  const mine = payments.filter((p) => p.clientId === c.id).sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt))
+  const k = mine.findIndex((p) => p.id === paymentId)
+  if (k < 0) return []
+  const from = mine.slice(0, k).reduce((a, p) => a + p.amount, 0)
+  const to = from + mine[k].amount
+  const out: string[] = []
+  let cum = 0
+  let m = billingStart(c, payments, today)
+  for (let i = 0; i < 240 && cum < to - 0.005; i++, m = addMonths(m, 1)) {
+    const charge = chargeFor(c, m)
+    if (charge <= 0) {
+      // Nothing charged this month: stop if the client has nothing that will ever be charged.
+      if (!c.services.some((s) => s.status !== "cancelado" && s.monthly)) break
+      continue
+    }
+    if (cum + charge > from + 0.005) out.push(m)
+    cum += charge
+  }
+  return out
+}
+
+/** "octubre de 2026", "octubre y noviembre de 2026", "noviembre de 2026 a enero de 2027". */
+export function monthsLabel(months: string[]): string {
+  if (!months.length) return ""
+  if (months.length === 1) return monthName(months[0])
+  const [a, b] = [months[0], months[months.length - 1]]
+  const sameYear = a.slice(0, 4) === b.slice(0, 4)
+  const name = (m: string) => new Date(`${m}-15T12:00:00`).toLocaleDateString("es-MX", { month: "long" })
+  if (months.length === 2 && sameYear) return `${name(a)} y ${monthName(b)}`
+  return `${sameYear ? name(a) : monthName(a)} a ${monthName(b)}`
+}
+
+/** `months`: what {mes} says (monthsLabel of monthsCovered); without it, the payment date's month. */
+export function cfdiBody(c: Client, p: Payment, s: CfdiSettings, opts: { folio?: string; cardFunding?: string; months?: string } = {}) {
   const total = round2(p.amount)
   const subtotal = round2(total / 1.16)
   const iva = round2(total - subtotal)
@@ -77,7 +114,7 @@ export function cfdiBody(c: Client, p: Payment, s: CfdiSettings, opts: { folio?:
       {
         ProductCode: s.productCode,
         IdentificationNumber: "INTERNET",
-        Description: s.description.replace("{plan}", plan).replace("{mes}", monthName(p.date)).replace(/\s+/g, " ").trim(),
+        Description: s.description.replace("{plan}", plan).replace("{mes}", opts.months || monthName(p.date.slice(0, 7))).replace(/\s+/g, " ").trim(),
         Unit: s.unit,
         UnitCode: s.unitCode,
         UnitPrice: subtotal,

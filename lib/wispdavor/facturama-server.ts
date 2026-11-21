@@ -41,13 +41,13 @@ async function call(path: string, init: RequestInit = {}) {
 export type IssueResult = { ok: true; id: string; uuid: string } | { ok: false; error: string }
 
 /** Issues the CFDI of one payment of a client with fiscal data; at most one active CFDI per payment. */
-export async function issueCfdi(c: Client, p: Payment, s: CfdiSettings, by: string, cardFunding = ""): Promise<IssueResult> {
+export async function issueCfdi(c: Client, p: Payment, s: CfdiSettings, by: string, cardFunding = "", months = ""): Promise<IssueResult> {
   if (!settingsReady(s)) return { ok: false, error: "settings" }
   if (fiscalIssues(c.fiscal).length) return { ok: false, error: "fiscal" }
   const pool = getPool()
   const dup = (await pool.query(`select id from cfdis where payment_id = $1 and status = 'active' limit 1`, [p.id])).rows[0]
   if (dup) return { ok: false, error: "duplicate" }
-  const r = (await call("/3/cfdis", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(cfdiBody(c, p, s, { cardFunding })) })) as {
+  const r = (await call("/3/cfdis", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(cfdiBody(c, p, s, { cardFunding, months })) })) as {
     Id: string
     Serie?: string
     Folio?: string

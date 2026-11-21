@@ -1462,7 +1462,8 @@
         "ok": "Gracias. Si pagaste con tarjeta, tu pago se registra en unos minutos; con OXXO o transferencia, en cuanto llegue.",
         "cancelado": "No se hizo el pago. Puedes intentar de nuevo cuando quieras."
       },
-      "secure": "El pago se hace en la página segura de Stripe; GigaFazt no ve ni guarda los datos de tu tarjeta."
+      "secure": "El pago se hace en la página segura de Stripe; GigaFazt no ve ni guarda los datos de tu tarjeta.",
+      "ahead": "Estás al corriente. Si quieres, paga tu siguiente mes por adelantado: {amount}"
     }
   }
 }

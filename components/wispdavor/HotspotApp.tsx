@@ -59,7 +59,7 @@ export function HotspotApp() {
   /** The unsold, unused vouchers as printable cards in a window of their own. */
   const print = () => {
     const list = (data?.vouchers ?? []).filter((v) => !v.sold_at && v.status !== "used")
-    const w = window.open("", "_blank", "noopener=no")
+    const w = window.open("", "_blank")
     if (!w) return
     const cards = list
       .map(

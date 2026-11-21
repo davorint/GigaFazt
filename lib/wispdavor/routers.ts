@@ -8,6 +8,7 @@
  * Report lines (text, one per line, fields separated by ";"):
  *   s;user;profile;disabled;active;rx;tx   a PPPoE secret: its profile, disabled (true/false), connected (1/0) and,
  *                                          when connected, its session's byte counters (rx = from the client = upload)
+ *   S;user;profile;disabled                the same without traffic, when the report would pass fetch's 64 KB
  *   h;name;uptime;bytes                    a hotspot user WispDavor added (comment "WispDavor")
  *   d;actionId;ok|err                      the result of an action received earlier
  * Action lines back: "id,kind,user,arg1,arg2,arg3,arg4" (commas: the router splits them with :toarray, so values are
@@ -34,7 +35,8 @@ export type ActionKind = (typeof ACTION_KINDS)[number]
 export const SAFE = /^[\w.@:/+-]{1,64}$/
 export const safe = (s: string) => SAFE.test(s)
 
-export type Secret = { user: string; profile: string; disabled: boolean; active: boolean; rx: number; tx: number }
+/** stateOnly: from a report too big for traffic ("S;user;profile;disabled"): connection and counters are left as they were. */
+export type Secret = { user: string; profile: string; disabled: boolean; active: boolean; rx: number; tx: number; stateOnly?: boolean }
 export type HotspotUse = { name: string; uptime: string; bytes: number }
 export type Report = { secrets: Secret[]; hotspot: HotspotUse[]; done: { id: number; ok: boolean }[] }
 
@@ -49,6 +51,7 @@ export function parseReport(text: string): Report {
   for (const raw of text.split(/\r?\n/).slice(0, 20000)) {
     const f = raw.split(";")
     if (f[0] === "s" && f.length >= 7 && f[1]) out.secrets.push({ user: f[1].slice(0, 64), profile: f[2].slice(0, 64), disabled: f[3] === "true" || f[3] === "yes", active: f[4] === "1", rx: num(f[5]), tx: num(f[6]) })
+    else if (f[0] === "S" && f.length >= 4 && f[1]) out.secrets.push({ user: f[1].slice(0, 64), profile: f[2].slice(0, 64), disabled: f[3] === "true" || f[3] === "yes", active: false, rx: 0, tx: 0, stateOnly: true })
     else if (f[0] === "h" && f.length >= 4 && f[1]) out.hotspot.push({ name: f[1].slice(0, 64), uptime: f[2].slice(0, 32), bytes: num(f[3]) })
     else if (f[0] === "d" && f.length >= 3 && /^\d+$/.test(f[1])) out.done.push({ id: Number(f[1]), ok: f[2] === "ok" })
   }
@@ -63,14 +66,33 @@ export function desiredUsers(clients: Client[], payments: Payment[], today: stri
   for (const c of clients) {
     const l = ledger(c, payments, today)
     const cut = l.status === "atrasado" && !(c.promiseDate && c.promiseDate >= today)
+    // A manual hold (not for debt) stays suspended whatever the balance says.
     for (const s of c.services) {
       const user = s.pppoeUser.trim()
       if (s.type !== "internet" || !user || !safe(user)) continue
       const plan = s.plan.trim()
       if (s.status === "cancelado") out.push({ user, clientId: c.id, serviceId: s.id, profile: "", disabled: true, suspended: false, plan })
-      else if (plan && safe(plan)) out.push({ user, clientId: c.id, serviceId: s.id, profile: cut ? SUSPENDED_PROFILE : plan, disabled: false, suspended: cut, plan })
+      else if (plan && safe(plan)) {
+        const off = cut || (s.status === "suspendido" && s.hold)
+        out.push({ user, clientId: c.id, serviceId: s.id, profile: off ? SUSPENDED_PROFILE : plan, disabled: false, suspended: off, plan })
+      }
     }
   }
+  return out
+}
+
+/** Internet services WispDavor can't manage on a router, and why (so staff fix them instead of them being skipped silently). */
+export type Unmanaged = { user: string; clientId: string; reason: "user" | "plan" }
+
+export function unmanagedUsers(clients: Client[]): Unmanaged[] {
+  const out: Unmanaged[] = []
+  for (const c of clients)
+    for (const s of c.services) {
+      const user = s.pppoeUser.trim()
+      if (s.type !== "internet" || !user || s.status === "cancelado") continue
+      if (!safe(user)) out.push({ user, clientId: c.id, reason: "user" })
+      else if (!s.plan.trim() || !safe(s.plan.trim())) out.push({ user, clientId: c.id, reason: "plan" })
+    }
   return out
 }
 
@@ -130,13 +152,13 @@ export function randomCode(len: number, rand: (n: number) => number = (n) => Mat
 export function agentScript(o: { url: string; routerId: string; key: string }): string {
   const lines = [
     "# WispDavor: agente del router (RouterOS 7). Reporta usuarios PPPoE, tráfico y fichas de hotspot; aplica acciones.",
-    "# HTTPS checked against the system's trusted certificates (RouterOS 7; skipped where the setting doesn't exist).",
-    ":do { /certificate settings set builtin-trust-anchors=trusted } on-error={}",
+    "# HTTPS checked (check-certificate=yes) against RouterOS 7's built-in trusted certificates: /certificate settings",
+    "# builtin-trust-store includes fetch by default (MikroTik docs, Certificates).",
     "/system script remove [find where name=wispdavor]",
     "/system scheduler remove [find where name=wispdavor]",
     `/system script add name=wispdavor policy=read,write,test dont-require-permissions=no source={`,
     `:local url "${o.url}"`,
-    `:local auth ("Authorization: Bearer ${o.routerId}.${o.key}")`,
+    `:local auth ("Authorization:Bearer ${o.routerId}.${o.key}")`,
     ":global wdDone",
     ':if ([:typeof $wdDone] != "str") do={ :set wdDone "" }',
     ":local out $wdDone",
@@ -154,8 +176,16 @@ export function agentScript(o: { url: string; routerId: string; key: string }): 
     ':foreach h in=[/ip hotspot user find where comment="WispDavor"] do={',
     '  :set out ($out . "h;" . [/ip hotspot user get $h name] . ";" . [/ip hotspot user get $h uptime] . ";" . ([/ip hotspot user get $h bytes-in] + [/ip hotspot user get $h bytes-out]) . "\\n")',
     "}",
+    "# fetch sends at most 64 KB (MikroTik docs): a bigger report goes without traffic, which is the part that can wait.",
+    ":if ([:len $out] > 60000) do={",
+    '  :log warning "wispdavor: reporte grande, se manda sin trafico"',
+    "  :set out $wdDone",
+    '  :foreach s in=[/ppp secret find where (service="pppoe" or service="any")] do={',
+    '    :set out ($out . "S;" . [/ppp secret get $s name] . ";" . [/ppp secret get $s profile] . ";" . [/ppp secret get $s disabled] . "\\n")',
+    "  }",
+    "}",
     ':local r ""',
-    ':do { :set r [/tool fetch url=$url check-certificate=yes http-method=post http-header-field=($auth . ",Content-Type: text/plain") http-data=$out output=user as-value] } on-error={ :log warning "wispdavor: sin conexion con el sitio" }',
+    ':do { :set r [/tool fetch url=$url check-certificate=yes http-method=post http-header-field=($auth . ",Content-Type:text/plain") http-data=$out output=user as-value] } on-error={ :log warning "wispdavor: sin conexion con el sitio" }',
     "# Without an answer the results stay in wdDone and go next time.",
     ':if ([:typeof $r] = "array") do={',
     ':set wdDone ""',

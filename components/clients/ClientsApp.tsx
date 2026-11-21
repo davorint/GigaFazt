@@ -446,9 +446,17 @@ function ServiceCard({ t, c, s, n, onChange, onRemove }: { t: T; c: Client; s: S
         <PickField
           label={t("services.status")}
           value={s.status}
-          onChange={(status) => up(status === "cancelado" ? { status, cancelledAt: s.cancelledAt || localToday() } : { status, cancelledAt: "", cancelReason: "", cancelNote: "" })}
+          onChange={(status) => up(status === "cancelado" ? { status, cancelledAt: s.cancelledAt || localToday(), hold: false } : { status, cancelledAt: "", cancelReason: "", cancelNote: "", hold: status === "suspendido" ? s.hold : false })}
           options={SERVICE_STATUSES.map((x) => ({ value: x, label: t(`statuses.${x}`) }))}
         />
+        {s.type === "internet" && s.status === "suspendido" && (
+          <label className="flex min-h-10 items-center gap-2 self-end text-sm text-zinc-200">
+            <input type="checkbox" checked={s.hold} onChange={(e) => up({ hold: e.target.checked })} className="size-5 accent-white" />
+            <span>
+              {t("services.hold")} <span className="block text-xs text-zinc-400">{t("services.holdHint")}</span>
+            </span>
+          </label>
+        )}
         {s.status === "cancelado" && (
           <div className="grid gap-1">
             <DateField label={t("services.cancelledAt")} value={s.cancelledAt} onChange={(v) => up({ cancelledAt: v })} />

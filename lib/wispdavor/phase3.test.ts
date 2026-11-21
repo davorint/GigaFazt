@@ -94,3 +94,41 @@ describe("WispDavor phase 3: hotspot vouchers", () => {
     expect(a[1]).toMatchObject({ kind: "voucher", user: vs[0].code, arg1: "WD-abc123", arg3: "1440m", arg4: "0" })
   })
 })
+
+describe("WispDavor review (2026-11-21)", () => {
+  it("a manual hold stays suspended even when paid up; a debt suspension reconnects", async () => {
+    const { cutLists } = await import("./cortes")
+    const held = client("fer", {}, { status: "suspendido", hold: true })
+    const debt = client("gus", {}, { status: "suspendido" })
+    const pays = [paidUp("fer"), paidUp("gus")]
+    const by = Object.fromEntries(desiredUsers([held, debt], pays, TODAY).map((d) => [d.user, d]))
+    expect(by.fer).toMatchObject({ profile: SUSPENDED_PROFILE, suspended: true })
+    expect(by.gus).toMatchObject({ profile: "200M", suspended: false })
+    expect(cutLists([held, debt], pays, TODAY).restore.map((r) => r.user)).toEqual(["gus"])
+  })
+
+  it("services WispDavor can't manage are reported, not skipped silently", async () => {
+    const { unmanagedUsers } = await import("./routers")
+    const bad = client("hugo", {}, { plan: "200 Mbps" })
+    const noPlan = client("ivan", {}, { plan: "" })
+    expect(unmanagedUsers([bad, noPlan, client("ok")]).map((u) => [u.user, u.reason])).toEqual([
+      ["hugo", "plan"],
+      ["ivan", "plan"],
+    ])
+  })
+
+  it("a report too big for traffic: state-only lines", () => {
+    expect(parseReport("S;ana;200M;false").secrets).toEqual([{ user: "ana", profile: "200M", disabled: false, active: false, rx: 0, tx: 0, stateOnly: true }])
+  })
+
+  it("CFDI: the months a payment covers, as Cobranza applies it", async () => {
+    const { monthsCovered, monthsLabel } = await import("./cfdi")
+    const c = client("jose")
+    const p1 = newPayment({ id: "pay-0001", clientId: "cli-jose", date: "2026-09-05", amount: 396, method: "efectivo" })
+    const p2 = newPayment({ id: "pay-0002", clientId: "cli-jose", date: "2026-11-02", amount: 792, method: "transferencia" })
+    expect(monthsCovered(c, [p1, p2], "pay-0001", TODAY)).toEqual(["2026-09"])
+    expect(monthsCovered(c, [p1, p2], "pay-0002", TODAY)).toEqual(["2026-10", "2026-11"])
+    expect(monthsLabel(["2026-10", "2026-11"])).toBe("octubre y noviembre de 2026")
+    expect(monthsLabel(["2026-12", "2027-01", "2027-02"])).toBe("diciembre de 2026 a febrero de 2027")
+  })
+})

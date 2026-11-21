@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       const users = Number(((await pool.query(`select count(*) from router_users where router_id = $1`, [r.id])).rows[0] as { count: string }).count)
       // Online: reported within the last 3 polls (POLL_MINUTES = 2).
       const online = !!r.lastSeenAt && Date.now() - Date.parse(r.lastSeenAt) < 6 * 60 * 1000
-      out.push({ ...r, online, users, changes: diff.changes, missing: diff.missing, actions })
+      out.push({ ...r, online, users, changes: diff.changes, missing: diff.missing, unmanaged: diff.unmanaged, actions })
     }
     return json({ ok: true, routers: out })
   } catch (e) {

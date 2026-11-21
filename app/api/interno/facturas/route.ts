@@ -1,8 +1,9 @@
 import type { NextRequest } from "next/server"
 import { getPool, hasDatabase } from "@/lib/db/client"
 import { editorOf, json, requireInterno } from "@/lib/internal-api"
-import { DEFAULT_CFDI, type CfdiSettings } from "@/lib/wispdavor/cfdi"
-import { getCfdiSettings, loadClient, loadPayment, saveCfdiSettings } from "@/lib/wispdavor/db-server"
+import { todayInMexico } from "@/lib/lead"
+import { DEFAULT_CFDI, monthsCovered, monthsLabel, type CfdiSettings } from "@/lib/wispdavor/cfdi"
+import { getCfdiSettings, loadClient, loadPayment, loadPayments, saveCfdiSettings } from "@/lib/wispdavor/db-server"
 import { cancelCfdi, emailCfdi, facturamaConfigured, issueCfdi } from "@/lib/wispdavor/facturama-server"
 
 const ID = /^[\w-]{6,64}$/
@@ -66,7 +67,9 @@ export async function POST(request: NextRequest) {
       const row = (await getPool().query(`select s.card_funding from online_payments o join stripe_customers s on s.client_id = o.client_id where o.payment_id = $1 and o.kind in ('card', 'autopay') limit 1`, [p.id])).rows[0] as
         | { card_funding: string }
         | undefined
-      const r = await issueCfdi(c, p, await getCfdiSettings(), await editorOf(request), row?.card_funding ?? "")
+      // The months this payment covers in Cobranza (owner's choice), for the invoice's description.
+      const months = monthsLabel(monthsCovered(c, await loadPayments(c.id), p.id, todayInMexico()))
+      const r = await issueCfdi(c, p, await getCfdiSettings(), await editorOf(request), row?.card_funding ?? "", months)
       return r.ok ? json({ ok: true, id: r.id, uuid: r.uuid }) : json({ error: r.error }, 409)
     }
     const id = text(b.id, 64)

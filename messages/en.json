@@ -1462,7 +1462,8 @@
         "ok": "Thank you. Card payments show up in a few minutes; OXXO and transfers as soon as they arrive.",
         "cancelado": "The payment wasn't made. You can try again anytime."
       },
-      "secure": "You pay on Stripe's secure page; GigaFazt never sees or keeps your card details."
+      "secure": "You pay on Stripe's secure page; GigaFazt never sees or keeps your card details.",
+      "ahead": "You're paid up. If you like, pay next month ahead: {amount}"
     }
   }
 }

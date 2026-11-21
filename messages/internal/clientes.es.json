@@ -211,7 +211,9 @@
         "otro": "Otro"
       },
       "cancelNote": "Detalle (opcional)",
-      "cancelNoteHint": "Lo que dijo el cliente, con quién se fue, qué precio le dieron…"
+      "cancelNoteHint": "Lo que dijo el cliente, con quién se fue, qué precio le dieron…",
+      "hold": "Suspensión manual (no reconectar sola)",
+      "holdHint": "Para suspensiones que no son por adeudo (abuso, mudanza…): WispDavor no la reconecta aunque esté al corriente."
     },
     "contacts": {
       "title": "Contactos",

@@ -8,12 +8,12 @@ import { PickField } from "@/components/surveys/SurveyFields"
 import { DANGER, PRIMARY, SMALL } from "@/components/finance/FinParts"
 import { siteLabel } from "@/lib/sites/model"
 import { readState } from "@/lib/sync/state"
-import type { Desired, Diff } from "@/lib/wispdavor/routers"
+import type { Desired, Diff, Unmanaged } from "@/lib/wispdavor/routers"
 import { useWispData } from "./useWispData"
 
 type T = ReturnType<typeof useTranslations>
 type ActionRow = { id: string; kind: string; user: string; arg1: string; source: string; status: string; result: string; created_at: string; created_by: string }
-type RouterRow = { id: string; siteId: string; name: string; pppoe: boolean; hotspot: boolean; auto: boolean; lastSeenAt: string; online: boolean; users: number; changes: Diff[]; missing: Desired[]; actions: ActionRow[] }
+type RouterRow = { id: string; siteId: string; name: string; pppoe: boolean; hotspot: boolean; auto: boolean; lastSeenAt: string; online: boolean; users: number; changes: Diff[]; missing: Desired[]; unmanaged: Unmanaged[]; actions: ActionRow[] }
 
 const headers = () => ({ "content-type": "application/json", "x-interno-nombre": encodeURIComponent(readState().name) })
 const STATUS_TONE: Record<string, string> = { done: "text-emerald-300", error: "text-red-300", sent: "text-amber-200", pending: "text-zinc-300" }
@@ -97,7 +97,7 @@ export function RoutersApp() {
             {t("hotspot")}
           </label>
         </fieldset>
-        <button type="button" onClick={create} className={PRIMARY}>
+        <button type="button" disabled={!form.name.trim()} onClick={create} className={`${PRIMARY} disabled:opacity-40`}>
           {t("create")}
         </button>
       </section>
@@ -133,6 +133,8 @@ function RouterCard({
   setMsg: (m: string) => void
 }) {
   const online = r.online
+  // The one-time password of a user just created on this router, shown here (with copy) until the page reloads.
+  const [created, setCreated] = useState<{ user: string; password: string } | null>(null)
   const when = r.lastSeenAt ? new Date(r.lastSeenAt).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }) : ""
   return (
     <div className="grid gap-4 rounded-2xl border border-white/10 p-4">
@@ -197,13 +199,34 @@ function RouterCard({
                   type="button"
                   onClick={async () => {
                     const b = await post({ action: "createUser", id: r.id, user: m.user, profile: m.profile, clientId: m.clientId, serviceId: m.serviceId })
-                    if (b) setMsg(t("password", { user: String(b.user), password: String(b.password) }))
+                    if (b) setCreated({ user: String(b.user), password: String(b.password) })
                     await reload()
                   }}
                   className={SMALL}
                 >
                   {t("createUser")}
                 </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {created && (
+        <div role="status" className="grid gap-2 rounded-xl border border-amber-400/40 p-3">
+          <p className="text-sm text-amber-100">{t("password", { user: created.user, password: created.password })}</p>
+          <CopyButton text={created.password} label={t("copy")} done={t("copied")} />
+        </div>
+      )}
+      {r.pppoe && r.unmanaged.length > 0 && (
+        <section aria-label={t("unmanaged", { n: r.unmanaged.length })} className="grid gap-1">
+          <h3 className="text-sm font-medium text-zinc-200">{t("unmanaged", { n: r.unmanaged.length })}</h3>
+          <ul className="grid gap-1 text-xs text-amber-200">
+            {r.unmanaged.slice(0, 50).map((u) => (
+              <li key={`${u.clientId}-${u.user}`}>
+                <a href={`/interno/admin/clientes?c=${u.clientId}`} className="underline decoration-amber-200/30 underline-offset-4">
+                  {u.user}
+                </a>{" "}
+                · {t(`unmanagedReason.${u.reason}`)}
               </li>
             ))}
           </ul>

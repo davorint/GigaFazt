@@ -10,7 +10,7 @@ import { todayInMexico } from "../lead"
 import { decodePayment, type Payment } from "../payments/model"
 import { sync } from "../sync/server"
 import { newId } from "../survey/id"
-import { MAX_ACTIONS, RESEND_MINUTES, SUSPENDED_PROFILE, actionLine, desiredUsers, diffRouter, parseReport, safe, type Action, type ActionKind, type Desired, type Diff } from "./routers"
+import { MAX_ACTIONS, RESEND_MINUTES, SUSPENDED_PROFILE, actionLine, desiredUsers, diffRouter, parseReport, safe, unmanagedUsers, type Action, type ActionKind, type Desired, type Diff, type Unmanaged } from "./routers"
 
 export type Router = { id: string; siteId: string; name: string; pppoe: boolean; hotspot: boolean; auto: boolean; lastSeenAt: string; createdAt: string }
 
@@ -94,10 +94,10 @@ async function routerState(routerId: string) {
 }
 
 /** The differences and missing users of a router right now (for the staff page and the automatic switch). */
-export async function routerDiff(r: Router): Promise<{ changes: Diff[]; missing: Desired[] }> {
-  if (!r.pppoe || !r.siteId) return { changes: [], missing: [] }
+export async function routerDiff(r: Router): Promise<{ changes: Diff[]; missing: Desired[]; unmanaged: Unmanaged[] }> {
+  if (!r.pppoe || !r.siteId) return { changes: [], missing: [], unmanaged: [] }
   const { clients, payments } = await siteClients(r.siteId)
-  return diffRouter(desiredUsers(clients, payments, todayInMexico()), await routerState(r.id))
+  return { ...diffRouter(desiredUsers(clients, payments, todayInMexico()), await routerState(r.id)), unmanaged: unmanagedUsers(clients) }
 }
 
 /** Differences become actions (skipping a user with one already pending or recently sent). */
@@ -163,6 +163,15 @@ export async function agentVisit(r: Router, body: string): Promise<string> {
   const counters = new Map(((await pool.query(`select "user", rx_last, tx_last from router_users where router_id = $1`, [r.id])).rows as { user: string; rx_last: string; tx_last: string }[]).map((x) => [x.user, x]))
   for (const s of report.secrets) {
     if (!safe(s.user)) continue
+    if (s.stateOnly) {
+      // Plan and disabled only; connection and counters stay as last reported (no traffic is lost or counted twice).
+      await pool.query(
+        `insert into router_users (router_id, "user", profile, disabled, seen_at) values ($1, $2, $3, $4, now())
+         on conflict (router_id, "user") do update set profile = excluded.profile, disabled = excluded.disabled, seen_at = now()`,
+        [r.id, s.user, s.profile, s.disabled]
+      )
+      continue
+    }
     const c = counters.get(s.user)
     const rxLast = Number(c?.rx_last ?? 0)
     const txLast = Number(c?.tx_last ?? 0)

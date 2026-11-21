@@ -70,8 +70,23 @@ export function TrafficApp() {
       <p className="text-sm text-zinc-300">{t("lead")}</p>
       {error && <p className="text-xs text-amber-200">{t("error")}</p>}
       <div className="grid items-start gap-3 sm:grid-cols-2">
-        <PickField label={t("client")} value={user} onChange={setUser} options={[{ value: "", label: t("pick") }, ...users.map((u) => ({ value: u.user, label: u.label }))]} />
-        <PickField label={t("range")} value={days} onChange={setDays} options={RANGES.map((r) => ({ value: r, label: t(`ranges.${r}`) }))} />
+        <PickField
+          label={t("client")}
+          value={user}
+          onChange={(u) => {
+            // Another client: the last one's chart doesn't stay on screen while this one loads.
+            setPoints(null)
+            setUser(u)
+          }}
+          options={[{ value: "", label: t("pick") }, ...users.map((u) => ({ value: u.user, label: u.label }))]} />
+        <PickField
+          label={t("range")}
+          value={days}
+          onChange={(x) => {
+            setPoints(null)
+            setDays(x)
+          }}
+          options={RANGES.map((r) => ({ value: r, label: t(`ranges.${r}`) }))} />
       </div>
       {user && shown && !shown.length && <p className="text-sm text-zinc-400">{t("empty")}</p>}
       {user && shown && shown.length > 0 && (
@@ -109,7 +124,12 @@ export function TrafficApp() {
         <ol className="grid gap-1 text-sm">
           {top?.map((x) => (
             <li key={x.user} className="flex flex-wrap justify-between gap-2 border-b border-white/5 py-1">
-              <button type="button" onClick={() => setUser(x.user)} className="text-left text-zinc-100 underline decoration-white/20 underline-offset-4 hover:decoration-white">
+              <button
+                type="button"
+                onClick={() => {
+                  setPoints(null)
+                  setUser(x.user)
+                }} className="text-left text-zinc-100 underline decoration-white/20 underline-offset-4 hover:decoration-white">
                 {nameOf(x.user)}
               </button>
               <span className="font-mono text-xs text-zinc-400">

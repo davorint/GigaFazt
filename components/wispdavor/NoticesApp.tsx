@@ -24,7 +24,18 @@ type Link = { clientId: string; token: string; revokedAt: string }
 /** "10 de diciembre" from YYYY-MM-DD. */
 const dayLabel = (d: string) => (d ? new Date(`${d}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "long" }) : "")
 /** Day 10 of this month: the last day to pay before the cut (Cobranza: late on the 11th). */
-const payBy = (today: string) => `${today.slice(0, 7)}-10`
+/**
+ * The last day to pay before a cut: the 10th of this month (Cobranza: late on the 11th) while it hasn't passed; after it
+ * (clients already late), three days from today, so a notice never names a date in the past.
+ */
+const payBy = (today: string) => {
+  if (Number(today.slice(8, 10)) <= 10) return `${today.slice(0, 7)}-10`
+  const d = new Date(`${today}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + 3)
+  return d.toISOString().slice(0, 10)
+}
+/** The notice that fits each audience (still changeable). */
+const TEMPLATE_FOR: Partial<Record<Audience, TemplateId>> = { porVencer: "recordatorio", atrasados: "corte", reconectar: "reconexion" }
 
 /** /interno/software/wispdavor/avisos: notices by WhatsApp, through the Cloud API when configured, else one-tap links. */
 export function NoticesApp() {
@@ -75,10 +86,16 @@ export function NoticesApp() {
     if (template === "reconexion") return [first]
     if (template === "mantenimiento") return [first, place, dayLabel(date), detail]
     if (template === "corte") return [first, mxn(l.owed), dayLabel(cutDate), link(c)]
-    return [first, mxn(l.owed > 0 ? l.owed : l.monthly), dayLabel(l.nextDue || payBy(today)), link(c)]
+    // The next payment day; a past one (already late) reads as the next valid date to pay.
+    const due = l.nextDue && l.nextDue >= today ? l.nextDue : payBy(today)
+    return [first, mxn(l.owed > 0 ? l.owed : l.monthly), dayLabel(due), link(c)]
   }
-  const rows = who.map((c) => ({ c, phone: waNumber(c.whatsapp || c.phone), values: values(c) }))
-  const ready = rows.filter((r) => r.phone)
+  // A cut-off notice only to who owes something (never "you owe $0.00").
+  const targets = template === "corte" ? who.filter((c) => ledger(c, d.payments, today).owed > 0.005) : who
+  const rows = targets.map((c) => ({ c, phone: waNumber(c.whatsapp || c.phone), values: values(c) }))
+  // Maintenance needs its place, date and detail before anything goes out.
+  const incomplete = template === "mantenimiento" && (!place.trim() || !date || !detail.trim())
+  const ready = incomplete ? [] : rows.filter((r) => r.phone)
   const missing = rows.length - ready.length
   const send = async () => {
     if (!window.confirm(t("confirmSend", { template: t(`templates.${template}`), n: ready.length }))) return
@@ -110,7 +127,15 @@ export function NoticesApp() {
       {api !== null && <p className={`text-xs ${api ? "text-emerald-300" : "text-amber-200"}`}>{api ? t("apiOn") : t("apiOff")}</p>}
       <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <PickField label={t("template")} value={template} onChange={setTemplate} options={MANUAL_TEMPLATES.map((x) => ({ value: x, label: t(`templates.${x}`) }))} />
-        <PickField label={t("audience")} value={audience} onChange={setAudience} options={AUDIENCES.map((x) => ({ value: x, label: t(`audiences.${x}`) }))} />
+        <PickField
+          label={t("audience")}
+          value={audience}
+          onChange={(a) => {
+            setAudience(a)
+            const tpl = TEMPLATE_FOR[a]
+            if (tpl) setTemplate(tpl)
+          }}
+          options={AUDIENCES.map((x) => ({ value: x, label: t(`audiences.${x}`) }))} />
         {audience === "despliegue" && <PickField label={t("site")} value={site} onChange={setSite} options={[{ value: "", label: "—" }, ...d.sites.map((s) => ({ value: s.id, label: siteLabel(s) }))]} />}
         {template === "corte" && <DateField label={t("cutDate")} value={cutDate} onChange={setCutDate} />}
         {template === "mantenimiento" && (
@@ -132,6 +157,7 @@ export function NoticesApp() {
         )}
         {(template === "recordatorio" || template === "corte") && <p className="text-xs text-zinc-400">{t("linkNote")}</p>}
       </div>
+      {incomplete && <p className="text-xs text-amber-200">{t("incomplete")}</p>}
       {api && ready.length > 0 && (
         <div className="grid gap-2">
           <button type="button" disabled={state === "sending"} onClick={send} className={`${PRIMARY} disabled:opacity-50`}>

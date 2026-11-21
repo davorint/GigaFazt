@@ -46,6 +46,11 @@ export type Service = {
   cancelledAt: string
   cancelReason: CancelReason
   cancelNote: string
+  /**
+   * Suspended on purpose, not for debt (owner, 2026-11-21: "Hold flag"): WispDavor's routers keep it suspended even when
+   * the client is up to date, until this is unchecked. Debt suspensions don't set it and reconnect on payment.
+   */
+  hold: boolean
   notes: string
   // Internet only (empty on the others)
   ontModel: string
@@ -120,6 +125,7 @@ export function newService(type: ServiceType, p: Partial<Service> = {}): Service
     cancelledAt: "",
     cancelReason: "",
     cancelNote: "",
+    hold: false,
     notes: "",
     ontModel: type === "internet" ? DEFAULT_ONT : "",
     ontSn: "",
@@ -199,6 +205,7 @@ function decodeService(v: unknown): Service | null {
     cancelledAt: oneOf(SERVICE_STATUSES, v.status, "activo") === "cancelado" ? date(v.cancelledAt) : "",
     cancelReason: oneOf(SERVICE_STATUSES, v.status, "activo") === "cancelado" ? oneOf(CANCEL_REASONS, v.cancelReason, "") : "",
     cancelNote: oneOf(SERVICE_STATUSES, v.status, "activo") === "cancelado" ? str(v.cancelNote, 300) : "",
+    hold: oneOf(SERVICE_STATUSES, v.status, "activo") === "suspendido" && v.hold === true,
     notes: str(v.notes, 2000),
     ontModel: net ? str(v.ontModel, 60) : "",
     ontSn: net ? str(v.ontSn, 40).toUpperCase() : "",
