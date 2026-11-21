@@ -167,7 +167,11 @@ function register(v: Values, s: OltSettings, how: "confirm" | "add", l: Loc): { 
     code.push(...pppoeLines(l, vlan, cred(v, "pppoeUser"), cred(v, "pppoePass")))
     verify.push(...PPPOE_VERIFY)
   }
-  const tv = s.iptvVlan && v.iptv === "si" ? iptvOnt(s, l, n(v, "iptvIndex", 0, 65535)) : null
+  if (v.iptv === "si" && !s.iptvVlan) throw new Bad("iptv")
+  const tvIdx = v.iptv === "si" ? n(v, "iptvIndex", 0, 65535) : null
+  // The internet and TV service-ports can't share an index.
+  if (tvIdx !== null && idx === tvIdx) throw new Bad("iptvIndex")
+  const tv = tvIdx !== null ? iptvOnt(s, l, tvIdx) : null
   if (tv) code.push(...tv.inGpon)
   code.push(" quit", servicePort(s, l, k, idx))
   if (tv) code.push(...tv.after)
@@ -188,7 +192,8 @@ export function run(tool: Tool, v: Values, s: OltSettings): Result | null {
   }
 }
 
-const REGISTER_FIELDS: Field[] = [...LOC, SN, { key: "desc", kind: "text", optional: true }, PLAN, SP, { key: "pppoeUser", kind: "text", optional: true }, { key: "pppoePass", kind: "secret", optional: true }, { key: "iptv", kind: "select", options: ["no", "si"], def: "no" }, { key: "iptvIndex", kind: "number", optional: true }]
+const TV_FIELDS: Field[] = [{ key: "iptv", kind: "select", options: ["no", "si"], def: "no" }, { key: "iptvIndex", kind: "number", optional: true }]
+const REGISTER_FIELDS: Field[] = [...LOC, SN, { key: "desc", kind: "text", optional: true }, PLAN, SP, { key: "pppoeUser", kind: "text", optional: true }, { key: "pppoePass", kind: "secret", optional: true }, ...TV_FIELDS]
 
 // ── The tools ──────────────────────────────────────────────────────────────
 
@@ -378,7 +383,7 @@ export const TOOLS: Tool[] = [
   {
     id: "todo",
     group: "setup",
-    fields: [{ key: "slots", kind: "select", options: ["1", "0", "01"], def: "1" }, { key: "ntp", kind: "text", optional: true }],
+    fields: [{ key: "slots", kind: "select", options: ["1", "0", "01"], def: "1" }, { key: "ports", kind: "select", options: ["8", "16"], def: "16" }, { key: "ntp", kind: "text", optional: true }],
     build: (v, s) => {
       const base = TOOLS.find((t) => t.id === "inicial")!.build!(v, s)
       if ("error" in base) return base
@@ -390,7 +395,7 @@ export const TOOLS: Tool[] = [
           ...head,
           "board confirm 0",
           ...vlans.flatMap((id) => [`vlan ${id} smart`, `port vlan ${id} 0/${s.uplinkSlot} ${s.uplinkPort}`]),
-          ...slots.flatMap((sl) => [`interface gpon 0/${sl}`, ...Array.from({ length: 16 }, (_, p) => ` port ${p} ont-auto-find enable`), " quit"]),
+          ...slots.flatMap((sl) => [`interface gpon 0/${sl}`, ...Array.from({ length: v.ports === "8" ? 8 : 16 }, (_, p) => ` port ${p} ont-auto-find enable`), " quit"]),
           ...profilesBlock(s),
           ...(s.iptvVlan ? iptvGlobal(s) : []),
           "save",
@@ -437,10 +442,22 @@ export const TOOLS: Tool[] = [
       const l = where(v)
       const { k, id } = plan(v, s)
       const idx = n(v, "spIndex", 0, 65535)
+      const bridge = s.ontMode === "bridge"
       return ok(
-        ["config", `display service-port port ${fsp(l)} ont ${l.ont}`, `undo service-port ${idx}`, `interface gpon 0/${l.slot}`, ` ont modify ${l.port} ${l.ont} ont-lineprofile-id ${id}`, " quit", servicePort(s, l, k, idx), "save"],
+        [
+          "config",
+          `display service-port port ${fsp(l)} ont ${l.ont}`,
+          `undo service-port ${idx}`,
+          `interface gpon 0/${l.slot}`,
+          // Bridges have a service profile per plan (the port's VLAN) and, with a VLAN per plan, a new native VLAN.
+          ` ont modify ${l.port} ${l.ont} ont-lineprofile-id ${id}${bridge ? ` ont-srvprofile-id ${srvId(s, k)}` : ""}`,
+          ...(bridge ? [` ont port native-vlan ${l.port} ${l.ont} eth 1 vlan ${planVlan(s, k)}`] : []),
+          " quit",
+          servicePort(s, l, k, idx),
+          "save",
+        ],
         [612],
-        ["undo service-port <índice>", "ont modify … ont-lineprofile-id"]
+        ["undo service-port <índice>", `ont modify … ont-lineprofile-id${bridge ? " … ont-srvprofile-id" : ""}`]
       )
     },
   },
@@ -478,7 +495,7 @@ export const TOOLS: Tool[] = [
   {
     id: "mover",
     group: "onu",
-    fields: [...LOC, { key: "toSlot", kind: "select", options: ["0", "1"], def: "1" }, { key: "toPort", kind: "number" }, { key: "toOntId", kind: "number" }, SN, { key: "desc", kind: "text", optional: true }, PLAN, SP],
+    fields: [...LOC, { key: "toSlot", kind: "select", options: ["0", "1"], def: "1" }, { key: "toPort", kind: "number" }, { key: "toOntId", kind: "number" }, SN, { key: "desc", kind: "text", optional: true }, PLAN, SP, ...TV_FIELDS],
     build: (v, s) => {
       const from = where(v)
       const to = { slot: n(v, "toSlot", 0, 1), port: n(v, "toPort", 0, MAX_PON_PORT), ont: n(v, "toOntId", 0, MAX_ONT_ID) }
@@ -518,7 +535,7 @@ export const TOOLS: Tool[] = [
   {
     id: "migrar",
     group: "onu",
-    fields: [...LOC, { key: "toSlot", kind: "select", options: ["0", "1"], def: "1" }, { key: "toPort", kind: "number" }, { key: "toOntId", kind: "number" }, SN, { key: "desc", kind: "text", optional: true }, PLAN, SP],
+    fields: [...LOC, { key: "toSlot", kind: "select", options: ["0", "1"], def: "1" }, { key: "toPort", kind: "number" }, { key: "toOntId", kind: "number" }, SN, { key: "desc", kind: "text", optional: true }, PLAN, SP, ...TV_FIELDS],
     build: (v, s) => {
       const from = where(v)
       const to = { slot: n(v, "toSlot", 0, 1), port: n(v, "toPort", 0, MAX_PON_PORT), ont: n(v, "toOntId", 0, MAX_ONT_ID) }

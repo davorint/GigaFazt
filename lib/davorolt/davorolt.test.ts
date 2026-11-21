@@ -70,3 +70,21 @@ describe("DavorOLT (owner, 2026-11-21)", () => {
     expect(settingsIssues(S)).toEqual([])
   })
 })
+
+describe("DavorOLT review fixes (2026-11-21)", () => {
+  const base = { slot: "1", port: "3", ontId: "5", sn: "HWTC1A2B3C4D", plan: "1", iptv: "si", iptvIndex: "20" }
+  it("TV needs the IPTV VLAN and its own service-port index", () => {
+    expect(run(toolById("autorizar")!, base, { ...S, iptvVlan: 0 })).toEqual({ error: "field", field: "iptv" })
+    expect(run(toolById("autorizar")!, { ...base, spIndex: "20" }, S)).toEqual({ error: "field", field: "iptvIndex" })
+  })
+  it("moving keeps TV; changing plan of a bridge moves its service profile and VLAN", () => {
+    expect(code("mover", { ...base, toSlot: "0", toPort: "1", toOntId: "2" })).toContain("igmp user add service-port 20")
+    const c = code("plan", { slot: "1", port: "3", ontId: "5", plan: "2", spIndex: "7" }, { ...S, ontMode: "bridge", planMode: "vlan" })
+    expect(c).toContain(" ont modify 3 5 ont-lineprofile-id 12 ont-srvprofile-id 12\n ont port native-vlan 3 5 eth 1 vlan 1000")
+  })
+  it("initial setup enables 8 ports on an 8-port board", () => {
+    const c = code("todo", { slots: "0", ports: "8", ntp: "" })
+    expect(c).toContain(" port 7 ont-auto-find enable")
+    expect(c).not.toContain(" port 8 ont-auto-find enable")
+  })
+})
