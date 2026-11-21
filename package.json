@@ -20,7 +20,8 @@
     "db:generate": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs migrate",
     "db:studio": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs studio",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:dev": "node e2e-dev/run.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

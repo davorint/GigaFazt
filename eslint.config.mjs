@@ -18,6 +18,11 @@ const eslintConfig = defineConfig([
     // Screenshots and local one-off scripts (git-ignored).
     ".screenshots/**",
   ]),
+  // The dev end-to-end scenarios (e2e-dev/, `npm run e2e:dev`) are plain Node CommonJS scripts: require() is how they load.
+  {
+    files: ["e2e-dev/**/*.cjs"],
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
 ]);
 
 export default eslintConfig;
