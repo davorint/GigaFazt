@@ -70,6 +70,10 @@ export function RestPanel({ routerId }: { routerId: string }) {
     if (b) setMsg(t("testOk", { board: b.board ?? "", version: b.version ?? "" }))
   }
   const readOnly = view?.readOnly ?? true
+  // "Probar" tests what's saved: with unsaved changes on screen it waits for "Guardar" (else it'd test the old ones).
+  const dirty =
+    !!view &&
+    (form.protocol !== view.protocol || form.host !== view.host || form.port !== String(view.port) || form.apiPort !== String(view.apiPort) || form.readUser !== view.readUser || form.writeUser !== view.writeUser || form.fingerprint !== view.fingerprint || !!form.readPass || !!form.writePass)
   const set = (k: Exclude<keyof typeof form, "protocol">) => (v: string) => setForm((f) => ({ ...f, [k]: v }))
   const setup = setupCommands({ restPort: Number(form.port) || 8443, apiPort: Number(form.apiPort) || 8729, dnsName: form.host })
   return (
@@ -124,7 +128,7 @@ export function RestPanel({ routerId }: { routerId: string }) {
           <button type="button" disabled={busy} onClick={() => void save()} className={SMALL}>
             {t("save")}
           </button>
-          <button type="button" disabled={busy || !view?.host} onClick={() => void test()} className={SMALL}>
+          <button type="button" disabled={busy || !view?.host || dirty} onClick={() => void test()} className={SMALL}>
             {busy ? t("testing") : t("test")}
           </button>
           {view?.writeUser && (
@@ -133,6 +137,7 @@ export function RestPanel({ routerId }: { routerId: string }) {
             </button>
           )}
         </div>
+        {dirty && <p className="text-xs text-amber-200">{t("unsaved")}</p>}
         {msg && (
           <p role="status" className="text-sm text-zinc-200">
             {msg}

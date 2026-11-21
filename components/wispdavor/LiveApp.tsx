@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { PickField } from "@/components/surveys/SurveyFields"
 import { TextField } from "@/components/mikrotik/TextField"
@@ -55,8 +55,9 @@ export function LiveApp() {
     })()
   }, [tr])
   const post = useCallback(
-    async <T,>(body: object): Promise<T | null> => {
-      setMsg("")
+    async <T,>(body: object, quiet = false): Promise<T | null> => {
+      // A quiet call (the automatic refresh) leaves the message on screen unless it fails.
+      if (!quiet) setMsg("")
       try {
         const r = await fetch("/api/interno/routers/rest", { method: "POST", headers: headers(), body: JSON.stringify({ id, ...body }) })
         const b = (await r.json().catch(() => ({}))) as T & { error?: string; detail?: string }
@@ -72,13 +73,25 @@ export function LiveApp() {
     },
     [id, tr]
   )
-  const refresh = useCallback(async () => {
-    if (!id) return
-    setBusy(true)
-    const b = await post<{ live: LiveView }>({ action: "live" })
-    setLive(b?.live ?? null)
-    setBusy(false)
-  }, [id, post])
+  // One refresh at a time: a slow router doesn't get a pile of connections from the 15 s timer.
+  const loading = useRef(false)
+  // Each request's number: an answer for a router no longer chosen (or overtaken by a newer request) is dropped.
+  const seq = useRef(0)
+  const refresh = useCallback(
+    async (quiet = false) => {
+      if (!id || (quiet && loading.current)) return
+      const mine = ++seq.current
+      loading.current = true
+      setBusy(true)
+      const b = await post<{ live: LiveView }>({ action: "live" }, quiet)
+      if (mine !== seq.current) return
+      // A failed refresh keeps the last good view (the error says why); a new router starts empty (below).
+      if (b) setLive(b.live)
+      setBusy(false)
+      loading.current = false
+    },
+    [id, post]
+  )
   const loadBackups = useCallback(async () => {
     if (!id) return
     const b = await post<{ backups: Backup[] }>({ action: "backups" })
@@ -93,7 +106,7 @@ export function LiveApp() {
   }, [refresh, loadBackups])
   useEffect(() => {
     if (!auto) return
-    const h = window.setInterval(() => void refresh(), 15000)
+    const h = window.setInterval(() => void refresh(true), 15000)
     return () => window.clearInterval(h)
   }, [auto, refresh])
   // The clients of this router's deployment (all of them when the router has none set).
@@ -236,7 +249,7 @@ export function LiveApp() {
               {t("client")}
             </h2>
             {!site && <p className="text-xs text-zinc-400">{t("allClients")}</p>}
-            <PickField label={t("pickClient")} value={user} onChange={(u) => void lookup(u)} options={[{ value: "", label: "—" }, ...users.map((u) => ({ value: u.value, label: u.label }))]} />
+            <PickField label={t("pickClient")} value={user} onChange={(u) => void lookup(u)} options={[{ value: "", label: "—" }, ...(user && !users.some((u) => u.value === user) ? [{ value: user, label: t("notInClients", { user }) }] : []), ...users.map((u) => ({ value: u.value, label: u.label }))]} />
             {client && (
               <div className="grid gap-3 text-sm">
                 {!client.secret ? (

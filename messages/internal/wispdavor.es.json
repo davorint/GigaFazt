@@ -644,7 +644,8 @@
         "rest": "HTTPS al servicio www-ssl (/rest). El grupo del usuario necesita rest-api y api.",
         "api": "API de MikroTik por TLS (servicio api-ssl, puerto 8729 por defecto). La contraseña viaja dentro de TLS; la API sin cifrar (8728) no se usa. El grupo necesita api."
       },
-      "apiPort": "Puerto API-SSL"
+      "apiPort": "Puerto API-SSL",
+      "unsaved": "Hay cambios sin guardar: guárdalos para poder probar la conexión."
     },
     "envivo": {
       "lead": "Un router a la vez, por API REST o por la API de MikroTik (lo eliges en su conexión). Leer siempre está permitido; los cambios solo si el router no está en «Solo lectura» y tiene usuario de escritura. Cada cambio queda en sus acciones recientes.",
@@ -706,7 +707,8 @@
         "rest": "Por API REST",
         "api": "Por API de MikroTik"
       },
-      "allClients": "Este router no tiene despliegue: se muestran los clientes de todos (asígnale uno en Routers en vivo)."
+      "allClients": "Este router no tiene despliegue: se muestran los clientes de todos (asígnale uno en Routers en vivo).",
+      "notInClients": "{user} (sin cliente en WispDavor)"
     }
   }
 }
