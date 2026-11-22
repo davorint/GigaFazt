@@ -74,7 +74,8 @@
       "mixTakeaway": "{n} servicios de internet activos y {tv} de TV.",
       "tv": "TV",
       "reasons": "Por qué cancelan",
-      "reasonsTakeaway": "El motivo más común: {top}."
+      "reasonsTakeaway": "El motivo más común: {top}.",
+      "others": "Otros"
     },
     "reasons": {
       "none": "Sin anotar",

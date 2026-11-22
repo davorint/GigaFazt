@@ -130,7 +130,17 @@ export function TableroApp() {
   const forecastOption = {
     grid: grid({ top: 36 }),
     legend: legend({ data: [t("forecast.actual"), t("forecast.range")] }),
-    tooltip: { trigger: "axis", valueFormatter: (v: number | null) => (v === null || v === undefined ? "—" : mxn(v)) },
+    tooltip: {
+      trigger: "axis",
+      // The band is stacked (low + gap): the tooltip says both bounds as amounts, not the gap.
+      formatter: (ps: { dataIndex: number; axisValue: string }[]) => {
+        const i = ps[0]?.dataIndex ?? 0
+        const f = fc.rows[i - hist.length]
+        return f
+          ? `${ps[0].axisValue}<br/>${t("forecast.high")}: <b>${mxn(f.scheduled)}</b><br/>${t("forecast.low")}: <b>${mxn(f.withChurn)}</b>`
+          : `${ps[0]?.axisValue ?? ""}<br/>${t("forecast.actual")}: <b>${mxn(hist[i]?.expected ?? 0)}</b>`
+      },
+    },
     xAxis: categoryAxis(fLabels, { boundaryGap: false }),
     yAxis: valueAxis(k, { minInterval: 1 }),
     series: [
@@ -193,37 +203,40 @@ export function TableroApp() {
     series: [bar(t("clients.reasons"), reasonRows.map((r) => r.n), SERIES[0], { barMaxWidth: 14, itemStyle: { borderRadius: [0, 4, 4, 0] } })],
   }
   const mixTotal = mix.plans.reduce((a, p) => a + p.n, 0)
+  // At most four segments (the validated slots): from a fifth plan on, the smallest go together as "Otros".
+  const mixParts = mix.plans.length > 4 ? [...mix.plans.slice(0, 3), { plan: t("clients.others"), n: mix.plans.slice(3).reduce((a, p) => a + p.n, 0) }] : mix.plans
   const mixOption = {
     grid: grid({ top: 36, bottom: 8 }),
     legend: legend(),
     tooltip: { trigger: "item", formatter: (p: { seriesName: string; value: number }) => `${p.seriesName}: ${p.value} (${mixTotal ? Math.round((p.value / mixTotal) * 100) : 0} %)` },
     xAxis: valueAxis(undefined, { show: false, max: mixTotal || 1 }),
     yAxis: categoryAxis([""], { show: false }),
-    series: mix.plans.slice(0, 4).map((p, i) => ({
+    series: mixParts.map((p, i) => ({
       type: "bar",
       name: p.plan,
       stack: "mix",
       data: [p.n],
       color: SERIES[i],
       barWidth: 36,
-      itemStyle: { borderColor: INK.surface, borderWidth: 2, borderRadius: i === 0 ? [6, 0, 0, 6] : i === Math.min(3, mix.plans.length - 1) ? [0, 6, 6, 0] : 0 },
+      itemStyle: { borderColor: INK.surface, borderWidth: 2, borderRadius: mixParts.length === 1 ? 6 : i === 0 ? [6, 0, 0, 6] : i === mixParts.length - 1 ? [0, 6, 6, 0] : 0 },
       label: { show: mixTotal > 0 && p.n / mixTotal >= 0.12, formatter: `${p.plan} · ${Math.round((p.n / (mixTotal || 1)) * 100)} %`, color: "#ffffff" },
     })),
   }
 
   // ── Network ──
   const capRows = network ? [...network.sites].filter((s) => s.use !== null).sort((a, b) => (a.use ?? 0) - (b.use ?? 0)) : []
+  const capMax = Math.max(100, ...capRows.map((s) => Math.ceil(((s.use ?? 0) * 100) / 25) * 25))
   const capOption = {
     grid: grid({ left: 4, right: 40 }),
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, valueFormatter: (v: number) => `${v} %` },
-    xAxis: valueAxis((n) => `${n} %`, { max: 100, interval: 25 }),
+    xAxis: valueAxis((n) => `${n} %`, { max: capMax, interval: capMax > 150 ? 50 : 25 }),
     yAxis: categoryAxis(capRows.map((s) => s.name), { axisLabel: { color: INK.secondary, width: 130, overflow: "truncate" } }),
     series: [
       bar(
         t("network.use"),
         capRows.map((s) => {
           const v = Math.round((s.use ?? 0) * 100)
-          return { value: Math.min(100, v), itemStyle: { color: v >= FULL_SHARE * 100 ? STATUS.critical : SERIES[0], borderRadius: [0, 4, 4, 0] } }
+          return { value: v, itemStyle: { color: v >= FULL_SHARE * 100 ? STATUS.critical : SERIES[0], borderRadius: [0, 4, 4, 0] } }
         }),
         SERIES[0],
         { barMaxWidth: 14, itemStyle: {}, markLine: { symbol: "none", silent: true, label: { formatter: `${FULL_SHARE * 100} %`, color: INK.muted }, lineStyle: { color: STATUS.critical, type: "solid", width: 1 }, data: [{ xAxis: FULL_SHARE * 100 }] } }
@@ -255,7 +268,7 @@ export function TableroApp() {
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
     xAxis: categoryAxis(AGE_BUCKETS.map((b) => t(`ops.ages.${b}`))),
     yAxis: valueAxis(undefined, { minInterval: 1 }),
-    series: [bar(t("ops.open"), AGE_BUCKETS.map((b, i) => ({ value: ages[b], itemStyle: { color: ORDINAL[4 - i] } })), ORDINAL[3], { label: { show: true, position: "top", color: INK.secondary } })],
+    series: [bar(t("ops.open"), AGE_BUCKETS.map((b, i) => ({ value: ages[b], itemStyle: { color: ORDINAL[i + 1] } })), ORDINAL[3], { label: { show: true, position: "top", color: INK.secondary } })],
   }
   const repairOption = {
     grid: grid({ top: 12 }),
@@ -281,9 +294,9 @@ export function TableroApp() {
     <div className="mt-6 grid gap-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <p className="max-w-2xl text-sm text-zinc-300">{t("lead")}</p>
-        <div role="radiogroup" aria-label={t("period")} className="flex gap-1 rounded-full border border-white/10 p-1">
+        <div role="group" aria-label={t("period")} className="flex gap-1 rounded-full border border-white/10 p-1">
           {PERIODS.map((p) => (
-            <button key={p} type="button" role="radio" aria-checked={period === p} onClick={() => setPeriod(p)} className={`min-h-9 rounded-full px-3 text-xs ${period === p ? "bg-white text-zinc-950" : "text-zinc-300 hover:bg-white/5"}`}>
+            <button key={p} type="button" aria-pressed={period === p} onClick={() => setPeriod(p)} className={`min-h-9 rounded-full px-3 text-xs ${period === p ? "bg-white text-zinc-950" : "text-zinc-300 hover:bg-white/5"}`}>
               {t("months", { n: p })}
             </button>
           ))}
