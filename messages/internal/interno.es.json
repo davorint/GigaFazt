@@ -218,6 +218,10 @@
               "desc": "Cada contrato firmado: con quién, desde y hasta cuándo, cómo se renueva, el aviso previo y la copia firmada (PDF o foto). Incluye los acuerdos con edificios."
             }
           }
+        },
+        "actividad": {
+          "name": "Actividad",
+          "desc": "Quién cambió qué: altas, cambios y borrados de cada registro, acciones en los routers y mensajes de WhatsApp. Solo administradores."
         }
       }
     },
@@ -323,6 +327,11 @@
         "error": "No se pudo obtener la lista (sin conexión o sin base de datos)."
       }
     },
-    "toolsTitle": "Todas las secciones"
+    "toolsTitle": "Todas las secciones",
+    "noAccess": {
+      "title": "Sin acceso",
+      "body": "Tu cuenta no tiene esta sección. Si la necesitas, pídele a un administrador que cambie tu rol en Usuarios y accesos.",
+      "home": "Ir al inicio"
+    }
   }
 }

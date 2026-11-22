@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { json, requireInterno } from "@/lib/internal-api"
+import { json, requireArea, requireInterno } from "@/lib/internal-api"
 import { INTERNAL_HEADERS } from "@/lib/internal-pages"
 import { cfdiFile, facturamaConfigured } from "@/lib/wispdavor/facturama-server"
 
@@ -7,6 +7,8 @@ import { cfdiFile, facturamaConfigured } from "@/lib/wispdavor/facturama-server"
 export async function GET(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "payments")
+  if (forbidden) return forbidden
   if (!facturamaConfigured()) return json({ error: "not-configured" }, 409)
   const p = request.nextUrl.searchParams
   const id = p.get("id") ?? ""

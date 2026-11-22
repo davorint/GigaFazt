@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
 import { saveFile } from "@/lib/contracts/storage"
-import { editorOf, json, requireInterno } from "@/lib/internal-api"
+import { editorOf, json, requireArea, requireInterno } from "@/lib/internal-api"
 import { cleanName, MAX_BYTES, sniffMime } from "@/lib/contracts/files"
 import { newId } from "@/lib/survey/id"
 
@@ -15,6 +15,8 @@ const ID = /^[\w-]{6,64}$/
 export async function POST(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "files")
+  if (forbidden) return forbidden
   if (!hasDatabase()) return json({ error: "no-database" }, 503)
   if (Number(request.headers.get("content-length") ?? 0) > MAX_BYTES + 64 * 1024) return json({ error: "too-big" }, 413)
   let form: FormData

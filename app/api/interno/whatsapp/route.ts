@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
-import { canChangeRouters, editorOf, json, requireInterno } from "@/lib/internal-api"
+import { canChangeRouters, editorOf, json, requireArea, requireInterno } from "@/lib/internal-api"
 import { getNotices, saveNotices } from "@/lib/wispdavor/selfservice-server"
 import { MAX_PER_SEND, TEMPLATES, TEMPLATE_IDS, waNumber, type TemplateId } from "@/lib/wispdavor/whatsapp"
 import { sendTemplate, whatsappConfigured } from "@/lib/wispdavor/whatsapp-server"
@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
     if (!(await canChangeRouters(request))) return json({ error: "admin-only" }, 403)
     return json({ ok: true, notices: await saveNotices(body.notices, await editorOf(request)) })
   }
+  const forbidden = await requireArea(request, "whatsapp")
+  if (forbidden) return forbidden
   if (!whatsappConfigured()) return json({ error: "not-configured" }, 409)
   const template = TEMPLATE_IDS.find((t) => t === body.template) as TemplateId | undefined
   const items = Array.isArray(body.items) ? (body.items as Item[]) : []

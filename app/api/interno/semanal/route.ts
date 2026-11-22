@@ -1,13 +1,15 @@
 import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
 import { runWeekly } from "@/lib/interno/weekly-server"
-import { json, requireInterno } from "@/lib/internal-api"
+import { json, requireArea, requireInterno } from "@/lib/internal-api"
 import { todayInMexico } from "@/lib/lead"
 
 /** POST /api/interno/semanal: sends the weekly summary now (Números' button; it also goes by itself on Mondays). */
 export async function POST(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "weekly")
+  if (forbidden) return forbidden
   if (!hasDatabase()) return json({ error: "no-database" }, 503)
   try {
     return json({ ok: true, ...(await runWeekly(todayInMexico(), true)) })

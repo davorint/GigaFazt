@@ -53,6 +53,7 @@ export default async function InternoPage({ params }: PageProps<"/[locale]/inter
             <li key={p}>
               <a
                 href={`/interno/${p}`}
+                data-nav
                 className="surface group grid h-full gap-2 rounded-2xl p-5 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:p-6"
               >
                 <span className="text-lg font-medium text-foreground">{t.tools[p].name}</span>

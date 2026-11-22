@@ -10,6 +10,7 @@ import { createHash, timingSafeEqual } from "node:crypto"
 import { NextResponse, type NextRequest } from "next/server"
 import { AUTH_COOKIE, sessionOf } from "./internal-auth"
 import { INTERNAL_HEADERS } from "./internal-pages"
+import { areaAllowed, type Access, type Area } from "./team/roles"
 import { accountsOn, memberById, sessionCurrent, type Member } from "./team/server"
 
 export type Who = { member: Member | null }
@@ -39,6 +40,20 @@ export async function whoIs(request: NextRequest): Promise<Who | null> {
 export async function canChangeRouters(request: NextRequest): Promise<boolean> {
   const w = await whoIs(request)
   return !!w && (!w.member || w.member.admin)
+}
+
+/** Phase 14: what this session reaches (admins and the shared password: everything). */
+export async function accessOf(request: NextRequest): Promise<Access | null> {
+  const w = await whoIs(request)
+  if (!w) return null
+  return w.member ? { admin: w.member.admin, role: w.member.role } : { admin: true, role: "oficina" }
+}
+
+/** null when the session's role reaches `area`; otherwise the 401 / 403 to return. */
+export async function requireArea(request: NextRequest, area: Area): Promise<NextResponse | null> {
+  const a = await accessOf(request)
+  if (!a) return NextResponse.json({ error: "signin" }, { status: 401, headers: INTERNAL_HEADERS })
+  return areaAllowed(a, area) ? null : NextResponse.json({ error: "forbidden" }, { status: 403, headers: INTERNAL_HEADERS })
 }
 
 /** null when the request is signed in; otherwise the 401 to return. */

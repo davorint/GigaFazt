@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { getPool, hasDatabase } from "@/lib/db/client"
-import { json, requireInterno } from "@/lib/internal-api"
+import { json, requireArea, requireInterno } from "@/lib/internal-api"
 
 /**
  * GET /api/interno/archivos-lista: every kept file (contracts' signed copies and the technicians' photos and
@@ -13,6 +13,8 @@ const part = (s: string) => s.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").trim().
 export async function GET(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "files")
+  if (forbidden) return forbidden
   if (!hasDatabase()) return json({ error: "no-database" }, 503)
   try {
     const pool = getPool()

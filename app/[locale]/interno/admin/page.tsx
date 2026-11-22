@@ -35,7 +35,7 @@ export default async function AdminPage({ params }: PageProps<"/[locale]/interno
       <ul className="mt-8 grid gap-4 sm:grid-cols-2">
         {ADMIN_PAGES.map((p) => (
           <li key={p}>
-            <a href={`/interno/admin/${p}`} className="surface group grid h-full gap-2 rounded-2xl p-5 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:p-6">
+            <a href={`/interno/admin/${p}`} data-nav className="surface group grid h-full gap-2 rounded-2xl p-5 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:p-6">
               <span className="text-lg font-medium text-foreground">{t.pages[p].name}</span>
               <span className="text-sm leading-relaxed text-zinc-300">{t.pages[p].desc}</span>
               <span className="mt-2 font-mono text-xs text-zinc-400 group-hover:text-zinc-200">

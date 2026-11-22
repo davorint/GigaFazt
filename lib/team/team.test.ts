@@ -17,7 +17,7 @@ describe("team accounts", () => {
     expect(cleanName("  Luis   Pérez ")).toBe("Luis Pérez")
   })
   it("a password change ends the sessions signed in before it (a reset locks out a lost phone)", () => {
-    const m = { id: "m-0001", name: "Luis", admin: false, active: true, createdAt: "2026-11-01T00:00:00Z", passwordChangedAt: "" }
+    const m = { id: "m-0001", name: "Luis", admin: false, role: "oficina" as const, active: true, createdAt: "2026-11-01T00:00:00Z", passwordChangedAt: "" }
     expect(sessionCurrent(m, Date.parse("2026-11-02T00:00:00Z"))).toBe(true)
     const reset = { ...m, passwordChangedAt: "2026-11-20T12:00:00.000Z" }
     expect(sessionCurrent(reset, Date.parse("2026-11-19T09:00:00Z"))).toBe(false)

@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
-import { requireInterno } from "@/lib/internal-api"
+import { requireArea, requireInterno } from "@/lib/internal-api"
 import { INTERNAL_HEADERS } from "@/lib/internal-pages"
 import { fullBackup } from "@/lib/sync/history"
 
@@ -12,6 +12,8 @@ import { fullBackup } from "@/lib/sync/history"
 export async function GET(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "backup")
+  if (forbidden) return forbidden
   if (!hasDatabase()) return Response.json({ error: "no-database" }, { status: 503, headers: INTERNAL_HEADERS })
   try {
     const body = JSON.stringify(await fullBackup(), null, 1)

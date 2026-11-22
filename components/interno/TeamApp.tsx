@@ -1,9 +1,10 @@
 "use client"
 
+import { DEFAULT_ROLE, ROLES, type Role } from "@/lib/team/roles"
 import { useCallback, useEffect, useId, useState } from "react"
 import { useTranslations } from "next-intl"
 
-type Member = { id: string; name: string; admin: boolean; active: boolean; createdAt: string }
+type Member = { id: string; name: string; admin: boolean; role: Role; active: boolean; createdAt: string }
 type State = { members: Member[]; me: string | null; admin: boolean; accounts: boolean }
 
 const SMALL = "inline-flex min-h-9 w-fit items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50"
@@ -47,14 +48,14 @@ export function TeamApp() {
   const err = (data: Record<string, unknown>) => t(`errors.${typeof data.error === "string" ? data.error : "server"}`)
 
   if (load !== "ok" || !st) return <p className="mt-6 text-sm text-zinc-400">{t(`load.${load}`)}</p>
-  const create = async (name: string, password: string, admin: boolean) => {
-    const r = await call("POST", { name, password, admin })
+  const create = async (name: string, password: string, admin: boolean, role: Role) => {
+    const r = await call("POST", { name, password, admin, role })
     if (!r.ok) return setMsg({ ok: false, text: err(r.data) }), false
     setMsg({ ok: true, text: st.accounts ? t("added", { name }) : t("firstAdded", { name }) })
     await refresh()
     return true
   }
-  const patch = async (id: string, p: { password?: string; active?: boolean; admin?: boolean }, done: string) => {
+  const patch = async (id: string, p: { password?: string; active?: boolean; admin?: boolean; role?: Role }, done: string) => {
     const r = await call("PATCH", { id, ...p })
     setMsg(r.ok ? { ok: true, text: done } : { ok: false, text: err(r.data) })
     if (r.ok) await refresh()
@@ -86,10 +87,11 @@ export function TeamApp() {
   )
 }
 
-function AddForm({ t, first, onAdd }: { t: ReturnType<typeof useTranslations>; first: boolean; onAdd: (name: string, password: string, admin: boolean) => Promise<boolean> }) {
+function AddForm({ t, first, onAdd }: { t: ReturnType<typeof useTranslations>; first: boolean; onAdd: (name: string, password: string, admin: boolean, role: Role) => Promise<boolean> }) {
   const [name, setName] = useState("")
   const [password, setPassword] = useState("")
   const [admin, setAdmin] = useState(false)
+  const [role, setRole] = useState<Role>(DEFAULT_ROLE)
   const [busy, setBusy] = useState(false)
   return (
     <form
@@ -97,10 +99,11 @@ function AddForm({ t, first, onAdd }: { t: ReturnType<typeof useTranslations>; f
       onSubmit={async (e) => {
         e.preventDefault()
         setBusy(true)
-        if (await onAdd(name, password, first || admin)) {
+        if (await onAdd(name, password, first || admin, role)) {
           setName("")
           setPassword("")
           setAdmin(false)
+          setRole(DEFAULT_ROLE)
         }
         setBusy(false)
       }}
@@ -117,6 +120,7 @@ function AddForm({ t, first, onAdd }: { t: ReturnType<typeof useTranslations>; f
           {t("adminCheck")}
         </label>
       )}
+      {!first && !admin && <RolePick t={t} value={role} onChange={setRole} />}
       <button type="submit" disabled={busy} className={PRIMARY}>
         {first ? t("firstSubmit") : t("addSubmit")}
       </button>
@@ -124,14 +128,36 @@ function AddForm({ t, first, onAdd }: { t: ReturnType<typeof useTranslations>; f
   )
 }
 
-function MemberRow({ t, m, me, admin, onPatch }: { t: ReturnType<typeof useTranslations>; m: Member; me: boolean; admin: boolean; onPatch: (id: string, p: { password?: string; active?: boolean; admin?: boolean }, done: string) => Promise<boolean> }) {
+/** Phase 14: what a non-admin account reaches (lib/team/roles.ts), with what each role means. */
+function RolePick({ t, value, onChange, label }: { t: ReturnType<typeof useTranslations>; value: Role; onChange: (r: Role) => void; label?: string }) {
+  const id = useId()
+  return (
+    <div className="grid gap-1 sm:max-w-md">
+      <label htmlFor={id} className="text-xs text-zinc-400">
+        {label ?? t("role")}
+      </label>
+      <select id={id} value={value} onChange={(e) => onChange(e.target.value as Role)} aria-describedby={`${id}-h`} className="h-10 rounded-lg border border-white/10 bg-zinc-950 px-3 text-sm text-zinc-100">
+        {ROLES.map((r) => (
+          <option key={r} value={r}>
+            {t(`roles.${r}`)}
+          </option>
+        ))}
+      </select>
+      <span id={`${id}-h`} className="text-xs text-zinc-400">
+        {t(`roleHints.${value}`)}
+      </span>
+    </div>
+  )
+}
+
+function MemberRow({ t, m, me, admin, onPatch }: { t: ReturnType<typeof useTranslations>; m: Member; me: boolean; admin: boolean; onPatch: (id: string, p: { password?: string; active?: boolean; admin?: boolean; role?: Role }, done: string) => Promise<boolean> }) {
   const [pw, setPw] = useState<string | null>(null)
   return (
     <div className={`grid gap-3 rounded-xl border p-3 ${m.active ? "border-white/10" : "border-white/5 opacity-60"}`}>
       <p className="flex flex-wrap items-center gap-2 text-sm text-zinc-100">
         {m.name}
         {me && <span className="text-xs text-cyan-200">{t("you")}</span>}
-        {m.admin && <span className="rounded-full border border-violet-400/40 px-2 py-0.5 text-xs text-violet-200">{t("adminBadge")}</span>}
+        {m.admin ? <span className="rounded-full border border-violet-400/40 px-2 py-0.5 text-xs text-violet-200">{t("adminBadge")}</span> : <span className="rounded-full border border-white/15 px-2 py-0.5 text-xs text-zinc-300">{t(`roles.${m.role}`)}</span>}
         {!m.active && <span className="rounded-full border border-white/15 px-2 py-0.5 text-xs text-zinc-400">{t("inactive")}</span>}
       </p>
       {pw !== null ? (
@@ -164,6 +190,7 @@ function MemberRow({ t, m, me, admin, onPatch }: { t: ReturnType<typeof useTrans
               {m.active ? t("deactivate") : t("activate")}
             </button>
           )}
+          {admin && !me && m.active && !m.admin && <RolePick t={t} value={m.role} onChange={(r) => void onPatch(m.id, { role: r }, t("roleChanged", { name: m.name, role: t(`roles.${r}`) }))} label={t("roleOf", { name: m.name })} />}
           {admin && !me && m.active && (
             <button type="button" onClick={() => void onPatch(m.id, { admin: !m.admin }, m.admin ? t("adminRemoved", { name: m.name }) : t("adminGiven", { name: m.name }))} className={SMALL}>
               {m.admin ? t("removeAdmin") : t("makeAdmin")}

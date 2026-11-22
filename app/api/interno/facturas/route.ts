@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { getPool, hasDatabase } from "@/lib/db/client"
-import { editorOf, json, requireInterno } from "@/lib/internal-api"
+import { editorOf, json, requireArea, requireInterno } from "@/lib/internal-api"
 import { todayInMexico } from "@/lib/lead"
 import { DEFAULT_CFDI, monthsCovered, monthsLabel, type CfdiSettings } from "@/lib/wispdavor/cfdi"
 import { getCfdiSettings, loadClient, loadPayment, loadPayments, saveCfdiSettings } from "@/lib/wispdavor/db-server"
@@ -18,6 +18,8 @@ const text = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slic
 export async function GET(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "payments")
+  if (forbidden) return forbidden
   const configured = { facturama: facturamaConfigured(), sandbox: process.env.FACTURAMA_SANDBOX === "1" }
   if (!hasDatabase()) return json({ ok: true, configured, settings: DEFAULT_CFDI, cfdis: [] })
   try {
@@ -31,6 +33,8 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "payments")
+  if (forbidden) return forbidden
   if (!hasDatabase()) return json({ error: "no-database" }, 503)
   const b = (await request.json().catch(() => ({}))) as { settings?: Record<string, unknown> }
   const v = b.settings ?? {}
@@ -53,6 +57,8 @@ export async function PUT(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "payments")
+  if (forbidden) return forbidden
   if (!hasDatabase()) return json({ error: "no-database" }, 503)
   if (!facturamaConfigured()) return json({ error: "not-configured" }, 409)
   const b = (await request.json().catch(() => ({}))) as { action?: unknown; paymentId?: unknown; id?: unknown; email?: unknown; motive?: unknown }

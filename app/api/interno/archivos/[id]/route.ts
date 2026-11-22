@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
 import { readFile, removeFile } from "@/lib/contracts/storage"
-import { json, requireInterno } from "@/lib/internal-api"
+import { json, requireArea, requireInterno } from "@/lib/internal-api"
 import { INTERNAL_HEADERS } from "@/lib/internal-pages"
 
 const ID = /^[\w-]{6,64}$/
@@ -14,6 +14,8 @@ const ID = /^[\w-]{6,64}$/
 export async function GET(request: NextRequest, { params }: RouteContext<"/api/interno/archivos/[id]">) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "files")
+  if (forbidden) return forbidden
   if (!hasDatabase()) return json({ error: "no-database" }, 503)
   const { id } = await params
   if (!ID.test(id)) return json({ error: "not-found" }, 404)
@@ -39,6 +41,8 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/api/i
 export async function DELETE(request: NextRequest, { params }: RouteContext<"/api/interno/archivos/[id]">) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "files")
+  if (forbidden) return forbidden
   if (!hasDatabase()) return json({ error: "no-database" }, 503)
   const { id } = await params
   if (!ID.test(id)) return json({ error: "not-found" }, 404)

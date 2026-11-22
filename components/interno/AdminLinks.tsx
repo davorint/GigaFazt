@@ -21,6 +21,7 @@ const GROUPS = [
       ["/interno/admin/cuentas-por-cobrar", "cuentas-por-cobrar"],
       ["/interno/admin/legal", "legal"],
       ["/interno/admin/usuarios", "usuarios"],
+      ["/interno/admin/actividad", "actividad"],
       ["/interno/equipos-telecom", "equipos-telecom"],
       ["/interno/software", "software"],
       ["/interno/guias", "guias"],
@@ -44,6 +45,7 @@ export function AdminLinks({ current }: { current: Key }) {
             <li key={key}>
               <a
                 href={href}
+                data-nav
                 aria-current={key === current ? "page" : undefined}
                 className="block rounded-md px-2.5 py-1.5 text-zinc-300 underline-offset-4 hover:text-foreground hover:underline aria-[current=page]:bg-white/10 aria-[current=page]:text-foreground aria-[current=page]:no-underline"
               >

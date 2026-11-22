@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { getPool, hasDatabase } from "@/lib/db/client"
-import { json, requireInterno } from "@/lib/internal-api"
+import { json, requireArea, requireInterno } from "@/lib/internal-api"
 import { stopAutopay, stripeConfigured, webhookConfigured } from "@/lib/wispdavor/stripe-server"
 
 const ID = /^[\w-]{6,64}$/
@@ -12,6 +12,8 @@ const ID = /^[\w-]{6,64}$/
 export async function GET(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "payments")
+  if (forbidden) return forbidden
   const configured = { stripe: stripeConfigured(), webhook: webhookConfigured(), cron: Boolean(process.env.CRON_SECRET), testMode: (process.env.STRIPE_SECRET_KEY ?? "").startsWith("sk_test_") }
   if (!hasDatabase()) return json({ ok: true, configured, payments: [], autopay: [] })
   try {
@@ -27,6 +29,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "payments")
+  if (forbidden) return forbidden
   if (!hasDatabase()) return json({ error: "no-database" }, 503)
   const b = (await request.json().catch(() => ({}))) as { clientId?: unknown }
   const clientId = typeof b.clientId === "string" ? b.clientId : ""

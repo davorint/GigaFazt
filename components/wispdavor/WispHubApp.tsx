@@ -50,7 +50,7 @@ export function WispHubApp() {
         <ul className="grid gap-3 sm:grid-cols-2">
           {WISPDAVOR_PAGES.map((p) => (
             <li key={p}>
-              <a href={`/interno/software/wispdavor/${p}`} className="surface grid h-full gap-2 rounded-2xl p-5 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+              <a href={`/interno/software/wispdavor/${p}`} data-nav className="surface grid h-full gap-2 rounded-2xl p-5 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
                 <span className="text-lg font-medium text-foreground">{t(`modules.${p}.name`)}</span>
                 <span className="text-sm leading-relaxed text-zinc-300">{t(`modules.${p}.desc`)}</span>
               </a>

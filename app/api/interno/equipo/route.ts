@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server"
+import { decodeRole } from "@/lib/team/roles"
 import { AUTH_COOKIE, newSession, sessionCookie } from "@/lib/internal-auth"
 import { hasDatabase } from "@/lib/db/client"
 import { json, whoIs } from "@/lib/internal-api"
@@ -7,9 +8,9 @@ import { accountsOn, createMember, members, updateMember, type TeamError } from 
 /**
  * The team accounts (/interno/admin/usuarios, "Usuarios y accesos").
  * GET: the list (names, admin, active; never passwords).
- * POST { name, password, admin }: add someone (admins only; the very first account can be made by whoever is signed
+ * POST { name, password, admin, role }: add someone (admins only; the very first account can be made by whoever is signed
  * in with the shared password, and it is always an admin).
- * PATCH { id, password?, active?, admin? }: admins change anyone; everyone can change their own password.
+ * PATCH { id, password?, active?, admin?, role? }: admins change anyone; everyone can change their own password.
  */
 const fail = (e: TeamError) => json({ error: e }, e === "forbidden" ? 403 : e === "notFound" ? 404 : 422)
 
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
   if (!b) return json({ error: "bad-json" }, 400)
   const first = !(await accountsOn())
   if (!first && !w.member?.admin) return fail("forbidden")
-  const r = await createMember(String(b.name ?? ""), String(b.password ?? ""), first || b.admin === true)
+  const r = await createMember(String(b.name ?? ""), String(b.password ?? ""), first || b.admin === true, decodeRole(b.role))
   return typeof r === "string" ? fail(r) : json({ member: r })
 }
 
@@ -50,12 +51,13 @@ export async function PATCH(request: NextRequest) {
   const b = await body(request)
   if (!b || typeof b.id !== "string") return json({ error: "bad-json" }, 400)
   const self = w.member?.id === b.id
-  const changesMore = b.active !== undefined || b.admin !== undefined
+  const changesMore = b.active !== undefined || b.admin !== undefined || b.role !== undefined
   if (!w.member?.admin && (!self || changesMore)) return fail("forbidden")
   const r = await updateMember(b.id, {
     password: typeof b.password === "string" ? b.password : undefined,
     active: typeof b.active === "boolean" ? b.active : undefined,
     admin: typeof b.admin === "boolean" ? b.admin : undefined,
+    role: b.role !== undefined ? decodeRole(b.role) : undefined,
   })
   if (typeof r === "string") return fail(r)
   const res = json({ member: r })

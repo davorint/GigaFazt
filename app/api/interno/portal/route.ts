@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
-import { editorOf, json, requireInterno } from "@/lib/internal-api"
+import { editorOf, json, requireArea, requireInterno } from "@/lib/internal-api"
 import { createLink, listLinks, revokeLinks } from "@/lib/wispdavor/portal-server"
 
 const ID = /^[\w-]{6,64}$/
@@ -13,6 +13,8 @@ const fail = (e: unknown) => json({ error: "server", detail: e instanceof Error 
 export async function GET(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "portal")
+  if (forbidden) return forbidden
   if (!hasDatabase()) return json({ error: "no-database" }, 503)
   try {
     return json({ ok: true, links: await listLinks() })
@@ -24,6 +26,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "portal")
+  if (forbidden) return forbidden
   if (!hasDatabase()) return json({ error: "no-database" }, 503)
   const body = (await request.json().catch(() => ({}))) as { clientId?: unknown }
   const clientId = typeof body.clientId === "string" ? body.clientId : ""
@@ -39,6 +43,8 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
+  const forbidden = await requireArea(request, "portal")
+  if (forbidden) return forbidden
   if (!hasDatabase()) return json({ error: "no-database" }, 503)
   const clientId = request.nextUrl.searchParams.get("cliente") ?? ""
   if (!ID.test(clientId)) return json({ error: "bad-client" }, 400)

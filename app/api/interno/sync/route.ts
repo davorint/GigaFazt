@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
-import { editorOf, json, requireInterno } from "@/lib/internal-api"
+import { accessOf, editorOf, json, requireInterno } from "@/lib/internal-api"
+import { kindAllowed } from "@/lib/team/roles"
 import { MAX_BODY_BYTES, MAX_CHANGES, SYNC_KINDS, type Change, type SyncKind } from "@/lib/sync/protocol"
 import { sync } from "@/lib/sync/server"
 
@@ -24,6 +25,9 @@ export async function POST(request: NextRequest) {
   }
   const b = body as { kind?: unknown; since?: unknown; changes?: unknown }
   if (!SYNC_KINDS.includes(b.kind as SyncKind)) return json({ error: "bad-kind" }, 400)
+  // Phase 14: a role only syncs its kinds of records (the phone skips the others quietly).
+  const access = await accessOf(request)
+  if (access && !kindAllowed(access, b.kind as SyncKind)) return json({ error: "forbidden-kind" }, 403)
   const since = typeof b.since === "number" && Number.isFinite(b.since) && b.since >= 0 ? Math.floor(b.since) : 0
   if (!Array.isArray(b.changes) || b.changes.length > MAX_CHANGES) return json({ error: "bad-changes" }, 400)
   const changes: Change[] = []

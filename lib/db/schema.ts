@@ -377,6 +377,8 @@ export const teamMembers = pgTable("team_members", {
   name: text("name").notNull().unique(),
   passHash: text("pass_hash").notNull(),
   admin: boolean("admin").notNull().default(false),
+  /** Phase 14: what the account reaches when it isn't an admin (lib/team/roles.ts): oficina, tecnico or cobranza. */
+  role: text("role").notNull().default("oficina"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

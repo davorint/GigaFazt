@@ -8,6 +8,7 @@
  * the sessions signed in before a password change (a reset ends a lost phone's session; owner review 2026-11-20).
  */
 import "server-only"
+import { DEFAULT_ROLE, decodeRole, type Role } from "./roles"
 import { pbkdf2 } from "../internal-auth"
 import { getPool, hasDatabase } from "../db/client"
 
@@ -19,6 +20,8 @@ export type Member = {
   id: string
   name: string
   admin: boolean
+  /** Phase 14 (lib/team/roles.ts); admins reach everything whatever their role. */
+  role: Role
   active: boolean
   createdAt: string
   /** When the password last changed ("" = not since the account was made). */
@@ -48,16 +51,17 @@ export async function verifyPassword(password: string, stored: string): Promise<
 /** A name as stored: trimmed, single spaces, at most 40 characters. */
 export const cleanName = (s: string) => s.replace(/\s+/g, " ").trim().slice(0, 40)
 
-type Row = { id: string; name: string; pass_hash: string; admin: boolean; active: boolean; created_at: Date; password_changed_at: Date | null }
+type Row = { id: string; name: string; pass_hash: string; admin: boolean; role: string; active: boolean; created_at: Date; password_changed_at: Date | null }
 const toMember = (r: Row): Member => ({
   id: r.id,
   name: r.name,
   admin: r.admin,
+  role: decodeRole(r.role),
   active: r.active,
   createdAt: r.created_at.toISOString(),
   passwordChangedAt: r.password_changed_at ? r.password_changed_at.toISOString() : "",
 })
-const COLS = "id, name, pass_hash, admin, active, created_at, password_changed_at"
+const COLS = "id, name, pass_hash, admin, role, active, created_at, password_changed_at"
 
 /** Seconds of clock difference between this server and the database allowed when comparing the two times. */
 const SKEW_MS = 5_000
@@ -95,12 +99,12 @@ export async function signIn(name: string, password: string): Promise<Member | n
 
 export type TeamError = "name" | "password" | "taken" | "lastAdmin" | "notFound" | "forbidden"
 
-export async function createMember(name: string, password: string, admin: boolean): Promise<Member | TeamError> {
+export async function createMember(name: string, password: string, admin: boolean, role: Role = DEFAULT_ROLE): Promise<Member | TeamError> {
   const n = cleanName(name)
   if (n.length < 2) return "name"
   if (password.length < MIN_PASSWORD) return "password"
   try {
-    const r = (await getPool().query(`insert into team_members (name, pass_hash, admin) values ($1, $2, $3) returning ${COLS}`, [n, await hashPassword(password), admin])).rows[0] as Row
+    const r = (await getPool().query(`insert into team_members (name, pass_hash, admin, role) values ($1, $2, $3, $4) returning ${COLS}`, [n, await hashPassword(password), admin, decodeRole(role)])).rows[0] as Row
     forget()
     return toMember(r)
   } catch (e) {
@@ -110,7 +114,7 @@ export async function createMember(name: string, password: string, admin: boolea
 }
 
 /** Changes an account; never leaves the team without an active admin. */
-export async function updateMember(id: string, p: { password?: string; active?: boolean; admin?: boolean }): Promise<Member | TeamError> {
+export async function updateMember(id: string, p: { password?: string; active?: boolean; admin?: boolean; role?: Role }): Promise<Member | TeamError> {
   const all = await members(true)
   const m = all.find((x) => x.id === id)
   if (!m) return "notFound"
@@ -128,6 +132,7 @@ export async function updateMember(id: string, p: { password?: string; active?: 
   if (p.password !== undefined) set("password_changed_at", new Date())
   if (p.active !== undefined) set("active", p.active)
   if (p.admin !== undefined) set("admin", p.admin)
+  if (p.role !== undefined) set("role", decodeRole(p.role))
   if (!sets.length) return m
   const r = (await getPool().query(`update team_members set ${sets.join(", ")}, updated_at = now() where id = $1 returning ${COLS}`, vals)).rows[0] as Row
   forget()

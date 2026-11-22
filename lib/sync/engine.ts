@@ -199,6 +199,8 @@ async function syncKind(kind: SyncKind, name: string): Promise<void> {
     })
     if (res.status === 503) throw Object.assign(new Error("no-database"), { code: "no-database" })
     if (res.status === 401) throw Object.assign(new Error("unauthorized"), { code: "unauthorized" })
+    // Phase 14: this person's role doesn't reach this kind of record: nothing to sync, not an error.
+    if (res.status === 403) return
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const body = (await res.json()) as SyncResponse
 

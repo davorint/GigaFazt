@@ -1,6 +1,8 @@
 {
   "equipo": {
-    "meta": { "title": "Usuarios y accesos · GigaFazt interno" },
+    "meta": {
+      "title": "Usuarios y accesos · GigaFazt interno"
+    },
     "kicker": "Interno · Administración",
     "title": "Usuarios y accesos",
     "lead": "Cada persona entra con su nombre y su contraseña, y su nombre queda en cada cambio. Quien administra agrega personas, cambia contraseñas y da de baja. Si alguien se va, dale de baja: deja de ver los datos en menos de un minuto.",
@@ -50,6 +52,70 @@
       "no-database": "La base de datos no está disponible.",
       "signin": "Tu sesión ya no es válida: entra de nuevo.",
       "server": "No se pudo guardar. Intenta de nuevo."
+    },
+    "role": "Rol",
+    "roleOf": "Rol de {name}",
+    "roles": {
+      "oficina": "Oficina",
+      "tecnico": "Técnico",
+      "cobranza": "Cobranza"
+    },
+    "roleHints": {
+      "oficina": "Todo, menos administrar cuentas y ver la actividad.",
+      "tecnico": "Trabajo de campo: Agenda, Técnico, clientes, reportes, despliegues, materiales, herramientas, equipos de telecom y la red. Sin pagos, cuentas, contratos ni WhatsApp.",
+      "cobranza": "Cobranza: clientes, pagos, cuentas por cobrar, reportes, Agenda, Alta y las páginas de cobro de WispDavor. Sin inventario, cuentas por pagar, contratos ni control de la red."
+    },
+    "roleChanged": "{name} ahora es {role}.",
+    "activity": {
+      "meta": "Actividad · Uso interno",
+      "kicker": "Uso interno · Administración",
+      "title": "Actividad",
+      "lead": "Quién cambió qué y cuándo: cada alta, cambio y borrado de los registros que se sincronizan, las acciones en los routers y los mensajes de WhatsApp. Solo administradores.",
+      "period": "Periodo",
+      "days": "{n, plural, one {Último día} other {Últimos # días}}",
+      "who": "Persona",
+      "everyone": "Todos",
+      "kind": "Qué",
+      "all": "Todo",
+      "none": "Sin actividad en ese periodo.",
+      "more": "Se muestran los 400 más recientes: acota por persona o por tipo para ver los demás.",
+      "offline": "Sin conexión con el sitio.",
+      "forbidden": "Solo un administrador puede ver la actividad.",
+      "cols": {
+        "when": "Cuándo",
+        "who": "Quién",
+        "what": "Qué hizo",
+        "record": "Registro"
+      },
+      "what": {
+        "new": "creó",
+        "edit": "cambió",
+        "delete": "borró",
+        "conflict": "cambió (en conflicto)",
+        "action": "acción",
+        "send": "mandó"
+      },
+      "kinds": {
+        "surveys": "levantamiento",
+        "materials": "material",
+        "providers": "proveedor",
+        "clients": "cliente",
+        "sites": "despliegue",
+        "tools": "herramienta",
+        "stock": "movimiento de inventario",
+        "units": "equipo con serie",
+        "reports": "reporte",
+        "payments": "pago",
+        "notes": "nota",
+        "rolls": "bobina",
+        "toolbuys": "compra de herramienta",
+        "agenda": "cita",
+        "porpagar": "cuenta por pagar",
+        "porcobrar": "cuenta por cobrar",
+        "contratos": "contrato",
+        "router": "router",
+        "whatsapp": "WhatsApp"
+      }
     }
   }
 }
