@@ -170,7 +170,8 @@
         "reconexion": "Servicio reconectado",
         "mantenimiento": "Mantenimiento",
         "pagoRecibido": "Pago recibido",
-        "cobroFallido": "Cobro con tarjeta rechazado"
+        "cobroFallido": "Cobro con tarjeta rechazado",
+        "reporte": "Tu reporte cambió (automático)"
       },
       "audience": "A quién",
       "audiences": {
@@ -801,6 +802,21 @@
       },
       "drop": "−{db} dB",
       "noName": "Sin nombre"
+    },
+    "autoNotices": {
+      "title": "Avisos automáticos",
+      "lead": "Se mandan solos por WhatsApp (API), una sola vez por cliente: nunca a quien paga con cobro automático de tarjeta. Apagados hasta que un administrador los encienda; antes, Meta debe aprobar las plantillas (lista abajo).",
+      "noKeys": "Faltan las llaves de WhatsApp en el servidor: aunque los enciendas, no sale nada hasta que estén.",
+      "adminOnly": "Solo un administrador puede cambiarlos.",
+      "reminders": "Recordatorios de pago",
+      "reminderDay": "Recordatorio el",
+      "noticeDay": "Aviso de corte el",
+      "day": "día {d}",
+      "remindersHint": "El recordatorio va a quien todavía debe; el aviso de corte, a quien sigue atrasado y no tiene promesa de pago vigente. Ambos dicen que el último día para pagar es el {by}.",
+      "reportUpdates": "Avisar al cliente cuando su reporte cambia",
+      "reportHint": "Cuando un reporte con cliente pasa a «visita» o «resuelto» (plantilla gigafazt_reporte_actualizado).",
+      "saved": "Guardado.",
+      "offline": "Sin conexión con el sitio."
     }
   }
 }

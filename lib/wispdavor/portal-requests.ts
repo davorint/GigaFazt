@@ -2,6 +2,7 @@
  * Requests a client sends from their portal (owner, 2026-11-21: "Request a plan change"): saved as a report in Reportes
  * (category "otro", the client already matched) so the team sees it where it sees the rest, and the team is alerted.
  * Nothing changes by itself: the team applies the new plan from the next month (Cobranza dates prices that way).
+ * Phase 9 (2026-11-22): faults reported from the portal too, with an optional photo (stored like Técnico's photos).
  */
 import "server-only"
 import type { Client } from "../clients/model"
@@ -9,7 +10,10 @@ import { getPool } from "../db/client"
 import { speedLabel } from "../format"
 import { getPlan } from "../plans"
 import { sendText } from "../reports/notify"
-import { newReport, reportCode } from "../reports/model"
+import { newReport, reportCode, type Report, type ReportCategory } from "../reports/model"
+import { saveFieldFile } from "../field/storage"
+import { newId } from "../survey/id"
+import { DUP_HOURS, MAX_DESCRIPTION, PORTAL_CATEGORIES, portalPriority } from "./selfservice"
 import { mxn } from "../materials/catalog"
 
 const PREFIX = "Solicitud de cambio de plan desde el portal"
@@ -44,7 +48,15 @@ export async function requestPlanChange(c: Client, planId: string): Promise<Plan
     siteId: c.siteId,
     by: "Portal del cliente",
   })
-  const db = await pool.connect()
+  await insertReport(r)
+  const code = reportCode(r)
+  await sendText("plan", `🔁 ${c.name || c.id} pide cambiar de plan: ${current || "sin plan"} → ${label} · ${code} (Reportes)`).catch(() => undefined)
+  return { kind: "saved", code }
+}
+
+/** A report and its first version, in one transaction. */
+async function insertReport(r: Report) {
+  const db = await getPool().connect()
   try {
     await db.query("begin")
     await db.query(`insert into reports (id, data, version, updated_by, status, category, client_id, source) values ($1, $2, 1, $3, $4, $5, $6, $7)`, [r.id, r, r.by, r.status, r.category, r.clientId, r.source])
@@ -56,7 +68,48 @@ export async function requestPlanChange(c: Client, planId: string): Promise<Plan
   } finally {
     db.release()
   }
+}
+
+const FAULT_BY = "Portal del cliente"
+
+export type FaultReport = { kind: "saved" | "duplicate"; code: string } | { kind: "bad-category" } | { kind: "empty" }
+
+/**
+ * A fault the client reports from their portal: a report in Reportes already matched to them (their name, WhatsApp,
+ * apartment and deployment), with the photo if they sent one; the team is alerted. A second report within DUP_HOURS
+ * while the first is still open answers the first's code (no duplicates from repeated taps).
+ */
+export async function reportFault(c: Client, input: { category: string; description: string; photo?: { bytes: Buffer; mime: string; name: string } }): Promise<FaultReport> {
+  const category = PORTAL_CATEGORIES.find((x) => x === input.category) as ReportCategory | undefined
+  if (!category) return { kind: "bad-category" }
+  const description = input.description.replace(/\s+/g, " ").trim().slice(0, MAX_DESCRIPTION)
+  if (!description && category === "otro") return { kind: "empty" }
+  const pool = getPool()
+  const dup = (await pool.query(
+    `select id from reports where deleted_at is null and client_id = $1 and source = 'web' and status not in ('resuelto', 'descartado')
+       and data->>'by' = $2 and created_at > now() - make_interval(hours => $3) order by created_at desc limit 1`,
+    [c.id, FAULT_BY, DUP_HOURS]
+  )).rows[0] as { id: string } | undefined
+  if (dup) return { kind: "duplicate", code: reportCode(dup) }
+  const r = newReport({
+    source: "web",
+    name: c.name,
+    phone: c.whatsapp || c.phone,
+    address: [c.building, c.tower, c.apartment].filter(Boolean).join(" · "),
+    category,
+    priority: portalPriority(category),
+    description,
+    clientId: c.id,
+    siteId: c.siteId,
+    by: FAULT_BY,
+  })
+  if (input.photo) {
+    const id = newId()
+    await saveFieldFile({ id, ref: { kind: "reporte", id: r.id }, kind: "foto", name: input.photo.name, mime: input.photo.mime, bytes: input.photo.bytes, by: FAULT_BY })
+    r.field = { ...r.field, files: [{ id, kind: "foto", name: input.photo.name }] }
+  }
+  await insertReport(r)
   const code = reportCode(r)
-  await sendText("plan", `🔁 ${c.name || c.id} pide cambiar de plan: ${current || "sin plan"} → ${label} · ${code} (Reportes)`).catch(() => undefined)
+  await sendText("reporte", `🛠️ ${c.name || c.id} reportó desde su portal: ${category}${description ? ` · ${description.slice(0, 140)}` : ""}${input.photo ? " · con foto" : ""} · ${code} (Reportes)`).catch(() => undefined)
   return { kind: "saved", code }
 }

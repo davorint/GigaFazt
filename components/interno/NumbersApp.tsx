@@ -1,6 +1,9 @@
 "use client"
 
-import { useSyncExternalStore } from "react"
+import { useState, useSyncExternalStore } from "react"
+import { LineChart, SERIES_COLORS } from "@/components/wispdavor/LineChart"
+import { forecast } from "@/lib/interno/outlook"
+import { readState } from "@/lib/sync/state"
 import { useTranslations } from "next-intl"
 import { clientsServerSnapshot, clientsSnapshot, subscribeClients } from "@/lib/clients/store"
 import { paymentsStore } from "@/lib/payments/store"
@@ -107,6 +110,8 @@ export function NumbersApp() {
           <Tile label={t("dash.atRisk")} value={String(atRisk.length)} hint={t("dash.atRiskHint")} tone={atRisk.length ? "text-amber-200" : ""} />
         </div>
       </section>
+
+      <Outlook rows={rows} clients={clients.list} />
 
       <section aria-label={t("monthly")} className="grid gap-2">
         <h2 className="text-base font-medium text-foreground">{t("monthly")}</h2>
@@ -227,5 +232,81 @@ export function NumbersApp() {
         )}
       </section>
     </div>
+  )
+}
+
+/**
+ * Phase 10: the next months' billing (an estimate: current clients at their dated prices, and the same with the average
+ * churn of the last 3 months), three 12-month trends and the weekly summary on demand.
+ */
+function Outlook({ rows, clients }: { rows: ReturnType<typeof monthNumbers>; clients: Parameters<typeof forecast>[0] }) {
+  const t = useTranslations("numeros.outlook")
+  const [msg, setMsg] = useState("")
+  const f = forecast(clients, rows, rows[rows.length - 1].month)
+  const times = rows.map((r) => `${r.month}-15T12:00:00`)
+  const when = (x: string) => monthName(x.slice(0, 7))
+  const churn = rows.map((_, i) => {
+    const c = churnRate(rows, i)
+    return c === null ? null : Math.round(c * 1000) / 10
+  })
+  const send = async () => {
+    setMsg(t("sending"))
+    try {
+      const r = await fetch("/api/interno/semanal", { method: "POST", headers: { "x-interno-nombre": encodeURIComponent(readState().name) } })
+      const b = (await r.json()) as { sent?: boolean; reason?: string }
+      setMsg(b.sent ? t("sent") : t(b.reason === "no-channel" ? "noChannel" : "failed"))
+    } catch {
+      setMsg(t("failed"))
+    }
+  }
+  return (
+    <section aria-label={t("title")} className="grid gap-3">
+      <h2 className="text-base font-medium text-foreground">{t("title")}</h2>
+      <p className="text-xs text-zinc-400">
+        <span className="mr-2 rounded border border-amber-300/40 px-1.5 py-0.5 font-mono text-[0.65rem] tracking-wide text-amber-200">{t("tag")}</span>
+        {t("hint", { churn: pct(f.churn) })}
+      </p>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {f.rows.map((r) => (
+          <Tile key={r.month} label={monthName(r.month)} value={mxn(r.withChurn)} hint={t("scheduled", { amount: mxn(r.scheduled) })} />
+        ))}
+      </div>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-1">
+          <h3 className="text-sm text-zinc-200">{t("charts.clients")}</h3>
+          <LineChart times={times} when={when} series={[{ label: t("charts.clients"), color: SERIES_COLORS[0], values: rows.map((r) => r.activeClients) }]} label={t("charts.clients")} unit="" fmt={(n) => String(Math.round(n))} />
+        </div>
+        <div className="grid gap-1">
+          <h3 className="text-sm text-zinc-200">{t("charts.money")}</h3>
+          <LineChart
+            times={times}
+            when={when}
+            series={[
+              { label: t("charts.expected"), color: SERIES_COLORS[0], values: rows.map((r) => r.expected) },
+              { label: t("charts.collected"), color: SERIES_COLORS[1], values: rows.map((r) => r.collected) },
+            ]}
+            label={t("charts.money")}
+            unit="MXN"
+            fmt={mxn}
+          />
+        </div>
+        <div className="grid gap-1">
+          <h3 className="text-sm text-zinc-200">{t("charts.churn")}</h3>
+          <LineChart times={times} when={when} series={[{ label: t("charts.churn"), color: SERIES_COLORS[2], values: churn }]} label={t("charts.churn")} unit="%" fmt={(n) => `${n.toLocaleString("es-MX", { maximumFractionDigits: 1 })} %`} />
+        </div>
+      </div>
+      <p className="text-xs text-zinc-400">{t("tableNote")}</p>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" onClick={() => void send()} className="inline-flex min-h-10 items-center rounded-full border border-white/15 px-4 text-sm text-zinc-100 hover:bg-white/5">
+          {t("weekly")}
+        </button>
+        {msg && (
+          <p role="status" className="text-xs text-zinc-200">
+            {msg}
+          </p>
+        )}
+      </div>
+      <p className="text-xs text-zinc-400">{t("weeklyHint")}</p>
+    </section>
   )
 }

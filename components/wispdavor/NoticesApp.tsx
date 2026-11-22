@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
+import { AutoNoticesPanel } from "./AutoNoticesPanel"
 import { TextField } from "@/components/mikrotik/TextField"
 import { DateField, PickField } from "@/components/surveys/SurveyFields"
 import { PRIMARY, SMALL } from "@/components/finance/FinParts"
@@ -139,6 +140,7 @@ export function NoticesApp() {
     <div className="mt-6 grid gap-8">
       <p className="text-sm text-zinc-300">{t("lead")}</p>
       {api !== null && <p className={`text-xs ${api ? "text-emerald-300" : "text-amber-200"}`}>{api ? t("apiOn") : t("apiOff")}</p>}
+      <AutoNoticesPanel configured={api} />
       <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <PickField label={t("template")} value={template} onChange={setTemplate} options={MANUAL_TEMPLATES.map((x) => ({ value: x, label: t(`templates.${x}`) }))} />
         <PickField

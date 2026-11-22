@@ -1,5 +1,6 @@
 "use client"
 
+import { shrink } from "@/lib/field/shrink"
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import { MoveForm } from "@/components/materials/MoveForm"
@@ -11,7 +12,7 @@ import { agendaStore } from "@/lib/agenda/store"
 import { clientsServerSnapshot, clientsSnapshot, subscribeClients } from "@/lib/clients/store"
 import { localToday } from "@/lib/clients/from-lead"
 import { whatsappHref } from "@/lib/contact"
-import { MAX_FIELD_BYTES, MAX_FIELD_FILES, type FieldFile, type FieldWork, type JobRef } from "@/lib/field/model"
+import { MAX_FIELD_FILES, type FieldFile, type FieldWork, type JobRef } from "@/lib/field/model"
 import { catalogServerSnapshot, catalogSnapshot, subscribeCatalog } from "@/lib/materials/store"
 import { reportCode, type Report } from "@/lib/reports/model"
 import { reportsStore } from "@/lib/reports/store"
@@ -21,7 +22,6 @@ import { drop, enqueue, pending, type Pending } from "@/lib/field/outbox"
 
 const BTN = "inline-flex min-h-11 w-fit items-center rounded-full border border-white/15 px-4 text-sm text-zinc-100 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-40"
 const PRIMARY = "inline-flex min-h-11 w-fit items-center rounded-full bg-white px-5 text-sm font-medium text-black hover:bg-zinc-200 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-40"
-const MAX_SIDE = 2000
 
 type Job =
   | { kind: "agenda"; ref: JobRef; time: string; who: string; done: boolean; rec: Appointment }
@@ -30,24 +30,6 @@ type Job =
 const fold = (s: string) => s.trim().toLocaleLowerCase("es")
 const hhmm = (iso: string) => (iso ? new Date(iso).toLocaleTimeString("es-MX", { timeZone: "America/Mexico_City", hour: "2-digit", minute: "2-digit" }) : "")
 
-/** A photo redrawn smaller as JPEG on the phone (field photos don't need full resolution; the host takes 4.5 MB). */
-async function shrink(file: File): Promise<Blob> {
-  try {
-    const img = await createImageBitmap(file)
-    const scale = Math.min(1, MAX_SIDE / Math.max(img.width, img.height))
-    const canvas = document.createElement("canvas")
-    canvas.width = Math.round(img.width * scale)
-    canvas.height = Math.round(img.height * scale)
-    canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height)
-    for (const q of [0.8, 0.65, 0.5]) {
-      const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", q))
-      if (blob && blob.size <= MAX_FIELD_BYTES) return blob
-    }
-  } catch {
-    // The browser can't read it: send it as it is (the server checks type and size).
-  }
-  return file
-}
 
 /** Saved; "retry" (no signal, or the server failed: it waits in the phone's outbox); "bad" (refused: type or size). */
 type Upload = { file: FieldFile } | "retry" | "bad"

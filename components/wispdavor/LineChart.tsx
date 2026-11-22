@@ -14,7 +14,7 @@ export type Series = { label: string; color: string; values: (number | null)[] }
  * Thin lines over time on one axis (gaps where a value is missing), a crosshair tooltip on hover, and a legend when
  * there's more than one series (one series: the title names it). The page puts a table next to it.
  */
-export function LineChart({ times, series, label, unit, fmt }: { times: string[]; series: Series[]; label: string; unit: string; fmt: (n: number) => string }) {
+export function LineChart({ times, series, label, unit, fmt, when: whenProp }: { times: string[]; series: Series[]; label: string; unit: string; fmt: (n: number) => string; when?: (t: string) => string }) {
   const id = useId()
   const ref = useRef<SVGSVGElement>(null)
   const [hover, setHover] = useState<number | null>(null)
@@ -36,7 +36,7 @@ export function LineChart({ times, series, label, unit, fmt }: { times: string[]
     })
     return d
   }
-  const when = (t: string) => new Date(t).toLocaleString("es-MX", { timeZone: "America/Mexico_City", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+  const when = whenProp ?? ((t: string) => new Date(t).toLocaleString("es-MX", { timeZone: "America/Mexico_City", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }))
   const pick = (clientX: number) => {
     const box = ref.current?.getBoundingClientRect()
     if (!box || n === 0) return

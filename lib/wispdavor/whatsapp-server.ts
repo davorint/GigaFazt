@@ -14,7 +14,8 @@ export const whatsappConfigured = () => Boolean(process.env.WHATSAPP_TOKEN?.trim
 
 export type SendResult = { ok: true; messageId: string } | { ok: false; error: string }
 
-export async function sendTemplate(to: string, id: TemplateId, values: string[], log: { clientId: string; by: string }): Promise<SendResult> {
+/** `log.ref`: what the send was about (an automatic one's key, so it goes only once: "rec-2026-11", "rep-<id>-resuelto"). */
+export async function sendTemplate(to: string, id: TemplateId, values: string[], log: { clientId: string; by: string; ref?: string }): Promise<SendResult> {
   const t = TEMPLATES[id]
   const body = {
     messaging_product: "whatsapp",
@@ -39,7 +40,7 @@ export async function sendTemplate(to: string, id: TemplateId, values: string[],
   } catch (e) {
     result = { ok: false, error: e instanceof Error ? e.message.slice(0, 300) : "error" }
   }
-  await getPool().query(`insert into whatsapp_sends (client_id, template, phone, status, message_id, error, sent_by) values ($1, $2, $3, $4, $5, $6, $7)`, [
+  await getPool().query(`insert into whatsapp_sends (client_id, template, phone, status, message_id, error, sent_by, ref) values ($1, $2, $3, $4, $5, $6, $7, $8)`, [
     log.clientId,
     t.name,
     to,
@@ -47,6 +48,7 @@ export async function sendTemplate(to: string, id: TemplateId, values: string[],
     result.ok ? result.messageId : "",
     result.ok ? "" : result.error,
     log.by,
+    log.ref ?? "",
   ])
   return result
 }

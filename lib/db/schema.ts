@@ -493,8 +493,10 @@ export const whatsappSends = pgTable(
     error: text("error").notNull().default(""),
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
     sentBy: text("sent_by").notNull().default(""),
+    /** Phase 9: an automatic send's key ("rec-2026-11", "rep-<report id>-resuelto"), so it goes once; "" = by hand. */
+    ref: text("ref").notNull().default(""),
   },
-  (t) => [index("whatsapp_sends_client_idx").on(t.clientId), index("whatsapp_sends_sent_idx").on(t.sentAt)]
+  (t) => [index("whatsapp_sends_client_idx").on(t.clientId), index("whatsapp_sends_sent_idx").on(t.sentAt), index("whatsapp_sends_ref_idx").on(t.clientId, t.ref)]
 )
 
 /** WispDavor settings that aren't secrets (CFDI defaults…), one row per key; keys and secrets stay in the host's env. */

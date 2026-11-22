@@ -2,13 +2,17 @@ import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
 import { cronAuthorized, json } from "@/lib/internal-api"
 import { trafficRetention } from "@/lib/wispdavor/routers-server"
+import { runReminders } from "@/lib/wispdavor/selfservice-server"
+import { runWeekly } from "@/lib/interno/weekly-server"
+import { todayInMexico } from "@/lib/lead"
 import { runAutopay, stripeConfigured } from "@/lib/wispdavor/stripe-server"
 
 /**
  * GET /api/interno/wispdavor-diario: WispDavor's daily run (vercel.json cron, 15:00 UTC = 9:00 in Mexico City; one
  * cron for all of WispDavor), allowed with `Authorization: Bearer <CRON_SECRET>`: card auto-pay (charges only on days 1,
  * 5 and 9, when Stripe is set up), then traffic retention (5-minute → hourly after 7 days, hourly kept 90 days) and old
- * router actions removed. Each part runs even if the other fails.
+ * router actions removed, then the automatic payment reminders (phase 9) and, on Mondays, the weekly summary (phase 10).
+ * Each part runs even if another fails.
  */
 export async function GET(request: NextRequest) {
   if (!cronAuthorized(request)) return json({ error: "unauthorized" }, 401)
@@ -22,5 +26,9 @@ export async function GET(request: NextRequest) {
   }
   const autopay = stripeConfigured() ? await part(() => runAutopay()) : { ok: false, detail: "sin Stripe" }
   const retention = await part(() => trafficRetention())
-  return json({ ok: true, autopay, retention })
+  // Phase 9: payment reminders (only when an admin turned them on in Avisos).
+  const reminders = await part(() => runReminders(todayInMexico()))
+  // Phase 10: the Monday summary to the team's chat.
+  const weekly = await part(() => runWeekly(todayInMexico()))
+  return json({ ok: true, autopay, retention, reminders, weekly })
 }

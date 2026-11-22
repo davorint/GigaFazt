@@ -248,7 +248,10 @@ function editTime(iso: string): Date {
   return Number.isFinite(t) ? new Date(Math.min(t, now)) : new Date(now)
 }
 
-async function applyOne(c: PoolClient, kind: SyncKind, ch: Change, editor: string): Promise<Outcome> {
+/** Phase 9: a report whose status changed (the client may hear about it after the commit). */
+type ReportChange = { id: string; clientId: string; status: string }
+
+async function applyOne(c: PoolClient, kind: SyncKind, ch: Change, editor: string, changed: ReportChange[] = []): Promise<Outcome> {
   const spec = SPECS[kind]
   if (!ID.test(ch.id)) return { id: ch.id, outcome: "rejected", reason: "bad-id" }
   const read = ch.deleted ? null : spec.read(ch.id, ch.data)
@@ -301,6 +304,11 @@ async function applyOne(c: PoolClient, kind: SyncKind, ch: Change, editor: strin
     await c.query(`update "${spec.table}" set deleted_at = now(), version = $2, rev = nextval('sync_rev'), updated_at = $3, updated_by = $4 where id = $1`, [ch.id, version, at, editor])
     await c.query(`insert into "${spec.versions}" (${spec.fk}, version, data, saved_by) values ($1, $2, $3, $4)`, [ch.id, version, cur.data, `${editor} (borrado)`])
   } else if (read) {
+    if (kind === "reports") {
+      const was = (cur.data as { status?: unknown } | null)?.status
+      const now = read.data as { status: string; clientId: string }
+      if (was !== now.status) changed.push({ id: ch.id, clientId: now.clientId, status: now.status })
+    }
     const cols = Object.keys(read.cols)
     await c.query(
       `update "${spec.table}" set data = $2, version = $3, rev = nextval('sync_rev'), updated_at = $4, updated_by = $5, deleted_at = null${cols.map((k, i) => `, ${k} = $${i + 6}`).join("")} where id = $1`,
@@ -315,13 +323,16 @@ async function applyOne(c: PoolClient, kind: SyncKind, ch: Change, editor: strin
 export async function sync(kind: SyncKind, since: number, changes: Change[], editor: string): Promise<SyncResponse> {
   const pool = getPool()
   const results: Outcome[] = []
+  const reportChanges: ReportChange[] = []
   const c = await pool.connect()
   try {
     for (const ch of changes) {
+      const mine: ReportChange[] = []
       try {
         await c.query("begin")
-        results.push(await applyOne(c, kind, ch, editor))
+        results.push(await applyOne(c, kind, ch, editor, mine))
         await c.query("commit")
+        reportChanges.push(...mine)
       } catch (e) {
         await c.query("rollback").catch(() => {})
         results.push({ id: ch.id, outcome: "rejected", reason: e instanceof Error ? e.message.slice(0, 120) : "error" })
@@ -329,6 +340,11 @@ export async function sync(kind: SyncKind, since: number, changes: Change[], edi
     }
   } finally {
     c.release()
+  }
+  // Phase 9: WhatsApp report updates (only if turned on; never fails the save).
+  if (reportChanges.length) {
+    const { notifyReportChanges } = await import("../wispdavor/selfservice-server")
+    await notifyReportChanges(reportChanges).catch(() => 0)
   }
   const spec = SPECS[kind]
   const rows = (

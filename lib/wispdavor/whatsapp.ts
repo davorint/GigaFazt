@@ -8,9 +8,9 @@
  * one-tap wa.me link instead (lib/wispdavor/whatsapp-server.ts sends through the API).
  */
 
-export const TEMPLATE_IDS = ["recordatorio", "corte", "reconexion", "mantenimiento", "pagoRecibido", "cobroFallido"] as const
+export const TEMPLATE_IDS = ["recordatorio", "corte", "reconexion", "mantenimiento", "pagoRecibido", "cobroFallido", "reporte"] as const
 export type TemplateId = (typeof TEMPLATE_IDS)[number]
-/** The ones staff send from Avisos; the others go by themselves (payments). */
+/** The ones staff send from Avisos; the others go by themselves (payments, report updates). */
 export const MANUAL_TEMPLATES = ["recordatorio", "corte", "reconexion", "mantenimiento"] as const satisfies readonly TemplateId[]
 
 export type Template = {
@@ -55,6 +55,12 @@ export const TEMPLATES: Record<TemplateId, Template> = {
     name: "gigafazt_cobro_fallido",
     params: ["nombre", "monto", "enlace"],
     body: "Hola {{1}}, no pudimos cobrar {{2}} a tu tarjeta. Actualízala o paga de otra forma aquí: {{3}}",
+  },
+  // Phase 9 (self-service): sent by itself when a client's report goes to "visita" or "resuelto".
+  reporte: {
+    name: "gigafazt_reporte_actualizado",
+    params: ["nombre", "codigo", "estado", "enlace"],
+    body: "Hola {{1}}, tu reporte {{2}} de GigaFazt ahora está: {{3}}. Consulta los detalles aquí: {{4}}",
   },
 }
 

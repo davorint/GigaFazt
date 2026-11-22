@@ -18,10 +18,10 @@ export function RedApp() {
   const t = useTranslations("wispdavor.red")
   const d = useWispData()
   const [site, setSite] = useState("")
-  const today = localToday()
   const onts = useMemo(() => (d.loaded ? ontsOf(d.clients).filter((o) => !site || o.siteId === site) : []), [d.loaded, d.clients, site])
   const ports = useMemo(() => byPort(onts), [onts])
-  const issues = useMemo(() => issuesOf(onts, today), [onts, today])
+  // Today only once the data is in (not while the page is prerendered).
+  const issues = useMemo(() => (d.loaded ? issuesOf(onts, localToday()) : []), [d.loaded, onts])
   const sum = summary(onts, issues)
   const siteName = useMemo(() => new Map(d.sites.map((s) => [s.id, s.name])), [d.sites])
   if (!d.loaded) return null

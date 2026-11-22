@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
-import { editorOf, json, requireInterno } from "@/lib/internal-api"
+import { canChangeRouters, editorOf, json, requireInterno } from "@/lib/internal-api"
+import { getNotices, saveNotices } from "@/lib/wispdavor/selfservice-server"
 import { MAX_PER_SEND, TEMPLATES, TEMPLATE_IDS, waNumber, type TemplateId } from "@/lib/wispdavor/whatsapp"
 import { sendTemplate, whatsappConfigured } from "@/lib/wispdavor/whatsapp-server"
 
@@ -12,7 +13,7 @@ import { sendTemplate, whatsappConfigured } from "@/lib/wispdavor/whatsapp-serve
 export async function GET(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
-  return json({ ok: true, configured: whatsappConfigured() && hasDatabase() })
+  return json({ ok: true, configured: whatsappConfigured() && hasDatabase(), notices: hasDatabase() ? await getNotices() : null, canEdit: await canChangeRouters(request) })
 }
 
 type Item = { clientId?: unknown; phone?: unknown; values?: unknown }
@@ -21,8 +22,13 @@ export async function POST(request: NextRequest) {
   const denied = await requireInterno(request)
   if (denied) return denied
   if (!hasDatabase()) return json({ error: "no-database" }, 503)
+  const body = (await request.json().catch(() => ({}))) as { template?: unknown; items?: unknown; action?: unknown; notices?: unknown }
+  // Phase 9: the automatic notices' settings (admins: each message costs).
+  if (body.action === "notices") {
+    if (!(await canChangeRouters(request))) return json({ error: "admin-only" }, 403)
+    return json({ ok: true, notices: await saveNotices(body.notices, await editorOf(request)) })
+  }
   if (!whatsappConfigured()) return json({ error: "not-configured" }, 409)
-  const body = (await request.json().catch(() => ({}))) as { template?: unknown; items?: unknown }
   const template = TEMPLATE_IDS.find((t) => t === body.template) as TemplateId | undefined
   const items = Array.isArray(body.items) ? (body.items as Item[]) : []
   if (!template || !items.length || items.length > MAX_PER_SEND) return json({ error: "bad-request" }, 400)

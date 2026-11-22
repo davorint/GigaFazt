@@ -85,6 +85,26 @@
         "cierre": "Cierre del negocio",
         "otro": "Otro"
       }
+    },
+    "outlook": {
+      "title": "Tendencia y pronóstico",
+      "tag": "ESTIMACIÓN",
+      "hint": "Lo que facturarían los próximos meses los clientes de hoy (con sus precios fechados), ya descontando la baja promedio de los últimos 3 meses ({churn} al mes). No cuenta clientes nuevos.",
+      "scheduled": "Sin bajas: {amount}",
+      "charts": {
+        "clients": "Clientes activos",
+        "money": "Facturado y cobrado",
+        "expected": "Facturado",
+        "collected": "Cobrado",
+        "churn": "Bajas (% al mes)"
+      },
+      "tableNote": "Los números exactos de cada mes están en la tabla de abajo.",
+      "weekly": "Enviar resumen semanal ahora",
+      "weeklyHint": "El resumen semanal (cobrado, altas y bajas, atrasados, reportes, caídas) llega solo al chat del equipo cada lunes a las 9:00.",
+      "sending": "Enviando…",
+      "sent": "Enviado al chat del equipo.",
+      "noChannel": "No hay chat configurado (Telegram o webhook): no se envió.",
+      "failed": "No se pudo enviar."
     }
   }
 }

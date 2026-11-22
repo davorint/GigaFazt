@@ -1440,7 +1440,6 @@
     },
     "reportsTitle": "Your reports",
     "noReports": "No reports in the last 90 days.",
-    "report": "Report a problem",
     "reported": "reported on {date}",
     "online": {
       "title": "Pay online",
@@ -1484,6 +1483,21 @@
       "amount": "Amount",
       "method": "Payment method",
       "reference": "Reference"
+    },
+    "fault": {
+      "title": "Report a problem",
+      "category": "What's happening?",
+      "details": "Tell us more (optional)",
+      "detailsRequired": "Tell us what's happening",
+      "photo": "Photo (optional): for example, the modem's lights",
+      "send": "Send report",
+      "sending": "Sending…",
+      "sent": "We got your report ({code}). We'll contact you soon.",
+      "duplicate": "You already have an open report ({code}). We'll contact you soon.",
+      "empty": "Tell us what's happening.",
+      "badPhoto": "The photo couldn't be sent: use a JPG, PNG or WebP image.",
+      "busy": "Too many attempts; try again later.",
+      "error": "Couldn't send it. Try again or message us on WhatsApp."
     }
   }
 }

@@ -32,6 +32,7 @@ const SCENARIOS = [
     [/auto, late: reconnect: 409 auto-late/, /auto: plan 500M: 409 auto-plan/, /auto: disable: 409 auto-disable/, /auto: kick: 200 kick/, /auto, paid: suspend: 200 suspend:DSX-suspendido/, /Clientes: \{"status":"suspendido","hold":true,"holdOpen":true\}/, /auto, held: reconnect: 200 reconnect:200M/, /Clientes: \{"status":"activo","hold":false\}/, /manual, late: reconnect: 200 reconnect:200M/, /debt suspension, no hold\): \{"status":"suspendido","hold":false\}/],
   ],
   ["backups.cjs", [/script backup step: true true/, /queued: 1/, /bad key: 401/, /bad header: 400/, /first copy: (200:partial ){2,}200:new/, /same again, new date: (200:partial ){2,}200:same/, /changed: (200:partial ){2,}200:new/, /copies: 2 by: agente\/Router,agente\/Prueba WD checked: true/, /download intact: true/, /parts left: 0/, /copies left after delete: 0/]],
+  ["selfservice.cjs", [/empty other: 1/, /reports: 1 \{"category":"sin-servicio","priority":"alta","address":"Torre Prueba · 301","phone":"5512345671","by":"Portal del cliente","files":1\}/, /photo stored: 1/, /resolved: saved sends: 0/, /default off: \{"reminders":false,"reportUpdates":false\}/, /saved: \{"reminders":true,"reminderDay":6,"noticeDay":6,"reportUpdates":true\}/, /overflow: 0 errors: \[\]/, /cleanup: \{"files":1,/]],
   ["outbox-portal.cjs", [/back online: stored files: 1 linked to the job: 1 banner gone: true/, /reports: \["Solicitud de cambio de plan/, /pdf: .* %PDF-1\.4 .* accents: true/, /errors: \[\]/]],
 ]
 

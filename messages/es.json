@@ -1440,7 +1440,6 @@
     },
     "reportsTitle": "Tus reportes",
     "noReports": "Sin reportes en los últimos 90 días.",
-    "report": "Reportar una falla",
     "reported": "reportado el {date}",
     "online": {
       "title": "Pagar en línea",
@@ -1484,6 +1483,21 @@
       "amount": "Importe",
       "method": "Forma de pago",
       "reference": "Referencia"
+    },
+    "fault": {
+      "title": "Reportar una falla",
+      "category": "¿Qué pasa?",
+      "details": "Cuéntanos más (opcional)",
+      "detailsRequired": "Cuéntanos qué pasa",
+      "photo": "Foto (opcional): por ejemplo, las luces del módem",
+      "send": "Enviar reporte",
+      "sending": "Enviando…",
+      "sent": "Recibimos tu reporte ({code}). Te contactamos pronto.",
+      "duplicate": "Ya tienes un reporte abierto ({code}). Te contactamos pronto.",
+      "empty": "Cuéntanos qué pasa.",
+      "badPhoto": "La foto no se pudo enviar: usa una imagen JPG, PNG o WebP.",
+      "busy": "Demasiados intentos; inténtalo más tarde.",
+      "error": "No se pudo enviar. Inténtalo otra vez o escríbenos por WhatsApp."
     }
   }
 }

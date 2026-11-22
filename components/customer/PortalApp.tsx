@@ -1,5 +1,7 @@
 "use client"
 
+import { shrink } from "@/lib/field/shrink"
+import { MAX_DESCRIPTION, PORTAL_CATEGORIES } from "@/lib/wispdavor/selfservice"
 import { useEffect, useState, type ReactNode } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { speedLabel } from "@/lib/format"
@@ -147,6 +149,78 @@ function PlanChange({ current, money }: { current: string; money: (n: number) =>
   )
 }
 
+/**
+ * "Reportar una falla" (phase 9): straight from the portal, already matched to the client (no form to fill with their
+ * name and apartment), with an optional photo shrunk on the phone; it lands in Reportes and the team is alerted.
+ */
+function FaultReport() {
+  const t = useTranslations("portal.fault")
+  const tc = useTranslations("report.categories")
+  const [category, setCategory] = useState<(typeof PORTAL_CATEGORIES)[number]>("sin-servicio")
+  const [text, setText] = useState("")
+  const [photo, setPhoto] = useState<File | null>(null)
+  const [msg, setMsg] = useState("")
+  const [busy, setBusy] = useState(false)
+  const send = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (category === "otro" && !text.trim()) {
+      setMsg(t("empty"))
+      return
+    }
+    setBusy(true)
+    setMsg("")
+    try {
+      const form = new FormData()
+      form.set("token", tokenFromHash())
+      form.set("categoria", category)
+      form.set("descripcion", text)
+      if (photo) form.set("foto", await shrink(photo), "foto.jpg")
+      const r = await fetch("/api/mi-cuenta/reporte", { method: "POST", body: form })
+      const b = (await r.json().catch(() => ({}))) as { kind?: string; code?: string }
+      if (r.ok) {
+        setMsg(t(b.kind === "duplicate" ? "duplicate" : "sent", { code: b.code ?? "" }))
+        setText("")
+        setPhoto(null)
+      } else setMsg(t(r.status === 429 ? "busy" : r.status === 413 || r.status === 415 ? "badPhoto" : "error"))
+    } catch {
+      setMsg(t("error"))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <form onSubmit={(e) => void send(e)} className="grid gap-3 rounded-xl border border-white/10 p-3">
+      <h3 className="text-base text-foreground">{t("title")}</h3>
+      <label className="grid gap-1 text-sm text-muted-foreground">
+        {t("category")}
+        <select value={category} onChange={(e) => setCategory(e.target.value as (typeof PORTAL_CATEGORIES)[number])} className="h-10 rounded-lg border border-white/15 bg-zinc-950 px-3 text-sm text-foreground">
+          {PORTAL_CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {tc(c)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="grid gap-1 text-sm text-muted-foreground">
+        {category === "otro" ? t("detailsRequired") : t("details")}
+        <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={MAX_DESCRIPTION} rows={3} className="rounded-lg border border-white/15 bg-zinc-950 px-3 py-2 text-sm text-foreground" />
+      </label>
+      <label className="grid gap-1 text-sm text-muted-foreground">
+        {t("photo")}
+        <input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} className="text-sm text-foreground file:mr-3 file:rounded-full file:border file:border-white/15 file:bg-transparent file:px-3 file:py-1.5 file:text-foreground" />
+      </label>
+      <button type="submit" disabled={busy} className="inline-flex min-h-10 w-fit items-center rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200 disabled:opacity-50">
+        {busy ? t("sending") : t("send")}
+      </button>
+      {msg && (
+        <p role="status" className="text-sm text-foreground">
+          {msg}
+        </p>
+      )}
+    </form>
+  )
+}
+
 const tokenFromHash = () => decodeURIComponent(window.location.hash.replace(/^#/, "").replace(/^k=/, "")).trim()
 
 /**
@@ -281,9 +355,7 @@ export function PortalApp({ pay }: { pay: ReactNode }) {
               </li>
             ))}
           </ul>
-          <a href={`/${locale}/clientes#reportar`} className="inline-flex min-h-10 w-fit items-center rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200">
-            {t("report")}
-          </a>
+          <FaultReport />
         </section>
       </div>
       {receipt && (
