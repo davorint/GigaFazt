@@ -15,13 +15,19 @@ export type PayKind = (typeof PAY_KINDS)[number] | "autopay"
 
 export const OXXO_MIN = 10
 export const OXXO_MAX = 10000
-/** Days an OXXO voucher stays valid (Stripe: 1–7, default 5). */
+/** Days an OXXO voucher stays valid (Stripe: expires_after_days 1–7; the Checkout default differs between its pages). */
 export const OXXO_DAYS = 5
 export const AUTOPAY_DAYS = [1, 5, 9] as const
 
-/** What to charge online: the debt, else a month ahead; 0 = nothing to charge. */
+/** Stripe's smallest charge in MXN for card, OXXO and SPEI (Stripe docs: 10.00 MXN). */
+export const ONLINE_MIN = 10
+
+/**
+ * What to charge online: the debt, else a month ahead; 0 = nothing to charge. A leftover under ONLINE_MIN (a partial
+ * payment's remainder) can't be charged on its own, so it goes with the next month.
+ */
 export function amountToCharge(l: Pick<Ledger, "owed" | "monthly">): number {
-  const x = l.owed > 0.005 ? l.owed : l.monthly
+  const x = l.owed > 0.005 ? (l.owed < ONLINE_MIN ? l.owed + l.monthly : l.owed) : l.monthly
   return Math.round(Math.max(0, x) * 100) / 100
 }
 
@@ -34,4 +40,4 @@ export const isAutopayDay = (today: string) => (AUTOPAY_DAYS as readonly number[
 export const cobranzaMethod = (kind: PayKind) => (kind === "spei" ? "transferencia" : kind === "oxxo" ? "efectivo" : "tarjeta")
 
 /** Which methods a client can use for this amount. */
-export const methodsFor = (amount: number): PayKind[] => (amount <= 0 ? [] : amount >= OXXO_MIN && amount <= OXXO_MAX ? ["card", "oxxo", "spei"] : ["card", "spei"])
+export const methodsFor = (amount: number): PayKind[] => (amount < ONLINE_MIN ? [] : amount >= OXXO_MIN && amount <= OXXO_MAX ? ["card", "oxxo", "spei"] : ["card", "spei"])

@@ -124,3 +124,15 @@ describe("WispDavor phase 2: Stripe flow (mocked)", () => {
     onItsWay = false
   })
 })
+
+describe("Online amounts and Stripe's 10 MXN minimum (2026-11-21 review)", () => {
+  it("a leftover under 10 MXN goes with the next month; nothing under 10 is offered", async () => {
+    const { amountToCharge, methodsFor } = await import("./online")
+    expect(amountToCharge({ owed: 3.5, monthly: 396 })).toBe(399.5)
+    expect(amountToCharge({ owed: 396, monthly: 396 })).toBe(396)
+    expect(amountToCharge({ owed: 0, monthly: 396 })).toBe(396)
+    expect(methodsFor(9.99)).toEqual([])
+    expect(methodsFor(10)).toEqual(["card", "oxxo", "spei"])
+    expect(methodsFor(10000.01)).toEqual(["card", "spei"])
+  })
+})
