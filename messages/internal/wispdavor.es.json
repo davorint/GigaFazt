@@ -16,7 +16,8 @@
       "envivo": "Router en vivo · WispDavor",
       "red": "Red y ONTs · WispDavor",
       "tunel": "Túnel a los routers · WispDavor",
-      "alta": "Alta de cliente · WispDavor"
+      "alta": "Alta de cliente · WispDavor",
+      "capacidad": "Capacidad de enlaces · WispDavor"
     },
     "kicker": "Uso interno · Software · WispDavor",
     "title": "WispDavor",
@@ -90,6 +91,10 @@
       "alta": {
         "name": "Alta de cliente",
         "desc": "Un solo formulario: el cliente y su plan, la instalación en la Agenda, el usuario PPPoE en el router, los comandos de la OLT y su portal con mensaje de bienvenida."
+      },
+      "capacidad": {
+        "name": "Capacidad de enlaces",
+        "desc": "Qué tan llenos van los enlaces de cada despliegue en la hora pico, cuántos clientes más caben y a qué horas se llena."
       }
     },
     "existing": {
@@ -952,6 +957,28 @@
       "copyPortal": "Copiar enlace al portal",
       "openClient": "Abrir en Clientes",
       "another": "Dar de alta otro"
+    },
+    "capacidad": {
+      "lead": "La hora pico de los últimos {days} días (la hora con más tráfico) contra la velocidad de los enlaces de cada despliegue. Del {full} % en adelante llega aviso al equipo: es momento de pensar en subir el enlace.",
+      "tag": "ESTIMACIÓN",
+      "estimate": "Sale del tráfico que reportan los routers; si un router reporta cada 10 minutos, los picos cortos se ven más planos.",
+      "loading": "Cargando…",
+      "offline": "Sin conexión con el sitio.",
+      "none": "Ningún despliegue tiene todavía tráfico de un router ni enlaces con velocidad.",
+      "useLabel": "Uso de los enlaces en la hora pico",
+      "links": "Enlaces (bajada / subida)",
+      "noSpeed": "sin velocidad",
+      "busy": "Hora pico (bajada / subida)",
+      "noTraffic": "sin tráfico",
+      "perClient": "Por cliente en la hora pico",
+      "active": "{n, plural, one {# cliente activo} other {# clientes activos}}",
+      "roomFor": "Caben todavía",
+      "clients": "{n, plural, =0 {ninguno más} one {# cliente} other {# clientes}}",
+      "fullHint": "En la hora pico los enlaces van llenos: los clientes notan lentitud. Sube el enlace o agrega otro.",
+      "setSpeed": "Escribe la velocidad de sus enlaces en Despliegues (cuarto de telecom → enlaces) para calcular el uso.",
+      "profile": "A qué horas se llena (promedio por hora del día)",
+      "down": "Bajada",
+      "up": "Subida"
     }
   }
 }

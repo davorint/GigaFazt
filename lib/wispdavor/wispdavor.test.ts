@@ -69,7 +69,7 @@ describe("WispDavor map and pages", () => {
     expect(toneOf(s)).toBe("suspended")
   })
   it("subfolders: any capitalization of a WispDavor page", () => {
-    expect(WISPDAVOR_PAGES).toEqual(["alta", "cortes", "portal", "avisos", "mapa", "pagos", "facturas", "routers", "trafico", "hotspot", "monitoreo", "cobranza", "envivo", "red", "tunel"])
+    expect(WISPDAVOR_PAGES).toEqual(["alta", "cortes", "portal", "avisos", "mapa", "pagos", "facturas", "routers", "trafico", "hotspot", "monitoreo", "cobranza", "envivo", "red", "capacidad", "tunel"])
     expect(matchInternal("/Interno/Software/WispDavor/Cortes")).toEqual({ rewriteTo: "/es/interno/software/wispdavor/cortes", open: false })
   })
 })
