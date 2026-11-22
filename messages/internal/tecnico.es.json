@@ -81,6 +81,8 @@
     "outboxRetry": "Subir ahora",
     "outboxSent": "Se subieron {sent} pendientes{bad, plural, =0 {} other {; # no eran válidas y se descartaron}}.",
     "photosResult": "{ok, plural, =0 {} one {# foto guardada. } other {# fotos guardadas. }}{waiting, plural, =0 {} one {# espera señal en el teléfono. } other {# esperan señal en el teléfono. }}{bad, plural, =0 {} one {# no es una imagen válida.} other {# no son imágenes válidas.}}{lost, plural, =0 {} one { # no se pudo guardar sin señal (¿navegación privada?): tómala otra vez con señal.} other { # no se pudieron guardar sin señal (¿navegación privada?): tómalas otra vez con señal.}}",
-    "signedWaiting": "Firma guardada en el teléfono: se sube sola cuando haya señal."
+    "signedWaiting": "Firma guardada en el teléfono: se sube sola cuando haya señal.",
+    "unassigned": "Sin técnico asignado",
+    "startMoved": "La instalación quedó hecha otro día que el planeado: el servicio del cliente ahora empieza el {day} (Cobranza cobra desde ahí)."
   }
 }

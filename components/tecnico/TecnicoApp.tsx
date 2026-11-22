@@ -9,7 +9,8 @@ import { TextField } from "@/components/mikrotik/TextField"
 import { useTechnicians } from "@/components/agenda/ScheduleForm"
 import { addDays, byWhen, type Appointment } from "@/lib/agenda/model"
 import { agendaStore } from "@/lib/agenda/store"
-import { clientsServerSnapshot, clientsSnapshot, subscribeClients } from "@/lib/clients/store"
+import { clientsServerSnapshot, clientsSnapshot, saveClient, subscribeClients } from "@/lib/clients/store"
+import { installedOn } from "@/lib/field/install"
 import { localToday } from "@/lib/clients/from-lead"
 import { whatsappHref } from "@/lib/contact"
 import { MAX_FIELD_FILES, type FieldFile, type FieldWork, type JobRef } from "@/lib/field/model"
@@ -127,7 +128,8 @@ export function TecnicoApp() {
       .filter((r) => r.visitDate === date && (r.status === "visita" || (r.status === "resuelto" && !!r.field.doneAt)))
       .map((r): Job => ({ kind: "reporte", ref: { kind: "reporte", id: r.id }, time: "", who: r.assignee, done: r.status === "resuelto", rec: r })),
   ]
-    .filter((j) => !me || fold(j.who) === fold(me))
+    // Mine, plus the ones nobody has yet (so an unassigned installation isn't seen by no one).
+    .filter((j) => !me || !j.who.trim() || fold(j.who) === fold(me))
     .sort((a, b) => Number(a.done) - Number(b.done) || byWhen({ date, time: a.time }, { date, time: b.time }))
   return (
     <div className="mt-6 grid gap-6">
@@ -252,6 +254,15 @@ function JobCard({
   const finish = () => {
     if (!signed && !window.confirm(t("confirmNoSign"))) return
     const now = new Date().toISOString()
+    // An installation done on another day than planned: the client's services start on the real day (Cobranza).
+    if (job.kind === "agenda" && job.rec.kind === "instalacion" && job.rec.clientId) {
+      const c = clientsSnapshot().list.find((x) => x.id === job.rec.clientId)
+      const moved = c ? installedOn(c, job.rec.date, localToday()) : null
+      if (moved) {
+        saveClient(moved)
+        setMsg(t("startMoved", { day: localToday() }))
+      }
+    }
     saveField(
       job.ref,
       () => ({ doneAt: now }),
@@ -269,6 +280,7 @@ function JobCard({
         </span>
         <span className="text-sm text-zinc-200">{name || t("noName")}</span>
         {job.rec.address && <span className="text-sm text-zinc-400">{job.rec.address}</span>}
+        {!job.who.trim() && <span className="w-fit rounded-full border border-amber-300/40 px-2 py-0.5 text-xs text-amber-200">{t("unassigned")}</span>}
       </button>
       {open && (
         <div className="grid gap-4 border-t border-white/10 pt-3">

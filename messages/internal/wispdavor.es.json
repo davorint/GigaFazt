@@ -906,7 +906,7 @@
       "planTitle": "Plan",
       "perMonth": "{amount} al mes",
       "tv": "Agregar TV",
-      "billing": "Se cobra desde la fecha de instalación que pongas aquí (si es a más tardar el 15, ese mes; si es después, desde el siguiente). Si la instalación se mueve, cambia el inicio del servicio en Clientes.",
+      "billing": "Se cobra desde la fecha de instalación (si es a más tardar el 15, ese mes; si es después, desde el siguiente). Si se instala otro día, al marcarla como hecha en Técnico el inicio se mueve solo a ese día.",
       "installTitle": "Instalación",
       "date": "Fecha",
       "time": "Hora (opcional)",
