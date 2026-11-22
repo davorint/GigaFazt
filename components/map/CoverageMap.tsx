@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import * as maplibregl from "maplibre-gl"
 import type { Map as MLMap } from "maplibre-gl"
+// The GeoJSON types imported, not taken from the global namespace (TypeScript 7 no longer loads every @types package).
+import type * as GeoJSON from "geojson"
 import "maplibre-gl/dist/maplibre-gl.css"
 import { Hand, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
