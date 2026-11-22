@@ -71,7 +71,7 @@ export async function sweepSilent(): Promise<number> {
   let opened = 0
   const quiet = (await pool.query(
     `select r.id, r.name, r.site_id from routers r
-      where r.last_seen_at < now() - make_interval(mins => 3 * r.poll_minutes) and r.last_seen_at > now() - interval '1 day'
+      where r.last_seen_at < now() - make_interval(mins => 3 * r.poll_script) and r.last_seen_at > now() - interval '1 day'
         and not exists (select 1 from outages o where o.router_id = r.id and o.ended_at is null)`
   )).rows as { id: string; name: string; site_id: string }[]
   for (const q of quiet) {

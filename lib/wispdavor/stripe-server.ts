@@ -139,7 +139,7 @@ async function reconnection(cl: Client): Promise<"auto" | "manual" | "late"> {
   if (!desired.length) return "manual"
   if (desired.some((d) => d.suspended)) return "late"
   if (!cl.siteId) return "manual"
-  const r = await getPool().query(`select 1 from routers where site_id = $1 and auto and pppoe and last_seen_at > now() - make_interval(mins => 3 * poll_minutes) limit 1`, [cl.siteId])
+  const r = await getPool().query(`select 1 from routers where site_id = $1 and auto and pppoe and last_seen_at > now() - make_interval(mins => 3 * poll_script) limit 1`, [cl.siteId])
   return (r.rowCount ?? 0) > 0 ? "auto" : "manual"
 }
 

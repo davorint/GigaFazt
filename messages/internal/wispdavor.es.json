@@ -428,7 +428,8 @@
       "pollHint": "Más seguido = cortes, reconexiones y fallas detectados antes. Cada 10 minutos la base de datos descansa cerca de la mitad del tiempo; cada 2 o 5 casi nada.",
       "pollChanged": "Cambiado. Para que el router lo use, pega su script nuevo: «Llave nueva».",
       "every": "cada {m} min",
-      "adminOnly": "Solo un administrador puede encender «Automático», mandar diferencias o crear usuarios en el router."
+      "adminOnly": "Solo un administrador puede encender «Automático», mandar diferencias o crear usuarios en el router.",
+      "pollPending": "Elegiste cada {next} min, pero el router sigue con su script de cada {now} min: pega el script nuevo («Llave nueva») para que lo use. Mientras, todo se mide con {now} min."
     },
     "trafico": {
       "lead": "La bajada y la subida de cada usuario PPPoE, según lo que reporta su router. Cada 5 minutos los últimos 7 días; por hora hasta 90 días.",

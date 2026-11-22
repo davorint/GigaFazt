@@ -19,6 +19,7 @@ const node = process.execPath
 const SCENARIOS = [
   ["routers.cjs", [/bad key: 401/, /report 2 \(auto on\): "\d+,profile,prueba\.rt,DSX-suspendido"/, /service status in Clientes: suspendido/, /diff after: 0/, /vouchers: 3/]],
   ["routers-clean.cjs", [/left routers: 0/]],
+  ["rate.cjs", [/created: \{"chosen":10,"script":10,"scriptLine":true\}/, /after change: \{"chosen":2,"script":10\}/, /after new key: \{"chosen":2,"script":2,"scriptLine":true\}/, /deleted: true/]],
   ["monitoring.cjs", [/drop to 3: 200 \[\{"kind":"sesiones"/, /banner shown: 1/, /recovered to 9: 200 .*"ended_at":"/, /carriers silent: 200 \{"kind":"carrier"/, /carrier back: 200 .*"ended_at":"/, /monitor page overflow: 0 errors: \[\]/]],
   ["tecnico.cjs", [/server record: \{"status":"hecha","arrived":true,"done":true,"files":\["foto","firma"\]/, /overflow: 0 errors: \[\]/]],
   ["funnel.cjs", [/rows: pagó solo el .+ \| avisado · pagó tras el aviso el .+ \| sigue debiendo/, /overflow: 0 errors: \[\]/]],

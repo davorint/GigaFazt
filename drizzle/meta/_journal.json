@@ -162,6 +162,13 @@
       "when": 1795301610126,
       "tag": "0022_routers_poll",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795314096288,
+      "tag": "0023_routers_poll_script",
+      "breakpoints": true
     }
   ]
 }

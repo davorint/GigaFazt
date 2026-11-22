@@ -231,6 +231,8 @@ function JobCard({
     let ok = 0
     let waiting = 0
     let bad = 0
+    // No signal and this phone can't keep files (private browsing, no space): the photo is lost, not invalid.
+    let lost = 0
     for (const file of [...files].slice(0, MAX_FIELD_FILES - f.files.length - queued.length)) {
       const blob = await shrink(file)
       const name = file.name.replace(/\.[^.]+$/, "") + ".jpg"
@@ -239,7 +241,7 @@ function JobCard({
       else if (r === "retry") {
         // No signal: it waits on the phone and goes by itself later.
         if (await enqueue({ ref: job.ref, kind: "foto", name, blob, signedBy: "" })) waiting++
-        else bad++
+        else lost++
       } else {
         ok++
         saveField(job.ref, (cur) => ({ files: [...cur.files, r.file] }))
@@ -247,7 +249,7 @@ function JobCard({
     }
     setBusy(false)
     if (waiting) onQueued()
-    setMsg(t("photosResult", { ok, waiting, bad }))
+    setMsg(t("photosResult", { ok, waiting, bad, lost }))
   }
   const sign = async () => {
     if (!signature || !signer.trim()) return

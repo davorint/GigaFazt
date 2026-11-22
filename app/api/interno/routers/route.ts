@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     // ?basico=1: just the routers (deployment, roles, automatic, online), for Cortes and others; no differences computed.
     if (request.nextUrl.searchParams.get("basico")) {
       const now = Date.now()
-      return json({ ok: true, routers: (await listRouters()).map((r) => ({ ...r, online: isOnline(r.lastSeenAt, r.pollMinutes, now) })) })
+      return json({ ok: true, routers: (await listRouters()).map((r) => ({ ...r, online: isOnline(r.lastSeenAt, r.pollScript, now) })) })
     }
     const pool = getPool()
     const out = []
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       const actions = (await pool.query(`select id, kind, "user", arg1, source, status, result, created_at, created_by, done_at from router_actions where router_id = $1 order by id desc limit 40`, [r.id])).rows
       const users = Number(((await pool.query(`select count(*) from router_users where router_id = $1`, [r.id])).rows[0] as { count: string }).count)
       // Online: reported within its last 3 intervals.
-      const online = isOnline(r.lastSeenAt, r.pollMinutes)
+      const online = isOnline(r.lastSeenAt, r.pollScript)
       out.push({ ...r, online, users, changes: diff.changes, missing: diff.missing, unmanaged: diff.unmanaged, actions })
     }
     return json({ ok: true, routers: out, canChange: await canChangeRouters(request) })
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     if ((b.action === "send" || b.action === "createUser") && !(await canChangeRouters(request))) return json({ error: "admin-only" }, 403)
     if (b.action === "send") {
       const { changes } = await routerDiff(router)
-      return json({ ok: true, queued: await queueDiffs(id, changes, "staff", by, router.pollMinutes) })
+      return json({ ok: true, queued: await queueDiffs(id, changes, "staff", by, router.pollScript) })
     }
     if (b.action === "createUser") {
       const user = text(b.user, 64)

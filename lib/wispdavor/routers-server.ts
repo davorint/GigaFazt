@@ -13,7 +13,7 @@ import { newId } from "../survey/id"
 import { recordHealth, sweepSilent } from "./monitor-server"
 import { MAX_ACTIONS, SUSPENDED_PROFILE, pollOf, resendMinutes, type PollMinutes, actionLine, desiredUsers, diffRouter, parseReport, safe, unmanagedUsers, type Action, type ActionKind, type Desired, type Diff, type Unmanaged } from "./routers"
 
-export type Router = { id: string; siteId: string; name: string; pppoe: boolean; hotspot: boolean; auto: boolean; pollMinutes: PollMinutes; lastSeenAt: string; createdAt: string }
+export type Router = { id: string; siteId: string; name: string; pppoe: boolean; hotspot: boolean; auto: boolean; pollMinutes: PollMinutes; pollScript: PollMinutes; lastSeenAt: string; createdAt: string }
 
 const sha = (s: string) => createHash("sha256").update(s).digest("hex")
 const toRouter = (r: Record<string, unknown>): Router => ({
@@ -24,6 +24,7 @@ const toRouter = (r: Record<string, unknown>): Router => ({
   hotspot: r.hotspot === true,
   auto: r.auto === true,
   pollMinutes: pollOf(r.poll_minutes),
+  pollScript: pollOf(r.poll_script),
   lastSeenAt: r.last_seen_at instanceof Date ? r.last_seen_at.toISOString() : "",
   createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : "",
 })
@@ -35,14 +36,14 @@ export async function listRouters(): Promise<Router[]> {
 /** A new router and its key (shown once: only its hash is kept). */
 export async function createRouter(p: { siteId: string; name: string; pppoe: boolean; hotspot: boolean; pollMinutes?: PollMinutes }, by: string): Promise<{ router: Router; key: string }> {
   const key = randomBytes(24).toString("base64url")
-  const r = await getPool().query(`insert into routers (id, site_id, name, pppoe, hotspot, poll_minutes, key_hash, created_by) values ($1, $2, $3, $4, $5, $6, $7, $8) returning *`, [newId(), p.siteId, p.name, p.pppoe, p.hotspot, pollOf(p.pollMinutes), sha(key), by])
+  const r = await getPool().query(`insert into routers (id, site_id, name, pppoe, hotspot, poll_minutes, poll_script, key_hash, created_by) values ($1, $2, $3, $4, $5, $6, $6, $7, $8) returning *`, [newId(), p.siteId, p.name, p.pppoe, p.hotspot, pollOf(p.pollMinutes), sha(key), by])
   return { router: toRouter(r.rows[0] as Record<string, unknown>), key }
 }
 
-/** A new key for a router (the old one stops working: the router needs the new script). */
+/** A new key for a router (the old one stops working: the router needs the new script, which carries the chosen rate). */
 export async function rotateKey(id: string): Promise<string> {
   const key = randomBytes(24).toString("base64url")
-  await getPool().query(`update routers set key_hash = $2 where id = $1`, [id, sha(key)])
+  await getPool().query(`update routers set key_hash = $2, poll_script = poll_minutes where id = $1`, [id, sha(key)])
   return key
 }
 
@@ -227,12 +228,12 @@ export async function agentVisit(r: Router, body: string): Promise<string> {
   // The automatic switch: the differences become actions by themselves.
   if (r.auto && r.pppoe && report.secrets.length) {
     const { changes } = await routerDiff(r)
-    await queueDiffs(r.id, changes, "auto", "WispDavor", r.pollMinutes)
+    await queueDiffs(r.id, changes, "auto", "WispDavor", r.pollScript)
   }
 
   // The next actions: pending ones, and sent ones the router never reported back.
   const next = (await pool.query(
-    `select id, kind, "user", arg1, arg2, arg3, arg4 from router_actions where router_id = $1 and (status = 'pending' or (status = 'sent' and sent_at < now() - interval '${resendMinutes(r.pollMinutes)} minutes')) order by id limit ${MAX_ACTIONS}`,
+    `select id, kind, "user", arg1, arg2, arg3, arg4 from router_actions where router_id = $1 and (status = 'pending' or (status = 'sent' and sent_at < now() - interval '${resendMinutes(r.pollScript)} minutes')) order by id limit ${MAX_ACTIONS}`,
     [r.id]
   )).rows as { id: string; kind: ActionKind; user: string; arg1: string; arg2: string; arg3: string; arg4: string }[]
   const lines: string[] = []

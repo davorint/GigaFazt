@@ -14,7 +14,7 @@ import { RestPanel } from "./RestPanel"
 
 type T = ReturnType<typeof useTranslations>
 type ActionRow = { id: string; kind: string; user: string; arg1: string; source: string; status: string; result: string; created_at: string; created_by: string }
-type RouterRow = { id: string; siteId: string; name: string; pppoe: boolean; hotspot: boolean; auto: boolean; pollMinutes: PollMinutes; lastSeenAt: string; online: boolean; users: number; changes: Diff[]; missing: Desired[]; unmanaged: Unmanaged[]; actions: ActionRow[] }
+type RouterRow = { id: string; siteId: string; name: string; pppoe: boolean; hotspot: boolean; auto: boolean; pollMinutes: PollMinutes; pollScript: PollMinutes; lastSeenAt: string; online: boolean; users: number; changes: Diff[]; missing: Desired[]; unmanaged: Unmanaged[]; actions: ActionRow[] }
 
 const headers = () => ({ "content-type": "application/json", "x-interno-nombre": encodeURIComponent(readState().name) })
 const STATUS_TONE: Record<string, string> = { done: "text-emerald-300", error: "text-red-300", sent: "text-amber-200", pending: "text-zinc-300" }
@@ -156,8 +156,9 @@ function RouterCard({
           {r.lastSeenAt ? `${online ? t("online") : t("offline")} · ${t("lastSeen", { when })}` : t("never")}
         </span>
       </div>
-      <p className="font-mono text-xs text-zinc-400">{[r.pppoe ? t("pppoe") : "", r.hotspot ? t("hotspot") : "", t("users", { n: r.users }), t("every", { m: r.pollMinutes })].filter(Boolean).join(" · ")}</p>
+      <p className="font-mono text-xs text-zinc-400">{[r.pppoe ? t("pppoe") : "", r.hotspot ? t("hotspot") : "", t("users", { n: r.users }), t("every", { m: r.pollScript })].filter(Boolean).join(" · ")}</p>
       {r.pppoe && !r.siteId && <p className="rounded-lg border border-amber-400/30 px-3 py-2 text-xs text-amber-100">{t("noSiteWarn")}</p>}
+      {r.pollMinutes !== r.pollScript && <p className="rounded-lg border border-amber-400/30 px-3 py-2 text-xs text-amber-100">{t("pollPending", { now: r.pollScript, next: r.pollMinutes })}</p>}
       <RestPanel routerId={r.id} />
       <details className="rounded-xl border border-white/10 p-3">
         <summary className="cursor-pointer text-sm text-zinc-200">{t("edit")}</summary>
