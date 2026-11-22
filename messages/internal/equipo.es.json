@@ -115,6 +115,30 @@
         "contratos": "contrato",
         "router": "router",
         "whatsapp": "WhatsApp"
+      },
+      "whatMany": "{what} {n} {kind}",
+      "labels": "{list}{more, plural, =0 {} one { y # más} other { y # más}}",
+      "showMore": "Mostrar más ({n} pendientes)",
+      "plural": {
+        "surveys": "levantamientos",
+        "materials": "materiales",
+        "providers": "proveedores",
+        "clients": "clientes",
+        "sites": "despliegues",
+        "tools": "herramientas",
+        "stock": "movimientos de inventario",
+        "units": "equipos con serie",
+        "reports": "reportes",
+        "payments": "pagos",
+        "notes": "notas",
+        "rolls": "bobinas",
+        "toolbuys": "compras de herramienta",
+        "agenda": "citas",
+        "porpagar": "cuentas por pagar",
+        "porcobrar": "cuentas por cobrar",
+        "contratos": "contratos",
+        "router": "acciones en routers",
+        "whatsapp": "mensajes de WhatsApp"
       }
     }
   }

@@ -838,7 +838,7 @@
       "reminderDay": "Recordatorio el",
       "noticeDay": "Aviso de corte el",
       "day": "día {d}",
-      "remindersHint": "El recordatorio va a quien todavía debe; el aviso de corte, a quien sigue atrasado y no tiene promesa de pago vigente. Ambos dicen que el último día para pagar es el {by}.",
+      "remindersHint": "El recordatorio va a quien todavía debe; el aviso de corte, a quien sigue atrasado, aún tiene internet activo y no tiene promesa de pago vigente. Ambos dicen que el último día para pagar es el {by}.",
       "reportUpdates": "Avisar al cliente cuando su reporte cambia",
       "reportHint": "Cuando un reporte con cliente pasa a «visita» o «resuelto» (plantilla gigafazt_reporte_actualizado).",
       "saved": "Guardado.",
@@ -966,7 +966,7 @@
       "twins": "Ese WhatsApp ya lo tiene {names}. Si es la misma persona con otro departamento, sigue; si no, revísalo."
     },
     "capacidad": {
-      "lead": "La hora pico de los últimos {days} días (la hora con más tráfico) contra la velocidad de los enlaces de cada despliegue. Del {full} % en adelante llega aviso al equipo: es momento de pensar en subir el enlace.",
+      "lead": "La hora pico de los últimos {days} días (la hora con más tráfico) contra la velocidad de los enlaces de cada despliegue. Del {full} % en adelante llega aviso al equipo (una vez por semana mientras siga así, o antes si se llena más): es momento de pensar en subir el enlace.",
       "tag": "ESTIMACIÓN",
       "estimate": "Sale del tráfico que reportan los routers; si un router reporta cada 10 minutos, los picos cortos se ven más planos.",
       "loading": "Cargando…",

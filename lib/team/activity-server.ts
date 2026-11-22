@@ -4,6 +4,7 @@
  * reads those, plus router actions (staff and automatic) and WhatsApp sends. Server code only.
  */
 import "server-only"
+import wisp from "@/messages/internal/wispdavor.es.json"
 import { getPool } from "../db/client"
 import { recordLabel } from "../sync/labels"
 import { SYNC_KINDS, type SyncKind } from "../sync/protocol"
@@ -14,6 +15,9 @@ export type Entry = { at: string; who: string; kind: ActivityKind; ref: string; 
 
 export const ACTIVITY_DAYS = [1, 7, 30, 90] as const
 const LIMIT = 400
+/** The Routers page's own words for an action and its state. */
+const ROUTER_KINDS: Record<string, string> = wisp.wispdavor.routers.kinds
+const ROUTER_STATUS: Record<string, string> = wisp.wispdavor.routers.status
 
 export async function activity(f: { days: number; who: string; kind: string }): Promise<{ entries: Entry[]; people: string[]; more: boolean }> {
   const pool = getPool()
@@ -34,7 +38,7 @@ export async function activity(f: { days: number; who: string; kind: string }): 
         )
       ).rows as { created_at: Date; created_by: string; router_id: string; kind: string; user: string; arg1: string; status: string; source: string; name: string | null }[]
       for (const r of rows)
-        out.push({ at: r.created_at.toISOString(), who: r.created_by || (r.source === "auto" ? "Automático" : ""), kind: "router", ref: r.router_id, what: "action", label: r.name ?? r.router_id, detail: [r.kind, r.user, r.arg1, r.status].filter(Boolean).join(" · ") })
+        out.push({ at: r.created_at.toISOString(), who: r.created_by || (r.source === "auto" ? "Automático" : ""), kind: "router", ref: r.router_id, what: "action", label: r.name ?? r.router_id, detail: [ROUTER_KINDS[r.kind] ?? r.kind, r.user, r.arg1, ROUTER_STATUS[r.status] ?? r.status].filter(Boolean).join(" · ") })
       continue
     }
     if (k === "whatsapp") {
@@ -45,7 +49,7 @@ export async function activity(f: { days: number; who: string; kind: string }): 
           args([days])
         )
       ).rows as { sent_at: Date; sent_by: string; client_id: string; template: string; status: string; name: string | null }[]
-      for (const r of rows) out.push({ at: r.sent_at.toISOString(), who: r.sent_by, kind: "whatsapp", ref: r.client_id, what: "send", label: r.name ?? r.client_id, detail: `${r.template} · ${r.status}` })
+      for (const r of rows) out.push({ at: r.sent_at.toISOString(), who: r.sent_by, kind: "whatsapp", ref: r.client_id, what: "send", label: r.name ?? r.client_id, detail: `${r.template} · ${r.status === "sent" ? "enviado" : r.status === "error" ? "falló" : r.status}` })
       continue
     }
     const s = SPECS[k]

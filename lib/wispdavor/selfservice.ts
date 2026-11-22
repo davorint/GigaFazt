@@ -6,7 +6,8 @@
  * Automatic notices are off until an admin turns them on (each message costs, and Meta must approve the templates first).
  * Cobranza's calendar: everyone is due on day 1 and has until day 10; late and cut on the 11th. So:
  * - "recordatorio" on the reminder day (default 3) to whoever still owes this month's bill;
- * - "corte" on the notice day (default 9) to whoever is still behind, unless they have a payment promise still standing;
+ * - "corte" on the notice day (default 9) to whoever is still behind and still has active internet (not one already
+ *   suspended), unless they have a payment promise still standing;
  * - never to clients on card auto-pay (the charge itself writes to them if it fails), never twice in a month.
  */
 import type { ReportCategory, ReportStatus } from "../reports/model"

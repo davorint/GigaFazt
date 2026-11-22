@@ -58,7 +58,9 @@ export async function runReminders(today: string): Promise<ReminderRun> {
     const l = ledger(c, payments.filter((p) => p.clientId === c.id), today)
     const to = waNumber(c.whatsapp || c.phone)
     const promised = Boolean(c.promiseDate && c.promiseDate >= today)
-    if (l.owed < 1 || !to || autopay.has(c.id) || (template === "corte" && promised) || !c.services.some((x) => x.status !== "cancelado")) {
+    // The cut-off notice only to someone who still has service to lose (one already suspended gets nothing from it).
+    const live = c.services.some((x) => x.type === "internet" && x.status === "activo")
+    if (l.owed < 1 || !to || autopay.has(c.id) || (template === "corte" && (promised || !live)) || !c.services.some((x) => x.status !== "cancelado")) {
       out.skipped++
       continue
     }

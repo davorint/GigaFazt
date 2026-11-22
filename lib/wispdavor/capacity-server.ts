@@ -46,19 +46,25 @@ export async function capacityAll(): Promise<(SiteCapacity & { buckets: Bucket[]
     .sort((a, b) => (b.use ?? -1) - (a.use ?? -1))
 }
 
-/** The daily job: an alert for each full deployment, once a day. */
+/** Days between two alerts for the same deployment while it stays full (sooner if it gets 5 points fuller). */
+const REPEAT_DAYS = 7
+
+/** The daily job: an alert for each full deployment, once a week while it stays full (or when it gets fuller). */
 export async function capacityAlerts(today: string): Promise<{ full: number; sent: number }> {
   const all = await capacityAll()
   const full = all.filter((x) => x.full)
   if (!full.length) return { full: 0, sent: 0 }
   const pool = getPool()
+  // Per deployment: the day of the last alert and the use it reported ("2026-11-22|85"; an older plain date still reads).
   const sent = (((await pool.query(`select value from wisp_settings where key = $1`, [KEY])).rows[0] as { value: Record<string, string> } | undefined)?.value ?? {}) as Record<string, string>
   let n = 0
   for (const x of full) {
-    if (sent[x.siteId] === today) continue
     const pct = Math.round((x.use ?? 0) * 100)
+    const [lastDay, lastPct] = (sent[x.siteId] ?? "").split("|")
+    const days = lastDay ? Math.round((Date.parse(`${today}T12:00:00Z`) - Date.parse(`${lastDay}T12:00:00Z`)) / 864e5) : Infinity
+    if (days < REPEAT_DAYS && pct < Number(lastPct || 0) + 5) continue
     await sendText("capacidad", `📶 ${x.name}: sus enlaces llegan al ${pct} % en la hora pico (${Math.round(x.busy?.down ?? 0)} de ${x.speed.down ?? "?"} Mbps de bajada). Más de ${Math.round(FULL_SHARE * 100)} %: piensa en subir el enlace.\n${SITE_URL}/interno/software/wispdavor/capacidad`).catch(() => undefined)
-    sent[x.siteId] = today
+    sent[x.siteId] = `${today}|${pct}`
     n++
   }
   await pool.query(
