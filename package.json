@@ -65,7 +65,7 @@
     "@types/three": "^0.187.0",
     "drizzle-kit": "0.31.11",
     "esbuild": "0.28.2",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "16.4.5",
     "shadcn": "^4.23.0",
     "tailwindcss": "^4",
