@@ -4,7 +4,7 @@ import { useEffect, useId, useState } from "react"
 import { useTranslations } from "next-intl"
 import { SignaturePad } from "@/components/tecnico/SignaturePad"
 
-type Contract = { title: string; text: string; version: number; signed: string } | null
+type Contract = { title: string; text: string; version: number; signed: string; earlier: string } | null
 const CARD = "grid gap-4 rounded-2xl border border-white/10 p-5"
 
 /**
@@ -60,6 +60,7 @@ export function PortalContract({ token, day }: { token: string; day: (d: string)
         <p className="text-sm text-emerald-300">{t("signed", { date: day(c.signed) })}</p>
       ) : (
         <>
+          {c.earlier && <p className="text-sm text-amber-200">{t("changed", { date: day(c.earlier) })}</p>}
           <p className="text-sm text-muted-foreground">{t("lead")}</p>
           <div tabIndex={0} role="region" aria-label={c.title} className="max-h-80 overflow-y-auto rounded-xl border border-white/10 bg-black/30 p-4 text-sm leading-relaxed whitespace-pre-wrap text-foreground">
             <p className="mb-3 font-medium">{c.title}</p>

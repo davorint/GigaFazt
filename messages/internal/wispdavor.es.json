@@ -961,7 +961,8 @@
       "sendWelcome": "Mandar bienvenida por WhatsApp",
       "copyPortal": "Copiar enlace al portal",
       "openClient": "Abrir en Clientes",
-      "another": "Dar de alta otro"
+      "another": "Dar de alta otro",
+      "twins": "Ese WhatsApp ya lo tiene {names}. Si es la misma persona con otro departamento, sigue; si no, revísalo."
     },
     "capacidad": {
       "lead": "La hora pico de los últimos {days} días (la hora con más tráfico) contra la velocidad de los enlaces de cada despliegue. Del {full} % en adelante llega aviso al equipo: es momento de pensar en subir el enlace.",
@@ -998,7 +999,8 @@
       "saved": "Guardado: versión {v}.",
       "empty": "Escribe el título y el texto.",
       "offline": "Sin conexión con el sitio.",
-      "preview": "Así lo verá un cliente (datos de ejemplo)"
+      "preview": "Así lo verá un cliente (datos de ejemplo)",
+      "confirmFirst": "¿Guardar este texto? Desde ahora cada cliente lo verá en su portal para firmarlo."
     }
   }
 }

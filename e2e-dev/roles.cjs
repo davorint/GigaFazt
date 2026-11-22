@@ -25,6 +25,8 @@ const HA = { cookie: `gf_interno=${admin}`, "content-type": "application/json", 
     const sync = (kind) => fetch(BASE + "/api/interno/sync", { method: "POST", headers: HT, body: JSON.stringify({ kind, since: 0, changes: [] }) }).then((r) => r.status)
     console.log("yo:", JSON.stringify((await (await fetch(BASE + "/api/interno/yo", { headers: HT })).json()).access))
     console.log("sync clients:", await sync("clients"), "payments:", await sync("payments"), "porpagar:", await sync("porpagar"))
+    const w = await (await fetch(BASE + "/api/interno/sync", { method: "POST", headers: HT, body: JSON.stringify({ kind: "payments", since: 0, changes: [{ id: "wdtest-ro-pay", baseVersion: null, data: { id: "wdtest-ro-pay", clientId: "x", date: "2026-11-01", amount: 1, method: "efectivo" }, deleted: false, editedAt: new Date().toISOString() }] }) })).json()
+    console.log("payment write:", w.results[0].outcome, w.results[0].reason, "saved:", (await db.query(`select count(*)::int n from payments where id = 'wdtest-ro-pay'`)).rows[0].n)
     console.log("whatsapp:", (await fetch(BASE + "/api/interno/whatsapp", { method: "POST", headers: HT, body: JSON.stringify({ template: "recordatorio", items: [] }) })).status)
     console.log("portal:", (await fetch(BASE + "/api/interno/portal", { method: "POST", headers: HT, body: JSON.stringify({ clientId: "x" }) })).status)
     console.log("activity:", (await fetch(BASE + "/api/interno/actividad", { headers: HT })).status, "backup:", (await fetch(BASE + "/api/interno/respaldo", { headers: HT })).status)

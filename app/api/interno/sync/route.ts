@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
 import { accessOf, editorOf, json, requireInterno } from "@/lib/internal-api"
-import { kindAllowed } from "@/lib/team/roles"
+import { kindAllowed, kindWritable } from "@/lib/team/roles"
 import { MAX_BODY_BYTES, MAX_CHANGES, SYNC_KINDS, type Change, type SyncKind } from "@/lib/sync/protocol"
 import { sync } from "@/lib/sync/server"
 
@@ -40,6 +40,15 @@ export async function POST(request: NextRequest) {
       deleted: x.deleted === true,
       editedAt: x.editedAt,
     })
+  }
+  // A kind this role only reads: its changes are refused one by one (the phone shows them), the records still come.
+  if (access && changes.length && !kindWritable(access, b.kind as SyncKind)) {
+    try {
+      const r = await sync(b.kind as SyncKind, since, [], await editorOf(request))
+      return json({ ...r, results: changes.map((c) => ({ id: c.id, outcome: "rejected" as const, reason: "solo-lectura" })) })
+    } catch (e) {
+      return json({ error: "server", detail: e instanceof Error ? e.message.slice(0, 160) : "error" }, 500)
+    }
   }
   try {
     return json(await sync(b.kind as SyncKind, since, changes, await editorOf(request)))

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { areaAllowed, decodeRole, kindAllowed, pageAllowed } from "./roles"
+import { areaAllowed, decodeRole, kindAllowed, kindWritable, pageAllowed } from "./roles"
 
 const admin = { admin: true, role: "tecnico" as const }
 const oficina = { admin: false, role: "oficina" as const }
@@ -15,7 +15,9 @@ describe("Phase 14: roles", () => {
     expect(kindAllowed(admin, "payments")).toBe(true)
     expect(kindAllowed(oficina, "contratos")).toBe(true)
     expect(kindAllowed(tecnico, "stock")).toBe(true)
-    expect(kindAllowed(tecnico, "payments")).toBe(false)
+    expect(kindAllowed(tecnico, "payments")).toBe(true)
+    expect(kindWritable(tecnico, "payments")).toBe(false)
+    expect(kindWritable(tecnico, "stock")).toBe(true)
     expect(kindAllowed(tecnico, "porpagar")).toBe(false)
     expect(kindAllowed(cobranza, "payments")).toBe(true)
     expect(kindAllowed(cobranza, "stock")).toBe(false)
@@ -39,6 +41,7 @@ describe("Phase 14: roles", () => {
     expect(pageAllowed(tecnico, "/interno/software/wispdavor/red")).toBe(true)
     expect(pageAllowed(cobranza, "/interno/software/wispdavor/alta")).toBe(true)
     expect(pageAllowed(cobranza, "/interno/materiales")).toBe(false)
+    expect(pageAllowed(cobranza, "/interno/admin/numeros")).toBe(false)
     expect(pageAllowed(oficina, "/interno/admin/usuarios")).toBe(false)
     expect(pageAllowed(oficina, "/interno/admin/actividad/")).toBe(false)
     expect(pageAllowed(oficina, "/interno/admin/legal/contratos")).toBe(true)

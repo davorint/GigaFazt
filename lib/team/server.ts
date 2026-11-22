@@ -84,7 +84,8 @@ export async function members(fresh = false): Promise<Member[]> {
   return cache.members
 }
 
-export const memberById = async (id: string) => (await members()).find((m) => m.id === id) ?? null
+/** An account by id; one not in the cached list is looked up again (it may have just been made on another instance). */
+export const memberById = async (id: string) => (await members()).find((m) => m.id === id) ?? (await members(true)).find((m) => m.id === id) ?? null
 
 /** Accounts exist (an active admin): the shared team password stops working. */
 export const accountsOn = async () => (await members()).some((m) => m.active && m.admin)

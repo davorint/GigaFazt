@@ -1516,7 +1516,8 @@
         "stale": "The contract changed while you read it: reload the page and read it again.",
         "too_many": "Too many attempts; try again later.",
         "error": "Couldn't sign. Try again or message us on WhatsApp."
-      }
+      },
+      "changed": "You signed an earlier version on {date}; the contract has changed since, so it needs signing again."
     }
   }
 }

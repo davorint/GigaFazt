@@ -54,7 +54,7 @@ export const profileOf = (p: Pick<Plan, "downMbps">) => (p.downMbps >= 1000 && p
 const fold = (s: string) =>
   s
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "")
 
@@ -83,6 +83,13 @@ export function sitePorts(siteId: string, clients: Client[]): string[] {
 }
 
 export type AltaProblem = "name" | "whatsapp" | "site" | "plan" | "date" | "user" | "userTaken" | "snTaken" | "idTaken" | "port" | "ontId"
+
+/** Clients who already have this WhatsApp (a warning, not a stop: one person can have two apartments). */
+export function sameWhatsapp(phone: string, clients: Client[]): Client[] {
+  const d = phone.replace(/\D/g, "").slice(-10)
+  if (d.length < 10) return []
+  return clients.filter((c) => [c.whatsapp, c.phone].some((x) => x.replace(/\D/g, "").slice(-10) === d))
+}
 
 /** What stops the form (empty = it can go). */
 export function problems(i: AltaInput, clients: Client[]): AltaProblem[] {

@@ -42,13 +42,24 @@ async function signedAt(clientId: string, version: number): Promise<string> {
   return r?.d ?? ""
 }
 
-export type PortalContract = { title: string; text: string; version: number; signed: string } | null
+export type PortalContract = { title: string; text: string; version: number; signed: string; earlier: string } | null
+
+/** The date they signed an earlier version, if any (the text changed since: they're asked to sign again). */
+async function signedEarlier(clientId: string, version: number): Promise<string> {
+  const r = (await getPool().query(
+    `select data->>'signedDate' as d from contracts where deleted_at is null and kind = 'cliente' and data->>'clientId' = $1 and data->>'number' like 'PORTAL-v%' and data->>'number' <> $2
+      order by data->>'signedDate' desc limit 1`,
+    [clientId, folio(version)]
+  )).rows[0] as { d: string } | undefined
+  return r?.d ?? ""
+}
 
 /** What the portal shows: nothing without a text; else the text filled with the client's data and whether it's signed. */
 export async function portalContract(c: Client, today: string): Promise<PortalContract> {
   const t = await getTemplate()
   if (!hasTemplate(t)) return null
-  return { title: t.title, text: fillTemplate(t.body, c, today), version: t.version, signed: await signedAt(c.id, t.version) }
+  const signed = await signedAt(c.id, t.version)
+  return { title: t.title, text: fillTemplate(t.body, c, today), version: t.version, signed, earlier: signed ? "" : await signedEarlier(c.id, t.version) }
 }
 
 export type SignResult = { kind: "signed" | "already"; date: string } | { kind: "no-contract" | "stale" | "name" | "signature" }

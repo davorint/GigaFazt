@@ -40,7 +40,7 @@ export function ContractTextApp() {
   }, [t])
   if (!tpl) return msg ? <p className="mt-6 text-sm text-amber-200">{msg}</p> : null
   const save = async () => {
-    if (!window.confirm(t("confirm"))) return
+    if (!window.confirm(t(tpl.version === 0 ? "confirmFirst" : "confirm"))) return
     setMsg("")
     try {
       const r = await fetch("/api/interno/contrato", { method: "POST", headers: { "content-type": "application/json", "x-interno-nombre": encodeURIComponent(readState().name) }, body: JSON.stringify({ title, body }) })

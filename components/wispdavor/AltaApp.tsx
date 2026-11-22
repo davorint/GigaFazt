@@ -13,7 +13,7 @@ import { mxn } from "@/lib/materials/catalog"
 import { plans } from "@/lib/plans"
 import { syncAndWait } from "@/lib/sync/engine"
 import { readState } from "@/lib/sync/state"
-import { buildAlta, emptyAlta, freeOntId, oltValues, problems, profileOf, sitePorts, suggestUser, type AltaInput, type AltaProblem } from "@/lib/wispdavor/alta"
+import { buildAlta, emptyAlta, freeOntId, oltValues, problems, profileOf, sameWhatsapp, sitePorts, suggestUser, type AltaInput, type AltaProblem } from "@/lib/wispdavor/alta"
 import { fill, waNumber } from "@/lib/wispdavor/whatsapp"
 import { useWispData } from "./useWispData"
 
@@ -61,6 +61,8 @@ export function AltaApp() {
   const agenda = useSyncExternalStore(agendaStore.subscribe, agendaStore.snapshot, agendaStore.serverSnapshot)
   const [f, setF] = useState<AltaInput>(emptyAlta)
   const [touched, setTouched] = useState(false)
+  // A PPPoE user typed by hand isn't replaced by the suggestion when the name or apartment changes.
+  const [userTyped, setUserTyped] = useState(false)
   const [routers, setRouters] = useState<RouterRow[] | null>(null)
   const [routerId, setRouterId] = useState("")
   const [busy, setBusy] = useState(false)
@@ -81,6 +83,7 @@ export function AltaApp() {
   }
   if (!d.loaded) return null
   const errs = problems(f, d.clients)
+  const twins = sameWhatsapp(f.whatsapp, d.clients)
   const show = (k: AltaProblem) => touched && errs.includes(k)
   const err = (...ks: AltaProblem[]) => {
     const k = ks.find(show)
@@ -200,6 +203,7 @@ export function AltaApp() {
               setDone(null)
               setF(emptyAlta())
               setTouched(false)
+              setUserTyped(false)
             }}
           >
             {t("another")}
@@ -223,17 +227,24 @@ export function AltaApp() {
         <Field id="alta-name" label={t("name")} error={err("name")}>
           {(a) => (
             <>
-              <input {...a} className={INPUT} value={f.name} onChange={(e) => set({ name: e.target.value })} onBlur={() => !f.pppoeUser && f.name && set({ pppoeUser: suggestUser(f.name, f.apartment, d.clients) })} autoComplete="off" />
+              <input {...a} className={INPUT} value={f.name} onChange={(e) => set({ name: e.target.value })} onBlur={() => !userTyped && f.name && set({ pppoeUser: suggestUser(f.name, f.apartment, d.clients) })} autoComplete="off" />
             </>
           )}
         </Field>
-        <Field id="alta-whatsapp" label={t("whatsapp")} error={err("whatsapp")}>
+        <div className="grid content-start gap-1">
+          <Field id="alta-whatsapp" label={t("whatsapp")} error={err("whatsapp")}>
           {(a) => (
             <>
               <input {...a} className={INPUT} inputMode="tel" value={f.whatsapp} onChange={(e) => set({ whatsapp: e.target.value })} autoComplete="off" />
             </>
           )}
         </Field>
+          {twins.length > 0 && (
+            <p className="text-xs text-amber-200">
+              {t("twins", { names: twins.slice(0, 3).map((c) => c.name || c.id).join(", ") })}
+            </p>
+          )}
+        </div>
         <Field id="alta-site" label={t("site")} error={err("site")}>
           {(a) => (
             <>
@@ -267,7 +278,7 @@ export function AltaApp() {
           <Field id="alta-apartment" label={t("apartment")}>
             {(a) => (
               <>
-                <input {...a} className={INPUT} value={f.apartment} onChange={(e) => set({ apartment: e.target.value })} onBlur={() => f.name && set({ pppoeUser: suggestUser(f.name, f.apartment, d.clients) })} />
+                <input {...a} className={INPUT} value={f.apartment} onChange={(e) => set({ apartment: e.target.value })} onBlur={() => !userTyped && f.name && set({ pppoeUser: suggestUser(f.name, f.apartment, d.clients) })} />
               </>
             )}
           </Field>
@@ -342,7 +353,10 @@ export function AltaApp() {
         <Field id="alta-user" label={t("user")} error={err("user", "userTaken")}>
           {(a) => (
             <>
-              <input {...a} className={`${INPUT} font-mono`} value={f.pppoeUser} onChange={(e) => set({ pppoeUser: e.target.value })} autoComplete="off" spellCheck={false} />
+              <input {...a} className={`${INPUT} font-mono`} value={f.pppoeUser} onChange={(e) => {
+                  setUserTyped(e.target.value.trim() !== "")
+                  set({ pppoeUser: e.target.value })
+                }} autoComplete="off" spellCheck={false} />
             </>
           )}
         </Field>

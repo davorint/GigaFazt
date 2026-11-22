@@ -1516,7 +1516,8 @@
         "stale": "El contrato cambió mientras lo leías: recarga la página y léelo de nuevo.",
         "too_many": "Demasiados intentos; inténtalo más tarde.",
         "error": "No se pudo firmar. Inténtalo otra vez o escríbenos por WhatsApp."
-      }
+      },
+      "changed": "Firmaste una versión anterior el {date}; el contrato cambió desde entonces y hay que firmarlo otra vez."
     }
   }
 }

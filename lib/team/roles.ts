@@ -5,7 +5,7 @@
  *
  * - oficina: everything except managing accounts and the activity log (the default; what everyone had before).
  * - tecnico: field work: agenda, Técnico, clients, reports, deployments, stock, tools, telecom guides, network pages.
- *   No payments, accounts payable/receivable, contracts or WhatsApp sending.
+ *   Payments read only (balances in Clientes); no accounts payable/receivable, contracts or WhatsApp sending.
  * - cobranza: collections: clients, payments, receivables, reports, agenda, Alta and WispDavor's money pages.
  *   No stock, tools, payables, contracts or network control.
  *
@@ -25,10 +25,19 @@ export type Access = { admin: boolean; role: Role }
 const TECH_KINDS: SyncKind[] = ["surveys", "materials", "providers", "clients", "sites", "tools", "stock", "units", "reports", "notes", "rolls", "toolbuys", "agenda"]
 const COBRANZA_KINDS: SyncKind[] = ["clients", "sites", "reports", "payments", "notes", "agenda", "porcobrar"]
 
-/** The kinds of records a session may sync (read and write). */
+/** Kinds a role reads but doesn't change (técnico: payments, so Clientes shows real balances, not everyone owing). */
+const READ_ONLY: Record<Exclude<Role, "oficina">, SyncKind[]> = { tecnico: ["payments"], cobranza: [] }
+
+/** The kinds of records a session may sync (read; see kindWritable for changes). */
 export function kindAllowed(a: Access, kind: SyncKind): boolean {
   if (a.admin || a.role === "oficina") return true
-  return (a.role === "tecnico" ? TECH_KINDS : COBRANZA_KINDS).includes(kind)
+  return [...(a.role === "tecnico" ? TECH_KINDS : COBRANZA_KINDS), ...READ_ONLY[a.role]].includes(kind)
+}
+
+/** The kinds a session may change. */
+export function kindWritable(a: Access, kind: SyncKind): boolean {
+  if (a.admin || a.role === "oficina") return true
+  return kindAllowed(a, kind) && !READ_ONLY[a.role].includes(kind)
 }
 
 /** Server areas beyond the synced records. */
@@ -73,7 +82,6 @@ const PAGES: Record<Exclude<Role, "oficina">, string[]> = {
     "/interno/admin/agenda",
     "/interno/admin/clientes",
     "/interno/admin/reportes_clientes",
-    "/interno/admin/numeros",
     "/interno/admin/cuentas-por-cobrar",
     "/interno/software/wispdavor/alta",
     "/interno/software/wispdavor/cortes",

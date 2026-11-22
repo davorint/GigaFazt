@@ -21,8 +21,9 @@ export async function activity(f: { days: number; who: string; kind: string }): 
   const who = f.who.trim()
   const kinds: ActivityKind[] = f.kind && ([...SYNC_KINDS, "router", "whatsapp"] as string[]).includes(f.kind) ? [f.kind as ActivityKind] : [...SYNC_KINDS, "router", "whatsapp"]
   const out: Entry[] = []
-  const whoSql = (col: string, i: number) => (who ? ` and ${col} like $${i}` : "")
-  const args = (base: unknown[]) => (who ? [...base, `${who}%`] : base)
+  // The exact person (a deletion is saved as "<name> (borrado)").
+  const whoSql = (col: string, i: number) => (who ? ` and (${col} = $${i} or ${col} = $${i} || ' (borrado)')` : "")
+  const args = (base: unknown[]) => (who ? [...base, who] : base)
   for (const k of kinds) {
     if (k === "router") {
       const rows = (
