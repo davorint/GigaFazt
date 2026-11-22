@@ -891,7 +891,8 @@
         "not-found": "Ese router ya no existe.",
         "no-host": "Falta la dirección del servidor (paso 1).",
         "not-in-tunnel": "Ese router no está en el túnel."
-      }
+      },
+      "repaste": "Cambió la dirección o la llave del servidor: vuelve a pegar el script del túnel en cada router (Ver script del router). Router en vivo ya usa la dirección nueva."
     },
     "alta": {
       "lead": "Llena esto una vez y se hace todo lo demás: el cliente en Clientes, la instalación en la Agenda, su usuario PPPoE en el router del despliegue, los comandos de la OLT y su enlace al portal con un mensaje de bienvenida.",
@@ -905,7 +906,7 @@
       "planTitle": "Plan",
       "perMonth": "{amount} al mes",
       "tv": "Agregar TV",
-      "billing": "Se cobra desde el día de la instalación (si es a más tardar el 15, ese mes; si es después, desde el siguiente).",
+      "billing": "Se cobra desde la fecha de instalación que pongas aquí (si es a más tardar el 15, ese mes; si es después, desde el siguiente). Si la instalación se mueve, cambia el inicio del servicio en Clientes.",
       "installTitle": "Instalación",
       "date": "Fecha",
       "time": "Hora (opcional)",

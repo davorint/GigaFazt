@@ -61,7 +61,7 @@
       "cobranza": "Cobranza"
     },
     "roleHints": {
-      "oficina": "Todo, menos administrar cuentas y ver la actividad.",
+      "oficina": "Todo, menos la actividad del equipo y administrar cuentas (cada quien sí cambia su propia contraseña).",
       "tecnico": "Trabajo de campo: Agenda, Técnico, clientes (con sus pagos, solo para ver), reportes, despliegues, materiales, herramientas, equipos de telecom y la red. Sin cuentas por pagar o cobrar, contratos ni WhatsApp.",
       "cobranza": "Cobranza: clientes, pagos, cuentas por cobrar, reportes, Agenda, Alta y las páginas de cobro de WispDavor. Sin inventario, Números, cuentas por pagar, contratos ni control de la red."
     },

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import interno from "@/messages/internal/interno.es.json"
 import { LOGIN_PATH } from "@/lib/internal-pages"
-import { pageAllowed, type Access } from "@/lib/team/roles"
+import { areaAllowed, pageAllowed, type Access, type Area } from "@/lib/team/roles"
 
 /**
  * When an internal page opens, asks the server whether this session still counts (owner review 2026-11-20): the proxy
@@ -36,6 +36,10 @@ export function SessionGuard() {
         setBlocked(!pageAllowed(access, window.location.pathname))
         for (const a of document.querySelectorAll<HTMLAnchorElement>("a[data-nav]")) {
           if (!pageAllowed(access, a.pathname)) (a.closest("li") ?? a).setAttribute("hidden", "")
+        }
+        // Buttons for something the role can't do (the full backup, the files zip): hidden, not a refusal later.
+        for (const el of document.querySelectorAll<HTMLElement>("[data-area]")) {
+          if (!areaAllowed(access, el.dataset.area as Area)) el.setAttribute("hidden", "")
         }
       })
       .catch(() => undefined)

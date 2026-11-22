@@ -44,6 +44,7 @@ const HA = { cookie: `gf_interno=${admin}`, "content-type": "application/json", 
     await page.waitForFunction(() => document.querySelector('nav a[href="/interno/admin/cuentas-por-pagar"]')?.closest("li")?.hidden === true, null, { timeout: 15000 })
     const shown = await page.evaluate(() => [...[...document.querySelectorAll("nav")].at(-1).querySelectorAll("a[data-nav]")].filter((a) => !a.closest("li").hidden).map((a) => a.textContent.trim()))
     console.log("menu:", JSON.stringify(shown))
+    console.log("backup buttons hidden:", await page.evaluate(() => document.querySelector('[data-area="backup"]')?.hidden), await page.evaluate(() => document.querySelector('[data-area="files"]')?.hidden))
     console.log("home blocked:", await page.getByRole("alertdialog").count())
     await browser.close()
     const act = await (await fetch(BASE + "/api/interno/actividad?dias=1", { headers: HA })).json()

@@ -85,7 +85,16 @@ export function TunnelApp() {
         <button
           type="button"
           disabled={!can || !hostOk || !pubOk}
-          onClick={() => void post({ action: "settings", settings: { host: host.trim().toLowerCase(), publicKey: pub.trim(), port: d.settings.port } }).then((b) => b && load())}
+          onClick={() => {
+            const keyChanged = !!d.settings.publicKey && pub.trim() !== d.settings.publicKey
+            const hostChanged = !!d.settings.host && host.trim().toLowerCase() !== d.settings.host
+            void post({ action: "settings", settings: { host: host.trim().toLowerCase(), publicKey: pub.trim(), port: d.settings.port } }).then(async (b) => {
+              if (!b) return
+              await load()
+              // The routers' scripts carry the server's address and key: changed, they must be pasted again.
+              if ((keyChanged || hostChanged) && d.peers.some((p) => p.inTunnel)) setMsg(t("repaste"))
+            })
+          }}
           className={`${SMALL} disabled:opacity-50`}
         >
           {t("save")}

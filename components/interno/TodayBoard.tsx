@@ -279,7 +279,7 @@ export function SessionActions() {
     <section aria-label={t("title")} className="grid gap-3 rounded-xl border border-white/10 p-4">
       <h2 className="text-sm font-medium text-foreground">{t("title")}</h2>
       <div className="flex flex-wrap gap-2">
-        <a href="/api/interno/respaldo" download className={SMALL}>
+        <a href="/api/interno/respaldo" download data-area="backup" className={SMALL}>
           {t("backup")}
         </a>
         <DownloadFiles />

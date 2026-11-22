@@ -58,7 +58,8 @@ export function routerScript(s: TunnelSettings, p: Pick<Peer, "n" | "name">, por
     `/interface wireguard add name=${WG_IFACE} listen-port=13231 comment="WispDavor"`,
     `/interface wireguard peers add interface=${WG_IFACE} public-key=${q(s.publicKey || "LLAVE-PUBLICA-DEL-SERVIDOR")} endpoint-address=${s.host || "servidor.ejemplo.com"} endpoint-port=${s.port} allowed-address=${VPS_TUNNEL_IP}/32 persistent-keepalive=25s comment="WispDavor"`,
     `/ip address add address=${peerIp(p.n)}/24 interface=${WG_IFACE} comment="WispDavor"`,
-    `/ip firewall filter add chain=input in-interface=${WG_IFACE} src-address=${VPS_TUNNEL_IP} protocol=tcp dst-port=${ports.rest},${ports.api} action=accept place-before=0 comment="WispDavor: REST y API por el tunel"`,
+    // place-before=0 fails on a router without filter rules (then nothing is blocked and the rule just goes in).
+    `:if ([:len [/ip firewall filter find]] > 0) do={ /ip firewall filter add chain=input in-interface=${WG_IFACE} src-address=${VPS_TUNNEL_IP} protocol=tcp dst-port=${ports.rest},${ports.api} action=accept place-before=0 comment="WispDavor: REST y API por el tunel" } else={ /ip firewall filter add chain=input in-interface=${WG_IFACE} src-address=${VPS_TUNNEL_IP} protocol=tcp dst-port=${ports.rest},${ports.api} action=accept comment="WispDavor: REST y API por el tunel" }`,
     "# Copia esta llave pública y pégala en WispDavor → Túnel:",
     `:put [/interface wireguard get [find name=${WG_IFACE}] public-key]`,
   ].join("\n")

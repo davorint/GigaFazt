@@ -12,6 +12,10 @@ export async function getTunnel(): Promise<TunnelSettings> {
 
 export async function saveTunnel(v: unknown, by: string): Promise<TunnelSettings> {
   const s = decodeSettings(v)
+  const before = await getTunnel()
+  // Routers already pointed at the server follow it to its new address.
+  if (before.host && s.host && before.host !== s.host)
+    await getPool().query(`update router_rest set host = $1, updated_at = now(), updated_by = $3 where host = $2 and router_id in (select router_id from router_tunnels)`, [s.host, before.host, by])
   await getPool().query(
     `insert into wisp_settings (key, value, updated_by) values ($1, $2, $3) on conflict (key) do update set value = excluded.value, updated_at = now(), updated_by = excluded.updated_by`,
     [KEY, s, by]

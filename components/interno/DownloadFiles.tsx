@@ -63,7 +63,7 @@ export function DownloadFiles() {
     }
   }
   return (
-    <span className="flex flex-wrap items-center gap-2">
+    <span data-area="files" className="flex flex-wrap items-center gap-2">
       <button type="button" disabled={busy} onClick={() => void run()} className={SMALL}>
         {t("button")}
       </button>

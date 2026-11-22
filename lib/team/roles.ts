@@ -51,8 +51,8 @@ export function areaAllowed(a: Access, area: Area): boolean {
   return false
 }
 
-/** Admin-only pages. */
-const ADMIN_PAGES = ["/interno/admin/usuarios", "/interno/admin/actividad"]
+/** Admin-only pages (Usuarios y accesos opens for everyone: each person changes their own password there). */
+const ADMIN_PAGES = ["/interno/admin/actividad"]
 
 /** Pages (path prefixes under /interno) each role can open; "/interno" alone is the home page. */
 const PAGES: Record<Exclude<Role, "oficina">, string[]> = {
@@ -96,7 +96,7 @@ const PAGES: Record<Exclude<Role, "oficina">, string[]> = {
   ],
 }
 /** Hubs every role opens (they list what's inside; each page inside is checked on its own). */
-const HUBS = ["/interno", "/interno/admin", "/interno/software", "/interno/software/wispdavor", "/interno/entrar"]
+const HUBS = ["/interno", "/interno/admin", "/interno/admin/usuarios", "/interno/software", "/interno/software/wispdavor", "/interno/entrar"]
 
 const strip = (p: string) => p.replace(/^\/[a-z]{2}(?=\/interno)/, "").replace(/\/+$/, "").toLowerCase() || "/"
 const under = (p: string, prefix: string) => p === prefix || p.startsWith(`${prefix}/`)
