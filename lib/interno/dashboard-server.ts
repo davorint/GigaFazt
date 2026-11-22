@@ -20,10 +20,11 @@ export type NetworkFigures = {
 export async function networkFigures(): Promise<NetworkFigures> {
   const pool = getPool()
   // The last 7 days from the 5-minute table, older days (up to 28) from the hourly one; both summed per hour first.
+  // The hour still running is left out (it would pull its cell's average down).
   const rows = (
     await pool.query(
       `with hours as (
-         select date_trunc('hour', bucket) as h, sum(down + up)::float8 as bytes from traffic_5m where bucket > now() - interval '7 days' group by 1
+         select date_trunc('hour', bucket) as h, sum(down + up)::float8 as bytes from traffic_5m where bucket > now() - interval '7 days' and bucket < date_trunc('hour', now()) group by 1
          union all
          select hour as h, sum(down + up)::float8 from traffic_hourly where hour > now() - interval '28 days' and hour <= now() - interval '7 days' group by 1
        )

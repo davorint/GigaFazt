@@ -25,7 +25,11 @@ const ClientsMap = dynamic(() => import("@/components/wispdavor/ClientsMap"), { 
 
 const PERIODS = [6, 12, 24] as const
 const short = (m: string) => new Date(`${m}-15T12:00:00`).toLocaleDateString("es-MX", { month: "short", year: "2-digit" })
-const k = (n: number) => (Math.abs(n) >= 1000 ? `$${(n / 1000).toLocaleString("es-MX", { maximumFractionDigits: 1 })}k` : `$${Math.round(n)}`)
+const k = (n: number) => {
+  const a = Math.abs(n)
+  const v = a >= 1000 ? `$${(a / 1000).toLocaleString("es-MX", { maximumFractionDigits: 1 })}k` : `$${Math.round(a)}`
+  return n < 0 ? `−${v}` : v
+}
 const pct = (x: number | null) => (x === null ? "—" : `${Math.round(x * 1000) / 10} %`)
 const DAYS = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
 
@@ -126,10 +130,13 @@ export function TableroApp() {
   }
   const hist = year.slice(-6)
   const fLabels = [...hist.map((r) => short(r.month)), ...fc.rows.map((r) => short(r.month))]
-  const pad = (xs: (number | null)[]) => [...Array(hist.length).fill(null), ...xs]
+  // The band starts at this month's point (both bounds = what it bills), so it continues the history line.
+  const last = hist[hist.length - 1]?.expected ?? 0
+  const pad = (xs: (number | null)[], start: number) => [...Array(hist.length - 1).fill(null), start, ...xs]
   const forecastOption = {
     grid: grid({ top: 36 }),
-    legend: legend({ data: [t("forecast.actual"), t("forecast.range")] }),
+    // The range's marker is a filled, lighter block like the band itself (the line keeps the line marker).
+    legend: legend({ data: [{ name: t("forecast.actual") }, { name: t("forecast.range"), icon: "rect", itemStyle: { color: SERIES[0], opacity: 0.45 } }], itemHeight: 8 }),
     tooltip: {
       trigger: "axis",
       // The band is stacked (low + gap): the tooltip says both bounds as amounts, not the gap.
@@ -146,8 +153,8 @@ export function TableroApp() {
     series: [
       line(t("forecast.actual"), [...hist.map((r) => r.expected), ...fc.rows.map(() => null)], SERIES[0], { showSymbol: true, symbolSize: 6 }),
       // The band: from "with the average cancellations" up to "nobody leaves" (stacked: base invisible, then the gap).
-      line(t("forecast.low"), pad(fc.rows.map((r) => r.withChurn)), SERIES[0], { stack: "band", lineStyle: { width: 1, opacity: 0.6 }, symbol: "none" }),
-      line(t("forecast.range"), pad(fc.rows.map((r) => Math.round((r.scheduled - r.withChurn) * 100) / 100)), SERIES[0], { stack: "band", lineStyle: { width: 1, opacity: 0.6 }, areaStyle: { color: SERIES[0], opacity: 0.35 }, symbol: "none" }),
+      line(t("forecast.low"), pad(fc.rows.map((r) => r.withChurn), last), SERIES[0], { stack: "band", lineStyle: { width: 1, opacity: 0.6 }, symbol: "none" }),
+      line(t("forecast.range"), pad(fc.rows.map((r) => Math.round((r.scheduled - r.withChurn) * 100) / 100), 0), SERIES[0], { stack: "band", lineStyle: { width: 1, opacity: 0.6 }, areaStyle: { color: SERIES[0], opacity: 0.35 }, symbol: "none" }),
     ],
   }
   const profitSorted = [...sites].sort((a, b) => a.profit - b.profit)
@@ -256,7 +263,7 @@ export function TableroApp() {
   const zoneColor = { baja: STATUS.critical, justo: STATUS.warning, bien: STATUS.good, satura: STATUS.serious } as const
   const lightOption = {
     grid: grid(),
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, formatter: (ps: { name: string; value: number }[]) => `${ps[0].name} dBm · ${ps[0].value} ONT` },
+    tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, formatter: (ps: { name: string; value: number; dataIndex: number }[]) => `${ps[0].name} dBm · ${ps[0].value} ONT<br/>${t(`zones.${light.bins[ps[0].dataIndex]?.zone ?? "bien"}`)}` },
     xAxis: categoryAxis(light.bins.map((b) => String(b.dbm))),
     yAxis: valueAxis(undefined, { minInterval: 1 }),
     series: [bar(t("network.light"), light.bins.map((b) => ({ value: b.n, itemStyle: { color: zoneColor[b.zone] } })), STATUS.good, { barCategoryGap: "12%" })],
@@ -375,7 +382,7 @@ export function TableroApp() {
               ))}
             </p>
           </Panel>
-          <Panel title={t("map.title")} takeaway={t("map.takeaway", { n: mapRows.filter((s) => s.lat !== null).length })} empty={!mapRows.length ? t("empty.sites") : !mapRows.some((s) => s.lat !== null) ? t("empty.map") : null} tableLabel={tl} table={{ head: [t("cols.site"), t("cols.clients"), t("map.late"), t("map.suspended")], rows: mapRows.map((s) => [s.name, s.clients, s.late, s.suspended]) }}>
+          <Panel title={t("map.title")} takeaway={mapRows.some((s) => s.lat !== null) ? t("map.takeaway", { n: mapRows.filter((s) => s.lat !== null).length }) : undefined} empty={!mapRows.length ? t("empty.sites") : !mapRows.some((s) => s.lat !== null) ? t("empty.map") : null} tableLabel={tl} table={{ head: [t("cols.site"), t("cols.clients"), t("map.late"), t("map.suspended")], rows: mapRows.map((s) => [s.name, s.clients, s.late, s.suspended]) }}>
             <ClientsMap sites={mapRows} label={t("map.title")} line={(s) => t("map.line", { n: s.clients, late: s.late })} />
           </Panel>
         </div>
