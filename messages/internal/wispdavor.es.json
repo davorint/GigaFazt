@@ -13,7 +13,8 @@
       "hotspot": "Fichas de hotspot · WispDavor",
       "monitoreo": "Monitoreo · WispDavor",
       "cobranza": "Embudo de cobranza · WispDavor",
-      "envivo": "Router en vivo · WispDavor"
+      "envivo": "Router en vivo · WispDavor",
+      "red": "Red y ONTs · WispDavor"
     },
     "kicker": "Uso interno · Software · WispDavor",
     "title": "WispDavor",
@@ -75,6 +76,10 @@
       "envivo": {
         "name": "Router en vivo (REST o API)",
         "desc": "Un router a la vez por su API REST o la API de MikroTik: recursos, interfaces con tráfico en vivo, sesiones PPPoE, bitácora, la sesión de un cliente con acciones y respaldos de la configuración. Solo lectura salvo que lo cambies."
+      },
+      "red": {
+        "name": "Red y ONTs",
+        "desc": "Cada ONT por puerto de la OLT: números de serie y ONT ID repetidos, datos faltantes, luz mala o que va bajando, e IDs libres."
       }
     },
     "existing": {
@@ -742,6 +747,60 @@
       "compare": "Ver cambios contra la copia anterior",
       "noDiff": "Solo cambió el orden o los espacios.",
       "more": "Hay más cambios: descarga las dos copias para verlos completos."
+    },
+    "red": {
+      "lead": "Las ONTs de los servicios de internet de Clientes (sin los cancelados), agrupadas por puerto de la OLT (hasta {n} por puerto GPON). La luz sale de las lecturas de «display ont optical-info» que pegas en Clientes; aquí no hay conexión con la OLT.",
+      "site": "Despliegue",
+      "allSites": "Todos",
+      "paste": "Pegar lecturas de la OLT en Clientes →",
+      "sum": {
+        "total": "ONTs",
+        "bien": "Luz bien",
+        "justo": "Luz justa",
+        "mala": "Luz mala",
+        "sin": "Sin lectura"
+      },
+      "issuesTitle": "Por atender ({n})",
+      "noIssues": "Todo en orden.",
+      "none": "No hay servicios de internet.",
+      "issue": {
+        "dupSn": "El número de serie {sn} está en {n} servicios: la OLT solo acepta uno.",
+        "dupId": "El puerto {port} tiene el ONT ID {id} en {n} servicios.",
+        "missing": "Falta: {fields}.",
+        "light": "Luz {status}: {rx} dBm.",
+        "falling": "La luz bajó {db} dB desde la lectura más vieja: revisa conectores y dobleces.",
+        "stale": "La última lectura tiene {days} días.",
+        "noReading": "Sin lectura de luz todavía."
+      },
+      "field": {
+        "sn": "número de serie",
+        "port": "puerto de la OLT",
+        "ontId": "ONT ID"
+      },
+      "light": {
+        "bien": "bien",
+        "justo": "justa",
+        "baja": "baja",
+        "satura": "saturada"
+      },
+      "status": {
+        "activo": "activo",
+        "suspendido": "suspendido",
+        "cancelado": "cancelado"
+      },
+      "portsTitle": "Por puerto",
+      "noPorts": "Ningún servicio tiene puerto de la OLT todavía.",
+      "port": "Puerto {port}",
+      "portLine": "{used} usados · {free} libres · siguiente ID libre: {next}",
+      "col": {
+        "id": "ONT ID",
+        "client": "Cliente",
+        "ont": "Modelo y serie",
+        "rx": "Luz (ONT)",
+        "date": "Leída"
+      },
+      "drop": "−{db} dB",
+      "noName": "Sin nombre"
     }
   }
 }
