@@ -1498,6 +1498,25 @@
       "badPhoto": "The photo couldn't be sent: use a JPG, PNG or WebP image.",
       "busy": "Too many attempts; try again later.",
       "error": "Couldn't send it. Try again or message us on WhatsApp."
+    },
+    "contract": {
+      "title": "Your contract",
+      "lead": "Read it in full. To sign, type your full name, draw your signature and tick that you accept it.",
+      "name": "Your full name",
+      "signature": "Your signature (draw it with your finger)",
+      "clear": "Clear signature",
+      "accept": "I read the whole contract and accept its terms.",
+      "sign": "Sign contract",
+      "signing": "Signing…",
+      "signed": "You signed your contract on {date}. If you need a copy, ask us on WhatsApp.",
+      "missing": "Type your full name, draw your signature and tick the box.",
+      "errors": {
+        "name": "Type your first and last name.",
+        "signature": "Draw your signature again.",
+        "stale": "The contract changed while you read it: reload the page and read it again.",
+        "too_many": "Too many attempts; try again later.",
+        "error": "Couldn't sign. Try again or message us on WhatsApp."
+      }
     }
   }
 }

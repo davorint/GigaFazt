@@ -1498,6 +1498,25 @@
       "badPhoto": "La foto no se pudo enviar: usa una imagen JPG, PNG o WebP.",
       "busy": "Demasiados intentos; inténtalo más tarde.",
       "error": "No se pudo enviar. Inténtalo otra vez o escríbenos por WhatsApp."
+    },
+    "contract": {
+      "title": "Tu contrato",
+      "lead": "Léelo completo. Para firmarlo escribe tu nombre completo, dibuja tu firma y marca que lo aceptas.",
+      "name": "Tu nombre completo",
+      "signature": "Tu firma (dibújala con el dedo)",
+      "clear": "Borrar firma",
+      "accept": "Leí el contrato completo y acepto sus términos.",
+      "sign": "Firmar contrato",
+      "signing": "Firmando…",
+      "signed": "Firmaste tu contrato el {date}. Si necesitas una copia, pídenosla por WhatsApp.",
+      "missing": "Escribe tu nombre completo, dibuja tu firma y marca la casilla.",
+      "errors": {
+        "name": "Escribe tu nombre y apellido.",
+        "signature": "Dibuja tu firma otra vez.",
+        "stale": "El contrato cambió mientras lo leías: recarga la página y léelo de nuevo.",
+        "too_many": "Demasiados intentos; inténtalo más tarde.",
+        "error": "No se pudo firmar. Inténtalo otra vez o escríbenos por WhatsApp."
+      }
     }
   }
 }

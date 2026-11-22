@@ -17,7 +17,8 @@
       "red": "Red y ONTs · WispDavor",
       "tunel": "Túnel a los routers · WispDavor",
       "alta": "Alta de cliente · WispDavor",
-      "capacidad": "Capacidad de enlaces · WispDavor"
+      "capacidad": "Capacidad de enlaces · WispDavor",
+      "contrato": "Contrato del cliente · WispDavor"
     },
     "kicker": "Uso interno · Software · WispDavor",
     "title": "WispDavor",
@@ -95,6 +96,10 @@
       "capacidad": {
         "name": "Capacidad de enlaces",
         "desc": "Qué tan llenos van los enlaces de cada despliegue en la hora pico, cuántos clientes más caben y a qué horas se llena."
+      },
+      "contrato": {
+        "name": "Contrato del cliente",
+        "desc": "El texto del contrato de servicio que cada cliente firma desde su portal (nombre, firma dibujada y «acepto»); la copia firmada queda en Legal → Contratos."
       }
     },
     "existing": {
@@ -979,6 +984,21 @@
       "profile": "A qué horas se llena (promedio por hora del día)",
       "down": "Bajada",
       "up": "Subida"
+    },
+    "contrato": {
+      "lead": "Pega aquí el contrato de servicio tal como lo aprobó tu abogado. Cada cliente lo ve en su portal con sus datos, lo firma con su nombre, su firma dibujada y «Leí y acepto», y la copia firmada (PDF y firma) queda en Legal → Contratos. Si cambias el texto es una versión nueva y se pide firmar otra vez.",
+      "placeholder": "Todavía no hay texto: el portal no muestra ningún contrato hasta que pegues el aprobado por tu abogado (y revises con él lo que pide Profeco para contratos de adhesión).",
+      "current": "Versión {v}, guardada el {date} por {by}.",
+      "adminOnly": "Solo un administrador puede cambiar el texto.",
+      "titleLabel": "Título",
+      "bodyLabel": "Texto del contrato",
+      "fields": "Puedes usar estos campos y se llenan con los datos de cada cliente: {list}",
+      "save": "Guardar como versión nueva",
+      "confirm": "¿Guardar como versión nueva? Todos los clientes tendrán que firmarla otra vez.",
+      "saved": "Guardado: versión {v}.",
+      "empty": "Escribe el título y el texto.",
+      "offline": "Sin conexión con el sitio.",
+      "preview": "Así lo verá un cliente (datos de ejemplo)"
     }
   }
 }

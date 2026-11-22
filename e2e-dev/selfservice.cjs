@@ -16,6 +16,8 @@ const change = (data, baseVersion = null) => ({ id: data.id, baseVersion, data, 
   const db = new Pool({ connectionString: process.env.DATABASE_URL })
   const q = async (s, a) => (await db.query(s, a)).rowCount
   for (let i = 0; i < 40; i++) { try { await fetch(BASE + "/es"); break } catch { await new Promise((r) => setTimeout(r, 1000)) } }
+  // The portal allows 60 lookups an hour per address; repeated test runs from this machine add up (dev database only).
+  await db.query(`delete from report_hits where ip_hash like 'p:%'`)
   const now = new Date().toISOString()
   const before = (await (await fetch(BASE + "/api/interno/whatsapp", { headers: H })).json()).notices
   const errors = []

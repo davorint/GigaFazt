@@ -21,25 +21,65 @@ function encode(s: string): string {
   return out
 }
 
-/** A4 page, 50 pt margins; lines go down from the top, each `gap` points below the last (default 1.5 × its size). */
+/** Text width room on an A4 page with 50 pt margins. */
+const WIDTH = 495
+/** Helvetica's average character width, as a share of the font size (a little wide on purpose, so lines never overflow). */
+const AVG = 0.52
+
+/** A paragraph cut into lines that fit the page at `size` (phase 15: contracts are long text). Blank lines stay. */
+export function wrapText(text: string, size = 10): string[] {
+  const max = Math.max(20, Math.floor(WIDTH / (size * AVG)))
+  const out: string[] = []
+  for (const para of text.replace(/\r\n/g, "\n").split("\n")) {
+    let line = ""
+    for (const word of para.split(/\s+/).filter(Boolean)) {
+      if (!line) line = word
+      else if (line.length + 1 + word.length <= max) line += ` ${word}`
+      else {
+        out.push(line)
+        line = word
+      }
+      while (line.length > max) {
+        out.push(line.slice(0, max))
+        line = line.slice(max)
+      }
+    }
+    out.push(line)
+  }
+  return out
+}
+
+/**
+ * A4 pages, 50 pt margins; lines go down from the top, each `gap` points below the last (default 1.5 × its size), and
+ * go on to a new page at the bottom margin (phase 15: contracts; receipts fit one page).
+ */
 export function simplePdf(lines: PdfLine[], title = ""): Uint8Array {
+  const pages: string[][] = [[]]
   let y = 842 - 60
-  const ops: string[] = []
   for (const l of lines) {
     const size = l.size ?? 11
-    y -= l.gap ?? Math.round(size * 1.5)
-    ops.push(`BT ${l.muted ? "0.4 0.4 0.4 rg" : "0 0 0 rg"} /${l.bold ? "F2" : "F1"} ${size} Tf 50 ${y} Td (${encode(l.text)}) Tj ET`)
+    const gap = l.gap ?? Math.round(size * 1.5)
+    if (y - gap < 50) {
+      pages.push([])
+      y = 842 - 60
+    }
+    y -= gap
+    pages[pages.length - 1].push(`BT ${l.muted ? "0.4 0.4 0.4 rg" : "0 0 0 rg"} /${l.bold ? "F2" : "F1"} ${size} Tf 50 ${y} Td (${encode(l.text)}) Tj ET`)
   }
-  const content = ops.join("\n")
+  // 1 catalog, 2 pages, 3–4 fonts, 5 info, then each page followed by its content.
+  const pageObj = (i: number) => 6 + i * 2
   const objects = [
     "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>",
+    `<< /Type /Pages /Kids [${pages.map((_, i) => `${pageObj(i)} 0 R`).join(" ")}] /Count ${pages.length} >>`,
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
-    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
     `<< /Title (${encode(title)}) /Producer (GigaFazt) >>`,
   ]
+  pages.forEach((ops, i) => {
+    const content = ops.join("\n")
+    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${pageObj(i) + 1} 0 R >>`)
+    objects.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`)
+  })
   // One byte per character (WinAnsi), so string lengths are byte offsets.
   let pdf = "%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"
   const offsets: number[] = []
@@ -49,7 +89,7 @@ export function simplePdf(lines: PdfLine[], title = ""): Uint8Array {
   })
   const xref = pdf.length
   pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, "0")} 00000 n \n`).join("")}`
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R /Info 7 0 R >>\nstartxref\n${xref}\n%%EOF\n`
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R /Info 5 0 R >>\nstartxref\n${xref}\n%%EOF\n`
   const bytes = new Uint8Array(pdf.length)
   for (let i = 0; i < pdf.length; i++) bytes[i] = pdf.charCodeAt(i) & 0xff
   return bytes

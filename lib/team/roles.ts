@@ -83,6 +83,7 @@ const PAGES: Record<Exclude<Role, "oficina">, string[]> = {
     "/interno/software/wispdavor/pagos",
     "/interno/software/wispdavor/facturas",
     "/interno/software/wispdavor/cobranza",
+    "/interno/software/wispdavor/contrato",
     "/interno/guias",
   ],
 }

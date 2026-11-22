@@ -88,7 +88,7 @@ export function vpsScript(s: TunnelSettings, peers: Peer[]): string {
     "EOF",
     "sysctl -w net.ipv4.ip_forward=1 >/dev/null",
     "echo net.ipv4.ip_forward=1 > /etc/sysctl.d/99-wispdavor.conf",
-    "# Only WispDavor's own table is replaced; any other firewall rules on the server stay as they are.",
+    "# Solo se reemplaza la tabla de WispDavor; las demás reglas del firewall del servidor se quedan como están.",
     "cat > /etc/wispdavor.nft <<EOF",
     "table ip wispdavor",
     "delete table ip wispdavor",
@@ -108,7 +108,7 @@ export function vpsScript(s: TunnelSettings, peers: Peer[]): string {
     "systemctl enable nftables >/dev/null 2>&1 || true",
     "systemctl enable wg-quick@wg0 >/dev/null 2>&1",
     "systemctl restart wg-quick@wg0",
-    "# With ufw on, forwarded traffic is dropped by default: allow it for the tunnel.",
+    "# Con ufw encendido, el tráfico reenviado se bloquea por omisión: se permite para el túnel.",
     `if command -v ufw >/dev/null && ufw status | grep -q " active"; then ufw route allow out on wg0; ufw allow ${s.port}/udp; ufw allow ${BASE_PORT}:${BASE_PORT + 2 * MAX_PEERS + 1}/tcp; fi`,
     `echo "Listo. Abre en el firewall del proveedor: UDP ${s.port} y TCP ${BASE_PORT}-${BASE_PORT + 2 * MAX_PEERS + 1}."`,
   ]

@@ -15,6 +15,8 @@ const change = (data) => ({ id: data.id, baseVersion: null, data, deleted: false
 ;(async () => {
   const db = new Pool({ connectionString: process.env.DATABASE_URL })
   for (let i = 0; i < 40; i++) { try { await fetch(BASE + "/es"); break } catch { await new Promise((r) => setTimeout(r, 1000)) } }
+  // The portal allows 60 lookups an hour per address; repeated test runs from this machine add up (dev database only).
+  await db.query(`delete from report_hits where ip_hash like 'p:%'`)
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" })
   const now = new Date().toISOString()
   await fetch(BASE + "/api/interno/sync", { method: "POST", headers: H, body: JSON.stringify({ kind: "agenda", since: 0, changes: [change({ id: AID, kind: "instalacion", date: today, time: "11:00", who: "Prueba WD", status: "confirmada", name: "Cliente Sin Señal", phone: "", address: "Sótano 2", notes: "", createdAt: now, updatedAt: now })] }) })

@@ -1,5 +1,6 @@
 "use client"
 
+import { PortalContract } from "./PortalContract"
 import { shrink } from "@/lib/field/shrink"
 import { MAX_DESCRIPTION, PORTAL_CATEGORIES } from "@/lib/wispdavor/selfservice"
 import { useEffect, useState, type ReactNode } from "react"
@@ -346,6 +347,7 @@ export function PortalApp({ pay }: { pay: ReactNode }) {
             ))}
           </ul>
         </section>
+        <PortalContract token={tokenFromHash()} day={day} />
         <section aria-labelledby="pt-reports" className={CARD}>
           <h2 id="pt-reports" className={H2}>
             {t("reportsTitle")}
