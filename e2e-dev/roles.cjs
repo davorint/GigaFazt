@@ -47,9 +47,14 @@ const HA = { cookie: `gf_interno=${admin}`, "content-type": "application/json", 
     console.log("backup buttons hidden:", await page.evaluate(() => document.querySelector('[data-area="backup"]')?.hidden), await page.evaluate(() => document.querySelector('[data-area="files"]')?.hidden))
     console.log("home blocked:", await page.getByRole("alertdialog").count())
     await browser.close()
-    const act = await (await fetch(BASE + "/api/interno/actividad?dias=1", { headers: HA })).json()
-    console.log("admin activity:", act.entries.length > 0, "kinds ok:", act.entries.every((e) => e.at && e.kind && e.what), "errors:", JSON.stringify(errors))
+    // Something to find in the log (the other scenarios clean up their records, history included).
+    const nowIso = new Date().toISOString()
+    await fetch(BASE + "/api/interno/sync", { method: "POST", headers: HA, body: JSON.stringify({ kind: "notes", since: 0, changes: [{ id: "wdtest-role-note", baseVersion: null, data: { id: "wdtest-role-note", title: "Nota de prueba de roles", body: "", doneAt: "", createdAt: nowIso, updatedAt: nowIso }, deleted: false, editedAt: nowIso }] }) })
+    const act = await (await fetch(BASE + "/api/interno/actividad?dias=1&tipo=notes", { headers: HA })).json()
+    console.log("admin activity:", act.entries.some((e) => e.ref === "wdtest-role-note" && e.who === "Prueba WD" && e.what === "new"), "kinds ok:", act.entries.every((e) => e.at && e.kind && e.what), "errors:", JSON.stringify(errors))
   } finally {
+    await db.query(`delete from note_versions where note_id = 'wdtest-role-note'`).catch(() => undefined)
+    await db.query(`delete from notes where id = 'wdtest-role-note'`)
     console.log("cleanup:", (await db.query(`delete from team_members where id = $1`, [m.id])).rowCount)
     await db.end()
   }
