@@ -337,6 +337,17 @@ export async function syncNow(): Promise<void> {
   }
 }
 
+/**
+ * Syncs and waits until nothing is left running (a sync already under way runs again for changes made during it), at
+ * most `ms`. For screens whose next step needs the records on the server (Alta: the portal link, the router action).
+ */
+export async function syncAndWait(ms = 20000): Promise<boolean> {
+  const until = Date.now() + ms
+  await syncNow()
+  while ((running || again) && Date.now() < until) await new Promise((r) => setTimeout(r, 150))
+  return !running && !again
+}
+
 let timer: ReturnType<typeof setTimeout> | null = null
 
 /** Starts syncing on this page (each page that shows the sync bar calls it); returns a stop function. */

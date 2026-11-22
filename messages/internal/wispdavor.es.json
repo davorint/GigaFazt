@@ -15,7 +15,8 @@
       "cobranza": "Embudo de cobranza · WispDavor",
       "envivo": "Router en vivo · WispDavor",
       "red": "Red y ONTs · WispDavor",
-      "tunel": "Túnel a los routers · WispDavor"
+      "tunel": "Túnel a los routers · WispDavor",
+      "alta": "Alta de cliente · WispDavor"
     },
     "kicker": "Uso interno · Software · WispDavor",
     "title": "WispDavor",
@@ -85,6 +86,10 @@
       "tunel": {
         "name": "Túnel a los routers",
         "desc": "WireGuard hacia un servidor tuyo, para entrar a los routers por REST o API aunque el enlace no tenga IP pública."
+      },
+      "alta": {
+        "name": "Alta de cliente",
+        "desc": "Un solo formulario: el cliente y su plan, la instalación en la Agenda, el usuario PPPoE en el router, los comandos de la OLT y su portal con mensaje de bienvenida."
       }
     },
     "existing": {
@@ -877,6 +882,76 @@
         "no-host": "Falta la dirección del servidor (paso 1).",
         "not-in-tunnel": "Ese router no está en el túnel."
       }
+    },
+    "alta": {
+      "lead": "Llena esto una vez y se hace todo lo demás: el cliente en Clientes, la instalación en la Agenda, su usuario PPPoE en el router del despliegue, los comandos de la OLT y su enlace al portal con un mensaje de bienvenida.",
+      "who": "Cliente",
+      "name": "Nombre del titular",
+      "whatsapp": "WhatsApp",
+      "site": "Despliegue",
+      "pick": "Elige…",
+      "tower": "Torre",
+      "apartment": "Departamento",
+      "planTitle": "Plan",
+      "perMonth": "{amount} al mes",
+      "tv": "Agregar TV",
+      "billing": "Se cobra desde el día de la instalación (si es a más tardar el 15, ese mes; si es después, desde el siguiente).",
+      "installTitle": "Instalación",
+      "date": "Fecha",
+      "time": "Hora (opcional)",
+      "tech": "Técnico (opcional)",
+      "netTitle": "Red",
+      "router": "Router del despliegue (usuario PPPoE)",
+      "noRouterOption": "Sin router: crear el usuario después",
+      "pickSiteFirst": "Elige primero el despliegue",
+      "thisSite": "este despliegue",
+      "user": "Usuario PPPoE",
+      "ontModel": "Modelo de ONT",
+      "ontSn": "Número de serie de la ONT (opcional)",
+      "ontSnHint": "Si aún no lo tienes, el técnico lo agrega en Clientes y los comandos salen de DavorOLT.",
+      "oltPort": "Puerto de la OLT (opcional)",
+      "ontId": "ONT ID",
+      "ontIdHint": "El siguiente libre en ese puerto; puedes cambiarlo.",
+      "problems": {
+        "name": "Escribe el nombre.",
+        "whatsapp": "Escribe un WhatsApp de 10 dígitos.",
+        "site": "Elige el despliegue.",
+        "plan": "Elige un plan.",
+        "date": "Elige la fecha de instalación.",
+        "user": "El usuario PPPoE: de 3 a 64 letras, números, punto, guion o @.",
+        "userTaken": "Ese usuario PPPoE ya lo tiene otro servicio.",
+        "snTaken": "Esa serie ya está en otro servicio.",
+        "idTaken": "Ese ONT ID ya está ocupado en ese puerto.",
+        "port": "Escribe el puerto como marco/tarjeta/puerto, por ejemplo 0/1/3.",
+        "ontId": "El ONT ID va de 0 a 127."
+      },
+      "fix": "Revisa {n, plural, one {un dato} other {# datos}} marcados en rojo.",
+      "submit": "Dar de alta",
+      "working": "Dando de alta…",
+      "doneTitle": "Listo",
+      "steps": {
+        "client": "Cliente guardado",
+        "agenda": "Instalación en la Agenda",
+        "router": "Usuario PPPoE en el router",
+        "olt": "Comandos de la OLT",
+        "portal": "Enlace al portal",
+        "welcome": "Mensaje de bienvenida"
+      },
+      "adminOnly": "solo un administrador puede crear usuarios en el router",
+      "offline": "sin conexión con el sitio",
+      "noRouter": "sin router elegido: créalo en Routers en vivo",
+      "oltMissing": "faltan la serie, el puerto o el ONT ID: genéralos en DavorOLT cuando los tengas",
+      "oltSettings": "los datos de la OLT en DavorOLT no tienen un plan de esa velocidad",
+      "welcomeLink": "WhatsApp no está configurado: mándalo con el botón",
+      "passwordTitle": "Contraseña PPPoE (solo se muestra esta vez)",
+      "passwordHint": "Va en la ONT; los comandos de la OLT de abajo ya la llevan. No se guarda en ningún otro lado.",
+      "oltTitle": "Comandos de la OLT",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "sendWelcome": "Mandar bienvenida por WhatsApp",
+      "copyPortal": "Copiar enlace al portal",
+      "openClient": "Abrir en Clientes",
+      "another": "Dar de alta otro"
     }
   }
 }

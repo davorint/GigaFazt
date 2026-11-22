@@ -34,6 +34,7 @@ const SCENARIOS = [
   ["backups.cjs", [/script backup step: true true/, /queued: 1/, /bad key: 401/, /bad header: 400/, /first copy: (200:partial ){2,}200:new/, /same again, new date: (200:partial ){2,}200:same/, /changed: (200:partial ){2,}200:new/, /copies: 2 by: agente\/Router,agente\/Prueba WD checked: true/, /download intact: true/, /parts left: 0/, /copies left after delete: 0/]],
   ["selfservice.cjs", [/empty other: 1/, /reports: 1 \{"category":"sin-servicio","priority":"alta","address":"Torre Prueba · 301","phone":"5512345671","by":"Portal del cliente","files":1\}/, /photo stored: 1/, /resolved: saved sends: 0/, /default off: \{"reminders":false,"reportUpdates":false\}/, /saved: \{"reminders":true,"reminderDay":6,"noticeDay":6,"reportUpdates":true\}/, /overflow: 0 errors: \[\]/, /cleanup: \{"files":1,/]],
   ["tunnel.cjs", [/use before joining: not-in-tunnel/, /settings: \{"host":"tunel\.prueba\.com"/, /router script: true true/, /bad key: 400/, /key: 200/, /server script has peer: true dnat: true/, /use: 200 \{"host":"tunel\.prueba\.com","port":20\d+,"api_port":20\d+\}/, /state: true/, /stop: 200 \{"host":"","port":443,"api_port":8729\}/, /remove: 200 \{"host":"","port":443,"api_port":8729\}/, /left: 0/]],
+  ["alta.cjs", [/empty: Revisa 5 datos/, /user: prueba\.alta\.1204 ont id: 0/, /router picked: true/, /steps: \["✓Cliente guardado.*","✓Instalación en la","✓Usuario PPPoE en","✓Comandos de la","✓Enlace al portal","–Mensaje de bienvenida.*"\]/, /password shown: 1 olt: true/, /welcome link: 1/, /client: \[\["internet","500M",496,"prueba\.alta\.1204","0\/1\/7",0\],\["iptv","TV",250,"","",null\]\]/, /appointment: 1/, /router action: \[\{"kind":"create","user":"prueba\.alta\.1204","arg1":"500M","linked":true\}\]/, /portal link: 1/, /overflow: 0 errors: \[\]/]],
   ["outbox-portal.cjs", [/back online: stored files: 1 linked to the job: 1 banner gone: true/, /reports: \["Solicitud de cambio de plan/, /pdf: .* %PDF-1\.4 .* accents: true/, /errors: \[\]/]],
 ]
 
@@ -65,7 +66,7 @@ try {
   start([join(here, "fake-router.cjs")], { FAKE_DIR: fake })
   start(["--env-file=.env.local", "node_modules/next/dist/bin/next", "start", "-p", "3000"])
   // 4. The scenarios.
-  for (const [file, expect] of SCENARIOS) {
+  for (const [file, expect] of SCENARIOS.filter(([f]) => !process.env.ONLY || process.env.ONLY.split(",").includes(f))) {
     let out = ""
     try {
       out = execFileSync(node, ["--env-file=.env.local", join(here, file)], { cwd: root, env: { ...process.env, SP }, timeout: 300000, stdio: ["ignore", "pipe", "pipe"] }).toString()

@@ -53,7 +53,7 @@ describe("WispDavor WhatsApp notices", () => {
     expect(waNumber("1234")).toBeNull()
   })
   it("the four templates fill their variables in order; Meta's rules on variables", () => {
-    expect(TEMPLATE_IDS.map((id) => TEMPLATES[id].name)).toEqual(["gigafazt_recordatorio_pago", "gigafazt_aviso_corte", "gigafazt_reconexion", "gigafazt_mantenimiento", "gigafazt_pago_recibido", "gigafazt_cobro_fallido", "gigafazt_reporte_actualizado"])
+    expect(TEMPLATE_IDS.map((id) => TEMPLATES[id].name)).toEqual(["gigafazt_recordatorio_pago", "gigafazt_aviso_corte", "gigafazt_reconexion", "gigafazt_mantenimiento", "gigafazt_pago_recibido", "gigafazt_cobro_fallido", "gigafazt_reporte_actualizado", "gigafazt_bienvenida"])
     for (const id of TEMPLATE_IDS) expect(TEMPLATES[id].body.match(/\{\{\d+\}\}/g)?.length ?? 0).toBe(TEMPLATES[id].params.length)
     expect(fill("reconexion", ["Ana"])).toBe("Hola Ana, recibimos tu pago y tu servicio de internet GigaFazt ya está activo. Si no tienes conexión, reinicia tu módem. ¡Gracias!")
     expect(cleanParam("a\nb\tc      d")).toBe("a b c   d")
@@ -69,7 +69,7 @@ describe("WispDavor map and pages", () => {
     expect(toneOf(s)).toBe("suspended")
   })
   it("subfolders: any capitalization of a WispDavor page", () => {
-    expect(WISPDAVOR_PAGES).toEqual(["cortes", "portal", "avisos", "mapa", "pagos", "facturas", "routers", "trafico", "hotspot", "monitoreo", "cobranza", "envivo", "red", "tunel"])
+    expect(WISPDAVOR_PAGES).toEqual(["alta", "cortes", "portal", "avisos", "mapa", "pagos", "facturas", "routers", "trafico", "hotspot", "monitoreo", "cobranza", "envivo", "red", "tunel"])
     expect(matchInternal("/Interno/Software/WispDavor/Cortes")).toEqual({ rewriteTo: "/es/interno/software/wispdavor/cortes", open: false })
   })
 })

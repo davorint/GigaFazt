@@ -8,7 +8,7 @@
  * one-tap wa.me link instead (lib/wispdavor/whatsapp-server.ts sends through the API).
  */
 
-export const TEMPLATE_IDS = ["recordatorio", "corte", "reconexion", "mantenimiento", "pagoRecibido", "cobroFallido", "reporte"] as const
+export const TEMPLATE_IDS = ["recordatorio", "corte", "reconexion", "mantenimiento", "pagoRecibido", "cobroFallido", "reporte", "bienvenida"] as const
 export type TemplateId = (typeof TEMPLATE_IDS)[number]
 /** The ones staff send from Avisos; the others go by themselves (payments, report updates). */
 export const MANUAL_TEMPLATES = ["recordatorio", "corte", "reconexion", "mantenimiento"] as const satisfies readonly TemplateId[]
@@ -61,6 +61,12 @@ export const TEMPLATES: Record<TemplateId, Template> = {
     name: "gigafazt_reporte_actualizado",
     params: ["nombre", "codigo", "estado", "enlace"],
     body: "Hola {{1}}, tu reporte {{2}} de GigaFazt ahora está: {{3}}. Consulta los detalles aquí: {{4}}",
+  },
+  // Phase 12 (new client in one step): sent from Alta with the installation date and their portal.
+  bienvenida: {
+    name: "gigafazt_bienvenida",
+    params: ["nombre", "fecha", "enlace"],
+    body: "Hola {{1}}, ¡bienvenido a GigaFazt! Tu instalación quedó agendada para el {{2}}. En este enlace puedes ver tu cuenta, pagar y reportar fallas: {{3}}",
   },
 }
 

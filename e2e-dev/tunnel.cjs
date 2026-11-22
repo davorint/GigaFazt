@@ -18,7 +18,7 @@ const T = (body) => fetch(BASE + "/api/interno/tunel", { method: "POST", headers
   const created = await j(await fetch(BASE + "/api/interno/routers", { method: "POST", headers: H, body: JSON.stringify({ action: "create", name: "Prueba Tunel", siteId: "", pppoe: true }) }))
   const rid = created.router.id
   try {
-    const rest = (o) => db.query(`select host, port, api_port from router_rest where router_id = $1`, [rid]).then((r) => JSON.stringify(r.rows[0] ?? null))
+    const rest = () => db.query(`select host, port, api_port from router_rest where router_id = $1`, [rid]).then((r) => JSON.stringify(r.rows[0] ?? null))
     console.log("use before joining:", (await T({ action: "use", id: rid, on: true }))[1].error)
     console.log("settings:", JSON.stringify((await T({ action: "settings", settings: { host: "tunel.prueba.com", publicKey: KEY, port: 51820 } }))[1].settings))
     const [, added] = await T({ action: "add", id: rid })
