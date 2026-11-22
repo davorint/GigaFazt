@@ -14,7 +14,8 @@
       "monitoreo": "Monitoreo · WispDavor",
       "cobranza": "Embudo de cobranza · WispDavor",
       "envivo": "Router en vivo · WispDavor",
-      "red": "Red y ONTs · WispDavor"
+      "red": "Red y ONTs · WispDavor",
+      "tunel": "Túnel a los routers · WispDavor"
     },
     "kicker": "Uso interno · Software · WispDavor",
     "title": "WispDavor",
@@ -80,6 +81,10 @@
       "red": {
         "name": "Red y ONTs",
         "desc": "Cada ONT por puerto de la OLT: números de serie y ONT ID repetidos, datos faltantes, luz mala o que va bajando, e IDs libres."
+      },
+      "tunel": {
+        "name": "Túnel a los routers",
+        "desc": "WireGuard hacia un servidor tuyo, para entrar a los routers por REST o API aunque el enlace no tenga IP pública."
       }
     },
     "existing": {
@@ -823,6 +828,55 @@
       "reportHint": "Cuando un reporte con cliente pasa a «visita» o «resuelto» (plantilla gigafazt_reporte_actualizado).",
       "saved": "Guardado.",
       "offline": "Sin conexión con el sitio."
+    },
+    "tunel": {
+      "lead": "Los enlaces de los carriers no tienen IP pública, así que el sitio no puede llegar directo a un MikroTik. Con el túnel, cada router se conecta por WireGuard a un servidor tuyo (un VPS con IP pública) y el servidor pasa un puerto a cada router. El sitio entra a ese servidor y puerto; la conexión sigue cifrada de punta a punta con el certificado del router (el servidor no ve contraseñas).",
+      "verify": "VERIFICAR: probado solo en el sitio, no en un router ni en un servidor reales. Hazlo primero con un router. Necesitas un VPS (por ejemplo, Ubuntu de unos 5 dólares al mes) usado solo para esto.",
+      "adminOnly": "Solo un administrador puede cambiar el túnel: abre una entrada a los routers.",
+      "loading": "Cargando…",
+      "offline": "Sin conexión con el sitio.",
+      "step1": "1. El servidor",
+      "step1Hint": "Su dirección (nombre o IP pública) y la llave pública que imprime el script del paso 2 la primera vez que lo corres.",
+      "host": "Dirección del servidor",
+      "hostHint": "Por ejemplo: tunel.gigafazt.com o 203.0.113.10",
+      "publicKey": "Llave pública del servidor",
+      "publicKeyHint": "44 caracteres que terminan en «=».",
+      "save": "Guardar",
+      "step2": "2. Script del servidor",
+      "step2Hint": "Córrelo como root en el servidor. Vuelve a correrlo cada vez que agregues un router o pegues su llave. En el firewall del proveedor del servidor abre UDP {udp} y TCP {from}–{to}.",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "step3": "3. Cada router",
+      "step3Hint": "Agrégalo, pega su script en la terminal del router, copia la llave que imprime al final y guárdala aquí; luego corre otra vez el script del servidor y usa el túnel.",
+      "needServer": "Primero guarda la dirección y la llave del servidor (paso 1).",
+      "noRouters": "Todavía no hay routers (agrégalos en Routers en vivo).",
+      "state": {
+        "out": "fuera del túnel",
+        "added": "agregado: falta su llave",
+        "keyed": "listo para usarse",
+        "using": "Router en vivo entra por el túnel"
+      },
+      "addr": "En el túnel: {ip} · el servidor pasa TCP {rest} → REST {rp} y TCP {api} → API {ap}",
+      "add": "Agregar al túnel",
+      "showScript": "Ver script del router",
+      "use": "Usar el túnel en Router en vivo",
+      "stopUsing": "Dejar de usar el túnel",
+      "remove": "Quitar del túnel",
+      "removeConfirm": "¿Quitar {name} del túnel? Vuelve a correr el script del servidor después.",
+      "routerScript": "Script del túnel para {name}",
+      "routerKey": "Llave pública del router",
+      "routerKeyHint": "La última línea que imprime el script del router.",
+      "saveKey": "Guardar llave",
+      "keySaved": "Llave guardada. Corre otra vez el script del servidor.",
+      "errors": {
+        "host": "Escribe un nombre (tunel.ejemplo.com) o una IPv4.",
+        "bad-key": "No parece una llave de WireGuard (44 caracteres que terminan en «=»).",
+        "admin-only": "Solo un administrador puede hacerlo.",
+        "full": "El túnel está lleno (253 routers).",
+        "not-found": "Ese router ya no existe.",
+        "no-host": "Falta la dirección del servidor (paso 1).",
+        "not-in-tunnel": "Ese router no está en el túnel."
+      }
     }
   }
 }

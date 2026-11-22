@@ -60,7 +60,7 @@ export async function updateRouter(id: string, p: Partial<Pick<Router, "name" | 
 
 export async function deleteRouter(id: string) {
   const pool = getPool()
-  for (const t of ["router_actions", "router_users", "router_metrics", "router_rest", "router_backups", "router_backup_parts"]) await pool.query(`delete from ${t} where router_id = $1`, [id])
+  for (const t of ["router_actions", "router_users", "router_metrics", "router_rest", "router_backups", "router_backup_parts", "router_tunnels"]) await pool.query(`delete from ${t} where router_id = $1`, [id])
   // Its open outage ends with it (else its building's clients would see the banner for good); history stays.
   await pool.query(`update outages set ended_at = now() where router_id = $1 and ended_at is null`, [id])
   await pool.query(`delete from routers where id = $1`, [id])

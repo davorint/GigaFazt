@@ -4,7 +4,7 @@
  * (clients' private links), avisos (WhatsApp notices), mapa (clients by deployment). No imports: lib/internal-pages
  * reads these to canonicalize addresses. Phase 2: pagos (Stripe: card, OXXO, SPEI, card auto-pay) and facturas (CFDI with
  * Facturama). Phase 3: routers (live control: each MikroTik pulls its actions), trafico (traffic per client), hotspot
- * (common-area Wi-Fi vouchers). Phase 4: monitoreo (sessions, carrier and ONT pings, outages). Phase 6: cobranza (the collections funnel). REST (2026-11-21): envivo (one router live over its REST API). Phase 8: red (ONT inventory by OLT port).
+ * (common-area Wi-Fi vouchers). Phase 4: monitoreo (sessions, carrier and ONT pings, outages). Phase 6: cobranza (the collections funnel). REST (2026-11-21): envivo (one router live over its REST API). Phase 8: red (ONT inventory by OLT port). Phase 11: tunel (WireGuard to reach routers without a public IP).
  */
-export const WISPDAVOR_PAGES = ["cortes", "portal", "avisos", "mapa", "pagos", "facturas", "routers", "trafico", "hotspot", "monitoreo", "cobranza", "envivo", "red"] as const
+export const WISPDAVOR_PAGES = ["cortes", "portal", "avisos", "mapa", "pagos", "facturas", "routers", "trafico", "hotspot", "monitoreo", "cobranza", "envivo", "red", "tunel"] as const
 export type WispPage = (typeof WISPDAVOR_PAGES)[number]

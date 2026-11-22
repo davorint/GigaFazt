@@ -756,6 +756,25 @@ export const routerRest = pgTable("router_rest", {
   updatedBy: text("updated_by").notNull().default(""),
 })
 
+/**
+ * Phase 11: a router in the WireGuard tunnel (lib/wispdavor/tunnel.ts): its number (address 10.77.0.<n+1>, ports on the
+ * VPS 20000 + 2n and + 1) and the public key it printed. The VPS's own settings are in wisp_settings ("tunel").
+ */
+export const routerTunnels = pgTable(
+  "router_tunnels",
+  {
+    routerId: text("router_id").primaryKey(),
+    n: integer("n").notNull(),
+    publicKey: text("public_key").notNull().default(""),
+    /** The router's own REST / API ports inside the tunnel (what the VPS forwards to). */
+    restPort: integer("rest_port").notNull().default(443),
+    apiPort: integer("api_port").notNull().default(8729),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedBy: text("updated_by").notNull().default(""),
+  },
+  (t) => [uniqueIndex("router_tunnels_n_idx").on(t.n)]
+)
+
 /** Copies of a router's configuration (/export over REST), the last 20 per router. */
 export const routerBackups = pgTable(
   "router_backups",
