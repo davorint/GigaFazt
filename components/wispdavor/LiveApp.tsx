@@ -144,10 +144,10 @@ export function LiveApp() {
   }
   const backup = async () => {
     setBusy(true)
-    const b = await post<{ backup: { size: number } }>({ action: "backup" })
+    const b = await post<{ backup: { size: number; kind: "new" | "same" } }>({ action: "backup" })
     setBusy(false)
     if (b) {
-      setMsg(t("backupDone", { kb: Math.max(1, Math.round(b.backup.size / 1024)) }))
+      setMsg(t(b.backup.kind === "same" ? "backupSame" : "backupDone", { kb: Math.max(1, Math.round(b.backup.size / 1024)) }))
       await loadBackups()
     }
   }

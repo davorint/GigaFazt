@@ -50,6 +50,17 @@ export function diffConfigs(before: string, after: string): { added: string[]; r
   return { added: take(normalizeConfig(after).split("\n"), a), removed: take(normalizeConfig(before).split("\n"), b) }
 }
 
+/**
+ * Lines WispDavor itself changes every day (cut-offs and reconnections switch PPPoE profiles, new users, hotspot
+ * vouchers): a change there isn't "someone edited the router by hand", so it doesn't alert (the copy is still kept).
+ */
+export const isManagedLine = (l: string) => /^\/(ppp secret|ppp active|ip hotspot user) /.test(l.trim())
+
+/** The added and removed lines that matter for the alert (not WispDavor's own). */
+export function handChanges(d: { added: string[]; removed: string[] }) {
+  return { added: d.added.filter((l) => !isManagedLine(l)), removed: d.removed.filter((l) => !isManagedLine(l)) }
+}
+
 /** A piece's header from the router: "<action id>/<piece>/<pieces>"; null when malformed. */
 export function parsePartHeader(h: string): { upload: string; idx: number; total: number } | null {
   const m = /^(\d{1,18})\/(\d{1,4})\/(\d{1,4})$/.exec(h.trim())

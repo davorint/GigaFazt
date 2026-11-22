@@ -9,7 +9,7 @@ import { createHash } from "node:crypto"
 import { getPool } from "../db/client"
 import { sendText } from "../reports/notify"
 import { SITE_URL } from "../site"
-import { KEEP_BACKUPS, diffConfigs, normalizeConfig } from "./backups"
+import { KEEP_BACKUPS, diffConfigs, handChanges, normalizeConfig } from "./backups"
 
 const LINK = `${SITE_URL}/interno/software/wispdavor/routers`
 
@@ -30,11 +30,12 @@ export async function saveConfig(routerId: string, text: string, source: "rest" 
   await pool.query(`delete from router_backups where router_id = $1 and id not in (select id from router_backups where router_id = $1 order by created_at desc limit ${KEEP_BACKUPS})`, [routerId])
   const d = last ? diffConfigs(last.text, text) : { added: [], removed: [] }
   // Someone changed the router by hand since the last copy: the team hears of it (only from the daily copy, so a copy
-  // staff asked for right after their own change doesn't alert).
-  if (auto && last) {
+  // staff asked for right after their own change doesn't alert; WispDavor's own PPPoE and hotspot changes don't count).
+  const hand = handChanges(d)
+  if (auto && last && (hand.added.length || hand.removed.length)) {
     const name = ((await pool.query(`select name from routers where id = $1`, [routerId])).rows[0] as { name: string } | undefined)?.name ?? routerId
     const when = last.created_at.toLocaleString("es-MX", { timeZone: "America/Mexico_City", dateStyle: "short", timeStyle: "short" })
-    await sendText("respaldo", `⚙️ ${name}: su configuración cambió desde la copia del ${when} (+${d.added.length} / −${d.removed.length} líneas)\n${LINK}`).catch(() => undefined)
+    await sendText("respaldo", `⚙️ ${name}: su configuración cambió desde la copia del ${when} (+${hand.added.length} / −${hand.removed.length} líneas, sin contar usuarios PPPoE ni fichas)\n${LINK}`).catch(() => undefined)
   }
   return { kind: "new", id, size: text.length, added: d.added.length, removed: d.removed.length }
 }
@@ -84,6 +85,25 @@ export async function backupsOf(routerId: string) {
     checked_at: Date | null
     size: number
   }[]
+}
+
+/**
+ * The last copy asked of the router (daily or staff) and how it went: "pending"/"sent" = on its way; "error" = the
+ * router failed (its message in `result`); "missing" = the router says done but no copy arrived after it was asked
+ * (its script is older than phase 7: paste it again).
+ */
+export async function lastAsk(routerId: string): Promise<{ status: string; at: string; result: string } | null> {
+  const pool = getPool()
+  const a = (await pool.query(`select status, result, created_at, done_at from router_actions where router_id = $1 and kind = 'backup' order by created_at desc limit 1`, [routerId])).rows[0] as
+    | { status: string; result: string; created_at: Date; done_at: Date | null }
+    | undefined
+  if (!a) return null
+  let status = a.status
+  if (status === "done") {
+    const got = (await pool.query(`select 1 from router_backups where router_id = $1 and source = 'agente' and greatest(created_at, coalesce(checked_at, created_at)) >= $2 limit 1`, [routerId, a.created_at])).rowCount
+    if (!got) status = "missing"
+  }
+  return { status, at: a.created_at.toISOString(), result: a.result.slice(0, 200) }
 }
 
 export async function backupText(id: string): Promise<{ routerId: string; text: string; createdAt: Date } | null> {

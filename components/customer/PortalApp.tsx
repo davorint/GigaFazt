@@ -153,7 +153,7 @@ function PlanChange({ current, money }: { current: string; money: (n: number) =>
  * "Reportar una falla" (phase 9): straight from the portal, already matched to the client (no form to fill with their
  * name and apartment), with an optional photo shrunk on the phone; it lands in Reportes and the team is alerted.
  */
-function FaultReport() {
+function FaultReport({ onSent }: { onSent: (code: string, category: (typeof PORTAL_CATEGORIES)[number]) => void }) {
   const t = useTranslations("portal.fault")
   const tc = useTranslations("report.categories")
   const [category, setCategory] = useState<(typeof PORTAL_CATEGORIES)[number]>("sin-servicio")
@@ -161,6 +161,8 @@ function FaultReport() {
   const [photo, setPhoto] = useState<File | null>(null)
   const [msg, setMsg] = useState("")
   const [busy, setBusy] = useState(false)
+  // A new key clears the file picker after a report goes (it can't be emptied any other way).
+  const [pick, setPick] = useState(0)
   const send = async (e: React.FormEvent) => {
     e.preventDefault()
     if (category === "otro" && !text.trim()) {
@@ -179,8 +181,10 @@ function FaultReport() {
       const b = (await r.json().catch(() => ({}))) as { kind?: string; code?: string }
       if (r.ok) {
         setMsg(t(b.kind === "duplicate" ? "duplicate" : "sent", { code: b.code ?? "" }))
+        if (b.kind !== "duplicate" && b.code) onSent(b.code, category)
         setText("")
         setPhoto(null)
+        setPick((n) => n + 1)
       } else setMsg(t(r.status === 429 ? "busy" : r.status === 413 || r.status === 415 ? "badPhoto" : "error"))
     } catch {
       setMsg(t("error"))
@@ -207,7 +211,7 @@ function FaultReport() {
       </label>
       <label className="grid gap-1 text-sm text-muted-foreground">
         {t("photo")}
-        <input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} className="text-sm text-foreground file:mr-3 file:rounded-full file:border file:border-white/15 file:bg-transparent file:px-3 file:py-1.5 file:text-foreground" />
+        <input key={pick} type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} className="text-sm text-foreground file:mr-3 file:rounded-full file:border file:border-white/15 file:bg-transparent file:px-3 file:py-1.5 file:text-foreground" />
       </label>
       <button type="submit" disabled={busy} className="inline-flex min-h-10 w-fit items-center rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200 disabled:opacity-50">
         {busy ? t("sending") : t("send")}
@@ -355,7 +359,11 @@ export function PortalApp({ pay }: { pay: ReactNode }) {
               </li>
             ))}
           </ul>
-          <FaultReport />
+          <FaultReport
+            onSent={(code, category) =>
+              setState((s) => (s.kind === "ok" ? { ...s, view: { ...s.view, reports: [{ code, category, status: "nuevo", createdAt: new Date().toISOString(), resolvedAt: "" }, ...s.view.reports] } } : s))
+            }
+          />
         </section>
       </div>
       {receipt && (

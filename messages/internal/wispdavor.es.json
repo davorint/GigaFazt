@@ -718,7 +718,7 @@
       "confirmAct": "¿{action} a {user}?",
       "actDone": "Hecho: {action} · {user}.",
       "backups": "Respaldos de la configuración",
-      "backupsHint": "/export terse por REST (sin contraseñas). Se guardan los últimos 20 de cada router.",
+      "backupsHint": "/export terse por REST (sin contraseñas). Se guardan las últimas 30 de cada router (las mismas de «Respaldos de la configuración» en Routers).",
       "backupNow": "Respaldar ahora",
       "backupDone": "Respaldo listo ({kb} KB).",
       "noBackups": "Todavía no hay respaldos.",
@@ -730,11 +730,12 @@
       "allClients": "Este router no tiene despliegue: se muestran los clientes de todos (asígnale uno en Routers en vivo).",
       "notInClients": "{user} (sin cliente en WispDavor)",
       "suspendHold": "Suspender a alguien al corriente es una suspensión manual: no se le cobra y nada lo reconecta solo (se quita con «Reconectar» o en Clientes).",
-      "autoNote": "Este router está en «Automático»: lo que no coincida con Clientes y Cobranza se rechaza aquí, porque el router lo desharía en su siguiente reporte."
+      "autoNote": "Este router está en «Automático»: lo que no coincida con Clientes y Cobranza se rechaza aquí, porque el router lo desharía en su siguiente reporte.",
+      "backupSame": "Sin cambios desde la copia anterior ({kb} KB): no se guardó otra igual."
     },
     "backups": {
       "title": "Respaldos de la configuración",
-      "lead": "El router manda su configuración (/export, sin contraseñas ni llaves) una vez al día con su agente, y cuando la pides. Se guardan las últimas 30; si no cambió, no se guarda otra copia igual. Si alguien la cambia a mano, el equipo recibe aviso. Necesita el script nuevo del agente (pégalo otra vez con «Llave nueva»). VERIFICAR en un router real: /export a archivo y /file read en pedazos.",
+      "lead": "El router manda su configuración (/export, sin contraseñas ni llaves) una vez al día con su agente, y cuando la pides. Se guardan las últimas 30; si no cambió, no se guarda otra copia igual. Si alguien la cambia a mano, el equipo recibe aviso (los cambios que hace WispDavor en usuarios PPPoE y fichas no cuentan). Necesita el script nuevo del agente (pégalo otra vez con «Llave nueva»). VERIFICAR en un router real: /export a archivo y /file read en pedazos.",
       "now": "Respaldar ahora",
       "refresh": "Actualizar lista",
       "asked": "Pedido: el router la manda en su siguiente reporte (cada {m} min).",
@@ -747,7 +748,12 @@
       "same": "Sin cambios; revisada otra vez el {date}",
       "compare": "Ver cambios contra la copia anterior",
       "noDiff": "Solo cambió el orden o los espacios.",
-      "more": "Hay más cambios: descarga las dos copias para verlos completos."
+      "more": "Hay más cambios: descarga las dos copias para verlos completos.",
+      "ask": {
+        "waiting": "Copia pedida el {date}: el router la manda en su siguiente reporte.",
+        "missing": "El router recibió el pedido del {date} pero no mandó la copia: tiene el script de antes. Pégalo otra vez («Llave nueva»).",
+        "error": "El router no pudo hacer la copia pedida el {date}: {result}"
+      }
     },
     "red": {
       "lead": "Las ONTs de los servicios de internet de Clientes (sin los cancelados), agrupadas por puerto de la OLT (hasta {n} por puerto GPON). La luz sale de las lecturas de «display ont optical-info» que pegas en Clientes; aquí no hay conexión con la OLT.",

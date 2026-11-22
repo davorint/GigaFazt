@@ -5,14 +5,17 @@
  * ONT data, light out of range, light falling over time and readings too old to trust. No OLT connection: DavorOLT gives
  * the commands; the readings come from `display ont optical-info` pasted in Clientes.
  */
-import type { Client, Service } from "../clients/model"
+import { lightDrop, type Client, type Service } from "../clients/model"
 import { lightStatus, type LightStatus } from "../clients/optics"
 import { normPort } from "../sites/model"
 
 /** ONT IDs per GPON port on the owner's MA5608T boards (GPBD/GPFD/GPBH: 128 ONT per port, lib/olt-kb.ts). */
 export const ONTS_PER_PORT = 128
-/** A drop this big (dB) between the oldest reading kept and the current one = the light is falling (connector, bend). */
-export const DROP_DB = 3
+/**
+ * A drop this big (dB) between the oldest reading kept and the current one = the light is falling (connector, bend);
+ * the same as Números' clients at risk (lib/interno/numbers.ts).
+ */
+export const DROP_DB = 2
 /** A reading older than this (days) isn't trusted any more. */
 export const STALE_DAYS = 30
 
@@ -53,7 +56,6 @@ export function ontsOf(clients: Client[]): Ont[] {
   for (const c of clients)
     for (const s of c.services) {
       if (s.type !== "internet" || s.status === "cancelado") continue
-      const first = s.rxHistory[0]
       out.push({
         clientId: c.id,
         clientName: c.name,
@@ -68,7 +70,7 @@ export function ontsOf(clients: Client[]): Ont[] {
         oltRx: s.oltRxDbm,
         rxDate: s.rxDate,
         light: lightStatus(s.rxDbm),
-        drop: first && s.rxDbm !== null ? Math.round((first.rx - s.rxDbm) * 100) / 100 : null,
+        drop: lightDrop(s),
       })
     }
   return out

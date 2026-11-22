@@ -18,13 +18,15 @@ const SHOW = 200
 export function BackupsPanel({ routerId, pollMinutes }: { routerId: string; pollMinutes: number }) {
   const t = useTranslations("wispdavor.backups")
   const [list, setList] = useState<Backup[] | null>(null)
+  const [lastAsk, setLastAsk] = useState<{ status: string; at: string; result: string } | null>(null)
   const [msg, setMsg] = useState("")
   const [diff, setDiff] = useState<{ id: string; added: string[]; removed: string[] } | null>(null)
   const load = useCallback(async () => {
     try {
       const r = await fetch("/api/interno/routers/rest", { method: "POST", headers: headers(), body: JSON.stringify({ action: "backups", id: routerId }) })
-      const b = (await r.json()) as { backups?: Backup[] }
+      const b = (await r.json()) as { backups?: Backup[]; ask?: { status: string; at: string; result: string } | null }
       setList(b.backups ?? [])
+      setLastAsk(b.ask ?? null)
     } catch {
       setMsg(t("offline"))
     }
@@ -32,8 +34,13 @@ export function BackupsPanel({ routerId, pollMinutes }: { routerId: string; poll
   const ask = async () => {
     const r = await fetch("/api/interno/routers", { method: "POST", headers: headers(), body: JSON.stringify({ action: "backup", id: routerId }) }).catch(() => null)
     setMsg(r?.ok ? t("asked", { m: pollMinutes }) : t("offline"))
+    if (r?.ok) void load()
   }
-  const text = async (id: string) => (await fetch(`/api/interno/routers/rest?respaldo=${id}`, { cache: "no-store" })).text()
+  const text = async (id: string) => {
+    const r = await fetch(`/api/interno/routers/rest?respaldo=${id}`, { cache: "no-store" })
+    if (!r.ok) throw new Error(String(r.status))
+    return r.text()
+  }
   const compare = async (i: number) => {
     if (!list) return
     const cur = list[i]
@@ -62,6 +69,11 @@ export function BackupsPanel({ routerId, pollMinutes }: { routerId: string; poll
         {msg && (
           <p role="status" className="text-xs text-zinc-200">
             {msg}
+          </p>
+        )}
+        {lastAsk && lastAsk.status !== "done" && (
+          <p className={`text-xs ${lastAsk.status === "pending" || lastAsk.status === "sent" ? "text-zinc-300" : "text-amber-200"}`}>
+            {t(`ask.${lastAsk.status === "pending" || lastAsk.status === "sent" ? "waiting" : lastAsk.status === "missing" ? "missing" : "error"}`, { date: when(lastAsk.at), result: lastAsk.result || "—" })}
           </p>
         )}
         {list && !list.length && <p className="text-sm text-zinc-400">{t("none")}</p>}

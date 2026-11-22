@@ -87,8 +87,8 @@ export async function reportFault(c: Client, input: { category: string; descript
   const pool = getPool()
   const dup = (await pool.query(
     `select id from reports where deleted_at is null and client_id = $1 and source = 'web' and status not in ('resuelto', 'descartado')
-       and data->>'by' = $2 and created_at > now() - make_interval(hours => $3) order by created_at desc limit 1`,
-    [c.id, FAULT_BY, DUP_HOURS]
+       and data->>'by' = $2 and data->>'description' not like $4 and created_at > now() - make_interval(hours => $3) order by created_at desc limit 1`,
+    [c.id, FAULT_BY, DUP_HOURS, `${PREFIX}%`]
   )).rows[0] as { id: string } | undefined
   if (dup) return { kind: "duplicate", code: reportCode(dup) }
   const r = newReport({

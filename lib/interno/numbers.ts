@@ -9,6 +9,7 @@
  * - Active clients: with a service started before the month ended and not cancelled before it (cancellations without a
  *   date count from the start of the records, as Cobranza does).
  */
+import { DROP_DB } from "../wispdavor/red"
 import type { Client } from "../clients/model"
 import { addMonths, chargeFor, ledger, monthOf, type Payment } from "../payments/model"
 import { hoursToSolve, type Report } from "../reports/model"
@@ -155,7 +156,7 @@ export function clientsAtRisk(clients: Client[], payments: Payment[], reports: R
     if (c.promiseDate && c.promiseDate < today && l.owed > 0) reasons.push("promesa")
     if (reports.filter((r) => r.clientId === c.id && r.status !== "descartado" && Date.parse(r.createdAt) >= since).length >= REPORTS_FOR_RISK) reasons.push("reportes")
     const net = c.services.filter((s) => s.type === "internet" && s.status === "activo")
-    if (net.some((s) => lightStatus(s.rxDbm) === "baja" || (lightDrop(s) ?? 0) >= 2)) reasons.push("luz")
+    if (net.some((s) => lightStatus(s.rxDbm) === "baja" || (lightDrop(s) ?? 0) >= DROP_DB)) reasons.push("luz")
     if (reasons.length) out.push({ client: c, reasons, owed: l.owed })
   }
   return out.sort((a, b) => b.reasons.length - a.reasons.length || b.owed - a.owed)

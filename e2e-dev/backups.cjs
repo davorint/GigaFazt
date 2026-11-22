@@ -17,7 +17,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL })
   const key = /Bearer ([\w-]+)\.([\w-]+)/.exec(created.script)[2]
   const auth = `Bearer ${rid}.${key}`
   try {
-    console.log("script backup step:", /\/export file=wispdavor-cfg/.test(created.script), /policy=read,write,test,ftp/.test(created.script))
+    console.log("script backup step:", /\/export terse file=wispdavor-cfg/.test(created.script), /policy=read,write,test,ftp/.test(created.script))
     // Staff ask for a copy; asking twice queues one.
     await fetch(BASE + "/api/interno/routers", { method: "POST", headers: H, body: JSON.stringify({ action: "backup", id: rid }) })
     await fetch(BASE + "/api/interno/routers", { method: "POST", headers: H, body: JSON.stringify({ action: "backup", id: rid }) })
