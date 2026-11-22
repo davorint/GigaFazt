@@ -10,6 +10,7 @@ import { siteLabel } from "@/lib/sites/model"
 import { readState } from "@/lib/sync/state"
 import { DEFAULT_POLL, POLL_CHOICES, pollOf, type Desired, type Diff, type PollMinutes, type Unmanaged } from "@/lib/wispdavor/routers"
 import { useWispData } from "./useWispData"
+import { BackupsPanel } from "./BackupsPanel"
 import { RestPanel } from "./RestPanel"
 
 type T = ReturnType<typeof useTranslations>
@@ -160,6 +161,7 @@ function RouterCard({
       {r.pppoe && !r.siteId && <p className="rounded-lg border border-amber-400/30 px-3 py-2 text-xs text-amber-100">{t("noSiteWarn")}</p>}
       {r.pollMinutes !== r.pollScript && <p className="rounded-lg border border-amber-400/30 px-3 py-2 text-xs text-amber-100">{t("pollPending", { now: r.pollScript, next: r.pollMinutes })}</p>}
       <RestPanel routerId={r.id} />
+      <BackupsPanel routerId={r.id} pollMinutes={r.pollScript} />
       <details className="rounded-xl border border-white/10 p-3">
         <summary className="cursor-pointer text-sm text-zinc-200">{t("edit")}</summary>
         <div className="mt-3 grid gap-3">

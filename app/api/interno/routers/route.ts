@@ -3,6 +3,7 @@ import { getPool, hasDatabase } from "@/lib/db/client"
 import { canChangeRouters, editorOf, json, requireInterno } from "@/lib/internal-api"
 import { SITE_URL, SITE_URL_CONFIGURED } from "@/lib/site"
 import { agentScript, isOnline, pollOf, randomCode, safe } from "@/lib/wispdavor/routers"
+import { queueBackup } from "@/lib/wispdavor/backups-server"
 import { createRouter, deleteRouter, listRouters, queueAction, queueDiffs, rotateKey, routerDiff, updateRouter } from "@/lib/wispdavor/routers-server"
 
 const ID = /^[\w-]{6,64}$/
@@ -83,6 +84,11 @@ export async function POST(request: NextRequest) {
     }
     const router = (await listRouters()).find((r) => r.id === id)
     if (!router) return json({ error: "not-found" }, 404)
+    // A configuration copy only reads the router: anyone signed in may ask for one (phase 7).
+    if (b.action === "backup") {
+      await queueBackup(id, by)
+      return json({ ok: true })
+    }
     if ((b.action === "send" || b.action === "createUser") && !(await canChangeRouters(request))) return json({ error: "admin-only" }, 403)
     if (b.action === "send") {
       const { changes } = await routerDiff(router)

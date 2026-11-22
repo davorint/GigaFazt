@@ -763,6 +763,29 @@ export const routerBackups = pgTable(
     text: text("text").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     createdBy: text("created_by").notNull().default(""),
+    /** Phase 7: how it came ("rest" = Router en vivo, "agente" = sent by the router itself). */
+    source: text("source").notNull().default("rest"),
+    /** SHA-256 of the configuration without its date line: equal = no change since the copy before. */
+    hash: text("hash").notNull().default(""),
+    /** The last time the router sent the same configuration again (no new copy is kept for that). */
+    checkedAt: timestamp("checked_at", { withTimezone: true }),
   },
   (t) => [index("router_backups_router_idx").on(t.routerId, t.createdAt)]
+)
+
+/**
+ * Phase 7: a configuration on its way from a router, in pieces (fetch sends at most 64 KB per request, /file read gives
+ * at most 32 KB): kept until the last piece arrives, then put together as one copy. Leftovers go after a day.
+ */
+export const routerBackupParts = pgTable(
+  "router_backup_parts",
+  {
+    routerId: text("router_id").notNull(),
+    upload: text("upload").notNull(),
+    idx: integer("idx").notNull(),
+    total: integer("total").notNull(),
+    data: text("data").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("router_backup_parts_pk").on(t.routerId, t.upload, t.idx)]
 )

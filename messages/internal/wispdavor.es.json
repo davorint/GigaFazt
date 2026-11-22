@@ -420,7 +420,8 @@
         "hsprofile": "perfil de hotspot",
         "voucher": "ficha",
         "unvoucher": "quitar ficha",
-        "kick": "desconectar sesión"
+        "kick": "desconectar sesión",
+        "backup": "copia de la configuración"
       },
       "waiting": "Esperando el primer reporte del router: pega su script en el MikroTik.",
       "poll": "Reporta cada",
@@ -713,7 +714,7 @@
       "backups": "Respaldos de la configuración",
       "backupsHint": "/export terse por REST (sin contraseñas). Se guardan los últimos 20 de cada router.",
       "backupNow": "Respaldar ahora",
-      "backupDone": "Respaldo guardado ({kb} KB).",
+      "backupDone": "Respaldo listo ({kb} KB).",
       "noBackups": "Todavía no hay respaldos.",
       "log": "Bitácora (últimos 60)",
       "via": {
@@ -724,6 +725,23 @@
       "notInClients": "{user} (sin cliente en WispDavor)",
       "suspendHold": "Suspender a alguien al corriente es una suspensión manual: no se le cobra y nada lo reconecta solo (se quita con «Reconectar» o en Clientes).",
       "autoNote": "Este router está en «Automático»: lo que no coincida con Clientes y Cobranza se rechaza aquí, porque el router lo desharía en su siguiente reporte."
+    },
+    "backups": {
+      "title": "Respaldos de la configuración",
+      "lead": "El router manda su configuración (/export, sin contraseñas ni llaves) una vez al día con su agente, y cuando la pides. Se guardan las últimas 30; si no cambió, no se guarda otra copia igual. Si alguien la cambia a mano, el equipo recibe aviso. Necesita el script nuevo del agente (pégalo otra vez con «Llave nueva»). VERIFICAR en un router real: /export a archivo y /file read en pedazos.",
+      "now": "Respaldar ahora",
+      "refresh": "Actualizar lista",
+      "asked": "Pedido: el router la manda en su siguiente reporte (cada {m} min).",
+      "none": "Todavía no hay copias.",
+      "offline": "Sin conexión con el sitio.",
+      "source": {
+        "agente": "del agente",
+        "rest": "por REST/API"
+      },
+      "same": "Sin cambios; revisada otra vez el {date}",
+      "compare": "Ver cambios contra la copia anterior",
+      "noDiff": "Solo cambió el orden o los espacios.",
+      "more": "Hay más cambios: descarga las dos copias para verlos completos."
     }
   }
 }

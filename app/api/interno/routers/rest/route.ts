@@ -2,7 +2,8 @@ import type { NextRequest } from "next/server"
 import { hasDatabase } from "@/lib/db/client"
 import { canChangeRouters, editorOf, json, requireInterno } from "@/lib/internal-api"
 import { INTERNAL_HEADERS } from "@/lib/internal-pages"
-import { REST_ACTIONS, RestError, backupNow, backupText, backupsOf, clientLive, credKeySet, liveView, restAct, restViews, saveRest, testRouter, type RestAction } from "@/lib/wispdavor/rest-server"
+import { backupText, backupsOf } from "@/lib/wispdavor/backups-server"
+import { REST_ACTIONS, RestError, backupNow, clientLive, credKeySet, liveView, restAct, restViews, saveRest, testRouter, type RestAction } from "@/lib/wispdavor/rest-server"
 
 const ID = /^[\w-]{6,64}$/
 const text = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : undefined)
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
       case "backup":
         return json({ ok: true, backup: await backupNow(id, by) })
       case "backups":
-        return json({ ok: true, backups: (await backupsOf(id)).map((x) => ({ id: String(x.id), at: x.created_at.toISOString(), by: x.created_by, size: Number(x.size) })) })
+        return json({ ok: true, backups: (await backupsOf(id)).map((x) => ({ id: String(x.id), at: x.created_at.toISOString(), by: x.created_by, size: Number(x.size), source: x.source, checkedAt: x.checked_at?.toISOString() ?? "" })) })
       default:
         return json({ error: "bad-action" }, 400)
     }

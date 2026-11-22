@@ -18,6 +18,7 @@ import { loadClient, loadPayments } from "./db-server"
 import { SUSPENDED_PROFILE, desiredUsers, safe } from "./routers"
 import { setServiceHold, setServiceStatus } from "./routers-server"
 import { EXPORT_SCRIPT, PROTOCOLS, bool, isReadOp, normalizeFingerprint, num, opProblem, opToApi, opToRest, validHost, type Op, type Protocol } from "./rest"
+import { saveConfig, type SavedConfig } from "./backups-server"
 import { collectReply, encodeSentence, readSentences } from "./ros-api"
 
 const TIMEOUT_MS = 8000
@@ -468,22 +469,10 @@ export async function restAct(routerId: string, action: RestAction, user: string
 
 // ── Config backups ──────────────────────────────────────────────────────────
 
-/** Reads the router's configuration (/export terse through /execute as-string, read-only) and keeps the last 20. */
-export async function backupNow(routerId: string, by: string): Promise<{ id: string; size: number }> {
+/** Reads the router's configuration (/export terse through /execute as-string, read-only) and keeps it (backups-server). */
+export async function backupNow(routerId: string, by: string): Promise<SavedConfig> {
   const out = first(await routerCall(routerId, { kind: "cmd", menu: "", cmd: "execute", params: { script: EXPORT_SCRIPT, "as-string": "" } }))
   const text = typeof out.ret === "string" ? out.ret : ""
   if (!text.trim()) throw new RestError("empty-export")
-  const pool = getPool()
-  const id = String(((await pool.query(`insert into router_backups (router_id, text, created_by) values ($1, $2, $3) returning id`, [routerId, text, by])).rows[0] as { id: string }).id)
-  await pool.query(`delete from router_backups where router_id = $1 and id not in (select id from router_backups where router_id = $1 order by created_at desc limit 20)`, [routerId])
-  return { id, size: text.length }
-}
-
-export async function backupsOf(routerId: string) {
-  return (await getPool().query(`select id, created_at, created_by, length(text) as size from router_backups where router_id = $1 order by created_at desc`, [routerId])).rows as { id: string; created_at: Date; created_by: string; size: number }[]
-}
-
-export async function backupText(id: string): Promise<{ routerId: string; text: string; createdAt: Date } | null> {
-  const r = (await getPool().query(`select router_id, text, created_at from router_backups where id = $1`, [id])).rows[0] as { router_id: string; text: string; created_at: Date } | undefined
-  return r ? { routerId: r.router_id, text: r.text, createdAt: r.created_at } : null
+  return saveConfig(routerId, text, "rest", by)
 }

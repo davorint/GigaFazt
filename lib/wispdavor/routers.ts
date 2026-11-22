@@ -24,6 +24,7 @@
  */
 import type { Client } from "../clients/model"
 import { ledger, type Payment } from "../payments/model"
+import { BACKUP_CHUNK } from "./backups"
 import { ONT_SLICE, parsePing, type GatewayPing, type OntPing } from "./monitor"
 
 export const SUSPENDED_PROFILE = "DSX-suspendido"
@@ -43,7 +44,8 @@ export const resendMinutes = (p: PollMinutes) => Math.max(10, 2 * p + 2)
 /** Online: reported within 3 intervals. */
 export const isOnline = (lastSeenAt: string, p: PollMinutes, now = Date.now()) => !!lastSeenAt && now - Date.parse(lastSeenAt) < silentMinutes(p) * 60000
 /** An action not reported back within this is sent again (the router may have missed it). */
-export const ACTION_KINDS = ["profile", "create", "disable", "enable", "hsprofile", "voucher", "unvoucher"] as const
+/** "backup" (phase 7): export the configuration and send it in pieces to /api/routers/respaldo. */
+export const ACTION_KINDS = ["profile", "create", "disable", "enable", "hsprofile", "voucher", "unvoucher", "backup"] as const
 export type ActionKind = (typeof ACTION_KINDS)[number]
 
 /** A value safe in an action line and as a RouterOS name: no commas, quotes, spaces or semicolons. */
@@ -180,8 +182,9 @@ export function agentScript(o: { url: string; routerId: string; key: string; pol
     "# builtin-trust-store includes fetch by default (MikroTik docs, Certificates).",
     "/system script remove [find where name=wispdavor]",
     "/system scheduler remove [find where name=wispdavor]",
-    `/system script add name=wispdavor policy=read,write,test dont-require-permissions=no source={`,
+    `/system script add name=wispdavor policy=read,write,test,ftp dont-require-permissions=no source={`,
     `:local url "${o.url}"`,
+    `:local burl "${o.url.replace(/\/agente$/, "/respaldo")}"`,
     `:local auth ("Authorization:Bearer ${o.routerId}.${o.key}")`,
     ":global wdDone",
     ':if ([:typeof $wdDone] != "str") do={ :set wdDone "" }',
@@ -289,13 +292,32 @@ export function agentScript(o: { url: string; routerId: string; key: string; pol
     '      :if ($k = "hsprofile") do={ :if ([:len [/ip hotspot user profile find where name=$u]] = 0) do={ /ip hotspot user profile add name=$u rate-limit=$p } else={ /ip hotspot user profile set [find where name=$u] rate-limit=$p } }',
     '      :if ($k = "voucher") do={ /ip hotspot user add name=$u password=[:tostr ($f->4)] profile=$p limit-uptime=($f->5) limit-bytes-total=($f->6) comment="WispDavor" }',
     '      :if ($k = "unvoucher") do={ /ip hotspot user remove [find where name=$u and comment="WispDavor"] }',
+    "      # Phase 7: the configuration (/export, without secrets) to a file, read in pieces of up to 30000 bytes (/file read",
+    "      # takes at most 32 KB) and posted one by one (fetch sends at most 64 KB); then the file is removed.",
+    '      :if ($k = "backup") do={',
+    "        /export file=wispdavor-cfg",
+    "        :delay 2s",
+    '        :local fid [/file find where name~"wispdavor-cfg.rsc\\$"]',
+    "        :local fname [/file get ($fid->0) name]",
+    "        :local fsz [/file get ($fid->0) size]",
+    `        :local parts (($fsz + ${BACKUP_CHUNK - 1}) / ${BACKUP_CHUNK})`,
+    "        :local off 0",
+    "        :local part 0",
+    "        :while ($off < $fsz) do={",
+    `          :local chunk ([/file read file=$fname offset=$off chunk-size=${BACKUP_CHUNK} as-value]->"data")`,
+    '          /tool fetch url=$burl check-certificate=yes http-method=post http-header-field=($auth . ",Content-Type:text/plain,X-WD-Backup:" . $id . "/" . $part . "/" . $parts) http-data=$chunk output=none',
+    `          :set off ($off + ${BACKUP_CHUNK})`,
+    "          :set part ($part + 1)",
+    "        }",
+    "        /file remove $fid",
+    "      }",
     '    } on-error={ :set ok "err" }',
     '    :set wdDone ($wdDone . "d;" . $id . ";" . $ok . "\\n")',
     "  }",
     "}",
     "}",
     "}",
-    `/system scheduler add name=wispdavor interval=${poll}m on-event=wispdavor policy=read,write,test start-time=startup comment="WispDavor"`,
+    `/system scheduler add name=wispdavor interval=${poll}m on-event=wispdavor policy=read,write,test,ftp start-time=startup comment="WispDavor"`,
   ]
   return lines.join("\n")
 }

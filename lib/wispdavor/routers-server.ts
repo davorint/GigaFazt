@@ -10,6 +10,7 @@ import { todayInMexico } from "../lead"
 import { decodePayment, type Payment } from "../payments/model"
 import { sync } from "../sync/server"
 import { newId } from "../survey/id"
+import { dropStaleParts, queueDailyBackup } from "./backups-server"
 import { recordHealth, sweepSilent } from "./monitor-server"
 import { MAX_ACTIONS, SUSPENDED_PROFILE, pollOf, resendMinutes, type PollMinutes, actionLine, desiredUsers, diffRouter, parseReport, safe, unmanagedUsers, type Action, type ActionKind, type Desired, type Diff, type Unmanaged } from "./routers"
 
@@ -59,7 +60,7 @@ export async function updateRouter(id: string, p: Partial<Pick<Router, "name" | 
 
 export async function deleteRouter(id: string) {
   const pool = getPool()
-  for (const t of ["router_actions", "router_users", "router_metrics", "router_rest", "router_backups"]) await pool.query(`delete from ${t} where router_id = $1`, [id])
+  for (const t of ["router_actions", "router_users", "router_metrics", "router_rest", "router_backups", "router_backup_parts"]) await pool.query(`delete from ${t} where router_id = $1`, [id])
   // Its open outage ends with it (else its building's clients would see the banner for good); history stays.
   await pool.query(`update outages set ended_at = now() where router_id = $1 and ended_at is null`, [id])
   await pool.query(`delete from routers where id = $1`, [id])
@@ -220,6 +221,8 @@ export async function agentVisit(r: Router, body: string): Promise<string> {
   try {
     await recordHealth({ id: r.id, name: r.name, siteId: r.siteId }, bucket, full.length ? full.filter((s) => s.active).length : null, report.gateways, report.onts)
     await sweepSilent()
+    // Phase 7: the daily configuration copy (an action the router does at this report or the next).
+    await queueDailyBackup(r.id)
   } catch (e) {
     console.error("[routers] monitoring failed", e instanceof Error ? e.message.slice(0, 200) : "")
   }
@@ -307,6 +310,8 @@ export async function trafficRetention(): Promise<{ hourly: number; deleted5m: n
   const da = await pool.query(`delete from router_actions where status in ('done', 'error') and created_at < now() - interval '90 days'`)
   // Phase 4: sessions and carrier pings kept 14 days (outages stay).
   await pool.query(`delete from router_metrics where bucket < now() - interval '14 days'`)
+  // Phase 7: pieces of a configuration copy that never finished.
+  await dropStaleParts()
   return { hourly: moved.rowCount ?? 0, deleted5m: d5.rowCount ?? 0, deletedHourly: dh.rowCount ?? 0, deletedActions: da.rowCount ?? 0 }
 }
 
