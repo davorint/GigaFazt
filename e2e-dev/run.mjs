@@ -38,6 +38,7 @@ const SCENARIOS = [
   ["capacity.cjs", [/api: \{"speed":\{"down":1000,"up":500,"links":2\},"busy":850,"use":85,"full":true,"perClient":85,"roomFor":0\}/, /first: true/, /meter: 85 full hint: 1/, /chart: true/, /overflow: 0 errors: \[\]/, /cleanup: 1/]],
   ["roles.cjs", [/yo: \{"admin":false,"role":"tecnico"\}/, /sync clients: 200 payments: 200 porpagar: 403/, /payment write: rejected solo-lectura/, /whatsapp: 403/, /portal: 403/, /activity: 403 backup: 403/, /blocked page: 1/, /menu: \["Inicio","Notas","Despliegues","Agenda","Técnico","Clientes","Reportes","Herramientas","Materiales","Usuarios y accesos","Equipos de Telecom","Software","Guías"\]/, /backup buttons hidden: true true/, /home blocked: 0/, /admin activity: true kinds ok: true errors: \[\]/, /cleanup: 1/]],
   ["contract.cjs", [/before a text: (had one|null)/, /saved version > 0: true/, /filled: 1/, /incomplete: 1/, /contract: 1 \{"number":true,"party":"Prueba Contrato Firmante","files":\["application\/pdf","image\/png"\]\}/, /pdf: (%PDF-1\.4|blob true)/, /stale or bad: (409|400)/, /signed shown: true/, /overflow: 0 errors: \[\]/, /cleanup: 1/]],
+  ["tablero.cjs", [/api: \{"traffic":true,"site":true\}/, /390: charts true tables true overflow 0/, /1440: charts true tables true overflow 0/, /errors: \[\]/, /cleanup: 0/]],
   ["outbox-portal.cjs", [/back online: stored files: 1 linked to the job: 1 banner gone: true/, /reports: \["Solicitud de cambio de plan/, /pdf: .* %PDF-1\.4 .* accents: true/, /errors: \[\]/]],
 ]
 

@@ -1,0 +1,146 @@
+{
+  "tablero": {
+    "meta": "Tablero · Uso interno",
+    "kicker": "Uso interno · Administración",
+    "title": "Tablero",
+    "lead": "El negocio de un vistazo: dinero, clientes, red y operación, con los registros que tiene este teléfono (sincroniza para ver los de todos) y la red en vivo. Cada gráfica trae sus números en «Ver tabla».",
+    "loading": "Cargando…",
+    "period": "Periodo de las gráficas por mes",
+    "months": "{n} meses",
+    "table": "Ver tabla",
+    "kpi": {
+      "title": "Lo principal",
+      "active": "Clientes activos",
+      "vsLast": "{d} contra el mes pasado",
+      "collected": "Cobrado este mes",
+      "ofBilled": "de {billed} facturado ({pct})",
+      "churn": "Cancelación del mes",
+      "churnHint": "promedio de 3 meses: {avg}",
+      "outages": "Caídas en 7 días",
+      "outagesHint": "Ninguna abierta ahora.",
+      "outagesOpen": "{n, plural, one {# abierta ahora} other {# abiertas ahora}}",
+      "noNetwork": "Sin datos de la red."
+    },
+    "cols": {
+      "month": "Mes",
+      "site": "Despliegue",
+      "stage": "Etapa",
+      "clients": "Clientes",
+      "plan": "Plan",
+      "reason": "Motivo",
+      "day": "Día",
+      "age": "Antigüedad",
+      "reports": "Reportes"
+    },
+    "money": {
+      "title": "Dinero",
+      "billedVsCollected": "Facturado y cobrado",
+      "billed": "Facturado",
+      "collected": "Cobrado",
+      "takeaway": "Este mes va cobrado el {rate} de lo facturado.",
+      "profitTitle": "Ganancia por despliegue (al mes)",
+      "profitTakeaway": "El menos rentable: {worst} ({amount}). Ingreso menos edificio y enlaces.",
+      "profit": "Ganancia",
+      "income": "Ingreso",
+      "costs": "Edificio y enlaces"
+    },
+    "forecast": {
+      "title": "Pronóstico de facturación",
+      "actual": "Facturado",
+      "range": "Rango estimado",
+      "low": "Con bajas promedio",
+      "high": "Sin bajas",
+      "takeaway": "El mes que entra: entre {low} y {high} (bajas promedio {churn} al mes).",
+      "estimate": "ESTIMACIÓN: los clientes de hoy a sus precios fechados; no cuenta clientes nuevos."
+    },
+    "funnel": {
+      "title": "Cobranza de {month}",
+      "series": "Clientes",
+      "late": "Atrasados",
+      "notified": "Avisados",
+      "suspended": "Suspendidos",
+      "paid": "Pagaron",
+      "takeaway": "{owing, plural, =0 {Nadie sigue debiendo} one {# sigue debiendo} other {# siguen debiendo}}; los que pagaron tardaron a la mitad {median} días desde el 11.",
+      "takeawayNoPaid": "{owing, plural, =0 {Nadie sigue debiendo} one {# sigue debiendo} other {# siguen debiendo}}; nadie ha pagado todavía."
+    },
+    "clients": {
+      "title": "Clientes",
+      "growth": "Altas y bajas por mes",
+      "growthTakeaway": "{n} altas y {c} bajas en {months} meses.",
+      "new": "Altas",
+      "cancelled": "Bajas",
+      "active": "Clientes activos",
+      "mix": "Mezcla de planes",
+      "mixTakeaway": "{n} servicios de internet activos y {tv} de TV.",
+      "tv": "TV",
+      "reasons": "Por qué cancelan",
+      "reasonsTakeaway": "El motivo más común: {top}."
+    },
+    "reasons": {
+      "none": "Sin anotar",
+      "precio": "Precio",
+      "fallas": "Fallas",
+      "mudanza": "Mudanza",
+      "competencia": "Competencia",
+      "falta-de-pago": "Falta de pago",
+      "cierre": "Cierre",
+      "otro": "Otro"
+    },
+    "network": {
+      "title": "Red",
+      "offline": "No se pudo leer la red (sin conexión o sin base de datos).",
+      "capacity": "Uso de enlaces en la hora pico",
+      "capacityTakeaway": "El más lleno: {site} al {use} %. Desde el 80 % conviene subir el enlace.",
+      "use": "Uso",
+      "busy": "Hora pico (bajada)",
+      "speed": "Enlace (bajada)",
+      "heat": "Tráfico por día y hora",
+      "heatTakeaway": "Promedio de las últimas 4 semanas, en Mbps: las celdas más claras son las horas pico.",
+      "noData": "sin datos",
+      "light": "Luz en las ONT",
+      "lightTakeaway": "{n} ONT con lectura. Bien: entre {low} y {high} dBm, con margen.",
+      "more": "Más tráfico",
+      "less": "Menos"
+    },
+    "zones": {
+      "baja": "Baja",
+      "justo": "Justa",
+      "bien": "Bien",
+      "satura": "Saturada"
+    },
+    "map": {
+      "title": "Despliegues en el mapa",
+      "takeaway": "{n, plural, one {# despliegue con ubicación} other {# despliegues con ubicación}}; el color dice si hay atrasados.",
+      "late": "Atrasados",
+      "suspended": "Suspendidos",
+      "line": "{n} clientes · {late} atrasados"
+    },
+    "ops": {
+      "title": "Operación",
+      "open": "Reportes abiertos por antigüedad",
+      "openTakeaway": "{n, plural, one {# abierto} other {# abiertos}}; {old} con más de una semana.",
+      "ages": {
+        "d1": "< 1 día",
+        "d3": "1–3 días",
+        "d7": "3–7 días",
+        "more": "> 7 días"
+      },
+      "repair": "Horas para resolver",
+      "repairTakeaway": "Este mes: {h} h en promedio.",
+      "repairNone": "Sin reportes resueltos este mes.",
+      "installs": "Instalaciones en 14 días",
+      "installsTakeaway": "{n, plural, one {# instalación} other {# instalaciones}} en las próximas dos semanas; {overdue} atrasadas."
+    },
+    "empty": {
+      "sites": "Todavía no hay despliegues.",
+      "funnel": "Nadie se atrasó este mes.",
+      "clients": "Todavía no hay servicios activos.",
+      "reasons": "Sin cancelaciones en el periodo.",
+      "capacity": "Sin datos todavía: hace falta que los routers reporten tráfico y que los enlaces tengan su velocidad en Despliegues.",
+      "traffic": "Sin tráfico todavía: aparece cuando los routers empiecen a reportar.",
+      "light": "Sin lecturas de luz todavía (pégalas en Clientes).",
+      "map": "Ningún despliegue tiene ubicación todavía: agrégala en su levantamiento (Despliegues).",
+      "repair": "Sin reportes resueltos en el periodo."
+    }
+  }
+}

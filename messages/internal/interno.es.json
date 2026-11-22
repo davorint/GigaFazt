@@ -222,6 +222,10 @@
         "actividad": {
           "name": "Actividad",
           "desc": "Quién cambió qué: altas, cambios y borrados de cada registro, acciones en los routers y mensajes de WhatsApp. Solo administradores."
+        },
+        "tablero": {
+          "name": "Tablero",
+          "desc": "El negocio de un vistazo: dinero, pronóstico, clientes, red, mapa y operación en gráficas, cada una con sus números."
         }
       }
     },

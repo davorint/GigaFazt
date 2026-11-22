@@ -1,0 +1,94 @@
+// The Tablero (owner 2026-11-22: ECharts, all five sections). Seeds a deployment with link speeds, clients on several
+// plans with light readings, payments, reports, installations and a week of traffic; opens the page on a phone and a
+// desktop; checks the charts drew, no sideways scroll, no console errors; saves screenshots (SHOTS). Cleans up.
+const { createRequire } = require("node:module")
+const req = createRequire(require("node:path").join(__dirname, "..", "package.json"))
+const { Pool } = req("pg")
+const { chromium } = req("playwright")
+const fs = require("node:fs"), path = require("node:path")
+const SP = process.env.SP, BASE = "http://localhost:3000"
+const cookie = fs.readFileSync(path.join(SP, "cookie.txt"), "utf8")
+const H = { cookie: `gf_interno=${cookie}`, "content-type": "application/json", "x-interno-nombre": "Prueba%20WD" }
+const SITE = "wdtest-tb-site"
+const SHOTS = process.env.SHOTS || SP
+const change = (data) => ({ id: data.id, baseVersion: null, data, deleted: false, editedAt: new Date().toISOString() })
+const j = async (r) => { const t = await r.text(); try { return JSON.parse(t) } catch { return t } }
+const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST", headers: H, body: JSON.stringify({ kind, since: 0, changes: items.map(change) }) })
+
+;(async () => {
+  const db = new Pool({ connectionString: process.env.DATABASE_URL })
+  for (let i = 0; i < 40; i++) { try { await fetch(BASE + "/es"); break } catch { await new Promise((r) => setTimeout(r, 1000)) } }
+  const now = new Date().toISOString()
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" })
+  const plus = (d) => new Date(Date.parse(`${today}T12:00:00Z`) + d * 864e5).toISOString().slice(0, 10)
+  const month = (back) => { const d = new Date(`${today.slice(0, 7)}-15T12:00:00Z`); d.setUTCMonth(d.getUTCMonth() - back); return d.toISOString().slice(0, 7) }
+  const carrier = (id, down, up, monthly) => ({ id, providerId: "", name: id, downMbps: down, upMbps: up, ip: "", account: "", monthly, notes: "" })
+  await sync("sites", [{ id: SITE, name: "Torre Tablero Prueba", address: "Av. Prueba 4", municipality: "Cuernavaca", lat: 18.92, lng: -99.23, rentMonthly: 1500, rooms: [{ id: "r1", name: "Cuarto", carriers: [carrier("A", 500, 500, 3000), carrier("B", 300, 300, 1800)] }], towers: [{ id: "t1", name: "A", apartments: 60 }], createdAt: now, updatedAt: now }])
+  const plans = [["200M", 396], ["500M", 496], ["1G", 596]]
+  const clients = Array.from({ length: 18 }, (_, i) => {
+    const [plan, price] = plans[i % 3]
+    const startBack = 1 + (i % 9)
+    const cancelled = i % 7 === 6
+    return {
+      id: `wdtest-tb-c${i}`, name: `Tablero ${i}`, siteId: SITE, billingFrom: "", createdAt: now, updatedAt: now,
+      services: [
+        { id: `wdtest-tb-s${i}`, type: "internet", status: cancelled ? "cancelado" : "activo", plan, monthly: price, start: `${month(startBack)}-05`, cancelledAt: cancelled ? `${month(1)}-20` : "", cancelReason: cancelled ? ["precio", "mudanza", "fallas"][i % 3] : "", rxDbm: -16 - (i % 13) * 0.9, rxDate: today, rxHistory: [] },
+        ...(i % 4 === 0 ? [{ id: `wdtest-tb-tv${i}`, type: "iptv", status: "activo", plan: "TV", monthly: 250, start: `${month(startBack)}-05` }] : []),
+      ],
+    }
+  })
+  await sync("clients", clients)
+  const pays = []
+  for (const c of clients) for (let b = 0; b < 3; b++) if ((c.id.length + b) % 4) pays.push({ id: `wdtest-tb-p${c.id.slice(-3)}${b}`, clientId: c.id, date: `${month(b)}-0${3 + b}`, amount: c.services[0].monthly, method: "transferencia", reference: "", notes: "", by: "Prueba", createdAt: now, updatedAt: now })
+  await sync("payments", pays)
+  const reps = [2, 30, 90, 200].map((h, i) => ({ id: `wdtest-tb-r${i}`, source: "interno", createdAt: new Date(Date.now() - h * 3600000).toISOString(), clientId: clients[i].id, name: clients[i].name, phone: "", address: "", siteId: SITE, category: "lento", description: "Prueba", priority: "normal", status: "nuevo", assignee: "", visitDate: "", cause: "", resolution: "", resolvedAt: "", notes: [], consentAt: "", by: "Prueba", updatedAt: now }))
+  await sync("reports", reps)
+  await sync("agenda", [1, 1, 3, 6, 9].map((d, i) => ({ id: `wdtest-tb-a${i}`, kind: "instalacion", date: plus(d), time: "10:00", who: "", status: "pendiente", clientId: "", leadId: "", reportId: "", siteId: SITE, name: `Instalación ${i}`, phone: "", address: "", notes: "", by: "Prueba", createdAt: now, updatedAt: now })))
+  const router = (await j(await fetch(BASE + "/api/interno/routers", { method: "POST", headers: H, body: JSON.stringify({ action: "create", name: "Router Tablero", siteId: SITE, pppoe: true }) }))).router
+  const errors = []
+  try {
+    // A week of traffic: evenings busiest (Mexico City 20–23 h = 02–05 UTC), weekends a bit more.
+    const start = Date.now() - 7 * 864e5
+    for (let m = 0; m < 7 * 24 * 60; m += 5) {
+      const at = new Date(start + m * 60000)
+      const hMx = (at.getUTCHours() + 18) % 24
+      const wk = [0, 6].includes(at.getUTCDay()) ? 1.15 : 1
+      const mbps = (hMx >= 19 && hMx <= 23 ? 520 : hMx >= 8 && hMx <= 18 ? 240 : 60) * wk
+      await db.query(`insert into traffic_5m (router_id, "user", bucket, down, up) values ($1, 'tb.user', $2, $3, $4) on conflict do nothing`, [router.id, at, Math.round((mbps * 1e6 * 300) / 8), Math.round((mbps * 0.12 * 1e6 * 300) / 8)])
+    }
+    const api = await j(await fetch(BASE + "/api/interno/tablero", { headers: H }))
+    console.log("api:", JSON.stringify({ traffic: api.network.hasTraffic, site: api.network.sites.some((s) => s.name === "Torre Tablero Prueba" && s.use > 0.5) }))
+    const browser = await chromium.launch()
+    for (const [w, h] of [[390, 844], [1440, 900]]) {
+      const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, isMobile: w < 500, hasTouch: w < 500 })
+      await ctx.addCookies([{ name: "gf_interno", value: cookie, domain: "localhost", path: "/" }])
+      await ctx.addInitScript(() => { try { localStorage.setItem("gigafazt-sync", JSON.stringify({ name: "Prueba WD" })) } catch {} })
+      const page = await ctx.newPage()
+      page.on("pageerror", (e) => errors.push(`${w}: ${e.message}`))
+      page.on("console", (m) => m.type() === "error" && !/Failed to load resource|tiles|maplibre|webgl/i.test(m.text()) && errors.push(`${w}: ${m.text().slice(0, 200)}`))
+      await page.goto(`${BASE}/interno/admin/tablero`)
+      await page.getByRole("heading", { name: "Dinero" }).waitFor({ timeout: 30000 })
+      // The records arrive with the first sync: wait until the clients show, then for the charts.
+      await page.waitForFunction(() => !document.body.innerText.includes("Todavía no hay servicios activos."), null, { timeout: 60000 })
+      await page.waitForFunction(() => document.querySelectorAll('[role="img"] svg').length >= 14, null, { timeout: 30000 }).catch(() => undefined)
+      await page.waitForTimeout(1500)
+      const charts = await page.evaluate(() => document.querySelectorAll('[role="img"] svg').length)
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+      const tables = await page.getByText("Ver tabla", { exact: true }).count()
+      console.log(`${w}: charts ${charts >= 12} tables ${tables >= 10} overflow ${overflow}`)
+      await page.screenshot({ path: path.join(SHOTS, `tablero-${w}.png`), fullPage: true })
+      await ctx.close()
+    }
+    await browser.close()
+    console.log("errors:", JSON.stringify(errors))
+  } finally {
+    await fetch(BASE + "/api/interno/routers", { method: "POST", headers: H, body: JSON.stringify({ action: "delete", id: router.id }) })
+    await db.query(`delete from traffic_5m where router_id = $1`, [router.id])
+    for (const [t, v, fk] of [["clients", "client_versions", "client_id"], ["payments", "payment_versions", "payment_id"], ["reports", "report_versions", "report_id"], ["appointments", "appointment_versions", "appointment_id"], ["sites", "site_versions", "site_id"]]) {
+      await db.query(`delete from ${v} where ${fk} like 'wdtest-tb-%'`).catch(() => undefined)
+      await db.query(`delete from ${t} where id like 'wdtest-tb-%'`)
+    }
+    console.log("cleanup:", (await db.query(`select count(*)::int n from clients where id like 'wdtest-tb-%'`)).rows[0].n)
+    await db.end()
+  }
+})().catch((e) => { console.error(e); process.exit(1) })

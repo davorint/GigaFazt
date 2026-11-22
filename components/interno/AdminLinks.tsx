@@ -7,6 +7,7 @@ const GROUPS = [
     key: "adminGroup",
     links: [
       ["/interno", "interno"],
+      ["/interno/admin/tablero", "tablero"],
       ["/interno/admin/notas", "notas"],
       ["/interno/admin/despliegues", "despliegues"],
       ["/interno/admin/agenda", "agenda"],

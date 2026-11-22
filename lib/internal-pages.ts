@@ -29,7 +29,7 @@ export const MIKROTIK_PAGES = ["guia", "scripts"] as const
 /** The AsterNOS pages (/interno/equipos-telecom/asternos/<page>, owner 2026-11-20). */
 export const ASTERNOS_PAGES = ["guia", "scripts", "simulador"] as const
 /** The admin area's pages (/interno/admin/<page>). */
-export const ADMIN_PAGES = ["notas", "despliegues", "clientes", "reportes_clientes", "proveedores", "agenda", "numeros", "usuarios", "actividad", "cuentas-por-pagar", "cuentas-por-cobrar", "legal"] as const
+export const ADMIN_PAGES = ["tablero", "notas", "despliegues", "clientes", "reportes_clientes", "proveedores", "agenda", "numeros", "usuarios", "actividad", "cuentas-por-pagar", "cuentas-por-cobrar", "legal"] as const
 /** The legal pages (/interno/admin/legal/<page>, owner 2026-11-21; building agreements are part of contratos). */
 export const LEGAL_PAGES = ["contratos"] as const
 /** Other spellings of an admin page. */
