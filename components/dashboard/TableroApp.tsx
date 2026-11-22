@@ -9,6 +9,7 @@ import { AGE_BUCKETS, installBacklog, lightHistogram, planMix, reportAges } from
 import type { NetworkFigures } from "@/lib/interno/dashboard-server"
 import { cancelReasons, churnRate, lastMonths, monthNumbers, siteNumbers } from "@/lib/interno/numbers"
 import { forecast } from "@/lib/interno/outlook"
+import { demoSet } from "@/lib/interno/dashboard-demo"
 import { mxn } from "@/lib/materials/catalog"
 import { addMonths } from "@/lib/payments/model"
 import { reportsStore } from "@/lib/reports/store"
@@ -34,7 +35,7 @@ const pct = (x: number | null) => (x === null ? "—" : `${Math.round(x * 1000) 
 const DAYS = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
 
 /** A stat with its 12-month trend (one series: the title names it, no legend). */
-function Tile({ label, value, hint, trend, color = SERIES[0], tone = "" }: { label: string; value: string; hint: string; trend: (number | null)[]; color?: string; tone?: string }) {
+function Tile({ label, value, hint, trend, color = SERIES[0], tone = "", demo = "" }: { label: string; value: string; hint: string; trend: (number | null)[]; color?: string; tone?: string; demo?: string }) {
   const option = useMemo(
     () => ({
       grid: { top: 4, right: 2, bottom: 2, left: 2 },
@@ -47,7 +48,10 @@ function Tile({ label, value, hint, trend, color = SERIES[0], tone = "" }: { lab
   )
   return (
     <div className="grid gap-1 rounded-2xl border border-white/10 bg-[#0e0e10] p-4">
-      <p className="text-xs text-zinc-400">{label}</p>
+      <p className="flex items-center justify-between gap-2 text-xs text-zinc-400">
+        {label}
+        {demo && <span className="rounded border border-amber-300/50 px-1 font-mono text-[0.6rem] tracking-wide text-amber-200">{demo}</span>}
+      </p>
       <p className={`text-3xl font-light text-zinc-50 ${tone}`}>{value}</p>
       <p className="text-xs text-zinc-400">{hint}</p>
       {trend.length > 0 && <EChart option={option} height={44} label={`${label}: ${value}. ${hint}`} />}
@@ -68,8 +72,15 @@ export function TableroApp() {
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>(12)
   const [net, setNet] = useState<NetworkFigures | null | "error">(null)
   const [events, setEvents] = useState<FunnelEvent[] | null>(null)
+  // Simulated data (owner, 2026-11-22): how the page looks once everything reports; labelled SIMULACIÓN everywhere.
+  const [demo, setDemo] = useState(false)
   const loaded = d.loaded && reports.loaded && agenda.loaded
   const today = loaded ? localToday() : ""
+  const sim = useMemo(() => (demo && today ? demoSet(today) : null), [demo, today])
+  const src = useMemo(
+    () => sim ?? { clients: d.clients, payments: d.payments, reports: reports.list, sites: d.sites, surveys: d.surveys, agenda: agenda.list },
+    [sim, d.clients, d.payments, reports.list, d.sites, d.surveys, agenda.list]
+  )
 
   useEffect(() => {
     let live = true
@@ -99,24 +110,25 @@ export function TableroApp() {
   }, [funnelMonthNow])
 
   const months = useMemo(() => (today ? lastMonths(today.slice(0, 7), period) : []), [today, period])
-  const rows = useMemo(() => (loaded ? monthNumbers(d.clients, d.payments, reports.list, months) : []), [loaded, d.clients, d.payments, reports.list, months])
-  const year = useMemo(() => (loaded ? monthNumbers(d.clients, d.payments, reports.list, lastMonths(today.slice(0, 7), 12)) : []), [loaded, d.clients, d.payments, reports.list, today])
-  const fc = useMemo(() => (rows.length ? forecast(d.clients, year, today.slice(0, 7)) : null), [rows.length, d.clients, year, today])
-  const sites = useMemo(() => (loaded ? siteNumbers(d.sites, d.clients) : []), [loaded, d.sites, d.clients])
-  const funnel = useMemo(() => (events && loaded && funnelMonthNow ? funnelMonth(d.clients, d.payments, events, funnelMonthNow, today) : null), [events, loaded, d.clients, d.payments, funnelMonthNow, today])
-  const reasons = useMemo(() => (loaded ? cancelReasons(d.clients, months) : []), [loaded, d.clients, months])
-  const mix = useMemo(() => (loaded ? planMix(d.clients) : null), [loaded, d.clients])
-  const light = useMemo(() => (loaded ? lightHistogram(d.clients) : null), [loaded, d.clients])
-  const ages = useMemo(() => (loaded ? reportAges(reports.list) : null), [loaded, reports.list])
-  const backlog = useMemo(() => (loaded ? installBacklog(agenda.list, today) : null), [loaded, agenda.list, today])
-  const mapRows = useMemo<MapSite[]>(() => (loaded ? mapSites(d.sites, d.surveys, d.clients, d.payments, today) : []), [loaded, d.sites, d.surveys, d.clients, d.payments, today])
+  const rows = useMemo(() => (loaded ? monthNumbers(src.clients, src.payments, src.reports, months) : []), [loaded, src, months])
+  const year = useMemo(() => (loaded ? monthNumbers(src.clients, src.payments, src.reports, lastMonths(today.slice(0, 7), 12)) : []), [loaded, src, today])
+  const fc = useMemo(() => (rows.length ? forecast(src.clients, year, today.slice(0, 7)) : null), [rows.length, src, year, today])
+  const sites = useMemo(() => (loaded ? siteNumbers(src.sites, src.clients) : []), [loaded, src])
+  const funnelEvents = sim ? sim.events : events
+  const funnel = useMemo(() => (funnelEvents && loaded && funnelMonthNow ? funnelMonth(src.clients, src.payments, funnelEvents, funnelMonthNow, today) : null), [funnelEvents, loaded, src, funnelMonthNow, today])
+  const reasons = useMemo(() => (loaded ? cancelReasons(src.clients, months) : []), [loaded, src, months])
+  const mix = useMemo(() => (loaded ? planMix(src.clients) : null), [loaded, src])
+  const light = useMemo(() => (loaded ? lightHistogram(src.clients) : null), [loaded, src])
+  const ages = useMemo(() => (loaded ? reportAges(src.reports) : null), [loaded, src])
+  const backlog = useMemo(() => (loaded ? installBacklog(src.agenda, today) : null), [loaded, src, today])
+  const mapRows = useMemo<MapSite[]>(() => (loaded ? mapSites(src.sites, src.surveys, src.clients, src.payments, today) : []), [loaded, src, today])
 
   if (!loaded || !fc || !mix || !light || !ages || !backlog) return <p className="mt-6 text-sm text-zinc-400">{t("loading")}</p>
   const labels = rows.map((r) => short(r.month))
   const now = year[year.length - 1]
   const prev = year[year.length - 2]
   const churnYear = year.map((_, i) => (i ? churnRate(year, i) : null))
-  const network = net && net !== "error" ? net : null
+  const network = sim ? sim.network : net && net !== "error" ? net : null
   const tl = t("table")
 
   // ── Money ──
@@ -301,20 +313,40 @@ export function TableroApp() {
     <div className="mt-6 grid gap-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <p className="max-w-2xl text-sm text-zinc-300">{t("lead")}</p>
-        <div role="group" aria-label={t("period")} className="flex gap-1 rounded-full border border-white/10 p-1">
-          {PERIODS.map((p) => (
-            <button key={p} type="button" aria-pressed={period === p} onClick={() => setPeriod(p)} className={`min-h-9 rounded-full px-3 text-xs ${period === p ? "bg-white text-zinc-950" : "text-zinc-300 hover:bg-white/5"}`}>
-              {t("months", { n: p })}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={demo}
+            onClick={() => setDemo((x) => !x)}
+            className="inline-flex min-h-9 items-center gap-2 rounded-full border border-white/10 py-1 pr-3 pl-1 text-xs text-zinc-200 hover:bg-white/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+          >
+            <span aria-hidden className={`relative block h-5 w-9 shrink-0 rounded-full transition-colors ${demo ? "bg-amber-300" : "bg-white/15"}`}>
+              <span className={`absolute top-0.5 left-0 size-4 rounded-full bg-white transition-transform motion-reduce:transition-none ${demo ? "translate-x-4" : "translate-x-0.5"}`} />
+            </span>
+            {t("demo.toggle")}
+          </button>
+          <div role="group" aria-label={t("period")} className="flex gap-1 rounded-full border border-white/10 p-1">
+            {PERIODS.map((p) => (
+              <button key={p} type="button" aria-pressed={period === p} onClick={() => setPeriod(p)} className={`min-h-9 rounded-full px-3 text-xs ${period === p ? "bg-white text-zinc-950" : "text-zinc-300 hover:bg-white/5"}`}>
+                {t("months", { n: p })}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+      {sim && (
+        <p role="status" className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-300/50 bg-amber-300/[0.06] p-3 text-sm text-amber-100">
+          <span className="rounded border border-amber-300/60 px-1.5 py-0.5 font-mono text-[0.7rem] tracking-wide">{t("demo.tag")}</span>
+          {t("demo.banner")}
+        </p>
+      )}
 
       <section aria-label={t("kpi.title")} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Tile label={t("kpi.active")} value={String(now.activeClients)} hint={t("kpi.vsLast", { d: now.activeClients - prev.activeClients >= 0 ? `+${now.activeClients - prev.activeClients}` : String(now.activeClients - prev.activeClients) })} trend={year.map((r) => r.activeClients)} />
-        <Tile label={t("kpi.collected")} value={mxn(now.collected)} hint={t("kpi.ofBilled", { billed: mxn(now.expected), pct: now.rate === null ? "—" : `${Math.round(now.rate * 100)} %` })} trend={year.map((r) => r.collected)} color={SERIES[1]} />
-        <Tile label={t("kpi.churn")} value={pct(churnYear.at(-1) ?? null)} hint={t("kpi.churnHint", { avg: pct(fc.churn) })} trend={churnYear.map((x) => (x === null ? null : Math.round(x * 1000) / 10))} color={SERIES[2]} />
-        <Tile label={t("kpi.outages")} value={network ? String(network.outages7) : "—"} hint={net7} trend={[]} color={SERIES[3]} tone={network && network.openOutages ? "text-red-300" : ""} />
+        <Tile demo={sim ? t("demo.tag") : ""} label={t("kpi.active")} value={String(now.activeClients)} hint={t("kpi.vsLast", { d: now.activeClients - prev.activeClients >= 0 ? `+${now.activeClients - prev.activeClients}` : String(now.activeClients - prev.activeClients) })} trend={year.map((r) => r.activeClients)} />
+        <Tile demo={sim ? t("demo.tag") : ""} label={t("kpi.collected")} value={mxn(now.collected)} hint={t("kpi.ofBilled", { billed: mxn(now.expected), pct: now.rate === null ? "—" : `${Math.round(now.rate * 100)} %` })} trend={year.map((r) => r.collected)} color={SERIES[1]} />
+        <Tile demo={sim ? t("demo.tag") : ""} label={t("kpi.churn")} value={pct(churnYear.at(-1) ?? null)} hint={t("kpi.churnHint", { avg: pct(fc.churn) })} trend={churnYear.map((x) => (x === null ? null : Math.round(x * 1000) / 10))} color={SERIES[2]} />
+        <Tile demo={sim ? t("demo.tag") : ""} label={t("kpi.outages")} value={network ? String(network.outages7) : "—"} hint={net7} trend={[]} color={SERIES[3]} tone={network && network.openOutages ? "text-red-300" : ""} />
       </section>
 
       <section aria-labelledby="tb-money" className="grid gap-3">
@@ -322,17 +354,17 @@ export function TableroApp() {
           {t("money.title")}
         </h2>
         <div className="grid gap-3 lg:grid-cols-2">
-          <Panel title={t("money.billedVsCollected")} takeaway={t("money.takeaway", { rate: now.rate === null ? "—" : `${Math.round(now.rate * 100)} %` })} tableLabel={tl} table={{ head: [t("cols.month"), t("money.billed"), t("money.collected")], rows: rows.map((r) => [short(r.month), mxn(r.expected), mxn(r.collected)]) }}>
+          <Panel demo={sim ? t("demo.tag") : ""} title={t("money.billedVsCollected")} takeaway={t("money.takeaway", { rate: now.rate === null ? "—" : `${Math.round(now.rate * 100)} %` })} tableLabel={tl} table={{ head: [t("cols.month"), t("money.billed"), t("money.collected")], rows: rows.map((r) => [short(r.month), mxn(r.expected), mxn(r.collected)]) }}>
             <EChart option={moneyOption} height={260} label={t("money.billedVsCollected")} />
           </Panel>
-          <Panel title={t("forecast.title")} takeaway={t("forecast.takeaway", { low: mxn(fc.rows[0].withChurn), high: mxn(fc.rows[0].scheduled), churn: pct(fc.churn) })} tableLabel={tl} table={{ head: [t("cols.month"), t("forecast.low"), t("forecast.high")], rows: fc.rows.map((r) => [short(r.month), mxn(r.withChurn), mxn(r.scheduled)]) }}>
+          <Panel demo={sim ? t("demo.tag") : ""} title={t("forecast.title")} takeaway={t("forecast.takeaway", { low: mxn(fc.rows[0].withChurn), high: mxn(fc.rows[0].scheduled), churn: pct(fc.churn) })} tableLabel={tl} table={{ head: [t("cols.month"), t("forecast.low"), t("forecast.high")], rows: fc.rows.map((r) => [short(r.month), mxn(r.withChurn), mxn(r.scheduled)]) }}>
             <EChart option={forecastOption} height={260} label={t("forecast.title")} />
             <p className="text-[0.7rem] text-amber-200/80">{t("forecast.estimate")}</p>
           </Panel>
-          <Panel title={t("money.profitTitle")} takeaway={profitSorted.length ? t("money.profitTakeaway", { worst: profitSorted[0].name, amount: mxn(profitSorted[0].profit) }) : undefined} empty={profitSorted.length ? null : t("empty.sites")} tableLabel={tl} table={{ head: [t("cols.site"), t("money.income"), t("money.costs"), t("money.profit")], rows: profitSorted.map((s) => [s.name, mxn(s.income), mxn(s.building + s.links), mxn(s.profit)]) }}>
+          <Panel demo={sim ? t("demo.tag") : ""} title={t("money.profitTitle")} takeaway={profitSorted.length ? t("money.profitTakeaway", { worst: profitSorted[0].name, amount: mxn(profitSorted[0].profit) }) : undefined} empty={profitSorted.length ? null : t("empty.sites")} tableLabel={tl} table={{ head: [t("cols.site"), t("money.income"), t("money.costs"), t("money.profit")], rows: profitSorted.map((s) => [s.name, mxn(s.income), mxn(s.building + s.links), mxn(s.profit)]) }}>
             <EChart option={profitOption} height={Math.max(160, profitSorted.length * 34 + 40)} label={t("money.profitTitle")} />
           </Panel>
-          <Panel title={t("funnel.title", { month: funnelMonthNow ? short(funnelMonthNow) : "" })} takeaway={funnel && funnel.late > 0 ? (funnel.medianDays === null ? t("funnel.takeawayNoPaid", { owing: funnel.owing }) : t("funnel.takeaway", { owing: funnel.owing, median: funnel.medianDays })) : undefined} empty={funnel && funnel.late === 0 ? t("empty.funnel") : !funnel ? t("loading") : null} tableLabel={tl} table={{ head: [t("cols.stage"), t("cols.clients")], rows: stages.map((s, i) => [s, stageValues[i]]) }}>
+          <Panel demo={sim ? t("demo.tag") : ""} title={t("funnel.title", { month: funnelMonthNow ? short(funnelMonthNow) : "" })} takeaway={funnel && funnel.late > 0 ? (funnel.medianDays === null ? t("funnel.takeawayNoPaid", { owing: funnel.owing }) : t("funnel.takeaway", { owing: funnel.owing, median: funnel.medianDays })) : undefined} empty={funnel && funnel.late === 0 ? t("empty.funnel") : !funnel ? t("loading") : null} tableLabel={tl} table={{ head: [t("cols.stage"), t("cols.clients")], rows: stages.map((s, i) => [s, stageValues[i]]) }}>
             <EChart option={funnelOption} height={240} label={t("funnel.title", { month: short(funnelMonthNow) })} />
           </Panel>
         </div>
@@ -343,16 +375,16 @@ export function TableroApp() {
           {t("clients.title")}
         </h2>
         <div className="grid gap-3 lg:grid-cols-2">
-          <Panel title={t("clients.growth")} takeaway={t("clients.growthTakeaway", { n: rows.reduce((a, r) => a + r.newServices, 0), c: rows.reduce((a, r) => a + r.cancelled, 0), months: period })} tableLabel={tl} table={{ head: [t("cols.month"), t("clients.new"), t("clients.cancelled"), t("clients.active")], rows: rows.map((r) => [short(r.month), r.newServices, r.cancelled, r.activeClients]) }}>
+          <Panel demo={sim ? t("demo.tag") : ""} title={t("clients.growth")} takeaway={t("clients.growthTakeaway", { n: rows.reduce((a, r) => a + r.newServices, 0), c: rows.reduce((a, r) => a + r.cancelled, 0), months: period })} tableLabel={tl} table={{ head: [t("cols.month"), t("clients.new"), t("clients.cancelled"), t("clients.active")], rows: rows.map((r) => [short(r.month), r.newServices, r.cancelled, r.activeClients]) }}>
             <EChart option={growthOption} height={220} label={t("clients.growth")} />
             <p className="text-xs text-zinc-400">{t("clients.active")}</p>
             <EChart option={activeOption} height={120} label={t("clients.active")} />
           </Panel>
           <div className="grid content-start gap-3">
-            <Panel title={t("clients.mix")} takeaway={t("clients.mixTakeaway", { n: mixTotal, tv: mix.tv })} empty={mixTotal ? null : t("empty.clients")} tableLabel={tl} table={{ head: [t("cols.plan"), t("cols.clients")], rows: [...mix.plans.map((p) => [p.plan, p.n] as (string | number)[]), [t("clients.tv"), mix.tv]] }}>
+            <Panel demo={sim ? t("demo.tag") : ""} title={t("clients.mix")} takeaway={t("clients.mixTakeaway", { n: mixTotal, tv: mix.tv })} empty={mixTotal ? null : t("empty.clients")} tableLabel={tl} table={{ head: [t("cols.plan"), t("cols.clients")], rows: [...mix.plans.map((p) => [p.plan, p.n] as (string | number)[]), [t("clients.tv"), mix.tv]] }}>
               <EChart option={mixOption} height={96} label={t("clients.mix")} />
             </Panel>
-            <Panel title={t("clients.reasons")} takeaway={reasons.length ? t("clients.reasonsTakeaway", { top: t(`reasons.${reasons[0].reason || "none"}`) }) : undefined} empty={reasons.length ? null : t("empty.reasons")} tableLabel={tl} table={{ head: [t("cols.reason"), t("cols.clients")], rows: reasons.map((r) => [t(`reasons.${r.reason || "none"}`), r.n]) }}>
+            <Panel demo={sim ? t("demo.tag") : ""} title={t("clients.reasons")} takeaway={reasons.length ? t("clients.reasonsTakeaway", { top: t(`reasons.${reasons[0].reason || "none"}`) }) : undefined} empty={reasons.length ? null : t("empty.reasons")} tableLabel={tl} table={{ head: [t("cols.reason"), t("cols.clients")], rows: reasons.map((r) => [t(`reasons.${r.reason || "none"}`), r.n]) }}>
               <EChart option={reasonsOption} height={Math.max(140, reasons.length * 30 + 40)} label={t("clients.reasons")} />
             </Panel>
           </div>
@@ -363,15 +395,15 @@ export function TableroApp() {
         <h2 id="tb-network" className="text-lg font-light text-foreground">
           {t("network.title")}
         </h2>
-        {net === "error" && <p className="text-xs text-amber-200">{t("network.offline")}</p>}
+        {net === "error" && !sim && <p className="text-xs text-amber-200">{t("network.offline")}</p>}
         <div className="grid gap-3 lg:grid-cols-2">
-          <Panel title={t("network.capacity")} takeaway={worstSite ? t("network.capacityTakeaway", { site: worstSite.name, use: Math.round((worstSite.use ?? 0) * 100) }) : undefined} empty={capRows.length ? null : t("empty.capacity")} tableLabel={tl} table={{ head: [t("cols.site"), t("network.use"), t("network.busy"), t("network.speed")], rows: capRows.map((s) => [s.name, `${Math.round((s.use ?? 0) * 100)} %`, s.busyDown === null ? "—" : `${s.busyDown} Mbps`, s.speedDown === null ? "—" : `${s.speedDown} Mbps`]) }}>
+          <Panel demo={sim ? t("demo.tag") : ""} title={t("network.capacity")} takeaway={worstSite ? t("network.capacityTakeaway", { site: worstSite.name, use: Math.round((worstSite.use ?? 0) * 100) }) : undefined} empty={capRows.length ? null : t("empty.capacity")} tableLabel={tl} table={{ head: [t("cols.site"), t("network.use"), t("network.busy"), t("network.speed")], rows: capRows.map((s) => [s.name, `${Math.round((s.use ?? 0) * 100)} %`, s.busyDown === null ? "—" : `${s.busyDown} Mbps`, s.speedDown === null ? "—" : `${s.speedDown} Mbps`]) }}>
             <EChart option={capOption} height={Math.max(140, capRows.length * 34 + 40)} label={t("network.capacity")} />
           </Panel>
-          <Panel title={t("network.heat")} takeaway={network?.hasTraffic ? t("network.heatTakeaway") : undefined} empty={network?.hasTraffic ? null : t("empty.traffic")} tableLabel={tl} table={network ? { head: [t("cols.day"), ...Array.from({ length: 24 }, (_, h) => `${h}h`)], rows: network.heat.map((r, i) => [DAYS[i], ...r.map((v) => (v === null ? "—" : v))]) } : undefined}>
+          <Panel demo={sim ? t("demo.tag") : ""} title={t("network.heat")} takeaway={network?.hasTraffic ? t("network.heatTakeaway") : undefined} empty={network?.hasTraffic ? null : t("empty.traffic")} tableLabel={tl} table={network ? { head: [t("cols.day"), ...Array.from({ length: 24 }, (_, h) => `${h}h`)], rows: network.heat.map((r, i) => [DAYS[i], ...r.map((v) => (v === null ? "—" : v))]) } : undefined}>
             <EChart option={heatOption} height={260} label={t("network.heat")} />
           </Panel>
-          <Panel title={t("network.light")} takeaway={light.readings ? t("network.lightTakeaway", { n: light.readings, low: light.low, high: light.high }) : undefined} empty={light.readings ? null : t("empty.light")} tableLabel={tl} table={{ head: ["dBm", "ONT"], rows: light.bins.filter((b) => b.n).map((b) => [b.dbm, b.n]) }}>
+          <Panel demo={sim ? t("demo.tag") : ""} title={t("network.light")} takeaway={light.readings ? t("network.lightTakeaway", { n: light.readings, low: light.low, high: light.high }) : undefined} empty={light.readings ? null : t("empty.light")} tableLabel={tl} table={{ head: ["dBm", "ONT"], rows: light.bins.filter((b) => b.n).map((b) => [b.dbm, b.n]) }}>
             <EChart option={lightOption} height={220} label={t("network.light")} />
             <p className="flex flex-wrap gap-3 text-[0.7rem] text-zinc-400">
               {(["baja", "justo", "bien", "satura"] as const).map((z) => (
@@ -382,7 +414,7 @@ export function TableroApp() {
               ))}
             </p>
           </Panel>
-          <Panel title={t("map.title")} takeaway={mapRows.some((s) => s.lat !== null) ? t("map.takeaway", { n: mapRows.filter((s) => s.lat !== null).length }) : undefined} empty={!mapRows.length ? t("empty.sites") : !mapRows.some((s) => s.lat !== null) ? t("empty.map") : null} tableLabel={tl} table={{ head: [t("cols.site"), t("cols.clients"), t("map.late"), t("map.suspended")], rows: mapRows.map((s) => [s.name, s.clients, s.late, s.suspended]) }}>
+          <Panel demo={sim ? t("demo.tag") : ""} title={t("map.title")} takeaway={mapRows.some((s) => s.lat !== null) ? t("map.takeaway", { n: mapRows.filter((s) => s.lat !== null).length }) : undefined} empty={!mapRows.length ? t("empty.sites") : !mapRows.some((s) => s.lat !== null) ? t("empty.map") : null} tableLabel={tl} table={{ head: [t("cols.site"), t("cols.clients"), t("map.late"), t("map.suspended")], rows: mapRows.map((s) => [s.name, s.clients, s.late, s.suspended]) }}>
             <ClientsMap sites={mapRows} label={t("map.title")} line={(s) => t("map.line", { n: s.clients, late: s.late })} />
           </Panel>
         </div>
@@ -393,13 +425,13 @@ export function TableroApp() {
           {t("ops.title")}
         </h2>
         <div className="grid gap-3 lg:grid-cols-3">
-          <Panel title={t("ops.open")} takeaway={t("ops.openTakeaway", { n: openReports, old: ages.more })} tableLabel={tl} table={{ head: [t("cols.age"), t("cols.reports")], rows: AGE_BUCKETS.map((b) => [t(`ops.ages.${b}`), ages[b]]) }}>
+          <Panel demo={sim ? t("demo.tag") : ""} title={t("ops.open")} takeaway={t("ops.openTakeaway", { n: openReports, old: ages.more })} tableLabel={tl} table={{ head: [t("cols.age"), t("cols.reports")], rows: AGE_BUCKETS.map((b) => [t(`ops.ages.${b}`), ages[b]]) }}>
             <EChart option={ageOption} height={220} label={t("ops.open")} />
           </Panel>
-          <Panel title={t("ops.repair")} takeaway={now.avgHours === null ? t("ops.repairNone") : t("ops.repairTakeaway", { h: Math.round(now.avgHours) })} empty={rows.some((r) => r.avgHours !== null) ? null : t("empty.repair")} tableLabel={tl} table={{ head: [t("cols.month"), t("ops.repair")], rows: rows.map((r) => [short(r.month), r.avgHours === null ? "—" : `${Math.round(r.avgHours)} h`]) }}>
+          <Panel demo={sim ? t("demo.tag") : ""} title={t("ops.repair")} takeaway={now.avgHours === null ? t("ops.repairNone") : t("ops.repairTakeaway", { h: Math.round(now.avgHours) })} empty={rows.some((r) => r.avgHours !== null) ? null : t("empty.repair")} tableLabel={tl} table={{ head: [t("cols.month"), t("ops.repair")], rows: rows.map((r) => [short(r.month), r.avgHours === null ? "—" : `${Math.round(r.avgHours)} h`]) }}>
             <EChart option={repairOption} height={220} label={t("ops.repair")} />
           </Panel>
-          <Panel title={t("ops.installs")} takeaway={t("ops.installsTakeaway", { n: backlogTotal, overdue: backlog.overdue })} tableLabel={tl} table={{ head: [t("cols.day"), t("ops.installs")], rows: backlog.days.map((x) => [x.day, x.n]) }}>
+          <Panel demo={sim ? t("demo.tag") : ""} title={t("ops.installs")} takeaway={t("ops.installsTakeaway", { n: backlogTotal, overdue: backlog.overdue })} tableLabel={tl} table={{ head: [t("cols.day"), t("ops.installs")], rows: backlog.days.map((x) => [x.day, x.n]) }}>
             <EChart option={backlogOption} height={220} label={t("ops.installs")} />
           </Panel>
         </div>

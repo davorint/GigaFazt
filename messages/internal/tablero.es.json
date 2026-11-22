@@ -142,6 +142,11 @@
       "light": "Sin lecturas de luz todavía (pégalas en Clientes).",
       "map": "Ningún despliegue tiene ubicación todavía: agrégala en su levantamiento (Despliegues).",
       "repair": "Sin reportes resueltos en el periodo."
+    },
+    "demo": {
+      "toggle": "Datos simulados",
+      "banner": "Estás viendo datos inventados: un operador de ejemplo con cinco despliegues, para ver cómo se verá el tablero cuando todo esté funcionando. No son tus clientes ni tu dinero; apágalo para volver a tus datos.",
+      "tag": "SIMULACIÓN"
     }
   }
 }

@@ -77,6 +77,16 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
       const tables = await page.getByText("Ver tabla", { exact: true }).count()
       console.log(`${w}: charts ${charts >= 12} tables ${tables >= 10} overflow ${overflow}`)
       await page.screenshot({ path: path.join(SHOTS, `tablero-${w}.png`), fullPage: true })
+      // Simulated data: the switch, the banner, a tag on every card, and still no sideways scroll.
+      await page.getByRole("switch", { name: "Datos simulados" }).click()
+      await page.getByText(/Estás viendo datos inventados/).waitFor({ timeout: 15000 })
+      await page.waitForTimeout(1500)
+      const tags = await page.getByText("SIMULACIÓN", { exact: true }).count()
+      const demoOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+      console.log(`${w} demo: switch ${await page.getByRole("switch").getAttribute("aria-checked")} tags ${tags >= 18} overflow ${demoOverflow}`)
+      await page.screenshot({ path: path.join(SHOTS, `tablero-demo-${w}.png`), fullPage: true })
+      await page.getByRole("switch", { name: "Datos simulados" }).click()
+      console.log(`${w} off: banner ${await page.getByText(/Estás viendo datos inventados/).count()}`)
       await ctx.close()
     }
     await browser.close()

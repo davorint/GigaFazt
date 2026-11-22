@@ -15,6 +15,7 @@ export function Panel({
   tableLabel,
   empty,
   className = "",
+  demo = "",
 }: {
   title: string
   takeaway?: string
@@ -23,13 +24,18 @@ export function Panel({
   tableLabel: string
   empty?: string | null
   className?: string
+  /** Simulated data on screen (Tablero's switch): the tag shown on the card ("SIMULACIÓN"); "" = real data. */
+  demo?: string
 }) {
   const id = useId()
   return (
     <section aria-labelledby={`${id}-t`} className={`grid content-start gap-2 rounded-2xl border border-white/10 bg-[#0e0e10] p-4 ${className}`}>
-      <h3 id={`${id}-t`} className="text-sm font-medium text-zinc-100">
-        {title}
-      </h3>
+      <div className="flex items-start justify-between gap-2">
+        <h3 id={`${id}-t`} className="text-sm font-medium text-zinc-100">
+          {title}
+        </h3>
+        {demo && <span className="shrink-0 rounded border border-amber-300/50 px-1 font-mono text-[0.6rem] tracking-wide text-amber-200">{demo}</span>}
+      </div>
       {takeaway && <p className="text-xs text-zinc-400">{takeaway}</p>}
       {empty ? <p className="grid min-h-24 place-items-center rounded-xl border border-dashed border-white/10 px-3 text-center text-xs text-zinc-400">{empty}</p> : children}
       {table && !empty && table.rows.length > 0 && (
