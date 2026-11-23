@@ -221,13 +221,13 @@ export function Tablero2App() {
             tableLabel={tl}
             table={{ head: [t("cols.month"), t("revenue.billed"), t("revenue.collected")], rows: [...revenue.map((r) => [short(r.month), mxn(r.billed), mxn(r.collected)]), ...fan.map((f) => [`${short(f.month)} · ${t("revenue.estimate")}`, `${mxn(f.low)} – ${mxn(f.high)}`, "—"])] }}
           >
-            <RevenueChart rows={revenue} forecast={fan} label={t("revenue.title")} names={{ billed: t("revenue.billed"), collected: t("revenue.collected"), low: t("revenue.low"), high: t("revenue.high") }} estimate={t("revenue.estimate")} />
+            <RevenueChart rows={revenue} forecast={fan} label={t("revenue.title")} names={{ billed: t("revenue.billed"), collected: t("revenue.collected"), rate: t("revenue.rate"), low: t("revenue.low"), high: t("revenue.high") }} estimate={t("revenue.estimate")} />
             <Legend items={[[t("revenue.billed"), SERIES[0], "line"], [t("revenue.collected"), SERIES[1], "area"], [`${t("revenue.low")} – ${t("revenue.high")}`, SERIES[0], "band"]]} />
           </Panel>
           <Panel
             demo={tag}
             title={t("bridge.title")}
-            takeaway={t("bridge.takeaway", { from: short(bridge.from), dir: delta > 0 ? t("bridge.up") : delta < 0 ? t("bridge.down") : t("bridge.same"), amount: delta ? mxn(Math.abs(delta)) : "", added: `+${mxn(bridge.added)}`, more: `+${mxn(bridge.more)}`, less: `−${mxn(bridge.less)}`, lost: `−${mxn(bridge.lost)}` })}
+            takeaway={t(delta ? "bridge.takeaway" : "bridge.takeawaySame", { from: short(bridge.from), dir: delta > 0 ? t("bridge.up") : t("bridge.down"), amount: mxn(Math.abs(delta)), added: `+${mxn(bridge.added)}`, more: `+${mxn(bridge.more)}`, less: `−${mxn(bridge.less)}`, lost: `−${mxn(bridge.lost)}` })}
             tableLabel={tl}
             table={{ head: [t("cols.concept"), t("cols.clients"), t("cols.amount")], rows: [[`${t("bridge.start")} (${short(bridge.from)})`, "—", mxn(bridge.start)], [t("bridge.added"), bridge.counts.added, `+${mxn(bridge.added)}`], [t("bridge.more"), bridge.counts.more, `+${mxn(bridge.more)}`], [t("bridge.less"), bridge.counts.less, `−${mxn(bridge.less)}`], [t("bridge.lost"), bridge.counts.lost, `−${mxn(bridge.lost)}`], [t("bridge.end"), "—", mxn(bridge.end)]] }}
           >
@@ -287,7 +287,7 @@ export function Tablero2App() {
         <Panel
           demo={tag}
           title={t("calendar.title")}
-          takeaway={win ? t("calendar.takeaway", { share: pct(win.share), from: win.from, to: win.to, n: cal.total }) : t("calendar.takeawayNone")}
+          takeaway={win ? t(win.from === win.to ? "calendar.takeawayDay" : "calendar.takeaway", { share: pct(win.share), from: win.from, to: win.to, n: cal.total }) : t("calendar.takeawayNone")}
           empty={cal.total ? null : t("empty.payments")}
           tableLabel={tl}
           table={{ head: [t("cols.day"), t("cols.payments")], rows: cal.byDayOfMonth.map((n, i) => [i + 1, n]) }}

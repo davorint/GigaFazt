@@ -67,6 +67,7 @@
       "takeaway": "En {month} va cobrado el {rate} de lo facturado. Los próximos 3 meses: entre {low} y {high} al mes.",
       "billed": "Facturado",
       "collected": "Cobrado",
+      "rate": "Cobrado del facturado",
       "low": "Con las bajas de siempre",
       "high": "Si nadie se va",
       "estimate": "ESTIMACIÓN"
@@ -74,9 +75,9 @@
     "bridge": {
       "title": "Puente del ingreso recurrente",
       "takeaway": "Del cierre de {from} a hoy el ingreso recurrente {dir} {amount}: altas {added}, cambios a más {more}, cambios a menos {less} y bajas {lost}.",
+      "takeawaySame": "Del cierre de {from} a hoy el ingreso recurrente quedó igual: altas {added}, cambios a más {more}, cambios a menos {less} y bajas {lost}.",
       "up": "subió",
       "down": "bajó",
-      "same": "quedó igual,",
       "start": "Inicio",
       "added": "Altas",
       "more": "Suben",
@@ -121,6 +122,7 @@
     "calendar": {
       "title": "Cuándo pagan",
       "takeaway": "El {share} de los pagos llega entre el día {from} y el {to} del mes ({n} pagos en 26 semanas).",
+      "takeawayDay": "El {share} de los pagos llega el día {from} del mes ({n} pagos en 26 semanas).",
       "takeawayNone": "Sin pagos en las últimas 26 semanas.",
       "byDay": "Pagos por día del mes",
       "payments": "{n, plural, =0 {Sin pagos} one {# pago} other {# pagos}}",

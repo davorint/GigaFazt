@@ -8,29 +8,49 @@ export type Tip = { show: (e: PointerEvent<Element>, content: ReactNode) => void
  * One Tablero 2 chart: an SVG as wide as its box (D3 computes, React draws), drawn once the box is measured, and a
  * tooltip that follows the pointer and stays inside the box. The SVG is an image with a label for screen readers; its
  * numbers are in the panel's "Ver tabla" (Panel.tsx).
+ *
+ * Touch screens have no hover: a tap shows the tooltip of what was tapped (the tap is replayed as a pointer move, so each
+ * chart's own handlers answer it) and it stays until the next tap, here or anywhere else on the page.
  */
 export function Frame({ height, label, children, square = false }: { height: number | ((w: number) => number); label: string; children: (w: number, tip: Tip) => ReactNode; square?: boolean }) {
   // The box as state (a callback ref): the tooltip reads its position in event handlers.
   const [box, setBox] = useState<HTMLDivElement | null>(null)
   const [w, setW] = useState(0)
   const [tip, setTip] = useState<{ x: number; y: number; content: ReactNode } | null>(null)
+  const [touch, setTouch] = useState(false)
   useEffect(() => {
     if (!box) return
     const ro = new ResizeObserver(([e]) => setW(Math.floor(e.contentRect.width)))
     ro.observe(box)
     return () => ro.disconnect()
   }, [box])
+  useEffect(() => {
+    if (!box || !touch) return
+    const away = (e: Event) => !box.contains(e.target as Node) && setTip(null)
+    document.addEventListener("pointerdown", away)
+    return () => document.removeEventListener("pointerdown", away)
+  }, [box, touch])
   const show = useCallback((e: PointerEvent<Element>, content: ReactNode) => {
     const r = box?.getBoundingClientRect()
     if (!r) return
     setTip({ x: e.clientX - r.left, y: e.clientY - r.top, content })
   }, [box])
-  const hide = useCallback(() => setTip(null), [])
+  // A finger lifting counts as leaving: on touch the tooltip stays until the next tap.
+  const hide = useCallback(() => !touch && setTip(null), [touch])
   const tipApi = useMemo(() => ({ show, hide }), [show, hide])
   const h = typeof height === "function" ? height(w) : height
   const side = square ? Math.min(w, h) : w
   return (
-    <div ref={setBox} className="relative w-full" style={{ height: square ? side || h : h }} onPointerLeave={hide}>
+    <div ref={setBox} className="relative w-full" style={{ height: square ? side || h : h }}
+      onPointerLeave={hide}
+      onPointerDown={(e) => {
+        const finger = e.pointerType !== "mouse"
+        setTouch(finger)
+        if (!finger) return
+        setTip(null)
+        e.target.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: e.clientX, clientY: e.clientY, pointerType: e.pointerType }))
+      }}
+    >
       {w > 0 && (
         <svg role="img" aria-label={label} width={square ? side : w} height={square ? side : h} viewBox={`0 0 ${square ? side : w} ${square ? side : h}`} className={`block overflow-visible ${square ? "mx-auto" : ""}`}>
           {children(square ? side : w, tipApi)}

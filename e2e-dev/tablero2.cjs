@@ -83,6 +83,15 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
       await cell.scrollIntoViewIfNeeded()
       await cell.hover({ force: true })
       console.log(`${w}: tooltip ${await page.getByText(/jue · 21:00–22:00/).count()}`)
+      if (w < 500) {
+        // A phone: tapping a step of the bridge shows its tooltip, and it stays after the finger lifts.
+        await page.mouse.move(0, 0)
+        const bar = page.locator('svg[aria-label="Puente del ingreso recurrente"] g').filter({ hasText: "Altas" }).first()
+        await bar.scrollIntoViewIfNeeded()
+        await bar.tap({ force: true })
+        await page.waitForTimeout(300)
+        console.log(`${w}: tap tooltip ${await page.locator('[role="presentation"]').filter({ hasText: /clientes?/ }).count()}`)
+      }
       await page.screenshot({ path: path.join(SHOTS, `tablero2-${w}.png`), fullPage: true })
       // Simulated data: the switch, the banner, a tag on every card, and still no sideways scroll.
       await page.getByRole("switch", { name: "Datos simulados" }).click()

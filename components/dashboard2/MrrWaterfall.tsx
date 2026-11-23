@@ -58,7 +58,7 @@ export function MrrWaterfall({ bridge, label, labels, hint }: { bridge: Bridge; 
               return (
                 <g
                   key={s.key}
-                  onPointerMove={(e) => tip.show(e, <TipBody title={s.label} rows={[{ label: s.hint || "", value: s.kind === "total" ? mxn(s.value) : `${s.value >= 0 ? "+" : "−"}${mxn(Math.abs(s.value))}`, color: BRIDGE_COLOR[s.kind] }]} />)}
+                  onPointerMove={(e) => tip.show(e, <TipBody title={s.label} rows={[{ label: s.hint || "", value: s.kind === "total" || s.value === 0 ? mxn(Math.abs(s.value)) : `${s.value > 0 ? "+" : "−"}${mxn(Math.abs(s.value))}`, color: BRIDGE_COLOR[s.kind] }]} />)}
                   onPointerLeave={tip.hide}
                 >
                   <rect x={(x(s.key) ?? 0) - 4} y={m.top} width={x.bandwidth() + 8} height={260 - m.bottom - m.top} fill="transparent" />

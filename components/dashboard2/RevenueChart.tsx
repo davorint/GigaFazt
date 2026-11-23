@@ -17,7 +17,7 @@ const H = 300
  * Billed (line) and collected (area) per month on one money axis, then the next months as a band from "with the usual
  * cancellations" to "nobody leaves" (an estimate, marked). A crosshair snaps to the month under the pointer.
  */
-export function RevenueChart({ rows, forecast, label, names, estimate }: { rows: RevenuePoint[]; forecast: ForecastPoint[]; label: string; names: { billed: string; collected: string; low: string; high: string }; estimate: string }) {
+export function RevenueChart({ rows, forecast, label, names, estimate }: { rows: RevenuePoint[]; forecast: ForecastPoint[]; label: string; names: { billed: string; collected: string; rate: string; low: string; high: string }; estimate: string }) {
   const [at, setAt] = useState<number | null>(null)
   const months = [...rows.map((r) => r.month), ...forecast.map((f) => f.month)]
   return (
@@ -69,7 +69,7 @@ export function RevenueChart({ rows, forecast, label, names, estimate }: { rows:
               tip.show(
                 e,
                 h ? (
-                  <TipBody title={short(h.month)} rows={[{ label: names.billed, value: mxn(h.billed), color: SERIES[0] }, { label: names.collected, value: mxn(h.collected), color: SERIES[1] }, ...(h.billed ? [{ label: "%", value: `${Math.round((h.collected / h.billed) * 100)} %` }] : [])]} />
+                  <TipBody title={short(h.month)} rows={[{ label: names.billed, value: mxn(h.billed), color: SERIES[0] }, { label: names.collected, value: mxn(h.collected), color: SERIES[1] }, ...(h.billed ? [{ label: names.rate, value: `${Math.round((h.collected / h.billed) * 100)} %` }] : [])]} />
                 ) : f ? (
                   <TipBody title={`${short(f.month)} · ${estimate}`} rows={[{ label: names.high, value: mxn(f.high), color: SERIES[0] }, { label: names.low, value: mxn(f.low), color: SERIES[0] }]} />
                 ) : null
