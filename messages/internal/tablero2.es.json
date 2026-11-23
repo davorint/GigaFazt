@@ -371,9 +371,9 @@
     },
     "prints": {
       "title": "Huella de pago",
-      "takeaway": "Los clientes con más de un año pagan a tiempo (hasta el día 10) el {loyal} de las veces; los de menos de 3 meses, el {fresh}.",
-      "takeawayAll": "El {all} de los pagos del último año llegó a tiempo (hasta el día 10).",
-      "note": "Un mapa topográfico de los pagos del último año: a lo ancho, el día del mes en que llegó el pago; hacia arriba, cuántos meses llevaba el cliente con nosotros. Lo más claro es donde se juntan más pagos. La línea punteada es el día 10: a la derecha, pagos tarde.",
+      "takeaway": "Los clientes con más de un año pagan entre el 1 y el 10 del mes el {loyal} de las veces; los de menos de 3 meses, el {fresh}.",
+      "takeawayAll": "El {all} de los pagos del último año llegó entre el 1 y el 10 del mes.",
+      "note": "Un mapa topográfico de los pagos del último año: a lo ancho, el día del mes en que llegó el pago; hacia arriba, cuántos meses llevaba el cliente con nosotros. Lo más claro es donde se juntan más pagos. La línea punteada es el día 10, cuando vence el mes; a su derecha caen los pagos tardíos y también los adelantados para el mes siguiente.",
       "due": "vence el 10",
       "x": "Día del mes en que pagó",
       "y": "Meses como cliente",
@@ -383,7 +383,7 @@
     },
     "compare": {
       "title": "Comparador de despliegues",
-      "takeaway": "{best} sale arriba en {n} de {of} medidas; {worst}, en {m}.",
+      "takeaway": "{best} queda arriba en {n} de {of} medidas; {worst} queda abajo en {m}.",
       "note": "Un eje por medida y una línea por despliegue. En todos los ejes lo mejor queda arriba: en uso pico, latencia y fallas, eso es el número más bajo. Una línea que se mantiene alta va bien en todo; una caída muestra dónde se queda atrás. Pasa el cursor por una línea o su nombre.",
       "axes": {
         "clients": "Clientes",

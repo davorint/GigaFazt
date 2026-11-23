@@ -68,7 +68,7 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
     await db.query(`insert into outages (router_id, site_id, kind, started_at, ended_at) values ($1, $2, 'carrier', now() - interval '2 hours', now() - interval '90 minutes')`, [router.id, SITE])
     const api2 = await j(await fetch(BASE + "/api/interno/tablero2", { headers: H }))
     const mine = (xs) => (xs ?? []).filter((x) => x.routerId === router.id)
-    console.log("api2:", JSON.stringify({ gateway: mine(api2.carriers?.gateways).some((g) => g.ip === "10.77.1.1" && g.hours.length >= 40 && g.hours.some((h) => h.loss > 0) && g.hours.every((h) => h.rtt !== null)), outages: mine(api2.carriers?.continuity)[0]?.outages.length, path: mine(api2.carriers?.path)[0]?.gatewayRtt > 0, daily: (api2.carriers?.daily ?? []).some((d) => d.siteId === SITE && d.days.length >= 1) }))
+    console.log("api2:", JSON.stringify({ gateway: mine(api2.carriers?.gateways).some((g) => g.ip === "10.77.1.1" && g.hours.length >= 40 && g.hours.some((h) => h.loss > 0) && g.hours.every((h) => h.rtt !== null)), outages: mine(api2.carriers?.continuity)[0]?.outages.length, path: mine(api2.carriers?.path)[0]?.gatewayRtt > 0, daily: (api2.carriers?.daily ?? []).some((d) => d.siteId === SITE && d.days.length >= 1), traffic: (api2.carriers?.traffic ?? []).some((x) => x.siteId === SITE && x.hours.length >= 100 && x.hours.some((h) => h.down > 100)) }))
     const browser = await chromium.launch()
     for (const [w, h] of [[390, 844], [1440, 900]]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, isMobile: w < 500, hasTouch: w < 500 })

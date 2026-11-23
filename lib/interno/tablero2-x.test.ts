@@ -34,7 +34,7 @@ describe("Tablero 2, fourth round", () => {
     expect(leaves(dos).map((l) => l.value).sort()).toEqual([596, 646])
     expect(leaves(dos).find((l) => l.value === 596)?.tone).toBe("suspendido")
     const uno = tree.children.find((n) => "name" in n && n.name === "Uno") as TreeNode
-    expect((uno.children[0] as TreeNode).name).toBe("")
+    expect((uno.children[0] as TreeNode).name).toBe("Única")
     expect(leaves(tree)).toHaveLength(4)
   })
 

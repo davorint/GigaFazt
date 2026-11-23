@@ -5,7 +5,8 @@
  *   with Cobranza (the zoomable circle packing).
  * - faultMatrix: fault reports of the last days per deployment and kind (the chord diagram).
  * - payPrints: every payment of the last months as (day of the month it came, months the client had been with us),
- *   and how punctual new and old clients are (the density contours).
+ *   and the share paid by the due day among new and old clients (the density contours). A payment after the due day
+ *   may be late or early for next month: the chart doesn't tell them apart, and the copy doesn't call them late.
  * - compareRows: each deployment's eight measures side by side (the parallel coordinates).
  * The horizon chart draws the hourly traffic the server sends (tablero2-server.ts) against each deployment's links.
  */
@@ -34,7 +35,8 @@ export function revenueTree(sites: Site[], clients: Client[], payments: Payment[
     if (!live.length || value <= 0) continue
     const site = known.get(c.siteId)
     const siteId = site ? site.id : ""
-    const tower = site && site.towers.length > 1 && site.towers.some((t) => t.id === c.towerId) ? c.towerId : ""
+    // One tower: everyone is in it. Several: the client's own tower, or "" (no tower written down).
+    const tower = !site ? "" : site.towers.length === 1 ? site.towers[0].id : site.towers.some((t) => t.id === c.towerId) ? c.towerId : ""
     const tone: Tone = live.some((s) => s.status === "suspendido") ? "suspendido" : ledger(c, payments, today).status
     const leaf: Leaf = { id: c.id, value, tone, place: [c.tower, c.apartment].filter(Boolean).join(" · "), plan: live.find((s) => s.type === "internet")?.plan.trim() ?? "" }
     const towers = bySite.get(siteId) ?? new Map<string, Leaf[]>()

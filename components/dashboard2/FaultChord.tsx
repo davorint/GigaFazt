@@ -57,6 +57,8 @@ export function FaultChord({ m, label, siteName, kindLabel, reportsLabel }: { m:
               )
             })}
             {chords.groups.map((g) => {
+              // A kind with no reports has no arc: no label either (it would sit on its neighbour's).
+              if (!g.value) return null
               const mid = (g.startAngle + g.endAngle) / 2
               const flip = mid > Math.PI
               const deg = (mid * 180) / Math.PI - 90

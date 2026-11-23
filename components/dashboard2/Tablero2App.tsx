@@ -390,7 +390,7 @@ export function Tablero2App() {
           tableLabel={tl}
           table={{ head: [t("cols.site"), t("cols.amount"), "%"], rows: [...packSites].sort((a, b) => b.value - a.value).map((x) => [x.name || t("pack.noSite"), mxn(x.value), pct(packTotal ? x.value / packTotal : null)]) }}
         >
-          {tree && <RevenuePack tree={tree} label={t("pack.title")} siteName={(n) => n || t("pack.noSite")} towerName={(n) => n} leafTip={packTip} allLabel={t("pack.all")} />}
+          {tree && <RevenuePack tree={tree} label={t("pack.title")} siteName={(n) => n || t("pack.noSite")} towerName={(n) => n || t("pack.noTower")} leafTip={packTip} allLabel={t("pack.all")} />}
           <Legend items={TONES.map((x) => [t(`rings.tones.${x}`), TONE_COLOR[x], "dot"] as [string, string, "dot"])} />
           <p className="text-[0.7rem] text-zinc-500">{t("pack.note")}</p>
         </Panel>
