@@ -9,6 +9,8 @@ import { lastMonths, monthNumbers } from "@/lib/interno/numbers"
 import { forecast } from "@/lib/interno/outlook"
 import { cohorts, moneyFlow, mrrAt, mrrBridge, networkGroups, payCalendar, payWindow, retentionAt, TONES, type FlowKind, type RingGroup, type Tone } from "@/lib/interno/tablero2"
 import { FLOW_STATES, lightRows, recovered, REPAIR_GROUPS, repairLanes, revenueStreams, skyline, statusFlows, tenure, type RepairBar, type Star } from "@/lib/interno/tablero2-more"
+import { demoCarriers } from "@/lib/interno/tablero2-demo"
+import { carrierOf, continuityStrip, gatewayStats, hourglass, saturation, type CarrierFigures, type Cell, type GatewayHour } from "@/lib/interno/tablero2-net"
 import { mxn } from "@/lib/materials/catalog"
 import { reportsStore } from "@/lib/reports/store"
 import { addMonths } from "@/lib/payments/model"
@@ -17,6 +19,11 @@ import { useWispData } from "@/components/wispdavor/useWispData"
 import { Panel } from "@/components/dashboard/Panel"
 import { INK, SERIES } from "@/components/dashboard/theme"
 import { CapacityBars } from "./CapacityBars"
+import { CarrierPulse } from "./CarrierPulse"
+import { CELL_COLOR, ContinuityStrips } from "./ContinuityStrips"
+import { PacketPath } from "./PacketPath"
+import { SaturationForecast } from "./SaturationForecast"
+import { SpeedHourglass } from "./SpeedHourglass"
 import { CohortGrid } from "./CohortGrid"
 import { k, monthName, pct, pesos, short, signed } from "./format"
 import { MoneySankey } from "./MoneySankey"
@@ -75,6 +82,7 @@ export function Tablero2App() {
   const d = useWispData()
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>(12)
   const [net, setNet] = useState<NetworkFigures | null | "error">(null)
+  const [carrierNet, setCarrierNet] = useState<CarrierFigures | null | "error">(null)
   const [demo, setDemo] = useState(false)
   const [nowHour, setNowHour] = useState<number | null>(null)
   const [nowMs, setNowMs] = useState(0)
@@ -91,6 +99,13 @@ export function Tablero2App() {
         if (live) setNet(r.ok && b.network ? b.network : "error")
       })
       .catch(() => live && setNet("error"))
+    // Carriers, continuity, packet path and daily busy hours (third round).
+    fetch("/api/interno/tablero2", { cache: "no-store" })
+      .then(async (r) => {
+        const b = (await r.json()) as { carriers?: CarrierFigures }
+        if (live) setCarrierNet(r.ok && b.carriers ? b.carriers : "error")
+      })
+      .catch(() => live && setCarrierNet("error"))
     const tick = () => {
       setNowHour(hourInMexico())
       setNowMs(Date.now())
@@ -128,6 +143,10 @@ export function Tablero2App() {
   const light = useMemo(() => lightRows(src.sites, src.clients), [src])
   const stars = useMemo(() => (today ? tenure(src.clients, src.sites, today) : []), [src, today])
   const repairs = useMemo(() => (nowMs ? repairLanes(src.reports, src.sites, nowMs, 90) : null), [src, nowMs])
+  // Third round (owner, 2026-11-22: carriers, speed of service, continuity, and a suggestion).
+  const carriers = useMemo(() => (sim ? (nowMs ? demoCarriers(sim, nowMs) : null) : carrierNet && carrierNet !== "error" ? carrierNet : null), [sim, nowMs, carrierNet])
+  const strips = useMemo(() => (carriers && nowMs ? carriers.continuity.map((c) => ({ c, strip: continuityStrip(c, nowMs) })) : []), [carriers, nowMs])
+  const forecasts = useMemo(() => (carriers && today ? saturation(src.sites, carriers.daily, today) : []), [carriers, src, today])
   const streamName = useCallback((key: string) => (key === "__tv" ? t("streams.tv") : key === "__otros" ? t("streams.otros") : key), [t])
   const streamColor = useCallback((key: string) => SERIES[streams.keys.indexOf(key)] ?? INK.muted, [streams.keys])
 
@@ -164,6 +183,48 @@ export function Tablero2App() {
   let peak: { d: number; h: number; v: number } | null = null
   if (network) network.heat.forEach((row, di) => row.forEach((v, h) => v !== null && (!peak || v > peak.v) && (peak = { d: di, h, v })))
   const pk = peak as { d: number; h: number; v: number } | null
+  // Carriers and continuity
+  const siteName = (id: string) => src.sites.find((x) => x.id === id)?.name.trim() || t("rings.noSite")
+  const ms = (v: number) => `${v < 10 ? v.toLocaleString("es-MX", { maximumFractionDigits: 1 }) : Math.round(v)} ms`
+  const speedText = (mbps: number) => (mbps >= 1000 ? `${(mbps / 1000).toLocaleString("es-MX", { maximumFractionDigits: 1 })} Gbps` : `${Math.round(mbps)} Mbps`)
+  const pulseRows = (carriers?.gateways ?? []).map((g) => {
+    const st = gatewayStats(g.hours)
+    const name = carrierOf(src.sites, g.siteId, g.ip) || g.ip
+    return { key: `${g.routerId}|${g.ip}`, title: name, sub: siteName(g.siteId), hours: g.hours, rtt: st.rtt, loss: st.loss, stats: t("pulse.stats", { rtt: st.rtt === null ? "—" : ms(st.rtt), p95: st.p95 === null ? "—" : ms(st.p95), loss: pct(st.loss, 2) }) }
+  })
+  const byRtt = pulseRows.filter((r) => r.rtt !== null).sort((a, b) => (a.rtt as number) - (b.rtt as number))
+  const lossAll = pulseRows.length ? pulseRows.reduce((a, r) => a + (r.loss ?? 0), 0) / pulseRows.length : null
+  const pulseTip = (h: GatewayHour) => ({ title: new Date(h.t).toLocaleString("es-MX", { weekday: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }), rows: [{ label: t("pulse.median"), value: h.rtt === null ? t("pulse.noReply") : ms(h.rtt) }, { label: t("pulse.p95"), value: h.p95 === null ? "—" : ms(h.p95) }, { label: t("pulse.lost"), value: pct(h.loss, 1) }] })
+  const availText = (a: number | null) => (a === null ? "—" : `${(a * 100).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`)
+  const minutesText = (m: number) => (m >= 120 ? `${(m / 60).toLocaleString("es-MX", { maximumFractionDigits: 1 })} h` : `${m} min`)
+  const stripRows = strips.map(({ c, strip }) => ({ key: c.routerId, title: c.router, sub: siteName(c.siteId), strip, headline: availText(strip.availability), detail: t("continuity.detail", { outages: strip.outages, minutes: minutesText(strip.downMinutes) }) }))
+  const worstStrip = [...stripRows].filter((r) => r.strip.availability !== null).sort((a, b) => (a.strip.availability as number) - (b.strip.availability as number))[0]
+  const watchedAll = strips.reduce((a, x) => a + x.strip.cells.filter((cc) => cc !== 0).length, 0)
+  const availAll = watchedAll ? 1 - strips.reduce((a, x) => a + x.strip.downMinutes, 0) / 60 / watchedAll : null
+  const busyByName = new Map((network?.sites ?? []).map((x) => [x.name, x.busyDown]))
+  const glasses = hourglass(src.sites, src.clients, busyByName)
+  const topGlass = glasses.find((g) => g.ratio !== null)
+  const glassLines = (g: (typeof glasses)[number]) => {
+    const use = g.busy !== null && g.link ? g.busy / g.link : null
+    return [
+      { label: t("hourglass.sold", { n: g.active }), value: speedText(g.sold) + (g.unknown ? ` · ${t("hourglass.unknown", { n: g.unknown })}` : "") },
+      { label: t("hourglass.link"), value: g.link ? `${speedText(g.link)} · ${g.ratio === null ? "—" : `${Math.round(g.ratio)}:1`}` : t("hourglass.noLink") },
+      ...(use === null ? [] : [{ label: t("hourglass.busy"), value: `${speedText(g.busy as number)} · ${pct(use)}`, tone: use >= 0.8 ? ("bad" as const) : use >= 0.6 ? ("warn" as const) : undefined }]),
+      ...(g.each === null ? [] : [{ label: t("hourglass.each"), value: `${speedText(g.each)} c/u` }]),
+    ]
+  }
+  const pathRows = (carriers?.path ?? []).map((pp) => {
+    const site = src.sites.find((x) => x.id === pp.siteId)
+    const names = site ? site.rooms.flatMap((r) => r.carriers.map((c) => c.name.trim()).filter(Boolean)) : []
+    return { key: pp.routerId, name: siteName(pp.siteId), carrier: names.join(" + ") || t("cols.carrier"), ont: pp.ontRtt, ontP90: pp.ontP90, gateway: pp.gatewayRtt, lossNote: pp.onts ? (pp.ontLossy ? t("path.loss", { lossy: pp.ontLossy, n: pp.onts }) : t("path.lossNone", { n: pp.onts })) : "" }
+  })
+  const measured = pathRows.filter((r) => r.gateway !== null)
+  const slowest = [...measured].sort((a, b) => (b.gateway ?? 0) + (b.ont ?? 0) - ((a.gateway ?? 0) + (a.ont ?? 0)))[0]
+  const avgPath = measured.length ? measured.reduce((a, r) => a + (r.gateway ?? 0) + (r.ont ?? 0), 0) / measured.length : null
+  const firstFull = forecasts.find((f) => f.full)
+  const firstSoon = forecasts.find((f) => !f.full && f.eta !== null)
+  const etaDate = (days: number) => new Date(Date.parse(`${today}T12:00:00Z`) + days * 864e5).toLocaleDateString("es-MX", { day: "numeric", month: "long" })
+  const cellLabel = (c: Cell) => t(`continuity.cells.${c}`)
   const capRows = network ? network.sites.filter((s) => s.use !== null).map((s) => ({ name: s.name, use: s.use ?? 0, busy: s.busyDown, speed: s.speedDown })).sort((a, b) => b.use - a.use) : []
 
   // Collections
@@ -391,6 +452,72 @@ export function Tablero2App() {
           <LightSwarm rows={light} label={t("light.title")} name={(r) => r.name || t("light.noSite")} zoneLabel={(z) => t(`light.zones.${z}`)} unknownPlace={t("light.noPlace")} dotTitle={(x) => ({ rx: t("light.rx", { v: x.rx.toLocaleString("es-MX") }), drop: x.drop !== null && x.drop >= 1 && x.first !== null ? t("light.drop", { d: x.drop.toLocaleString("es-MX"), first: x.first.toLocaleString("es-MX") }) : null })} />
           <Legend items={(["bien", "justo", "baja", "satura"] as const).map((z) => [t(`light.zones.${z}`), LIGHT_COLOR[z], "dot"] as [string, string, "dot"])} />
           <p className="text-[0.7rem] text-zinc-500">{t("light.note")}</p>
+        </Panel>
+      </Section>
+
+      <Section id="t2-carriers" title={t("sections.carriers")}>
+        <Panel
+          demo={tag}
+          title={t("pulse.title")}
+          takeaway={pulseRows.length ? (byRtt.length ? t("pulse.takeaway", { best: ms(byRtt[0].rtt as number), bestName: `${byRtt[0].title} · ${byRtt[0].sub}`, worst: ms(byRtt[byRtt.length - 1].rtt as number), worstName: `${byRtt[byRtt.length - 1].title} · ${byRtt[byRtt.length - 1].sub}`, loss: pct(lossAll, 2) }) : t("pulse.takeawayNoRtt", { loss: pct(lossAll, 2) })) : undefined}
+          empty={pulseRows.length ? null : t("pulse.empty")}
+          tableLabel={tl}
+          table={{ head: [t("cols.carrier"), t("cols.site"), t("pulse.median"), t("pulse.lost")], rows: pulseRows.map((r) => [r.title, r.sub, r.rtt === null ? "—" : ms(r.rtt), pct(r.loss, 2)]) }}
+        >
+          {carriers && <CarrierPulse rows={pulseRows} from={nowMs - 7 * 864e5} now={nowMs} label={t("pulse.title")} tip={pulseTip} noLatency={t("pulse.noLatency")} />}
+          <p className="text-[0.7rem] text-zinc-500">{t("pulse.note")}</p>
+        </Panel>
+        <Panel
+          demo={tag}
+          title={t("continuity.title")}
+          takeaway={worstStrip ? t("continuity.takeaway", { worst: worstStrip.title.includes(worstStrip.sub) ? worstStrip.title : `${worstStrip.title} (${worstStrip.sub})`, worstA: worstStrip.headline, outages: worstStrip.strip.outages, minutes: minutesText(worstStrip.strip.downMinutes), all: availText(availAll) }) : undefined}
+          empty={stripRows.length ? null : t("continuity.empty")}
+          tableLabel={tl}
+          table={{ head: [t("cols.router"), t("cols.site"), t("cols.availability"), t("continuity.cells.3")], rows: stripRows.map((r) => [r.title, r.sub, r.headline, r.detail]) }}
+        >
+          <ContinuityStrips rows={stripRows} label={t("continuity.title")} cellLabel={cellLabel} hourLabel={(tt) => new Date(tt).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} />
+          <Legend items={([1, 2, 3, 0] as const).map((c) => [cellLabel(c), CELL_COLOR[c], "bar"] as [string, string, "bar"])} />
+          <p className="text-[0.7rem] text-zinc-500">{t("continuity.note")}</p>
+        </Panel>
+        <Panel
+          demo={tag}
+          title={t("hourglass.title")}
+          takeaway={topGlass ? t("hourglass.takeaway", { name: topGlass.name, ratio: Math.round(topGlass.ratio as number), each: topGlass.each === null ? "—" : speedText(topGlass.each), use: topGlass.busy !== null && topGlass.link ? pct(topGlass.busy / topGlass.link) : "—" }) : undefined}
+          empty={glasses.length ? null : t("hourglass.empty")}
+          tableLabel={tl}
+          table={{ head: [t("cols.site"), t("cols.sold"), t("cols.link"), t("cols.ratio"), t("hourglass.busy"), t("hourglass.each")], rows: glasses.map((g) => [g.name, speedText(g.sold), g.link ? speedText(g.link) : "—", g.ratio === null ? "—" : `${Math.round(g.ratio)}:1`, g.busy === null ? "—" : speedText(g.busy), g.each === null ? "—" : speedText(g.each)]) }}
+        >
+          <SpeedHourglass glasses={glasses} lines={glassLines} />
+          <p className="text-[0.7rem] text-zinc-500">{t("hourglass.note")}</p>
+        </Panel>
+        <Panel
+          demo={tag}
+          title={t("path.title")}
+          takeaway={avgPath !== null && slowest ? t("path.takeaway", { total: ms(avgPath), slow: slowest.name, ms: ms((slowest.gateway ?? 0) + (slowest.ont ?? 0)) }) : undefined}
+          empty={pathRows.length ? null : t("path.empty")}
+          tableLabel={tl}
+          table={{ head: [t("cols.site"), t("path.home"), "p90", t("cols.carrier"), t("cols.latency")], rows: pathRows.map((r) => [r.name, r.ont === null ? "—" : ms(r.ont), r.ontP90 === null ? "—" : ms(r.ontP90), r.carrier, r.gateway === null ? "—" : ms(r.gateway)]) }}
+        >
+          <PacketPath rows={pathRows} label={t("path.title")} names={{ home: t("path.home"), router: t("path.router"), internet: t("path.internet"), unmeasured: t("path.unmeasured") }} ms={ms} />
+          <p className="text-[0.7rem] text-zinc-500">{t("path.note")}</p>
+        </Panel>
+        <Panel
+          demo={tag}
+          title={t("forecast.title")}
+          takeaway={forecasts.length ? (firstFull ? t("forecast.takeawayFull", { name: firstFull.name }) : firstSoon && firstSoon.eta !== null ? t("forecast.takeaway", { name: firstSoon.name, date: etaDate(firstSoon.eta), days: firstSoon.eta }) : t("forecast.takeawayCalm")) : undefined}
+          empty={forecasts.length ? null : t("forecast.empty")}
+          tableLabel={tl}
+          table={{ head: [t("cols.site"), t("forecast.today"), t("forecast.week"), t("cols.eta")], rows: forecasts.map((f) => [f.name, pct(f.level), `${f.slope >= 0 ? "+" : "−"}${pct(Math.abs(f.slope * 7), 1)}`, f.full ? t("forecast.already") : f.eta === null ? t("forecast.never") : etaDate(f.eta)]) }}
+        >
+          <SaturationForecast
+            rows={forecasts}
+            today={today}
+            label={t("forecast.title")}
+            name={(f) => f.name}
+            fullLabel={t("forecast.full")}
+            tipFor={(f) => ({ title: f.name, rows: [{ label: t("forecast.today"), value: pct(f.level) }, { label: t("forecast.week"), value: `${f.slope >= 0 ? "+" : "−"}${pct(Math.abs(f.slope * 7), 1)}` }, { label: t("forecast.eta"), value: f.full ? t("forecast.already") : f.eta === null ? t("forecast.never") : etaDate(f.eta) }] })}
+          />
+          <p className="text-[0.7rem] text-amber-200/80">{t("forecast.estimate")} · {t("forecast.note")}</p>
         </Panel>
       </Section>
 

@@ -18,7 +18,8 @@
       "clients": "Clientes",
       "network": "Red",
       "collections": "Cobranza",
-      "ops": "Operación"
+      "ops": "Operación",
+      "carriers": "Carriers y continuidad"
     },
     "kpi": {
       "title": "Lo principal",
@@ -163,7 +164,16 @@
       "apartments": "Departamentos",
       "zone": "Zona",
       "start": "Inicio",
-      "kind": "Tipo"
+      "kind": "Tipo",
+      "carrier": "Carrier",
+      "router": "Router",
+      "latency": "Latencia",
+      "availability": "Disponibilidad",
+      "sold": "Vendido",
+      "link": "Enlace",
+      "ratio": "Relación",
+      "hop": "Tramo",
+      "eta": "Llega al 80 %"
     },
     "empty": {
       "clients": "Todavía no hay clientes con servicio.",
@@ -253,6 +263,71 @@
       "days": "{n} días",
       "empty": "Sin reportes en los últimos 90 días.",
       "backlog": "Abiertos a la vez (máximo {n})"
+    },
+    "pulse": {
+      "title": "El pulso de los carriers",
+      "takeaway": "El enlace que mejor responde va en {best} ({bestName}); el más lento, {worst} ({worstName}). En la semana se perdió el {loss} de los pings.",
+      "takeawayNoRtt": "Los routers cuentan las respuestas de los carriers pero no miden la latencia; en la semana se perdió el {loss} de los pings.",
+      "note": "Un monitor por puerta de enlace de cada carrier, 7 días. La línea brillante es la latencia mediana de cada hora; la bruma llega al percentil 95 (cuánto varía); las espigas rojas son pings perdidos y los huecos, horas sin respuesta. Todas las filas usan la misma escala.",
+      "stats": "{rtt} · p95 {p95} · pérdida {loss}",
+      "noLatency": "Este router no mide la latencia (solo cuenta respuestas).",
+      "median": "Mediana",
+      "p95": "Percentil 95",
+      "lost": "Pings perdidos",
+      "noReply": "Sin respuesta",
+      "empty": "Sin datos de los carriers todavía: aparecen cuando los routers reportan sus puertas de enlace."
+    },
+    "continuity": {
+      "title": "Cinta de continuidad",
+      "takeaway": "{worst} tiene la menor disponibilidad: {worstA} ({outages, plural, =0 {sin fallas} one {# falla} other {# fallas}}, {minutes} fuera). La red completa: {all}.",
+      "note": "Una cinta por router, 30 días, una raya por hora: verde si reportó bien, ámbar si perdió pings con un carrier, rojo si hubo falla, gris si no reportó. La cifra es la disponibilidad desde su primer reporte del periodo.",
+      "cells": {
+        "0": "Sin reporte",
+        "1": "Bien",
+        "2": "Perdió pings",
+        "3": "Falla"
+      },
+      "detail": "{outages, plural, =0 {Sin fallas} one {# falla} other {# fallas}} · {minutes} fuera",
+      "empty": "Sin reportes de los routers todavía."
+    },
+    "hourglass": {
+      "title": "Reloj de arena de la velocidad",
+      "takeaway": "{name} vende {ratio} veces la velocidad de su enlace: si todos sus clientes se conectaran a la vez, a cada uno le tocarían {each}. En su hora pico usa el {use} del enlace.",
+      "note": "Arriba, la velocidad vendida (la suma de los planes activos); el cuello, los enlaces de los carriers; abajo, la hora pico llenando esos enlaces. Vender más de lo que mide el enlace es normal (no todos navegan a la vez): lo que importa es cuánto se llena la parte de abajo.",
+      "sold": "Vendido · {n, plural, one {# cliente} other {# clientes}}",
+      "link": "Enlaces · relación",
+      "busy": "Hora pico",
+      "each": "Todos a la vez",
+      "unknown": "{n, plural, one {# plan} other {# planes}} sin velocidad en el nombre",
+      "noLink": "Sin velocidad en Despliegues",
+      "empty": "Hace falta la velocidad de los enlaces en Despliegues y planes con su velocidad en el nombre (200M, 1G…)."
+    },
+    "path": {
+      "title": "El camino del paquete",
+      "takeaway": "De la casa al carrier: {total} en promedio. El tramo más lento está en {slow} ({ms} hasta el carrier).",
+      "note": "Por despliegue: de la ONT del cliente a nuestro router, del router a la puerta de enlace del carrier y de ahí a Internet (ese tramo no lo medimos). Mediana de las últimas 24 horas; el color dice si el tramo va bien.",
+      "home": "Casa (ONT)",
+      "router": "Router",
+      "internet": "Internet",
+      "unmeasured": "sin medir",
+      "loss": "{lossy} de {n} ONT perdieron pings",
+      "lossNone": "{n} ONT sin pérdida",
+      "empty": "Sin mediciones todavía: aparecen cuando los routers hacen ping a sus carriers y a las ONT."
+    },
+    "forecast": {
+      "title": "Sugerencia: ¿cuándo se llena cada enlace?",
+      "takeaway": "A este ritmo, {name} llegaría al 80 % de sus enlaces alrededor del {date} (en {days} días): conviene subir su enlace antes de que lo noten los clientes.",
+      "takeawayFull": "{name} ya pasa del 80 % de sus enlaces en la hora pico: conviene subir su enlace cuanto antes.",
+      "takeawayCalm": "A este ritmo ningún enlace llega al 80 % en los próximos 6 meses.",
+      "note": "La línea continua es el uso de los enlaces en la hora más cargada de cada día (60 días); la punteada, su tendencia de las últimas 6 semanas llevada hacia adelante, con su margen. Es una estimación: supone que se sigue creciendo igual.",
+      "full": "80 % · lleno",
+      "estimate": "ESTIMACIÓN",
+      "today": "Hoy (tendencia)",
+      "week": "Cambio por semana",
+      "eta": "Llega al 80 %",
+      "never": "No a este ritmo",
+      "already": "Ya pasó",
+      "empty": "Hacen falta unas semanas de tráfico y la velocidad de los enlaces en Despliegues."
     }
   }
 }

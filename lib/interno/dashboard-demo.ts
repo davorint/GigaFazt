@@ -16,7 +16,7 @@ import type { FunnelEvent } from "../wispdavor/funnel"
 import type { NetworkFigures } from "./dashboard-server"
 
 /** A small fixed-seed generator (mulberry32): the same demo every time. */
-function rng(seed: number) {
+export function rng(seed: number) {
   let a = seed >>> 0
   return () => {
     a = (a + 0x6d2b79f5) >>> 0
@@ -69,7 +69,7 @@ export function demoSet(today: string): DemoSet {
       rentMonthly: d.rent,
       // Big buildings have two towers; every tower its floors (about 6 apartments per floor).
       towers: d.apartments >= 60 ? [newTower({ name: "A", apartments: Math.ceil(d.apartments / 2), floors: Math.ceil(d.apartments / 12) }), newTower({ name: "B", apartments: Math.floor(d.apartments / 2), floors: Math.ceil(d.apartments / 12) })] : [newTower({ name: "A", apartments: d.apartments, floors: Math.ceil(d.apartments / 6) })],
-      rooms: [newRoom({ name: "Cuarto de telecom", carriers: d.links.map((mbps, li) => newRoomCarrier({ name: `Enlace ${li + 1}`, downMbps: mbps, upMbps: mbps, monthly: Math.round(mbps * 3.2) })) })],
+      rooms: [newRoom({ name: "Cuarto de telecom", carriers: d.links.map((mbps, li) => newRoomCarrier({ name: ["Carrier A", "Carrier B"][li] ?? `Enlace ${li + 1}`, downMbps: mbps, upMbps: mbps, monthly: Math.round(mbps * 3.2), ip: `189.${200 + si}.${li}.34` })) })],
     })
     sites.push(site)
     const sv = newSurvey()

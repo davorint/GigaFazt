@@ -308,8 +308,8 @@ export async function trafficRetention(): Promise<{ hourly: number; deleted5m: n
   }
   const dh = await pool.query(`delete from traffic_hourly where hour < now() - interval '90 days'`)
   const da = await pool.query(`delete from router_actions where status in ('done', 'error') and created_at < now() - interval '90 days'`)
-  // Phase 4: sessions and carrier pings kept 14 days (outages stay).
-  await pool.query(`delete from router_metrics where bucket < now() - interval '14 days'`)
+  // Phase 4: sessions and carrier pings kept 35 days (Tablero 2 draws 30 days of continuity); outages stay.
+  await pool.query(`delete from router_metrics where bucket < now() - interval '35 days'`)
   // Phase 7: pieces of a configuration copy that never finished.
   await dropStaleParts()
   return { hourly: moved.rowCount ?? 0, deleted5m: d5.rowCount ?? 0, deletedHourly: dh.rowCount ?? 0, deletedActions: da.rowCount ?? 0 }

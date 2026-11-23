@@ -59,6 +59,16 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
     }
     const api = await j(await fetch(BASE + "/api/interno/tablero", { headers: H }))
     console.log("api:", JSON.stringify({ traffic: api.network.hasTraffic, site: api.network.sites.some((s) => s.name === "Torre Tablero2 Prueba" && s.use > 0.5) }))
+    // Two days of carrier gateway pings every 10 minutes (a few lost), and a 30-minute carrier outage two hours ago.
+    for (let m = 0; m < 2 * 24 * 60; m += 10) {
+      const at = new Date(Date.now() - m * 60000)
+      const lost = m % 170 === 0 ? 1 : 0
+      await db.query(`insert into router_metrics (router_id, bucket, online, gateways) values ($1, $2, 12, $3::jsonb) on conflict do nothing`, [router.id, at, JSON.stringify([{ ip: "10.77.1.1", sent: 5, received: 5 - lost, rtt: 4 + (m % 60) / 20 }])])
+    }
+    await db.query(`insert into outages (router_id, site_id, kind, started_at, ended_at) values ($1, $2, 'carrier', now() - interval '2 hours', now() - interval '90 minutes')`, [router.id, SITE])
+    const api2 = await j(await fetch(BASE + "/api/interno/tablero2", { headers: H }))
+    const mine = (xs) => (xs ?? []).filter((x) => x.routerId === router.id)
+    console.log("api2:", JSON.stringify({ gateway: mine(api2.carriers?.gateways).some((g) => g.ip === "10.77.1.1" && g.hours.length >= 40 && g.hours.some((h) => h.loss > 0) && g.hours.every((h) => h.rtt !== null)), outages: mine(api2.carriers?.continuity)[0]?.outages.length, path: mine(api2.carriers?.path)[0]?.gatewayRtt > 0, daily: (api2.carriers?.daily ?? []).some((d) => d.siteId === SITE && d.days.length >= 1) }))
     const browser = await chromium.launch()
     for (const [w, h] of [[390, 844], [1440, 900]]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, isMobile: w < 500, hasTouch: w < 500 })
@@ -106,6 +116,12 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
         return { streams: n("El río del ingreso", "path") >= 3, flows: n("Cómo se mueven los clientes", "path") >= 5, galaxy: n("Galaxia de clientes", "circle") >= 100, windows: document.querySelectorAll('svg[aria-label^="Torre"] rect').length >= 300, light: n("Constelación de luz", "circle") >= 100, repairs: n("Ritmo de reparaciones", "rect") >= 10 }
       })
       console.log(`${w} more: ${JSON.stringify(more)}`)
+      // Third round with the simulated operator: pulse monitors, continuity strips, hourglasses, packet paths, forecast.
+      const carriers = await page.evaluate(() => {
+        const n = (l, sel) => document.querySelector(`svg[aria-label="${l}"]`)?.querySelectorAll(sel).length ?? 0
+        return { pulse: n("El pulso de los carriers", "path") >= 12, strips: n("Cinta de continuidad", "rect") >= 40, glasses: document.querySelectorAll('svg[aria-label*="Vendido"]').length >= 5, path: n("El camino del paquete", "circle") >= 20, forecast: n("Sugerencia: ¿cuándo se llena cada enlace?", "path") >= 15 }
+      })
+      console.log(`${w} carriers: ${JSON.stringify(carriers)}`)
       await page.screenshot({ path: path.join(SHOTS, `tablero2-demo-${w}.png`), fullPage: true })
       await page.getByRole("switch", { name: "Datos simulados" }).click()
       console.log(`${w} off: banner ${await page.getByText(/Estás viendo datos inventados/).count()}`)
@@ -116,6 +132,8 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
   } finally {
     await fetch(BASE + "/api/interno/routers", { method: "POST", headers: H, body: JSON.stringify({ action: "delete", id: router.id }) })
     await db.query(`delete from traffic_5m where router_id = $1`, [router.id])
+    await db.query(`delete from router_metrics where router_id = $1`, [router.id])
+    await db.query(`delete from outages where router_id = $1`, [router.id])
     for (const [t, v, fk] of [["clients", "client_versions", "client_id"], ["payments", "payment_versions", "payment_id"], ["reports", "report_versions", "report_id"], ["appointments", "appointment_versions", "appointment_id"], ["sites", "site_versions", "site_id"]]) {
       await db.query(`delete from ${v} where ${fk} like 'wdtest-t2-%'`).catch(() => undefined)
       await db.query(`delete from ${t} where id like 'wdtest-t2-%'`)
