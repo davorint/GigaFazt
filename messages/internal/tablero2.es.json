@@ -17,7 +17,8 @@
       "money": "Dinero",
       "clients": "Clientes",
       "network": "Red",
-      "collections": "Cobranza"
+      "collections": "Cobranza",
+      "ops": "Operación"
     },
     "kpi": {
       "title": "Lo principal",
@@ -110,7 +111,15 @@
       "peak": "HORA PICO",
       "unit": "Mbps",
       "noData": "Sin datos",
-      "days": ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
+      "days": [
+        "lun",
+        "mar",
+        "mié",
+        "jue",
+        "vie",
+        "sáb",
+        "dom"
+      ]
     },
     "capacity": {
       "title": "Enlaces en hora pico",
@@ -127,7 +136,15 @@
       "byDay": "Pagos por día del mes",
       "payments": "{n, plural, =0 {Sin pagos} one {# pago} other {# pagos}}",
       "day": "Día {d}: {n, plural, =0 {sin pagos} one {# pago} other {# pagos}}",
-      "letters": ["L", "M", "M", "J", "V", "S", "D"]
+      "letters": [
+        "L",
+        "M",
+        "M",
+        "J",
+        "V",
+        "S",
+        "D"
+      ]
     },
     "cols": {
       "month": "Mes",
@@ -139,7 +156,14 @@
       "day": "Día",
       "hour": "Hora",
       "use": "Uso",
-      "payments": "Pagos"
+      "payments": "Pagos",
+      "plan": "Plan",
+      "state": "Estado",
+      "tower": "Torre",
+      "apartments": "Departamentos",
+      "zone": "Zona",
+      "start": "Inicio",
+      "kind": "Tipo"
     },
     "empty": {
       "clients": "Todavía no hay clientes con servicio.",
@@ -149,6 +173,86 @@
       "traffic": "Sin tráfico todavía: aparece cuando los routers empiecen a reportar.",
       "payments": "Sin pagos en las últimas 26 semanas."
     },
-    "offline": "No se pudo leer la red (sin conexión o sin base de datos)."
+    "offline": "No se pudo leer la red (sin conexión o sin base de datos).",
+    "streams": {
+      "title": "El río del ingreso",
+      "takeaway": "{top} es el plan que más aporta: {share} del ingreso recurrente de {month}. En {months} meses el río pasó de {from} a {to} al mes.",
+      "note": "El grosor de cada corriente es lo que ese plan cobra al mes; la posición vertical no significa nada. Pasa el cursor por un mes para ver cada plan.",
+      "tv": "TV",
+      "otros": "Otros",
+      "total": "Total"
+    },
+    "flows": {
+      "title": "Cómo se mueven los clientes",
+      "takeaway": "De los {late} clientes atrasados en {prev}, el {share} ya está al corriente en {cur}.",
+      "takeawayNone": "Nadie estaba atrasado en {prev}.",
+      "note": "Cada columna es un mes (los pasados vistos al día 28, el actual hoy). Las cintas son clientes que pasaron de un estado a otro; un bloque más alto que sus cintas incluye a los que llegaron ese mes.",
+      "states": {
+        "al-corriente": "Al corriente",
+        "por-vencer": "Por vencer",
+        "atrasado": "Atrasado",
+        "sin-cobro": "Sin cobro",
+        "baja": "Baja"
+      },
+      "clients": "{n, plural, one {# cliente} other {# clientes}}"
+    },
+    "skyline": {
+      "title": "Edificios encendidos",
+      "takeaway": "{name} tiene la mayor penetración: {pct} de sus departamentos. En total, {active} de {apartments} departamentos ({all}).",
+      "note": "Cada ventana es un departamento y cada ventana encendida un cliente activo (no su departamento real): lo encendido es la penetración.",
+      "tower": "Torre {name}: {lit} de {apartments} departamentos con servicio",
+      "site": "{active} de {apartments} departamentos · {pct}",
+      "loose": "{n, plural, one {# cliente} other {# clientes}} sin torre asignada",
+      "empty": "Ningún despliegue tiene departamentos registrados todavía (agrégalos en Despliegues)."
+    },
+    "light": {
+      "title": "Constelación de luz",
+      "takeaway": "{n} ONT con lectura: {weak} con luz baja o justa y {falling} con una caída de 3 dB o más desde su primera lectura.",
+      "note": "Cada punto es una ONT según la potencia que recibe (dBm). Una estela detrás de un punto llega a su primera lectura: una fibra que fue perdiendo 2 dB o más.",
+      "zones": {
+        "baja": "Baja",
+        "justo": "Justa",
+        "bien": "Bien",
+        "satura": "Satura"
+      },
+      "noSite": "Sin despliegue",
+      "noPlace": "Sin torre ni departamento",
+      "rx": "{v} dBm",
+      "drop": "{d} dB menos (antes {first} dBm)",
+      "empty": "Sin lecturas de luz todavía (pégalas en Clientes)."
+    },
+    "galaxy": {
+      "title": "Galaxia de clientes",
+      "takeaway": "{live} clientes siguen con nosotros y llevan {avg} meses en promedio; el primero empezó el {first}.",
+      "note": "Cada punto es un cliente en una espiral por el día en que empezó: el primero al centro, los nuevos afuera. El tamaño es lo que paga y el color su plan; los aros vacíos son clientes que se fueron.",
+      "center": "CON NOSOTROS",
+      "gone": "Se fue",
+      "plan": "Plan",
+      "since": "Desde",
+      "months": "Meses",
+      "pays": "Paga",
+      "paid": "Pagaba",
+      "empty": "Todavía no hay clientes con fecha de inicio."
+    },
+    "repairs": {
+      "title": "Ritmo de reparaciones",
+      "takeaway": "{n} reportes en 90 días; la mitad se resolvió en menos de {median}. {open, plural, =0 {Ninguno abierto.} one {# sigue abierto.} other {# siguen abiertos.}}",
+      "takeawayNoMedian": "{n} reportes en 90 días, ninguno resuelto todavía.",
+      "note": "Cada barra es un reporte, de que se abrió a que se resolvió; los abiertos llegan hasta hoy y terminan en un punto rojo. Abajo, cuántos había abiertos al mismo tiempo.",
+      "groups": {
+        "sin-servicio": "Sin servicio",
+        "lento": "Lento o intermitente",
+        "wifi": "Wi-Fi o equipo",
+        "otro": "TV y otros"
+      },
+      "opened": "Se abrió",
+      "took": "Tardó",
+      "openFor": "Abierto hace",
+      "site": "Despliegue",
+      "hours": "{n} h",
+      "days": "{n} días",
+      "empty": "Sin reportes en los últimos 90 días.",
+      "backlog": "Abiertos a la vez (máximo {n})"
+    }
   }
 }

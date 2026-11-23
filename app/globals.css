@@ -1477,9 +1477,23 @@ html {
 .t2-rise, .t2-drop { transform-box: fill-box; animation: t2-scale-y 0.7s cubic-bezier(.22,.8,.3,1) both; }
 .t2-rise { transform-origin: 50% 100%; }
 .t2-drop { transform-origin: 50% 0%; }
-.t2-grow { transform-origin: 0 50%; animation: t2-scale-x 0.8s cubic-bezier(.22,.8,.3,1) both; }
+.t2-grow { transform-box: fill-box; transform-origin: 0 50%; animation: t2-scale-x 0.8s cubic-bezier(.22,.8,.3,1) both; }
 .t2-fade { animation: t2-fade 0.6s ease-out both; }
 @media (prefers-reduced-motion: reduce) {
   .t2-draw, .t2-rise, .t2-drop, .t2-grow, .t2-fade { animation: none !important; }
 }
 html[data-motion="off"] :is(.t2-draw, .t2-rise, .t2-drop, .t2-grow, .t2-fade) { animation: none !important; }
+/* Tablero 2 skyline: the antenna light blinks (static under reduced motion via the global rules). */
+@keyframes t2-blink {
+  0%, 70%, 100% { opacity: 1; }
+  80% { opacity: 0.15; }
+}
+.t2-blink { animation: t2-blink 2.4s ease-in-out infinite; }
+/* Tablero 2 open repairs: a ring that keeps spreading from the open end (static under reduced motion). */
+@keyframes t2-ping {
+  from { transform: scale(1); opacity: 0.8; }
+  to { transform: scale(3); opacity: 0; }
+}
+.t2-ping { transform-box: fill-box; transform-origin: center; animation: t2-ping 1.6s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .t2-ping { display: none; } }
+html[data-motion="off"] .t2-ping { display: none; }

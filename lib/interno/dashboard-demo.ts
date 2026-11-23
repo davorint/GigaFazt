@@ -48,6 +48,8 @@ const day = (month: string, d: number) => `${month}-${String(Math.min(28, Math.m
 
 export function demoSet(today: string): DemoSet {
   const r = rng(20261122)
+  // Towers, floors and light history (Tablero 2) draw from their own sequence, so the rest stays as it was.
+  const r2 = rng(20261123)
   const now = new Date().toISOString()
   const month = today.slice(0, 7)
   const sites: Site[] = []
@@ -65,7 +67,8 @@ export function demoSet(today: string): DemoSet {
       name: d.name,
       municipality: d.municipality,
       rentMonthly: d.rent,
-      towers: [newTower({ name: "A", apartments: d.apartments })],
+      // Big buildings have two towers; every tower its floors (about 6 apartments per floor).
+      towers: d.apartments >= 60 ? [newTower({ name: "A", apartments: Math.ceil(d.apartments / 2), floors: Math.ceil(d.apartments / 12) }), newTower({ name: "B", apartments: Math.floor(d.apartments / 2), floors: Math.ceil(d.apartments / 12) })] : [newTower({ name: "A", apartments: d.apartments, floors: Math.ceil(d.apartments / 6) })],
       rooms: [newRoom({ name: "Cuarto de telecom", carriers: d.links.map((mbps, li) => newRoomCarrier({ name: `Enlace ${li + 1}`, downMbps: mbps, upMbps: mbps, monthly: Math.round(mbps * 3.2) })) })],
     })
     sites.push(site)
@@ -86,7 +89,10 @@ export function demoSet(today: string): DemoSet {
         newService("internet", { id: `${id}-i`, plan, monthly: price, start, status: leaves ? "cancelado" : "activo", cancelledAt, cancelReason: leaves ? reasons[Math.floor(Math.pow(r(), 1.6) * reasons.length)] : "", pppoeUser: `demo.${si}.${i}`, rxDbm: leaves ? null : rx, rxDate: today, rxHistory: [] }),
         ...(r() < 0.25 ? [newService("iptv", { id: `${id}-t`, plan: "TV", monthly: 250, start, status: leaves ? "cancelado" : "activo", cancelledAt })] : []),
       ]
-      const c = newClient({ id, name: `Cliente demo ${si + 1}-${i + 1}`, siteId: site.id, services, createdAt: now, updatedAt: now })
+      // About one in eight ONTs had more light two months ago (a fiber getting worse).
+      const svc = services[0]
+      if (svc.rxDbm !== null && r2() < 0.12) svc.rxHistory = [{ date: day(addMonths(month, -2), 3), rx: Math.round((svc.rxDbm + 1 + r2() * 4.5) * 10) / 10, oltRx: null }]
+      const c = newClient({ id, name: `Cliente demo ${si + 1}-${i + 1}`, siteId: site.id, towerId: site.towers[Math.floor(r2() * site.towers.length)].id, services, createdAt: now, updatedAt: now })
       clients.push(c)
       // Pays every month from the one after joining: most by the 5th, some by the 10th, a few late or not yet.
       const monthly = services.reduce((a, s) => a + (s.monthly ?? 0), 0)

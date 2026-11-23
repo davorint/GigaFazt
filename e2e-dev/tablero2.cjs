@@ -100,6 +100,12 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
       const tags = await page.getByText("SIMULACIÓN", { exact: true }).count()
       const demoOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
       console.log(`${w} demo: switch ${await page.getByRole("switch").getAttribute("aria-checked")} tags ${tags >= 12} overflow ${demoOverflow}`)
+      // The second round draws with the simulated operator: streams, flows, galaxy, lit windows, light dots, repair bars.
+      const more = await page.evaluate(() => {
+        const n = (l, sel) => document.querySelector(`svg[aria-label="${l}"]`)?.querySelectorAll(sel).length ?? 0
+        return { streams: n("El río del ingreso", "path") >= 3, flows: n("Cómo se mueven los clientes", "path") >= 5, galaxy: n("Galaxia de clientes", "circle") >= 100, windows: document.querySelectorAll('svg[aria-label^="Torre"] rect').length >= 300, light: n("Constelación de luz", "circle") >= 100, repairs: n("Ritmo de reparaciones", "rect") >= 10 }
+      })
+      console.log(`${w} more: ${JSON.stringify(more)}`)
       await page.screenshot({ path: path.join(SHOTS, `tablero2-demo-${w}.png`), fullPage: true })
       await page.getByRole("switch", { name: "Datos simulados" }).click()
       console.log(`${w} off: banner ${await page.getByText(/Estás viendo datos inventados/).count()}`)

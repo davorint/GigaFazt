@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react"
 import { useTranslations } from "next-intl"
 import { localToday } from "@/lib/clients/from-lead"
 import { demoSet } from "@/lib/interno/dashboard-demo"
@@ -8,12 +8,14 @@ import type { NetworkFigures } from "@/lib/interno/dashboard-server"
 import { lastMonths, monthNumbers } from "@/lib/interno/numbers"
 import { forecast } from "@/lib/interno/outlook"
 import { cohorts, moneyFlow, mrrAt, mrrBridge, networkGroups, payCalendar, payWindow, retentionAt, TONES, type FlowKind, type RingGroup, type Tone } from "@/lib/interno/tablero2"
+import { FLOW_STATES, lightRows, recovered, REPAIR_GROUPS, repairLanes, revenueStreams, skyline, statusFlows, tenure, type RepairBar, type Star } from "@/lib/interno/tablero2-more"
 import { mxn } from "@/lib/materials/catalog"
+import { reportsStore } from "@/lib/reports/store"
 import { addMonths } from "@/lib/payments/model"
 import { FULL_SHARE } from "@/lib/wispdavor/capacity"
 import { useWispData } from "@/components/wispdavor/useWispData"
 import { Panel } from "@/components/dashboard/Panel"
-import { SERIES } from "@/components/dashboard/theme"
+import { INK, SERIES } from "@/components/dashboard/theme"
 import { CapacityBars } from "./CapacityBars"
 import { CohortGrid } from "./CohortGrid"
 import { k, monthName, pct, pesos, short, signed } from "./format"
@@ -24,7 +26,13 @@ import { NetworkRings, TONE_COLOR } from "./NetworkRings"
 import { PayCalendar, PayDays } from "./PayCalendar"
 import { RadialClock } from "./RadialClock"
 import { RevenueChart } from "./RevenueChart"
+import { LIGHT_COLOR, LightSwarm } from "./LightSwarm"
+import { REPAIR_COLOR, RepairGantt } from "./RepairGantt"
+import { Skyline } from "./Skyline"
 import { Spark } from "./Spark"
+import { FLOW_COLOR, StatusAlluvial } from "./StatusAlluvial"
+import { Streamgraph } from "./Streamgraph"
+import { TenureGalaxy } from "./TenureGalaxy"
 
 const PERIODS = [6, 12, 24] as const
 /** The hour now in Mexico City (the traffic heat is in that zone). */
@@ -69,9 +77,11 @@ export function Tablero2App() {
   const [net, setNet] = useState<NetworkFigures | null | "error">(null)
   const [demo, setDemo] = useState(false)
   const [nowHour, setNowHour] = useState<number | null>(null)
+  const [nowMs, setNowMs] = useState(0)
+  const reports = useSyncExternalStore(reportsStore.subscribe, reportsStore.snapshot, reportsStore.serverSnapshot)
   const today = d.loaded ? localToday() : ""
   const sim = useMemo(() => (demo && today ? demoSet(today) : null), [demo, today])
-  const src = useMemo(() => sim ?? { clients: d.clients, payments: d.payments, sites: d.sites }, [sim, d.clients, d.payments, d.sites])
+  const src = useMemo(() => sim ?? { clients: d.clients, payments: d.payments, sites: d.sites, reports: reports.list }, [sim, d.clients, d.payments, d.sites, reports.list])
 
   useEffect(() => {
     let live = true
@@ -81,7 +91,10 @@ export function Tablero2App() {
         if (live) setNet(r.ok && b.network ? b.network : "error")
       })
       .catch(() => live && setNet("error"))
-    const tick = () => setNowHour(hourInMexico())
+    const tick = () => {
+      setNowHour(hourInMexico())
+      setNowMs(Date.now())
+    }
     tick()
     const id = window.setInterval(tick, 60_000)
     return () => {
@@ -107,8 +120,18 @@ export function Tablero2App() {
   const nodeName = useCallback((kind: FlowKind, label: string) => (kind === "plan" || kind === "site" ? label : t(`flow.nodes.${kind}`)), [t])
   const groupName = useCallback((g: RingGroup) => g.name || t("rings.noSite"), [t])
   const toneLabel = useCallback((x: Tone) => t(`rings.tones.${x}`), [t])
+  // Second round (owner, 2026-11-22: "more, way more impressive").
+  const streams = useMemo(() => revenueStreams(src.clients, months), [src, months])
+  const flowMonths = useMemo(() => (cur ? lastMonths(cur, Math.min(period, 6)) : []), [cur, period])
+  const flows = useMemo(() => (today ? statusFlows(src.clients, src.payments, flowMonths, today) : null), [src, flowMonths, today])
+  const sky = useMemo(() => skyline(src.sites, src.clients), [src])
+  const light = useMemo(() => lightRows(src.sites, src.clients), [src])
+  const stars = useMemo(() => (today ? tenure(src.clients, src.sites, today) : []), [src, today])
+  const repairs = useMemo(() => (nowMs ? repairLanes(src.reports, src.sites, nowMs, 90) : null), [src, nowMs])
+  const streamName = useCallback((key: string) => (key === "__tv" ? t("streams.tv") : key === "__otros" ? t("streams.otros") : key), [t])
+  const streamColor = useCallback((key: string) => SERIES[streams.keys.indexOf(key)] ?? INK.muted, [streams.keys])
 
-  if (!d.loaded || !fc || !bridge || !cal || !rows.length) return <p className="mt-6 text-sm text-zinc-400">{t("loading")}</p>
+  if (!d.loaded || !reports.loaded || !fc || !bridge || !cal || !flows || !repairs || !rows.length) return <p className="mt-6 text-sm text-zinc-400">{t("loading")}</p>
 
   const tag = sim ? t("demo.tag") : ""
   const tl = t("table")
@@ -145,6 +168,25 @@ export function Tablero2App() {
 
   // Collections
   const win = payWindow(cal.byDayOfMonth)
+
+  // Second round
+  const lastStream = streams.rows[streams.rows.length - 1]
+  const firstStream = streams.rows[0]
+  const streamTotal = (r: typeof lastStream) => streams.keys.reduce((a, key) => a + (r?.values[key] ?? 0), 0)
+  const topKey = [...streams.keys].sort((a, b) => (lastStream?.values[b] ?? 0) - (lastStream?.values[a] ?? 0))[0]
+  const rec = recovered(flows)
+  const skyApts = sky.reduce((a, x) => a + x.apartments, 0)
+  const skyActive = sky.reduce((a, x) => a + Math.min(x.active, x.apartments), 0)
+  const ontCount = light.reduce((a, r) => a + r.dots.length, 0)
+  const weak = light.reduce((a, r) => a + r.dots.filter((x) => x.status === "baja" || x.status === "justo").length, 0)
+  const falling = light.reduce((a, r) => a + r.dots.filter((x) => (x.drop ?? 0) >= 3).length, 0)
+  const liveStars = stars.filter((x) => x.live)
+  const avgTenure = liveStars.length ? Math.round(liveStars.reduce((a, x) => a + x.months, 0) / liveStars.length) : 0
+  const dayLong = (dd: string) => new Date(`${dd}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })
+  const starKey = (x: Star) => (x.plan && streams.keys.includes(x.plan) ? x.plan : !x.plan && streams.keys.includes("__tv") ? "__tv" : "__otros")
+  const dur = (h: number) => (h < 48 ? t("repairs.hours", { n: Math.max(1, Math.round(h)) }) : t("repairs.days", { n: Math.round(h / 24) }))
+  const openRepairs = repairs.bars.filter((b) => b.open).length
+  const repairTip = (b: RepairBar) => ({ title: t(`repairs.groups.${b.group}`), rows: [...(b.site ? [{ label: t("repairs.site"), value: b.site }] : []), { label: t("repairs.opened"), value: new Date(b.start).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) }, { label: b.open ? t("repairs.openFor") : t("repairs.took"), value: dur(b.hours) }] })
 
   return (
     <div className="mt-6 grid gap-10">
@@ -213,6 +255,18 @@ export function Tablero2App() {
           <MoneySankey flow={flow} label={t("flow.title")} name={nodeName} />
           <p className="text-[0.7rem] text-zinc-500">{t("flow.note")}</p>
         </Panel>
+        <Panel
+          demo={tag}
+          title={t("streams.title")}
+          takeaway={topKey && lastStream && streamTotal(lastStream) ? t("streams.takeaway", { top: streamName(topKey), share: pct((lastStream.values[topKey] ?? 0) / streamTotal(lastStream)), month: monthName(lastStream.month), months: period, from: mxn(streamTotal(firstStream)), to: mxn(streamTotal(lastStream)) }) : undefined}
+          empty={streams.keys.length ? null : t("empty.flow")}
+          tableLabel={tl}
+          table={{ head: [t("cols.month"), ...streams.keys.map(streamName), t("streams.total")], rows: streams.rows.map((r) => [short(r.month), ...streams.keys.map((key) => mxn(r.values[key] ?? 0)), mxn(streamTotal(r))]) }}
+        >
+          <Streamgraph streams={streams} label={t("streams.title")} name={streamName} color={streamColor} totalLabel={t("streams.total")} />
+          <Legend items={streams.keys.map((key) => [streamName(key), streamColor(key), "bar"] as [string, string, "bar"])} />
+          <p className="text-[0.7rem] text-zinc-500">{t("streams.note")}</p>
+        </Panel>
         <div className="grid gap-3 lg:grid-cols-2">
           <Panel
             demo={tag}
@@ -237,7 +291,7 @@ export function Tablero2App() {
       </Section>
 
       <Section id="t2-clients" title={t("sections.clients")}>
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid items-start gap-3 lg:grid-cols-2">
           <Panel demo={tag} title={t("moves.title")} takeaway={t("moves.takeaway", { added, lost, months: period, net: signed(added - lost) })} tableLabel={tl} table={{ head: [t("cols.month"), t("moves.added"), t("moves.lost"), t("moves.net")], rows: moves.map((m) => [short(m.month), m.added, m.lost, signed(m.added - m.lost)]) }}>
             <MovesChart rows={moves} label={t("moves.title")} names={{ added: t("moves.added"), lost: t("moves.lost"), net: t("moves.net") }} />
             <Legend items={[[t("moves.added"), SERIES[0], "bar"], [t("moves.lost"), SERIES[1], "bar"]]} />
@@ -252,6 +306,51 @@ export function Tablero2App() {
           >
             <CohortGrid rows={cohortRows} label={t("cohorts.title")} ageLabel={(kk) => t("cohorts.age", { k: kk })} sizeLabel={t("cohorts.size")} tipTitle={(m, kk) => t("cohorts.tip", { month: short(m), k: kk })} tipKept={t("cohorts.kept")} />
             <p className="text-[0.7rem] text-zinc-500">{t("cohorts.note")}</p>
+          </Panel>
+        </div>
+        <Panel
+          demo={tag}
+          title={t("flows.title")}
+          takeaway={flowMonths.length > 1 ? (rec.share === null ? t("flows.takeawayNone", { prev: monthName(flowMonths[flowMonths.length - 2]) }) : t("flows.takeaway", { late: rec.late, prev: monthName(flowMonths[flowMonths.length - 2]), share: pct(rec.share), cur: monthName(flowMonths[flowMonths.length - 1]) })) : undefined}
+          empty={flows.counts.some((c) => FLOW_STATES.some((x) => c[x])) ? null : t("empty.clients")}
+          tableLabel={tl}
+          table={{ head: [t("cols.state"), ...flowMonths.map(short)], rows: FLOW_STATES.map((x) => [t(`flows.states.${x}`), ...flows.counts.map((c) => c[x])]) }}
+        >
+          <StatusAlluvial flows={flows} label={t("flows.title")} stateLabel={(x) => t(`flows.states.${x}`)} clientsLabel={(n) => t("flows.clients", { n })} />
+          <Legend items={FLOW_STATES.map((x) => [t(`flows.states.${x}`), FLOW_COLOR[x], "bar"] as [string, string, "bar"])} />
+          <p className="text-[0.7rem] text-zinc-500">{t("flows.note")}</p>
+        </Panel>
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+          <Panel
+            demo={tag}
+            title={t("galaxy.title")}
+            takeaway={liveStars.length ? t("galaxy.takeaway", { live: liveStars.length, avg: avgTenure, first: dayLong(stars[0].start) }) : undefined}
+            empty={stars.length ? null : t("galaxy.empty")}
+            tableLabel={tl}
+            table={{ head: [t("cols.start"), t("cols.site"), t("galaxy.plan"), t("galaxy.months"), t("galaxy.pays")], rows: [...stars].reverse().map((x) => [x.start, x.site || "—", x.live ? x.plan || "—" : t("galaxy.gone"), x.months, mxn(x.monthly)]) }}
+          >
+            <TenureGalaxy
+              stars={stars}
+              today={today}
+              label={t("galaxy.title")}
+              color={(x) => streamColor(starKey(x))}
+              center={String(liveStars.length)}
+              centerHint={t("galaxy.center")}
+              tipRows={(x) => ({ title: x.site || t("rings.noSite"), rows: [{ label: t("galaxy.plan"), value: x.plan || "—" }, { label: t("galaxy.since"), value: dayLong(x.start) }, { label: t("galaxy.months"), value: String(x.months) }, { label: x.live ? t("galaxy.pays") : t("galaxy.paid"), value: mxn(x.monthly) }, ...(x.live ? [] : [{ label: t("galaxy.gone"), value: "" }])] })}
+            />
+            <Legend items={[...streams.keys.map((key) => [streamName(key), streamColor(key), "dot"] as [string, string, "dot"]), [t("galaxy.gone"), INK.muted, "ring"] as [string, string, "ring"]]} />
+            <p className="text-[0.7rem] text-zinc-500">{t("galaxy.note")}</p>
+          </Panel>
+          <Panel
+            demo={tag}
+            title={t("skyline.title")}
+            takeaway={sky.length ? t("skyline.takeaway", { name: sky[0].name, pct: pct(Math.min(1, sky[0].active / sky[0].apartments)), active: skyActive, apartments: skyApts, all: pct(skyApts ? skyActive / skyApts : null) }) : undefined}
+            empty={sky.length ? null : t("skyline.empty")}
+            tableLabel={tl}
+            table={{ head: [t("cols.site"), t("cols.tower"), t("cols.apartments"), t("cols.clients")], rows: sky.flatMap((x) => x.towers.map((tw) => [x.name, tw.name, tw.apartments, tw.lit])) }}
+          >
+            <Skyline sites={sky} towerLabel={(tw) => t("skyline.tower", { name: tw.name, lit: tw.lit, apartments: tw.apartments })} siteLine={(x) => t("skyline.site", { active: x.active, apartments: x.apartments, pct: pct(Math.min(1, x.active / x.apartments)) })} looseLabel={(n) => t("skyline.loose", { n })} />
+            <p className="text-[0.7rem] text-zinc-500">{t("skyline.note")}</p>
           </Panel>
         </div>
       </Section>
@@ -281,6 +380,33 @@ export function Tablero2App() {
             <CapacityBars rows={capRows} full={FULL_SHARE} fullLabel={t("capacity.full")} detail={(r) => t("capacity.detail", { busy: r.busy === null ? t("capacity.unknown") : `${r.busy} Mbps`, speed: r.speed === null ? t("capacity.unknown") : `${r.speed} Mbps`, full: pct(FULL_SHARE) })} />
           </Panel>
         </div>
+        <Panel
+          demo={tag}
+          title={t("light.title")}
+          takeaway={ontCount ? t("light.takeaway", { n: ontCount, weak, falling }) : undefined}
+          empty={ontCount ? null : t("light.empty")}
+          tableLabel={tl}
+          table={{ head: [t("cols.site"), t("cols.zone"), "ONT"], rows: light.flatMap((r) => (["baja", "justo", "bien", "satura"] as const).map((z) => [r.name || t("light.noSite"), t(`light.zones.${z}`), r.dots.filter((x) => x.status === z).length])) }}
+        >
+          <LightSwarm rows={light} label={t("light.title")} name={(r) => r.name || t("light.noSite")} zoneLabel={(z) => t(`light.zones.${z}`)} unknownPlace={t("light.noPlace")} dotTitle={(x) => ({ rx: t("light.rx", { v: x.rx.toLocaleString("es-MX") }), drop: x.drop !== null && x.drop >= 1 && x.first !== null ? t("light.drop", { d: x.drop.toLocaleString("es-MX"), first: x.first.toLocaleString("es-MX") }) : null })} />
+          <Legend items={(["bien", "justo", "baja", "satura"] as const).map((z) => [t(`light.zones.${z}`), LIGHT_COLOR[z], "dot"] as [string, string, "dot"])} />
+          <p className="text-[0.7rem] text-zinc-500">{t("light.note")}</p>
+        </Panel>
+      </Section>
+
+      <Section id="t2-ops" title={t("sections.ops")}>
+        <Panel
+          demo={tag}
+          title={t("repairs.title")}
+          takeaway={repairs.bars.length ? (repairs.median === null ? t("repairs.takeawayNoMedian", { n: repairs.bars.length }) : t("repairs.takeaway", { n: repairs.bars.length, median: dur(repairs.median), open: openRepairs })) : undefined}
+          empty={repairs.bars.length ? null : t("repairs.empty")}
+          tableLabel={tl}
+          table={{ head: [t("cols.kind"), t("repairs.site"), t("repairs.opened"), t("repairs.took")], rows: [...repairs.bars].reverse().map((b) => [t(`repairs.groups.${b.group}`), b.site || "—", new Date(b.start).toLocaleDateString("es-MX"), b.open ? `${t("repairs.openFor")} ${dur(b.hours)}` : dur(b.hours)]) }}
+        >
+          <RepairGantt bars={repairs.bars} lanes={repairs.lanes} from={repairs.from} now={nowMs} label={t("repairs.title")} backlogLabel={(n) => t("repairs.backlog", { n })} tipFor={repairTip} />
+          <Legend items={REPAIR_GROUPS.map((g) => [t(`repairs.groups.${g}`), REPAIR_COLOR[g], "bar"] as [string, string, "bar"])} />
+          <p className="text-[0.7rem] text-zinc-500">{t("repairs.note")}</p>
+        </Panel>
       </Section>
 
       <Section id="t2-collections" title={t("sections.collections")}>
@@ -302,12 +428,12 @@ export function Tablero2App() {
 }
 
 /** A chart's key: what each color is, drawn as the mark it is (line, area, band or bar). */
-function Legend({ items }: { items: [string, string, "line" | "area" | "band" | "bar"][] }) {
+function Legend({ items }: { items: [string, string, "line" | "area" | "band" | "bar" | "dot" | "ring"][] }) {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-300">
       {items.map(([label, color, mark]) => (
         <li key={label} className="inline-flex items-center gap-1.5">
-          <span aria-hidden className={mark === "line" ? "h-0.5 w-3.5 rounded-full" : mark === "bar" ? "size-2.5 rounded-sm" : "h-2.5 w-3.5 rounded-sm"} style={{ background: color, opacity: mark === "band" ? 0.4 : mark === "area" ? 0.7 : 1 }} />
+          <span aria-hidden className={mark === "line" ? "h-0.5 w-3.5 rounded-full" : mark === "bar" ? "size-2.5 rounded-sm" : mark === "dot" || mark === "ring" ? "size-2.5 rounded-full" : "h-2.5 w-3.5 rounded-sm"} style={mark === "ring" ? { border: `1px solid ${color}` } : { background: color, opacity: mark === "band" ? 0.4 : mark === "area" ? 0.7 : 1 }} />
           {label}
         </li>
       ))}
