@@ -75,6 +75,9 @@ describe("Tablero 2, carriers and continuity", () => {
     expect(a.eta).toBe(11)
     expect(b.eta).toBeNull()
     expect(b.full).toBe(false)
+    // Today's busiest hour so far (a day not over) is left out: a low reading this morning changes nothing.
+    rising.days[rising.days.length - 1] = { day: today, down: 10, up: 1 }
+    expect(saturation([s], [rising], today)[0].eta).toBe(11)
   })
 
   it("the simulated operator's carriers fill every chart: lossy hours, outages, one link filling soon", () => {

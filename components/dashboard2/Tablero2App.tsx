@@ -460,7 +460,7 @@ export function Tablero2App() {
           demo={tag}
           title={t("pulse.title")}
           takeaway={pulseRows.length ? (byRtt.length ? t("pulse.takeaway", { best: ms(byRtt[0].rtt as number), bestName: `${byRtt[0].title} · ${byRtt[0].sub}`, worst: ms(byRtt[byRtt.length - 1].rtt as number), worstName: `${byRtt[byRtt.length - 1].title} · ${byRtt[byRtt.length - 1].sub}`, loss: pct(lossAll, 2) }) : t("pulse.takeawayNoRtt", { loss: pct(lossAll, 2) })) : undefined}
-          empty={pulseRows.length ? null : t("pulse.empty")}
+          empty={!carriers ? (carrierNet === "error" ? t("offline") : t("loading")) : pulseRows.length ? null : t("pulse.empty")}
           tableLabel={tl}
           table={{ head: [t("cols.carrier"), t("cols.site"), t("pulse.median"), t("pulse.lost")], rows: pulseRows.map((r) => [r.title, r.sub, r.rtt === null ? "—" : ms(r.rtt), pct(r.loss, 2)]) }}
         >
@@ -471,7 +471,7 @@ export function Tablero2App() {
           demo={tag}
           title={t("continuity.title")}
           takeaway={worstStrip ? t("continuity.takeaway", { worst: worstStrip.title.includes(worstStrip.sub) ? worstStrip.title : `${worstStrip.title} (${worstStrip.sub})`, worstA: worstStrip.headline, outages: worstStrip.strip.outages, minutes: minutesText(worstStrip.strip.downMinutes), all: availText(availAll) }) : undefined}
-          empty={stripRows.length ? null : t("continuity.empty")}
+          empty={!carriers ? (carrierNet === "error" ? t("offline") : t("loading")) : stripRows.length ? null : t("continuity.empty")}
           tableLabel={tl}
           table={{ head: [t("cols.router"), t("cols.site"), t("cols.availability"), t("continuity.cells.3")], rows: stripRows.map((r) => [r.title, r.sub, r.headline, r.detail]) }}
         >
@@ -494,7 +494,7 @@ export function Tablero2App() {
           demo={tag}
           title={t("path.title")}
           takeaway={avgPath !== null && slowest ? t("path.takeaway", { total: ms(avgPath), slow: slowest.name, ms: ms((slowest.gateway ?? 0) + (slowest.ont ?? 0)) }) : undefined}
-          empty={pathRows.length ? null : t("path.empty")}
+          empty={!carriers ? (carrierNet === "error" ? t("offline") : t("loading")) : pathRows.length ? null : t("path.empty")}
           tableLabel={tl}
           table={{ head: [t("cols.site"), t("path.home"), "p90", t("cols.carrier"), t("cols.latency")], rows: pathRows.map((r) => [r.name, r.ont === null ? "—" : ms(r.ont), r.ontP90 === null ? "—" : ms(r.ontP90), r.carrier, r.gateway === null ? "—" : ms(r.gateway)]) }}
         >
@@ -505,7 +505,7 @@ export function Tablero2App() {
           demo={tag}
           title={t("forecast.title")}
           takeaway={forecasts.length ? (firstFull ? t("forecast.takeawayFull", { name: firstFull.name }) : firstSoon && firstSoon.eta !== null ? t("forecast.takeaway", { name: firstSoon.name, date: etaDate(firstSoon.eta), days: firstSoon.eta }) : t("forecast.takeawayCalm")) : undefined}
-          empty={forecasts.length ? null : t("forecast.empty")}
+          empty={!carriers ? (carrierNet === "error" ? t("offline") : t("loading")) : forecasts.length ? null : t("forecast.empty")}
           tableLabel={tl}
           table={{ head: [t("cols.site"), t("forecast.today"), t("forecast.week"), t("cols.eta")], rows: forecasts.map((f) => [f.name, pct(f.level), `${f.slope >= 0 ? "+" : "−"}${pct(Math.abs(f.slope * 7), 1)}`, f.full ? t("forecast.already") : f.eta === null ? t("forecast.never") : etaDate(f.eta)]) }}
         >

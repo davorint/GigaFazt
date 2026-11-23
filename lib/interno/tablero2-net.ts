@@ -149,7 +149,7 @@ export type Forecast = { siteId: string; name: string; history: { day: string; u
 const addDay = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 864e5).toISOString().slice(0, 10)
 
 /**
- * Daily busy-hour use (the fuller direction ÷ the links' speed) for the last 60 days, a least-squares line over the
+ * Daily busy-hour use (the fuller direction ÷ the links' speed) for the last 60 whole days (today left out), a least-squares line over the
  * last 42 with traffic, and in how many days that line reaches FULL_SHARE (0 = already there; null = flat or falling,
  * or beyond `horizon`). `sd` is the spread around the line (the band on the chart).
  */
@@ -161,7 +161,8 @@ export function saturation(sites: Site[], daily: DailyBusy[], today: string, hor
     if (!d || (!sp.down && !sp.up)) continue
     const from = addDay(today, -60)
     const history = d.days
-      .filter((x) => x.day >= from && x.day <= today && (x.down > 0 || x.up > 0))
+      // Whole days only: today's busiest hour so far would read low and pull the trend down.
+      .filter((x) => x.day >= from && x.day < today && (x.down > 0 || x.up > 0))
       .map((x) => ({ day: x.day, use: Math.max(sp.down ? x.down / sp.down : 0, sp.up ? x.up / sp.up : 0) }))
     if (history.length < 7) continue
     const fit = history.filter((x) => x.day >= addDay(today, -42))

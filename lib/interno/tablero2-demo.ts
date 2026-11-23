@@ -47,7 +47,7 @@ export function demoCarriers(set: Pick<DemoSet, "sites" | "network" | "clients">
         gateways.push({ routerId, router, siteId: s.id, ip: `189.${200 + si}.${li}.1`, hours })
       })
     const hours = []
-    for (let h = 30 * 24; h >= 1; h--) {
+    for (let h = 30 * 24; h >= 0; h--) {
       const t = end - h * HOUR
       hours.push({ t: new Date(t).toISOString(), lossy: lossyHours.has(t) || (h > 7 * 24 && r() < 0.008) })
     }
