@@ -68,5 +68,19 @@ export function demoCarriers(set: Pick<DemoSet, "sites" | "network" | "clients">
     }
     return { siteId: s.id, days }
   })
-  return { now: new Date(now).toISOString(), gateways, continuity, path, daily }
+  // The last week hour by hour: today's busy hour shaped by the time of day (evenings fullest), weekends a bit more.
+  const traffic = set.sites.map((s, si) => {
+    const busy = (set.network.sites[si]?.use ?? 0.5) * (linkSpeed(s).down ?? 0)
+    const hours = []
+    for (let h = 7 * 24; h >= 1; h--) {
+      const t = end - h * HOUR
+      const hr = mxHour(t)
+      const dow = new Date(t).getUTCDay()
+      const curve = hr >= 20 && hr <= 22 ? 1 : hr >= 19 && hr <= 23 ? 0.86 : hr >= 9 && hr <= 18 ? 0.38 + (hr - 9) * 0.03 : hr <= 1 ? 0.5 : 0.1
+      const down = Math.round(busy * curve * ([0, 6].includes(dow) ? 1.06 : 0.97) * (0.86 + r() * 0.2) * 10) / 10
+      hours.push({ t: new Date(t).toISOString(), down, up: Math.round(down * 0.16 * 10) / 10 })
+    }
+    return { siteId: s.id, hours }
+  })
+  return { now: new Date(now).toISOString(), gateways, continuity, path, daily, traffic }
 }

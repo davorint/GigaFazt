@@ -5,7 +5,9 @@ import { useTranslations } from "next-intl"
 import { localToday } from "@/lib/clients/from-lead"
 import { demoSet } from "@/lib/interno/dashboard-demo"
 import type { NetworkFigures } from "@/lib/interno/dashboard-server"
-import { lastMonths, monthNumbers } from "@/lib/interno/numbers"
+import { lastMonths, monthNumbers, siteNumbers } from "@/lib/interno/numbers"
+import { compareRows, faultMatrix, faultsPer10, MEASURES, payPrints, revenueTree, type Leaf, type Measure } from "@/lib/interno/tablero2-x"
+import { linkSpeed } from "@/lib/wispdavor/capacity"
 import { forecast } from "@/lib/interno/outlook"
 import { cohorts, moneyFlow, mrrAt, mrrBridge, networkGroups, payCalendar, payWindow, retentionAt, TONES, type FlowKind, type RingGroup, type Tone } from "@/lib/interno/tablero2"
 import { FLOW_STATES, lightRows, recovered, REPAIR_GROUPS, repairLanes, revenueStreams, skyline, statusFlows, tenure, type RepairBar, type Star } from "@/lib/interno/tablero2-more"
@@ -19,6 +21,11 @@ import { useWispData } from "@/components/wispdavor/useWispData"
 import { Panel } from "@/components/dashboard/Panel"
 import { INK, SERIES } from "@/components/dashboard/theme"
 import { CapacityBars } from "./CapacityBars"
+import { FaultChord } from "./FaultChord"
+import { BAND_COLOR, HorizonChart } from "./HorizonChart"
+import { ParallelCoords } from "./ParallelCoords"
+import { PayContours } from "./PayContours"
+import { RevenuePack } from "./RevenuePack"
 import { CarrierPulse } from "./CarrierPulse"
 import { CELL_COLOR, ContinuityStrips } from "./ContinuityStrips"
 import { PacketPath } from "./PacketPath"
@@ -147,6 +154,11 @@ export function Tablero2App() {
   const carriers = useMemo(() => (sim ? (nowMs ? demoCarriers(sim, nowMs) : null) : carrierNet && carrierNet !== "error" ? carrierNet : null), [sim, nowMs, carrierNet])
   const strips = useMemo(() => (carriers && nowMs ? carriers.continuity.map((c) => ({ c, strip: continuityStrip(c, nowMs) })) : []), [carriers, nowMs])
   const forecasts = useMemo(() => (carriers && today ? saturation(src.sites, carriers.daily, today) : []), [carriers, src, today])
+  // Fourth round (owner, 2026-11-23: "5 more custom made, cutting edge").
+  const tree = useMemo(() => (today ? revenueTree(src.sites, src.clients, src.payments, today) : null), [src, today])
+  const chordM = useMemo(() => (nowMs ? faultMatrix(src.reports, src.sites, nowMs, 90) : null), [src, nowMs])
+  const prints = useMemo(() => (today ? payPrints(src.payments, src.clients, today, 12, 10) : null), [src, today])
+  const siteRows = useMemo(() => siteNumbers(src.sites, src.clients), [src])
   const streamName = useCallback((key: string) => (key === "__tv" ? t("streams.tv") : key === "__otros" ? t("streams.otros") : key), [t])
   const streamColor = useCallback((key: string) => SERIES[streams.keys.indexOf(key)] ?? INK.muted, [streams.keys])
 
@@ -203,6 +215,48 @@ export function Tablero2App() {
   const availAll = watchedAll ? 1 - strips.reduce((a, x) => a + x.strip.downMinutes, 0) / 60 / watchedAll : null
   const busyByName = new Map((network?.sites ?? []).map((x) => [x.name, x.busyDown]))
   const glasses = hourglass(src.sites, src.clients, busyByName)
+
+  // Fourth round: money map, traffic horizon, fault chord, payment fingerprint, deployments compared.
+  const packSites = (tree?.children ?? []).map((n) => ({ name: "name" in n ? n.name : "", value: 0, n }))
+  const leafSum = (n: unknown): number => (n && typeof n === "object" && "children" in n ? (n as { children: unknown[] }).children.reduce((a: number, c) => a + leafSum(c), 0) : ((n as Leaf).value ?? 0))
+  for (const x of packSites) x.value = leafSum(x.n)
+  const packTotal = packSites.reduce((a, x) => a + x.value, 0)
+  const packTop = [...packSites].sort((a, b) => b.value - a.value)[0]
+  const packTip = (l: Leaf) => ({ title: l.place || t("pack.noPlace"), rows: [{ label: t("pack.plan"), value: l.plan || "—" }, { label: t("pack.pays"), value: mxn(l.value) }, { label: t("pack.status"), value: t(`rings.tones.${l.tone}`) }] })
+  const horizonRows = (carriers?.traffic ?? []).map((tr) => {
+    const site = src.sites.find((x) => x.id === tr.siteId)
+    const link = site ? linkSpeed(site).down : null
+    const hours = tr.hours.map((h) => ({ t: Date.parse(h.t) + 1800000, down: h.down }))
+    const peak = Math.max(0, ...hours.map((h) => h.down))
+    return { key: tr.siteId, name: siteName(tr.siteId), link, hours, peakMbps: peak, over: link ? hours.filter((h) => h.down >= 0.8 * link).length : 0, peak: link ? t("horizon.peak", { pct: pct(peak / link) }) : t("horizon.peakNoLink", { mbps: speedText(peak) }) }
+  })
+  const hotHorizon = [...horizonRows].filter((r) => r.link).sort((a, b) => b.over - a.over || b.peakMbps / (b.link as number) - a.peakMbps / (a.link as number))[0]
+  const chordSites = chordM ? chordM.sites.map((x, i) => ({ ...x, n: chordM.counts[i].reduce((a, b) => a + b, 0), top: chordM.kinds[chordM.counts[i].indexOf(Math.max(...chordM.counts[i]))] })) : []
+  const faultsBySite = new Map(chordSites.map((x) => [x.id, x.n]))
+  const routerAvail = new Map<string, number>()
+  for (const x of strips) if (x.strip.availability !== null) routerAvail.set(x.c.siteId, Math.min(routerAvail.get(x.c.siteId) ?? 1, x.strip.availability))
+  const latency = new Map((carriers?.path ?? []).filter((x) => x.gatewayRtt !== null).map((x) => [x.siteId, (x.gatewayRtt ?? 0) + (x.ontRtt ?? 0)]))
+  const useByName = new Map((network?.sites ?? []).map((x) => [x.name, x.use]))
+  const compare = compareRows(
+    siteRows.filter((x) => x.clients > 0).sort((a, b) => b.active - a.active),
+    (id) => {
+      const x = siteRows.find((r) => r.id === id)
+      return x ? { clients: x.active, penetration: x.penetration, income: x.income, profit: x.profit, use: useByName.get(x.name) ?? null, latency: latency.get(id) ?? null, availability: routerAvail.get(id) ?? null, faults: chordM ? faultsPer10(faultsBySite.get(id) ?? 0, x.active) : null } : {}
+    }
+  )
+  const fmtMeasure = (m: Measure, v: number) => (m === "clients" ? String(Math.round(v)) : m === "penetration" || m === "use" || m === "availability" ? pct(v, m === "availability" ? 2 : 0) : m === "income" || m === "profit" ? k(v) : m === "latency" ? ms(v) : v.toLocaleString("es-MX", { maximumFractionDigits: 1 }))
+  // Who is on top (best value) of the most axes, and who at the bottom.
+  const wins = new Map<string, number>()
+  const losses = new Map<string, number>()
+  const axesWithData = MEASURES.filter((m) => compare.filter((r) => r.values[m] !== null).length >= 2)
+  for (const m of axesWithData) {
+    const vals = compare.filter((r) => r.values[m] !== null)
+    const sorted = [...vals].sort((a, b) => ((b.values[m] as number) - (a.values[m] as number)) * (["use", "latency", "faults"].includes(m) ? -1 : 1))
+    wins.set(sorted[0].id, (wins.get(sorted[0].id) ?? 0) + 1)
+    losses.set(sorted[sorted.length - 1].id, (losses.get(sorted[sorted.length - 1].id) ?? 0) + 1)
+  }
+  const bestId = [...wins].sort((a, b) => b[1] - a[1])[0]
+  const worstId = [...losses].sort((a, b) => b[1] - a[1])[0]
   const topGlass = glasses.find((g) => g.ratio !== null)
   const glassLines = (g: (typeof glasses)[number]) => {
     const use = g.busy !== null && g.link ? g.busy / g.link : null
@@ -327,6 +381,18 @@ export function Tablero2App() {
           <Streamgraph streams={streams} label={t("streams.title")} name={streamName} color={streamColor} totalLabel={t("streams.total")} />
           <Legend items={streams.keys.map((key) => [streamName(key), streamColor(key), "bar"] as [string, string, "bar"])} />
           <p className="text-[0.7rem] text-zinc-500">{t("streams.note")}</p>
+        </Panel>
+        <Panel
+          demo={tag}
+          title={t("pack.title")}
+          takeaway={packTop && packTotal ? t("pack.takeaway", { top: packTop.name || t("pack.noSite"), share: pct(packTop.value / packTotal), amount: mxn(packTop.value) }) : undefined}
+          empty={tree && tree.children.length ? null : t("pack.empty")}
+          tableLabel={tl}
+          table={{ head: [t("cols.site"), t("cols.amount"), "%"], rows: [...packSites].sort((a, b) => b.value - a.value).map((x) => [x.name || t("pack.noSite"), mxn(x.value), pct(packTotal ? x.value / packTotal : null)]) }}
+        >
+          {tree && <RevenuePack tree={tree} label={t("pack.title")} siteName={(n) => n || t("pack.noSite")} towerName={(n) => n} leafTip={packTip} allLabel={t("pack.all")} />}
+          <Legend items={TONES.map((x) => [t(`rings.tones.${x}`), TONE_COLOR[x], "dot"] as [string, string, "dot"])} />
+          <p className="text-[0.7rem] text-zinc-500">{t("pack.note")}</p>
         </Panel>
         <div className="grid gap-3 lg:grid-cols-2">
           <Panel
@@ -453,6 +519,18 @@ export function Tablero2App() {
           <Legend items={(["bien", "justo", "baja", "satura"] as const).map((z) => [t(`light.zones.${z}`), LIGHT_COLOR[z], "dot"] as [string, string, "dot"])} />
           <p className="text-[0.7rem] text-zinc-500">{t("light.note")}</p>
         </Panel>
+        <Panel
+          demo={tag}
+          title={t("horizon.title")}
+          takeaway={hotHorizon ? (hotHorizon.over ? t("horizon.takeaway", { name: hotHorizon.name, hours: hotHorizon.over, peak: speedText(hotHorizon.peakMbps), pct: pct(hotHorizon.peakMbps / (hotHorizon.link as number)) }) : t("horizon.takeawayCalm", { name: hotHorizon.name, pct: pct(hotHorizon.peakMbps / (hotHorizon.link as number)) })) : undefined}
+          empty={!carriers ? (carrierNet === "error" ? t("offline") : t("loading")) : horizonRows.length ? null : t("horizon.empty")}
+          tableLabel={tl}
+          table={{ head: [t("cols.site"), t("hourglass.busy"), t("horizon.ofLink"), "≥ 80 %"], rows: horizonRows.map((r) => [r.name, speedText(r.peakMbps), r.link ? pct(r.peakMbps / r.link) : "—", r.link ? `${r.over} h` : "—"]) }}
+        >
+          <HorizonChart rows={horizonRows} from={nowMs - 7 * 864e5} now={nowMs} label={t("horizon.title")} tipFor={(r, h) => ({ title: `${r.name} · ${new Date(h.t - 1800000).toLocaleString("es-MX", { weekday: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`, rows: [{ label: t("horizon.down"), value: speedText(h.down) }, ...(r.link ? [{ label: t("horizon.ofLink"), value: pct(h.down / r.link) }] : [])] })} />
+          <Legend items={(t.raw("horizon.bands") as string[]).map((b, i) => [b, BAND_COLOR[i], "bar"] as [string, string, "bar"])} />
+          <p className="text-[0.7rem] text-zinc-500">{t("horizon.note")}</p>
+        </Panel>
       </Section>
 
       <Section id="t2-carriers" title={t("sections.carriers")}>
@@ -534,6 +612,17 @@ export function Tablero2App() {
           <Legend items={REPAIR_GROUPS.map((g) => [t(`repairs.groups.${g}`), REPAIR_COLOR[g], "bar"] as [string, string, "bar"])} />
           <p className="text-[0.7rem] text-zinc-500">{t("repairs.note")}</p>
         </Panel>
+        <Panel
+          demo={tag}
+          title={t("chord.title")}
+          takeaway={chordM && chordSites.length ? t("chord.takeaway", { site: chordSites[0].name || t("pack.noSite"), share: pct(chordSites[0].n / chordM.total), kind: t(`repairs.groups.${chordSites[0].top}`) }) : undefined}
+          empty={chordM && chordM.total ? null : t("chord.empty")}
+          tableLabel={tl}
+          table={chordM ? { head: [t("cols.site"), ...chordM.kinds.map((x) => t(`repairs.groups.${x}`))], rows: chordM.sites.map((x, i) => [x.name || t("pack.noSite"), ...chordM.counts[i]]) } : undefined}
+        >
+          {chordM && <FaultChord m={chordM} label={t("chord.title")} siteName={(n) => n || t("pack.noSite")} kindLabel={(x) => t(`repairs.groups.${x}`)} reportsLabel={(n) => t("chord.reports", { n })} />}
+          <p className="text-[0.7rem] text-zinc-500">{t("chord.note")}</p>
+        </Panel>
       </Section>
 
       <Section id="t2-collections" title={t("sections.collections")}>
@@ -548,6 +637,31 @@ export function Tablero2App() {
           <PayCalendar days={cal.days} label={t("calendar.title")} dayLetters={t.raw("calendar.letters") as string[]} paymentsLabel={(n) => t("calendar.payments", { n })} />
           <p className="mt-2 text-xs text-zinc-400">{t("calendar.byDay")}</p>
           <PayDays counts={cal.byDayOfMonth} window={win} label={t("calendar.byDay")} dayLabel={(dd, n) => t("calendar.day", { d: dd, n })} />
+        </Panel>
+        <Panel
+          demo={tag}
+          title={t("prints.title")}
+          takeaway={prints && prints.points.length ? (prints.loyal !== null && prints.fresh !== null ? t("prints.takeaway", { loyal: pct(prints.loyal), fresh: pct(prints.fresh) }) : t("prints.takeawayAll", { all: pct(prints.points.filter((x) => x.day <= 10).length / prints.points.length) })) : undefined}
+          empty={prints && prints.points.length ? null : t("prints.empty")}
+          tableLabel={tl}
+          table={prints ? { head: [t("cols.day"), t("cols.payments")], rows: Array.from({ length: 31 }, (_, i) => [i + 1, prints.points.filter((x) => x.day === i + 1).length]) } : undefined}
+        >
+          {prints && <PayContours points={prints.points} maxTenure={prints.maxTenure} due={10} label={t("prints.title")} dueLabel={t("prints.due")} xLabel={t("prints.x")} yLabel={t("prints.y")} cellTip={(day, months, n) => ({ title: t("prints.tip", { day, months }), rows: [{ label: t("prints.near"), value: String(n) }] })} />}
+          <p className="text-[0.7rem] text-zinc-500">{t("prints.note")}</p>
+        </Panel>
+      </Section>
+
+      <Section id="t2-compare" title={t("sections.compare")}>
+        <Panel
+          demo={tag}
+          title={t("compare.title")}
+          takeaway={bestId && worstId && compare.length >= 2 ? t("compare.takeaway", { best: compare.find((r) => r.id === bestId[0])?.name ?? "", n: bestId[1], of: axesWithData.length, worst: compare.find((r) => r.id === worstId[0])?.name ?? "", m: worstId[1] }) : undefined}
+          empty={compare.length >= 2 ? null : t("compare.empty")}
+          tableLabel={tl}
+          table={{ head: [t("cols.site"), ...MEASURES.map((m) => t(`compare.axes.${m}`))], rows: compare.map((r) => [r.name, ...MEASURES.map((m) => (r.values[m] === null ? "—" : fmtMeasure(m, r.values[m] as number)))]) }}
+        >
+          <ParallelCoords rows={compare} label={t("compare.title")} axisLabel={(m) => t(`compare.axes.${m}`)} fmt={fmtMeasure} better={{ high: t("compare.better.high"), low: t("compare.better.low") }} />
+          <p className="text-[0.7rem] text-zinc-500">{t("compare.note")}</p>
         </Panel>
       </Section>
     </div>

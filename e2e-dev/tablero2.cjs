@@ -122,6 +122,23 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
         return { pulse: n("El pulso de los carriers", "path") >= 12, strips: n("Cinta de continuidad", "rect") >= 40, glasses: document.querySelectorAll('svg[aria-label*="Vendido"]').length >= 5, path: n("El camino del paquete", "circle") >= 20, forecast: n("Sugerencia: ¿cuándo se llena cada enlace?", "path") >= 15 }
       })
       console.log(`${w} carriers: ${JSON.stringify(carriers)}`)
+      // Fourth round: money map (and flying into a deployment), traffic horizon, fault chord, payment contours, comparator.
+      const x4 = await page.evaluate(() => {
+        const n = (l, sel) => document.querySelector(`svg[aria-label="${l}"]`)?.querySelectorAll(sel).length ?? 0
+        return { pack: n("Mapa de ingresos", "circle") >= 100, horizon: n("Latido del tráfico", "path") >= 25, chord: n("Qué falla y dónde", "path") >= 10, contours: n("Huella de pago", "path") >= 5, compare: n("Comparador de despliegues", "path") >= 10 }
+      })
+      const zoom = page.getByRole("group", { name: "Mapa de ingresos" }).getByRole("button").nth(1)
+      await zoom.scrollIntoViewIfNeeded()
+      await zoom.click()
+      await page.waitForTimeout(1800)
+      x4.zoomed = (await zoom.getAttribute("aria-pressed")) === "true"
+      console.log(`${w} round4: ${JSON.stringify(x4)}`)
+      // Each new panel on its own, for review (the money map is zoomed into a deployment here).
+      for (const [file, name] of [["pack", "Mapa de ingresos"], ["horizon", "Latido del tráfico"], ["chord", "Qué falla y dónde"], ["prints", "Huella de pago"], ["compare", "Comparador de despliegues"]]) {
+        const panel = page.locator(`svg[aria-label="${name}"]`).first().locator("xpath=ancestor::section[1]")
+        await panel.scrollIntoViewIfNeeded()
+        await panel.screenshot({ path: path.join(SHOTS, `t2-${file}-${w}.png`) }).catch(() => undefined)
+      }
       await page.screenshot({ path: path.join(SHOTS, `tablero2-demo-${w}.png`), fullPage: true })
       await page.getByRole("switch", { name: "Datos simulados" }).click()
       console.log(`${w} off: banner ${await page.getByText(/Estás viendo datos inventados/).count()}`)

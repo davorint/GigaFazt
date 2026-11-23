@@ -19,7 +19,8 @@
       "network": "Red",
       "collections": "Cobranza",
       "ops": "Operación",
-      "carriers": "Carriers y continuidad"
+      "carriers": "Carriers y continuidad",
+      "compare": "Comparar despliegues"
     },
     "kpi": {
       "title": "Lo principal",
@@ -173,7 +174,8 @@
       "link": "Enlace",
       "ratio": "Relación",
       "hop": "Tramo",
-      "eta": "Llega al 80 %"
+      "eta": "Llega al 80 %",
+      "measure": "Medida"
     },
     "empty": {
       "clients": "Todavía no hay clientes con servicio.",
@@ -328,6 +330,76 @@
       "never": "No a este ritmo",
       "already": "Ya pasó",
       "empty": "Hacen falta unas semanas de tráfico y la velocidad de los enlaces en Despliegues."
+    },
+    "pack": {
+      "title": "Mapa de ingresos",
+      "takeaway": "{top} aporta el {share} del ingreso mensual ({amount}). Toca un despliegue para entrar en él.",
+      "note": "Cada círculo grande es un despliegue, los punteados sus torres y cada punto un cliente: su tamaño es lo que paga al mes y su color cómo va con sus pagos. Toca un despliegue (o su botón) para acercarte; toca el fondo o «Ver todo» para volver.",
+      "all": "Ver todo",
+      "noSite": "Sin despliegue",
+      "noTower": "Sin torre",
+      "plan": "Plan",
+      "pays": "Paga al mes",
+      "status": "Estado",
+      "noPlace": "Sin torre ni departamento",
+      "empty": "Todavía no hay clientes con servicio y precio."
+    },
+    "horizon": {
+      "title": "Latido del tráfico",
+      "takeaway": "{name} pasó del 80 % de sus enlaces {hours, plural, one {# hora} other {# horas}} esta semana; su pico fue {peak} ({pct}).",
+      "takeawayCalm": "Ningún despliegue pasó del 80 % de sus enlaces esta semana; el más cargado llegó al {pct} ({name}).",
+      "note": "Una semana de tráfico de bajada por despliegue, hora por hora, doblada en cinco franjas de 20 % de la velocidad de sus enlaces encimadas: mientras más clara, más lleno; en rojo, del 80 % para arriba. Así una semana entera cabe en una tira.",
+      "peak": "pico {pct}",
+      "peakNoLink": "pico {mbps} · escala propia (sin velocidad de enlace)",
+      "bands": [
+        "0–20 %",
+        "20–40 %",
+        "40–60 %",
+        "60–80 %",
+        "80 % o más"
+      ],
+      "down": "Bajada",
+      "ofLink": "Del enlace",
+      "empty": "Sin tráfico de la última semana todavía: aparece cuando los routers lo reportan."
+    },
+    "chord": {
+      "title": "Qué falla y dónde",
+      "takeaway": "{site} concentra el {share} de los reportes de 90 días; ahí lo que más falla es «{kind}».",
+      "note": "De un lado del aro, los despliegues (gris); del otro, el tipo de falla (color). Cada cinta une un despliegue con un tipo de falla y es tan ancha como sus reportes de los últimos 90 días. Pasa el cursor por un arco para ver solo sus cintas.",
+      "reports": "{n, plural, one {# reporte} other {# reportes}}",
+      "empty": "Sin reportes en los últimos 90 días."
+    },
+    "prints": {
+      "title": "Huella de pago",
+      "takeaway": "Los clientes con más de un año pagan a tiempo (hasta el día 10) el {loyal} de las veces; los de menos de 3 meses, el {fresh}.",
+      "takeawayAll": "El {all} de los pagos del último año llegó a tiempo (hasta el día 10).",
+      "note": "Un mapa topográfico de los pagos del último año: a lo ancho, el día del mes en que llegó el pago; hacia arriba, cuántos meses llevaba el cliente con nosotros. Lo más claro es donde se juntan más pagos. La línea punteada es el día 10: a la derecha, pagos tarde.",
+      "due": "vence el 10",
+      "x": "Día del mes en que pagó",
+      "y": "Meses como cliente",
+      "tip": "Día {day} · {months, plural, one {# mes} other {# meses}} como cliente",
+      "near": "Pagos ahí",
+      "empty": "Sin pagos en el último año todavía."
+    },
+    "compare": {
+      "title": "Comparador de despliegues",
+      "takeaway": "{best} sale arriba en {n} de {of} medidas; {worst}, en {m}.",
+      "note": "Un eje por medida y una línea por despliegue. En todos los ejes lo mejor queda arriba: en uso pico, latencia y fallas, eso es el número más bajo. Una línea que se mantiene alta va bien en todo; una caída muestra dónde se queda atrás. Pasa el cursor por una línea o su nombre.",
+      "axes": {
+        "clients": "Clientes",
+        "penetration": "Penetración",
+        "income": "Ingreso",
+        "profit": "Utilidad",
+        "use": "Uso pico",
+        "latency": "Latencia",
+        "availability": "Disponib.",
+        "faults": "Fallas/10"
+      },
+      "better": {
+        "high": "mejor",
+        "low": "mejor (−)"
+      },
+      "empty": "Hacen falta al menos dos despliegues con datos para comparar."
     }
   }
 }

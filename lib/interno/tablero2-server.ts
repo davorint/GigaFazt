@@ -6,7 +6,7 @@
 import "server-only"
 import { getPool } from "../db/client"
 import type { OutageKind } from "../wispdavor/monitor"
-import type { CarrierFigures, DailyBusy, GatewaySeries, PathStat, RouterContinuity } from "./tablero2-net"
+import type { CarrierFigures, DailyBusy, GatewaySeries, PathStat, RouterContinuity, SiteTraffic } from "./tablero2-net"
 
 export async function carrierFigures(): Promise<CarrierFigures> {
   const pool = getPool()
@@ -90,5 +90,21 @@ export async function carrierFigures(): Promise<CarrierFigures> {
     daily.set(r.site_id, x)
   }
 
-  return { now: new Date().toISOString(), gateways: [...gw.values()], continuity: continuity.filter((c) => c.hours.length || c.outages.length), path: path.filter((p) => p.gatewayRtt !== null || p.onts), daily: [...daily.values()] }
+  // Horizon: each deployment's traffic hour by hour, last 7 days (the hour still running left out).
+  const th = (
+    await pool.query(
+      `select r.site_id, date_trunc('hour', t.bucket) as h, (sum(t.down)::float8 * 8 / 3600 / 1e6) as down, (sum(t.up)::float8 * 8 / 3600 / 1e6) as up
+         from traffic_5m t join routers r on r.id = t.router_id
+        where t.bucket > now() - interval '7 days' and t.bucket < date_trunc('hour', now()) and r.site_id <> ''
+        group by 1, 2 order by 2`
+    )
+  ).rows as { site_id: string; h: Date; down: number; up: number }[]
+  const traffic = new Map<string, SiteTraffic>()
+  for (const r of th) {
+    const x = traffic.get(r.site_id) ?? { siteId: r.site_id, hours: [] }
+    x.hours.push({ t: r.h.toISOString(), down: Math.round(r.down * 10) / 10, up: Math.round(r.up * 10) / 10 })
+    traffic.set(r.site_id, x)
+  }
+
+  return { now: new Date().toISOString(), gateways: [...gw.values()], continuity: continuity.filter((c) => c.hours.length || c.outages.length), path: path.filter((p) => p.gatewayRtt !== null || p.onts), daily: [...daily.values()], traffic: [...traffic.values()] }
 }

@@ -23,7 +23,9 @@ export type OutageSpan = { kind: OutageKind; start: string; end: string }
 export type RouterContinuity = { routerId: string; router: string; siteId: string; hours: { t: string; lossy: boolean }[]; outages: OutageSpan[] }
 export type PathStat = { routerId: string; siteId: string; gatewayRtt: number | null; ontRtt: number | null; ontP90: number | null; onts: number; ontLossy: number }
 export type DailyBusy = { siteId: string; days: { day: string; down: number; up: number }[] }
-export type CarrierFigures = { now: string; gateways: GatewaySeries[]; continuity: RouterContinuity[]; path: PathStat[]; daily: DailyBusy[] }
+/** Each deployment's traffic per hour (Mbps, every router of it summed), last 7 days: the horizon chart. */
+export type SiteTraffic = { siteId: string; hours: { t: string; down: number; up: number }[] }
+export type CarrierFigures = { now: string; gateways: GatewaySeries[]; continuity: RouterContinuity[]; path: PathStat[]; daily: DailyBusy[]; traffic: SiteTraffic[] }
 
 const HOUR = 3600000
 
