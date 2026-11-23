@@ -1,0 +1,152 @@
+{
+  "tablero2": {
+    "meta": "Tablero 2 · Uso interno",
+    "kicker": "Uso interno · Administración",
+    "title": "Tablero 2",
+    "lead": "El negocio dibujado con D3: cómo fluye el dinero, cuánto se quedan los clientes y a qué hora late la red. Usa los registros de este teléfono (sincroniza para ver los de todos) y la red en vivo. Cada gráfica trae sus números en «Ver tabla».",
+    "loading": "Cargando…",
+    "period": "Periodo de las gráficas por mes",
+    "months": "{n} meses",
+    "table": "Ver tabla",
+    "demo": {
+      "toggle": "Datos simulados",
+      "tag": "SIMULACIÓN",
+      "banner": "Estás viendo datos inventados: un operador de ejemplo con cinco despliegues, para ver cómo se verá el tablero cuando todo esté funcionando. No son tus clientes ni tu dinero; apágalo para volver a tus datos."
+    },
+    "sections": {
+      "money": "Dinero",
+      "clients": "Clientes",
+      "network": "Red",
+      "collections": "Cobranza"
+    },
+    "kpi": {
+      "title": "Lo principal",
+      "mrr": "Ingreso recurrente",
+      "mrrHint": "{d} contra el mes pasado",
+      "collected": "Cobrado este mes",
+      "collectedHint": "{pct} de {billed} facturado",
+      "profit": "Utilidad del mes",
+      "profitHint": "{income} entran, {costs} en edificios y enlaces",
+      "retention": "Siguen a los 3 meses",
+      "retentionHint": "De quienes llegaron en el periodo",
+      "retentionNone": "Aún no hay clientes con 3 meses en el periodo."
+    },
+    "rings": {
+      "title": "La red viva",
+      "takeaway": "{n, plural, one {# cliente} other {# clientes}} con servicio en {sites, plural, one {# despliegue} other {# despliegues}}: {late} {late, plural, one {atrasado} other {atrasados}} y {sus} {sus, plural, one {suspendido} other {suspendidos}}.",
+      "note": "Cada punto es un cliente: al centro de cada despliegue los que van al corriente, en la orilla los atrasados y suspendidos. Pasa el cursor sobre un despliegue para ver su detalle.",
+      "center": "CON SERVICIO",
+      "noSite": "Sin despliegue",
+      "tones": {
+        "al-corriente": "Al corriente",
+        "por-vencer": "Por vencer",
+        "atrasado": "Atrasado",
+        "suspendido": "Suspendido",
+        "sin-cobro": "Sin cobro"
+      }
+    },
+    "flow": {
+      "title": "Cómo fluye el dinero cada mes",
+      "takeaway": "Entran {income} al mes por servicios activos; {costs} se van en edificios y enlaces y quedan {profit} ({margin}).",
+      "takeawayLoss": "Entran {income} al mes, pero edificios y enlaces cuestan {costs}: faltan {short}.",
+      "note": "De izquierda a derecha: lo que paga cada plan, a qué despliegue entra y en qué se va. «Faltante» es lo que un despliegue cuesta de más sobre lo que cobra.",
+      "nodes": {
+        "tv": "TV",
+        "otros": "Otros servicios",
+        "faltante": "Faltante",
+        "nosite": "Sin despliegue",
+        "edificio": "Edificio (renta y luz)",
+        "enlaces": "Enlaces (carriers)",
+        "utilidad": "Utilidad"
+      },
+      "from": "De",
+      "to": "A"
+    },
+    "revenue": {
+      "title": "Facturado, cobrado y lo que viene",
+      "takeaway": "En {month} va cobrado el {rate} de lo facturado. Los próximos 3 meses: entre {low} y {high} al mes.",
+      "billed": "Facturado",
+      "collected": "Cobrado",
+      "low": "Con las bajas de siempre",
+      "high": "Si nadie se va",
+      "estimate": "ESTIMACIÓN"
+    },
+    "bridge": {
+      "title": "Puente del ingreso recurrente",
+      "takeaway": "Del cierre de {from} a hoy el ingreso recurrente {dir} {amount}: altas {added}, cambios a más {more}, cambios a menos {less} y bajas {lost}.",
+      "up": "subió",
+      "down": "bajó",
+      "same": "quedó igual,",
+      "start": "Inicio",
+      "added": "Altas",
+      "more": "Suben",
+      "less": "Bajan",
+      "lost": "Bajas",
+      "end": "Hoy",
+      "clients": "{n, plural, one {# cliente} other {# clientes}}"
+    },
+    "moves": {
+      "title": "Altas y bajas",
+      "takeaway": "{added} altas y {lost} bajas de servicios en {months} meses: {net} neto.",
+      "added": "Altas",
+      "lost": "Bajas",
+      "net": "Neto"
+    },
+    "cohorts": {
+      "title": "Permanencia por generación",
+      "takeaway": "A los 3 meses sigue el {r3} de los clientes; a los 6, el {r6}.",
+      "takeawayShort": "Todavía no hay generaciones con 3 meses: la tabla se llena con el tiempo.",
+      "note": "Cada fila: los clientes que llegaron ese mes. Cada columna: los meses después (M0 = el mismo mes). El número es el porcentaje que sigue con servicio.",
+      "age": "M{k}",
+      "size": "Clientes",
+      "tip": "{month} · {k, plural, =0 {el mismo mes} one {# mes después} other {# meses después}}",
+      "kept": "Siguen"
+    },
+    "clock": {
+      "title": "El reloj de la red",
+      "takeaway": "La hora más cargada: {day} a las {h}:00, con {v} Mbps en promedio (últimas 4 semanas).",
+      "note": "Medianoche arriba. Cada anillo es un día: lunes al centro, domingo afuera. La manecilla marca la hora actual.",
+      "peak": "HORA PICO",
+      "unit": "Mbps",
+      "noData": "Sin datos",
+      "days": ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
+    },
+    "capacity": {
+      "title": "Enlaces en hora pico",
+      "takeaway": "El más cargado: {site}, al {use} de sus enlaces en la hora más ocupada.",
+      "full": "Lleno",
+      "detail": "{busy} de {speed} en la hora más ocupada · la marca es el {full}",
+      "unknown": "—"
+    },
+    "calendar": {
+      "title": "Cuándo pagan",
+      "takeaway": "El {share} de los pagos llega entre el día {from} y el {to} del mes ({n} pagos en 26 semanas).",
+      "takeawayNone": "Sin pagos en las últimas 26 semanas.",
+      "byDay": "Pagos por día del mes",
+      "payments": "{n, plural, =0 {Sin pagos} one {# pago} other {# pagos}}",
+      "day": "Día {d}: {n, plural, =0 {sin pagos} one {# pago} other {# pagos}}",
+      "letters": ["L", "M", "M", "J", "V", "S", "D"]
+    },
+    "cols": {
+      "month": "Mes",
+      "site": "Despliegue",
+      "clients": "Clientes",
+      "status": "Estado",
+      "amount": "Monto",
+      "concept": "Concepto",
+      "day": "Día",
+      "hour": "Hora",
+      "use": "Uso",
+      "payments": "Pagos"
+    },
+    "empty": {
+      "clients": "Todavía no hay clientes con servicio.",
+      "flow": "Todavía no hay servicios activos con precio.",
+      "cohorts": "Ningún cliente empezó en el periodo.",
+      "capacity": "Sin datos todavía: hace falta que los routers reporten tráfico y que los enlaces tengan su velocidad en Despliegues.",
+      "traffic": "Sin tráfico todavía: aparece cuando los routers empiecen a reportar.",
+      "payments": "Sin pagos en las últimas 26 semanas."
+    },
+    "offline": "No se pudo leer la red (sin conexión o sin base de datos)."
+  }
+}

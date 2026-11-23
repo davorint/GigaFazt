@@ -226,6 +226,10 @@
         "tablero": {
           "name": "Tablero",
           "desc": "El negocio de un vistazo: dinero, pronóstico, clientes, red, mapa y operación en gráficas, cada una con sus números."
+        },
+        "tablero2": {
+          "name": "Tablero 2",
+          "desc": "El negocio dibujado con D3: la red viva, cómo fluye el dinero, el puente del ingreso, permanencia por generación, el reloj de la red y cuándo pagan."
         }
       }
     },

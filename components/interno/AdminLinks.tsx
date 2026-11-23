@@ -8,6 +8,7 @@ const GROUPS = [
     links: [
       ["/interno", "interno"],
       ["/interno/admin/tablero", "tablero"],
+      ["/interno/admin/tablero2", "tablero2"],
       ["/interno/admin/notas", "notas"],
       ["/interno/admin/despliegues", "despliegues"],
       ["/interno/admin/agenda", "agenda"],

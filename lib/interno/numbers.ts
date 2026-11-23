@@ -40,7 +40,7 @@ export type MonthNumbers = {
 export const lastMonths = (current: string, n: number) => Array.from({ length: n }, (_, i) => addMonths(current, i - n + 1))
 
 /** Whether a client had a live service at the end of a month. */
-function activeAt(c: Client, month: string): boolean {
+export function activeAt(c: Client, month: string): boolean {
   const end = `${month}-31`
   return c.services.some((s) => (!s.start || s.start <= end) && (s.status !== "cancelado" || (!!s.cancelledAt && s.cancelledAt > end)))
 }
