@@ -14,6 +14,7 @@
       "banner": "Estás viendo datos inventados: un operador de ejemplo con cinco despliegues, para ver cómo se verá el tablero cuando todo esté funcionando. No son tus clientes ni tu dinero; apágalo para volver a tus datos."
     },
     "sections": {
+      "today": "Hoy",
       "money": "Dinero",
       "clients": "Clientes",
       "network": "Red",
@@ -34,6 +35,55 @@
       "retention": "Siguen a los 3 meses",
       "retentionHint": "De quienes llegaron en el periodo",
       "retentionNone": "Aún no hay clientes con 3 meses en el periodo."
+    },
+    "today": {
+      "today": "hoy",
+      "pay": {
+        "title": "Pagos de hoy",
+        "takeaway": "Hoy {n, plural, one {llegó # pago} other {llegaron # pagos}} por {amount}: {online} en línea, {transfers} por transferencia y {other} por otros medios.",
+        "none": "Hoy no ha llegado ningún pago todavía.",
+        "channels": {
+          "linea": "En línea",
+          "transferencia": "Transferencias",
+          "otros": "Efectivo y otros"
+        },
+        "onlineKinds": "En línea hoy:",
+        "kinds": {
+          "tarjeta": "Tarjeta",
+          "oxxo": "OXXO",
+          "spei": "SPEI"
+        },
+        "chart": "Pagos por día, últimas 2 semanas",
+        "count": "{n, plural, =0 {Sin pagos} one {# pago} other {# pagos}}",
+        "note": "«En línea» son los pagos que el cliente hizo desde su portal (tarjeta, OXXO o SPEI); el SPEI del portal es una transferencia, pero se cuenta una sola vez, aquí. «Transferencias» son las que registra la oficina al ver el banco. Las barras cuentan pagos por día; pasa el cursor por un día para ver montos."
+      },
+      "tickets": {
+        "title": "Reportes",
+        "takeaway": "{open, plural, one {# reporte abierto} other {# reportes abiertos}}, {pending} sin atender; el más antiguo lleva {oldest}. En {monthName} van {month}.",
+        "none": "Ningún reporte abierto. En {monthName} van {month}.",
+        "open": "Abiertos",
+        "stale": "{n} con más de 48 h",
+        "fresh": "Ninguno con más de 48 h",
+        "pending": "Pendientes",
+        "pendingHint": "Sin atender: nadie los ha tomado",
+        "month": "En {month}",
+        "vsMore": "{n} más que el mes pasado a esta fecha ({last})",
+        "vsLess": "{n} menos que el mes pasado a esta fecha ({last})",
+        "vsSame": "Igual que el mes pasado a esta fecha ({last})",
+        "stages": {
+          "nuevo": "Sin atender",
+          "en-proceso": "En proceso",
+          "visita": "Visita programada"
+        },
+        "states": {
+          "abierto": "Siguen abiertos",
+          "resuelto": "Resueltos",
+          "descartado": "Descartados"
+        },
+        "chart": "Reportes de {month} por día en que se abrieron",
+        "count": "{n, plural, =0 {Sin reportes} one {# reporte} other {# reportes}}",
+        "note": "Abiertos = todo lo que no está resuelto ni descartado; pendientes = los que nadie ha tomado todavía (estado «nuevo»). Las barras son los reportes que se abrieron cada día del mes, según cómo están ahora."
+      }
     },
     "rings": {
       "title": "La red viva",

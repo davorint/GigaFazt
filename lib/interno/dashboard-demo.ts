@@ -111,7 +111,11 @@ export function demoSet(today: string): DemoSet {
         const d2 = mo === month ? (late ? 12 + Math.floor(r() * Math.max(1, todayDay - 11)) : Math.min(todayDay, 1 + Math.floor(r() * 9))) : late ? 11 + Math.floor(r() * 10) : 1 + Math.floor(r() * 9)
         if (late) events.push({ clientId: id, kind: "aviso", day: day(mo, 9) })
         if (late && d2 > 14) events.push({ clientId: id, kind: "suspension", day: day(mo, 11) }, { clientId: id, kind: "activo", day: day(mo, d2) })
-        payments.push({ id: `demo-p-${id}-${m}`, clientId: id, date: day(mo, d2), amount: monthly, method: r() < 0.7 ? "transferencia" : "efectivo", reference: "", notes: "", by: "Demo", createdAt: now, updatedAt: now })
+        const method = r() < 0.7 ? "transferencia" : "efectivo"
+        // About a third come through the portal (Stripe: card, SPEI, OXXO), picked without drawing (the rest of the set stays the same).
+        const online = (m + d2 + i) % 3 === 0
+        const card = online && (m + d2) % 2 === 0
+        payments.push({ id: online ? `stripe-demo-${id}-${m}` : `demo-p-${id}-${m}`, clientId: id, date: day(mo, d2), amount: monthly, method: card ? "tarjeta" : method, reference: online ? "Stripe demo" : "", notes: "", by: online ? "Pago en línea" : "Demo", createdAt: now, updatedAt: now })
       }
     }
   })
@@ -129,7 +133,7 @@ export function demoSet(today: string): DemoSet {
       // Open ones are recent (hours to days old; now and then one older than a week).
       const openedAt = open ? new Date(Date.parse(`${today}T18:00:00Z`) - Math.pow(r(), 1.8) * 10 * 864e5) : created
       const hours = 2 + Math.pow(r(), 2) * 70
-      reports.push(newReport({ id: `demo-r-${mo}-${i}`, clientId: c.id, siteId: c.siteId, name: c.name, category: cats[Math.floor(r() * cats.length)], createdAt: openedAt.toISOString(), status: open ? "nuevo" : "resuelto", resolvedAt: open ? "" : new Date(created.getTime() + hours * 3600000).toISOString(), by: "Demo" }))
+      reports.push(newReport({ id: `demo-r-${mo}-${i}`, clientId: c.id, siteId: c.siteId, name: c.name, category: cats[Math.floor(r() * cats.length)], createdAt: openedAt.toISOString(), status: open ? (["nuevo", "en-proceso", "visita"] as const)[i % 3] : m <= 2 && i % 7 === 3 ? "descartado" : "resuelto", resolvedAt: open ? "" : new Date(created.getTime() + hours * 3600000).toISOString(), by: "Demo" }))
     }
   }
 

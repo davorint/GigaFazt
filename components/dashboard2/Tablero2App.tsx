@@ -25,6 +25,8 @@ import { CapacityBars } from "./CapacityBars"
 import { FaultChord } from "./FaultChord"
 import { BAND_COLOR, HorizonChart } from "./HorizonChart"
 import { SCORE_COLOR, ScoreBoard } from "./ScoreBoard"
+import { CHANNEL_COLOR, MONTH_COLOR, PaymentDays, StageBar, TicketDays } from "./TodayCharts"
+import { CHANNELS, MONTH_STATES, ONLINE_KINDS, paymentsByDay, ticketFigures } from "@/lib/interno/tablero2-today"
 import { PayContours } from "./PayContours"
 import { RevenuePack } from "./RevenuePack"
 import { CarrierPulse } from "./CarrierPulse"
@@ -79,6 +81,20 @@ function Kpi({ label, value, hint, trend, color, demo, meter }: { label: string;
       ) : (
         <Spark values={trend} color={color} label={`${label}: ${value}. ${hint}`} />
       )}
+    </div>
+  )
+}
+
+/** A figure in the "Hoy" panels: a label (with its color key when it has one), the number, a line under it. */
+function Stat({ label, value, sub, color, strong = false }: { label: string; value: string; sub: string; color?: string; strong?: boolean }) {
+  return (
+    <div className={`grid content-start gap-0.5 rounded-xl border p-3 ${strong ? "border-red-400/30 bg-red-400/[0.06]" : "border-white/5 bg-white/[0.02]"}`}>
+      <p className="flex items-center gap-1.5 text-xs text-zinc-400">
+        {color && <span aria-hidden className="size-2.5 shrink-0 rounded-sm" style={{ background: color }} />}
+        <span className="truncate">{label}</span>
+      </p>
+      <p className="text-2xl font-light tracking-tight text-zinc-50 tabular-nums">{value}</p>
+      <p className="text-[0.7rem] text-zinc-400">{sub}</p>
     </div>
   )
 }
@@ -167,6 +183,9 @@ export function Tablero2App() {
   const sky = useMemo(() => skyline(src.sites, src.clients, today), [src, today])
   const light = useMemo(() => lightRows(src.sites, src.clients), [src])
   const stars = useMemo(() => (today ? tenure(src.clients, src.sites, today) : []), [src, today])
+  // Hoy (owner, 2026-11-24): today's payments by channel and the tickets.
+  const payDays = useMemo(() => (today ? paymentsByDay(src.payments, today, 14) : null), [src, today])
+  const tickets = useMemo(() => (today && nowMs ? ticketFigures(src.reports, today, nowMs) : null), [src, today, nowMs])
   const repairs = useMemo(() => (nowMs ? repairLanes(src.reports, src.sites, nowMs, 90) : null), [src, nowMs])
   // Third round (owner, 2026-11-22: carriers, speed of service, continuity, and a suggestion).
   const carriers = useMemo(() => (sim ? (nowMs ? demoCarriers(sim, nowMs) : null) : carrierNet && carrierNet !== "error" ? carrierNet : null), [sim, nowMs, carrierNet])
@@ -180,7 +199,7 @@ export function Tablero2App() {
   const streamName = useCallback((key: string) => (key === "__tv" ? t("streams.tv") : key === "__otros" ? t("streams.otros") : key), [t])
   const streamColor = useCallback((key: string) => SERIES[streams.keys.indexOf(key)] ?? INK.muted, [streams.keys])
 
-  if (!d.loaded || !reports.loaded || !fc || !bridge || !cal || !flows || !repairs || !rows.length) return <p className="mt-6 text-sm text-zinc-400">{t("loading")}</p>
+  if (!d.loaded || !reports.loaded || !fc || !bridge || !cal || !flows || !repairs || !payDays || !tickets || !rows.length) return <p className="mt-6 text-sm text-zinc-400">{t("loading")}</p>
 
   const tag = sim ? t("demo.tag") : ""
   const tl = t("table")
@@ -385,6 +404,67 @@ export function Tablero2App() {
           <Kpi demo={tag} label={t("kpi.retention")} value={pct(r3)} hint={r3 === null ? t("kpi.retentionNone") : t("kpi.retentionHint")} trend={r3Trend} color={SERIES[3]} />
         </section>
       </div>
+
+      <Section id="t2-today" title={t("sections.today")}>
+        <div className="grid items-start gap-3 lg:grid-cols-2">
+          {(() => {
+            const day = payDays.days[payDays.days.length - 1]
+            const dayTitle = (dd: string) => new Date(`${dd}T12:00:00`).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })
+            return (
+              <Panel
+                demo={tag}
+                title={t("today.pay.title")}
+                takeaway={day.total.n ? t("today.pay.takeaway", { n: day.total.n, amount: mxn(day.total.amount), online: day.by.linea.n, transfers: day.by.transferencia.n, other: day.by.otros.n }) : t("today.pay.none")}
+                tableLabel={tl}
+                table={{ head: [t("cols.day"), ...CHANNELS.map((c) => t(`today.pay.channels.${c}`)), t("cols.amount")], rows: [...payDays.days].reverse().map((x) => [x.day, ...CHANNELS.map((c) => x.by[c].n), mxn(x.total.amount)]) }}
+              >
+                <div className="grid grid-cols-3 gap-2">
+                  {CHANNELS.map((c) => (
+                    <Stat key={c} color={CHANNEL_COLOR[c]} label={t(`today.pay.channels.${c}`)} value={String(day.by[c].n)} sub={mxn(day.by[c].amount)} />
+                  ))}
+                </div>
+                <p className="text-xs text-zinc-400">
+                  {t("today.pay.onlineKinds")}{" "}
+                  {ONLINE_KINDS.map((o, i) => (
+                    <span key={o}>
+                      {i > 0 && " · "}
+                      {t(`today.pay.kinds.${o}`)} <span className="font-mono tabular-nums text-zinc-100">{payDays.online[o].n}</span>
+                    </span>
+                  ))}
+                </p>
+                <PaymentDays days={payDays.days} today={today} label={t("today.pay.chart")} channelLabel={(c) => t(`today.pay.channels.${c}`)} dayTitle={dayTitle} money={mxn} countLabel={(n) => t("today.pay.count", { n })} todayLabel={t("today.today")} />
+                <Legend items={CHANNELS.map((c) => [t(`today.pay.channels.${c}`), CHANNEL_COLOR[c], "bar"] as [string, string, "bar"])} />
+                <p className="text-[0.7rem] text-zinc-500">{t("today.pay.note")}</p>
+              </Panel>
+            )
+          })()}
+          {(() => {
+            const dayTitle = (dd: string) => new Date(`${dd}T12:00:00`).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })
+            const monthNow = monthName(cur)
+            const vs = tickets.month.total - tickets.lastMonthSoFar
+            return (
+              <Panel
+                demo={tag}
+                title={t("today.tickets.title")}
+                takeaway={tickets.open.total ? t("today.tickets.takeaway", { open: tickets.open.total, pending: tickets.open.nuevo, oldest: dur(tickets.oldestHours ?? 0), month: tickets.month.total, monthName: monthNow }) : t("today.tickets.none", { month: tickets.month.total, monthName: monthNow })}
+                tableLabel={tl}
+                table={{ head: [t("cols.day"), ...MONTH_STATES.map((x) => t(`today.tickets.states.${x}`))], rows: tickets.days.filter((x) => !x.future).reverse().map((x) => [x.day, ...MONTH_STATES.map((st) => x.by[st])]) }}
+              >
+                <div className="grid grid-cols-3 gap-2">
+                  <Stat label={t("today.tickets.open")} value={String(tickets.open.total)} sub={tickets.stale ? t("today.tickets.stale", { n: tickets.stale }) : t("today.tickets.fresh")} />
+                  <Stat label={t("today.tickets.pending")} value={String(tickets.open.nuevo)} sub={t("today.tickets.pendingHint")} strong={tickets.open.nuevo > 0} />
+                  <Stat label={t("today.tickets.month", { month: monthNow })} value={String(tickets.month.total)} sub={t(vs > 0 ? "today.tickets.vsMore" : vs < 0 ? "today.tickets.vsLess" : "today.tickets.vsSame", { n: Math.abs(vs), last: tickets.lastMonthSoFar })} />
+                </div>
+                <StageBar open={tickets.open} stageLabel={(x) => t(`today.tickets.stages.${x}`)} />
+                <p className="mt-1 text-xs text-zinc-400">{t("today.tickets.chart", { month: monthNow })}</p>
+                <TicketDays days={tickets.days} today={today} label={t("today.tickets.chart", { month: monthNow })} stateLabel={(x) => t(`today.tickets.states.${x}`)} dayTitle={dayTitle} countLabel={(n) => t("today.tickets.count", { n })} todayLabel={t("today.today")} />
+                <Legend items={MONTH_STATES.map((x) => [t(`today.tickets.states.${x}`), MONTH_COLOR[x], "bar"] as [string, string, "bar"])} />
+                <p className="text-[0.7rem] text-zinc-500">{t("today.tickets.note")}</p>
+              </Panel>
+            )
+          })()}
+        </div>
+      </Section>
 
       <Section id="t2-money" title={t("sections.money")}>
         <Panel
