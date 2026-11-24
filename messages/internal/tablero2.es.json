@@ -389,8 +389,8 @@
     },
     "compare": {
       "title": "Comparador de despliegues",
-      "takeaway": "{best} queda arriba en {n} de {of} medidas; {worst} queda abajo en {m}.",
-      "note": "Un eje por medida y una línea por despliegue. En todos los ejes lo mejor queda arriba: en uso pico, latencia y fallas, eso es el número más bajo. Una línea que se mantiene alta va bien en todo; una caída muestra dónde se queda atrás. Pasa el cursor por una línea o su nombre.",
+      "takeaway": "{best} supera la mediana de los despliegues en {n} de {of} medidas; {worst} queda por debajo en {m} de {mOf}.",
+      "note": "Cada fila es un despliegue y cada columna una medida. La línea punteada es la mediana de todos los despliegues: la barra sale hacia la derecha (azul) cuando va mejor que ella y hacia la izquierda (naranja) cuando va peor; en uso pico, latencia y fallas, mejor es menos. Cada columna se mide contra su mayor diferencia, así la barra más larga es la que más se aleja. El aro suma las medidas que van mejor y peor, y las filas van de la más sana a la más débil. Pasa el cursor por una celda para ver su lugar y cuánto se aleja de la mediana.",
       "axes": {
         "clients": "Clientes",
         "penetration": "Penetración",
@@ -402,8 +402,26 @@
         "faults": "Fallas/10"
       },
       "better": {
-        "high": "mejor",
-        "low": "mejor (−)"
+        "high": "↑ más es mejor",
+        "low": "↓ menos es mejor"
+      },
+      "score": "Puntaje",
+      "median": "Mediana",
+      "medianOf": "mediana {v}",
+      "summary": "{wins} mejor · {losses} peor que la mediana",
+      "legend": {
+        "better": "Mejor que la mediana",
+        "worse": "Peor que la mediana"
+      },
+      "tip": {
+        "value": "Valor",
+        "none": "Sin dato",
+        "place": "Lugar",
+        "rank": "{rank}º de {of}",
+        "median": "Mediana {v}",
+        "better": "{d} mejor",
+        "worse": "{d} peor",
+        "same": "En la mediana"
       },
       "empty": "Hacen falta al menos dos despliegues con datos para comparar."
     }

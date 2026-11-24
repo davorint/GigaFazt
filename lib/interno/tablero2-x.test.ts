@@ -5,7 +5,7 @@ import { newReport } from "../reports/model"
 import { newSite, newTower } from "../sites/model"
 import { demoSet } from "./dashboard-demo"
 import { demoCarriers } from "./tablero2-demo"
-import { compareRows, faultMatrix, faultsPer10, payPrints, revenueTree, type Leaf, type TreeNode } from "./tablero2-x"
+import { compareRows, faultMatrix, faultsPer10, payPrints, revenueTree, scoreBoard, type Leaf, type TreeNode } from "./tablero2-x"
 
 const net = (plan: string, monthly: number, p: Partial<ReturnType<typeof newService>> = {}) => newService("internet", { plan, monthly, status: "activo", start: "2026-01-10", ...p })
 const leaves = (n: TreeNode | Leaf): Leaf[] => ("children" in n ? n.children.flatMap(leaves) : [n])
@@ -74,5 +74,27 @@ describe("Tablero 2, fourth round", () => {
     expect(f.traffic[0].hours).toHaveLength(7 * 24)
     const poniente = f.traffic[2]
     expect(Math.max(...poniente.hours.map((h) => h.down))).toBeGreaterThan(0.8 * 300)
+  })
+})
+
+describe("scoreboard against the median", () => {
+  it("better is positive on every measure, scaled to the widest gap, best first", () => {
+    const v = (clients: number, latency: number | null) => ({ clients, penetration: null, income: null, profit: null, use: null, latency, availability: null, faults: null })
+    const b = scoreBoard([
+      { id: "a", name: "A", values: v(10, 9) },
+      { id: "b", name: "B", values: v(30, 3) },
+      { id: "c", name: "C", values: v(20, 5) },
+    ])
+    expect(b.medians.clients).toBe(20)
+    expect(b.medians.latency).toBe(5)
+    expect(b.rows.map((r) => r.id)).toEqual(["b", "c", "a"])
+    const [best, mid, worst] = b.rows
+    expect(best.cells.clients).toMatchObject({ dev: 10, norm: 1, rank: 1, of: 3 })
+    // Less latency is better: 3 ms beats the 5 ms median by 2; 9 ms is 4 behind (the widest gap).
+    expect(best.cells.latency).toMatchObject({ dev: 2, norm: 0.5, rank: 1 })
+    expect(worst.cells.latency).toMatchObject({ dev: -4, norm: -1, rank: 3 })
+    expect(mid).toMatchObject({ wins: 0, losses: 0, score: 0 })
+    expect(best).toMatchObject({ wins: 2, losses: 0, score: 2 })
+    expect(worst.cells.income).toMatchObject({ value: null, dev: 0, rank: 0, of: 0 })
   })
 })

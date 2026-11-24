@@ -128,3 +128,53 @@ export function compareRows(sites: { id: string; name: string }[], get: (id: str
     })
     .filter((r) => MEASURES.some((m) => r.values[m] !== null))
 }
+
+// ── Scoreboard against the network median ───────────────────────────────────
+
+/** One measure of one deployment: its value, how far it is from the median in the "better" direction (> 0 = better), that distance ÷ the widest one on the measure (−1…1), and its place. */
+export type ScoreCell = { value: number | null; dev: number; norm: number; rank: number; of: number }
+export type ScoreRow = { id: string; name: string; cells: Record<Measure, ScoreCell>; wins: number; losses: number; score: number }
+export type ScoreBoard = { medians: Record<Measure, number | null>; rows: ScoreRow[] }
+
+const median = (xs: number[]): number | null => {
+  if (!xs.length) return null
+  const s = [...xs].sort((a, b) => a - b)
+  const m = s.length >> 1
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2
+}
+
+/**
+ * Every deployment against the median of all of them, measure by measure (owner, 2026-11-24: the comparator as a
+ * scoreboard). Better is always positive (less latency, use and faults is better). Each measure is scaled to its own
+ * widest gap, so the deployment furthest from the median draws a full bar and a near tie stays short. Score = measures
+ * better than the median − measures worse; rows best first.
+ */
+export function scoreBoard(rows: CompareRow[]): ScoreBoard {
+  const medians = Object.fromEntries(MEASURES.map((m) => [m, median(rows.map((r) => r.values[m]).filter((v): v is number => v !== null))])) as Record<Measure, number | null>
+  const devOf = (r: CompareRow, m: Measure) => {
+    const v = r.values[m]
+    const md = medians[m]
+    if (v === null || md === null) return 0
+    const d = (v - md) * (BETTER_HIGH[m] ? 1 : -1)
+    return Math.abs(d) < 1e-9 ? 0 : d
+  }
+  const widest = Object.fromEntries(MEASURES.map((m) => [m, Math.max(0, ...rows.map((r) => Math.abs(devOf(r, m))))])) as Record<Measure, number>
+  const out = rows.map((r) => {
+    let wins = 0
+    let losses = 0
+    const cells = Object.fromEntries(
+      MEASURES.map((m) => {
+        const v = r.values[m]
+        const dev = devOf(r, m)
+        if (v !== null && dev > 0) wins++
+        if (v !== null && dev < 0) losses++
+        const peers = rows.filter((x) => x.values[m] !== null)
+        const rank = v === null ? 0 : 1 + peers.filter((x) => devOf(x, m) > dev).length
+        return [m, { value: v, dev, norm: widest[m] ? dev / widest[m] : 0, rank, of: peers.length }]
+      })
+    ) as Record<Measure, ScoreCell>
+    return { id: r.id, name: r.name, cells, wins, losses, score: wins - losses }
+  })
+  out.sort((a, b) => b.score - a.score || b.wins - a.wins || a.name.localeCompare(b.name, "es"))
+  return { medians, rows: out }
+}

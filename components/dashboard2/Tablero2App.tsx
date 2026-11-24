@@ -6,7 +6,7 @@ import { localToday } from "@/lib/clients/from-lead"
 import { demoSet } from "@/lib/interno/dashboard-demo"
 import type { NetworkFigures } from "@/lib/interno/dashboard-server"
 import { lastMonths, monthNumbers, siteNumbers } from "@/lib/interno/numbers"
-import { compareRows, faultMatrix, faultsPer10, MEASURES, payPrints, revenueTree, type Leaf, type Measure } from "@/lib/interno/tablero2-x"
+import { BETTER_HIGH, compareRows, faultMatrix, faultsPer10, MEASURES, payPrints, revenueTree, scoreBoard, type Leaf, type Measure, type ScoreRow } from "@/lib/interno/tablero2-x"
 import { linkSpeed } from "@/lib/wispdavor/capacity"
 import { siteLabel } from "@/lib/sites/model"
 import { forecast } from "@/lib/interno/outlook"
@@ -24,7 +24,7 @@ import { INK, SERIES } from "@/components/dashboard/theme"
 import { CapacityBars } from "./CapacityBars"
 import { FaultChord } from "./FaultChord"
 import { BAND_COLOR, HorizonChart } from "./HorizonChart"
-import { ParallelCoords } from "./ParallelCoords"
+import { SCORE_COLOR, ScoreBoard } from "./ScoreBoard"
 import { PayContours } from "./PayContours"
 import { RevenuePack } from "./RevenuePack"
 import { CarrierPulse } from "./CarrierPulse"
@@ -266,18 +266,25 @@ export function Tablero2App() {
     }
   )
   const fmtMeasure = (m: Measure, v: number) => (m === "clients" ? String(Math.round(v)) : m === "penetration" || m === "use" || m === "availability" ? pct(v, m === "availability" ? 2 : 0) : m === "income" || m === "profit" ? k(v) : m === "latency" ? ms(v) : v.toLocaleString("es-MX", { maximumFractionDigits: 1 }))
-  // Who is on top (best value) of the most axes, and who at the bottom.
-  const wins = new Map<string, number>()
-  const losses = new Map<string, number>()
-  const axesWithData = MEASURES.filter((m) => compare.filter((r) => r.values[m] !== null).length >= 2)
-  for (const m of axesWithData) {
-    const vals = compare.filter((r) => r.values[m] !== null)
-    const sorted = [...vals].sort((a, b) => ((b.values[m] as number) - (a.values[m] as number)) * (["use", "latency", "faults"].includes(m) ? -1 : 1))
-    wins.set(sorted[0].id, (wins.get(sorted[0].id) ?? 0) + 1)
-    losses.set(sorted[sorted.length - 1].id, (losses.get(sorted[sorted.length - 1].id) ?? 0) + 1)
+  // Every deployment against the median of all of them (the scoreboard), best first.
+  const board = scoreBoard(compare)
+  const measuredOf = (r: ScoreRow) => MEASURES.filter((m) => r.cells[m].value !== null).length
+  const boardBest = board.rows[0]
+  const boardWorst = board.rows[board.rows.length - 1]
+  const scoreText = (r: ScoreRow) => (r.score > 0 ? `+${r.score}` : r.score < 0 ? `−${Math.abs(r.score)}` : "0")
+  const boardTip = (r: ScoreRow, m: Measure) => {
+    const c = r.cells[m]
+    const md = board.medians[m]
+    const vs = c.value === null ? "—" : c.dev === 0 ? t("compare.tip.same") : t(c.dev > 0 ? "compare.tip.better" : "compare.tip.worse", { d: fmtMeasure(m, Math.abs(c.dev)) })
+    return {
+      title: `${r.name} · ${t(`compare.axes.${m}`)}`,
+      rows: [
+        { label: t("compare.tip.value"), value: c.value === null ? t("compare.tip.none") : fmtMeasure(m, c.value) },
+        ...(c.value === null ? [] : [{ label: t("compare.tip.place"), value: t("compare.tip.rank", { rank: c.rank, of: c.of }) }]),
+        ...(c.value === null || md === null ? [] : [{ label: t("compare.tip.median", { v: fmtMeasure(m, md) }), value: vs, color: c.dev > 0 ? SCORE_COLOR.better : c.dev < 0 ? SCORE_COLOR.worse : undefined }]),
+      ],
+    }
   }
-  const bestId = [...wins].sort((a, b) => b[1] - a[1])[0]
-  const worstId = [...losses].sort((a, b) => b[1] - a[1])[0]
   const topGlass = glasses.find((g) => g.ratio !== null)
   const glassLines = (g: (typeof glasses)[number]) => {
     const use = g.busy !== null && g.link ? g.busy / g.link : null
@@ -675,12 +682,22 @@ export function Tablero2App() {
         <Panel
           demo={tag}
           title={t("compare.title")}
-          takeaway={bestId && worstId && compare.length >= 2 ? t("compare.takeaway", { best: compare.find((r) => r.id === bestId[0])?.name ?? "", n: bestId[1], of: axesWithData.length, worst: compare.find((r) => r.id === worstId[0])?.name ?? "", m: worstId[1] }) : undefined}
+          takeaway={compare.length >= 2 && boardBest && boardWorst ? t("compare.takeaway", { best: boardBest.name, n: boardBest.wins, of: measuredOf(boardBest), worst: boardWorst.name, m: boardWorst.losses, mOf: measuredOf(boardWorst) }) : undefined}
           empty={compare.length >= 2 ? null : t("compare.empty")}
           tableLabel={tl}
-          table={{ head: [t("cols.site"), ...MEASURES.map((m) => t(`compare.axes.${m}`))], rows: compare.map((r) => [r.name, ...MEASURES.map((m) => (r.values[m] === null ? "—" : fmtMeasure(m, r.values[m] as number)))]) }}
+          table={{ head: [t("cols.site"), t("compare.score"), ...MEASURES.map((m) => t(`compare.axes.${m}`))], rows: [...board.rows.map((r) => [r.name, scoreText(r), ...MEASURES.map((m) => (r.cells[m].value === null ? "—" : fmtMeasure(m, r.cells[m].value as number)))]), [t("compare.median"), "—", ...MEASURES.map((m) => (board.medians[m] === null ? "—" : fmtMeasure(m, board.medians[m] as number)))]] }}
         >
-          <ParallelCoords rows={compare} label={t("compare.title")} axisLabel={(m) => t(`compare.axes.${m}`)} fmt={fmtMeasure} better={{ high: t("compare.better.high"), low: t("compare.better.low") }} />
+          <ScoreBoard
+            board={board}
+            label={t("compare.title")}
+            axisLabel={(m) => t(`compare.axes.${m}`)}
+            hint={(m) => t(BETTER_HIGH[m] ? "compare.better.high" : "compare.better.low")}
+            medianText={(m, v) => t("compare.medianOf", { v: fmtMeasure(m, v) })}
+            fmt={fmtMeasure}
+            summary={(r) => t("compare.summary", { wins: r.wins, losses: r.losses })}
+            tipFor={boardTip}
+          />
+          <Legend items={[[t("compare.legend.better"), SCORE_COLOR.better, "bar"], [t("compare.legend.worse"), SCORE_COLOR.worse, "bar"]]} />
           <p className="text-[0.7rem] text-zinc-500">{t("compare.note")}</p>
         </Panel>
       </Section>
