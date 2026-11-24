@@ -49,11 +49,12 @@ describe("Tablero 2 · Hoy", () => {
         // 9 p.m. on Oct 31 in Mexico City is already Nov 1 in UTC: it belongs to October.
         r("2026-11-01T03:00:00Z", "resuelto"),
         r("2026-10-26T15:00:00Z", "resuelto"),
+        r("", "en-proceso"),
       ],
       "2026-11-24",
       now
     )
-    expect(f.open).toEqual({ nuevo: 1, "en-proceso": 1, visita: 1, total: 3 })
+    expect(f.open).toEqual({ nuevo: 1, "en-proceso": 2, visita: 1, total: 4 })
     expect(f.oldestHours).toBe(22 * 24 + 3)
     expect(f.stale).toBe(2)
     expect(f.month).toEqual({ abierto: 3, resuelto: 1, descartado: 1, total: 5 })

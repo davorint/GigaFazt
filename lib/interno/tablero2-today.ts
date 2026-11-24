@@ -92,14 +92,17 @@ export function ticketFigures(reports: Report[], today: string, now: number): Ti
   let lastMonthSoFar = 0
   for (const r of reports) {
     const t = Date.parse(r.createdAt)
-    if (!Number.isFinite(t)) continue
+    // Open counts every open report, even one whose date is unreadable (it just has no age and no day).
     if (isOpen(r)) {
       open[r.status as OpenStage]++
       open.total++
-      const hours = Math.max(0, (now - t) / 3600000)
-      oldest = Math.max(oldest ?? 0, hours)
-      if (hours > 48) stale++
+      if (Number.isFinite(t)) {
+        const hours = Math.max(0, (now - t) / 3600000)
+        oldest = Math.max(oldest ?? 0, hours)
+        if (hours > 48) stale++
+      }
     }
+    if (!Number.isFinite(t)) continue
     const day = dayInMexico(r.createdAt)
     if (day.startsWith(prev) && day <= prevCut) lastMonthSoFar++
     if (!day.startsWith(month)) continue

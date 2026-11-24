@@ -49,7 +49,8 @@ export function PaymentDays({ days, today, label, channelLabel, dayTitle, money,
           .domain(days.map((d) => d.day))
           .range([2, w - 2])
           .paddingInner(0.28)
-        const most = Math.max(1, ...days.map((d) => d.total.n))
+        // A floor of 4: one payment on a quiet day stays a short bar, not a full-height spike.
+        const most = Math.max(4, ...days.map((d) => d.total.n))
         const y = scaleLinear()
           .domain([0, most])
           .range([H - 26, 24])
@@ -77,8 +78,9 @@ export function PaymentDays({ days, today, label, channelLabel, dayTitle, money,
                   <rect x={x0 - 2} y={0} width={bw + 4} height={H} fill="transparent" />
                   {isToday && <rect x={x0 - 4} y={14} width={bw + 8} height={H - 36} rx={8} fill="rgba(57,135,229,0.08)" stroke="rgba(57,135,229,0.3)" />}
                   <Stack x={x0} w={bw} y={y} parts={CHANNELS.map((c) => ({ key: c, v: d.by[c].n, color: CHANNEL_COLOR[c] }))} opacity={lit} delay={i * 25} />
-                  {(isToday || at === d.day) && d.total.n > 0 && (
-                    <text x={x0 + bw / 2} y={y(d.total.n) - 6} textAnchor="middle" fontSize={11} fontWeight={500} fill={INK.primary} className="tabular-nums">
+                  {/* Every day's count over its bar (there is no axis); today's and the hovered one bright. */}
+                  {d.total.n > 0 && (isToday || at === d.day || bw >= 14) && (
+                    <text x={x0 + bw / 2} y={y(d.total.n) - 6} textAnchor="middle" fontSize={isToday || at === d.day ? 11 : 10} fontWeight={isToday || at === d.day ? 500 : 400} fill={isToday || at === d.day ? INK.primary : INK.muted} className="tabular-nums">
                       {d.total.n}
                     </text>
                   )}
@@ -128,15 +130,15 @@ export function TicketDays({ days, today, label, stateLabel, dayTitle, countLabe
   const [at, setAt] = useState<string | null>(null)
   const order: MonthState[] = ["resuelto", "descartado", "abierto"]
   return (
-    <Frame height={H - 10} label={label}>
+    <Frame height={H - 36} label={label}>
       {(w, tip) => {
-        const h = H - 10
+        const h = H - 36
         const x = scaleBand<string>()
           .domain(days.map((d) => d.day))
           .range([2, w - 2])
           .paddingInner(0.25)
         const total = (d: (typeof days)[number]) => MONTH_STATES.reduce((a, s) => a + d.by[s], 0)
-        const most = Math.max(1, ...days.map(total))
+        const most = Math.max(4, ...days.map(total))
         const y = scaleLinear()
           .domain([0, most])
           .range([h - 24, 18])
@@ -169,8 +171,8 @@ export function TicketDays({ days, today, label, stateLabel, dayTitle, countLabe
                     <Stack x={x0} w={bw} y={y} parts={order.map((s) => ({ key: s, v: d.by[s], color: MONTH_COLOR[s] }))} opacity={at === null || at === d.day ? 1 : 0.4} delay={i * 18} />
                   )}
                   {isToday && <line x1={x0 + bw / 2} x2={x0 + bw / 2} y1={10} y2={h - 24} stroke={INK.secondary} strokeDasharray="2 3" />}
-                  {at === d.day && n > 0 && (
-                    <text x={x0 + bw / 2} y={y(n) - 5} textAnchor="middle" fontSize={10.5} fill={INK.primary} className="tabular-nums">
+                  {n > 0 && (at === d.day || bw >= 9) && (
+                    <text x={x0 + bw / 2} y={y(n) - 5} textAnchor="middle" fontSize={at === d.day ? 10.5 : 9.5} fill={at === d.day ? INK.primary : INK.muted} className="tabular-nums">
                       {n}
                     </text>
                   )}

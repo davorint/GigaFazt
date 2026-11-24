@@ -88,10 +88,10 @@ function Kpi({ label, value, hint, trend, color, demo, meter }: { label: string;
 /** A figure in the "Hoy" panels: a label (with its color key when it has one), the number, a line under it. */
 function Stat({ label, value, sub, color, strong = false }: { label: string; value: string; sub: string; color?: string; strong?: boolean }) {
   return (
-    <div className={`grid content-start gap-0.5 rounded-xl border p-3 ${strong ? "border-red-400/30 bg-red-400/[0.06]" : "border-white/5 bg-white/[0.02]"}`}>
-      <p className="flex items-center gap-1.5 text-xs text-zinc-400">
-        {color && <span aria-hidden className="size-2.5 shrink-0 rounded-sm" style={{ background: color }} />}
-        <span className="truncate">{label}</span>
+    <div className={`grid min-w-0 content-start gap-0.5 rounded-xl border p-3 ${strong ? "border-red-400/30 bg-red-400/[0.06]" : "border-white/5 bg-white/[0.02]"}`}>
+      <p className="flex min-h-[2.5em] min-w-0 items-start gap-1.5 text-xs leading-tight text-zinc-400 sm:min-h-0">
+        {color && <span aria-hidden className="mt-px size-2.5 shrink-0 rounded-sm" style={{ background: color }} />}
+        <span className="min-w-0">{label}</span>
       </p>
       <p className="text-2xl font-light tracking-tight text-zinc-50 tabular-nums">{value}</p>
       <p className="text-[0.7rem] text-zinc-400">{sub}</p>
@@ -184,6 +184,7 @@ export function Tablero2App() {
   const light = useMemo(() => lightRows(src.sites, src.clients), [src])
   const stars = useMemo(() => (today ? tenure(src.clients, src.sites, today) : []), [src, today])
   // Hoy (owner, 2026-11-24): today's payments by channel and the tickets.
+  const dayShort = (dd: string) => new Date(`${dd}T12:00:00`).toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })
   const payDays = useMemo(() => (today ? paymentsByDay(src.payments, today, 14) : null), [src, today])
   const tickets = useMemo(() => (today && nowMs ? ticketFigures(src.reports, today, nowMs) : null), [src, today, nowMs])
   const repairs = useMemo(() => (nowMs ? repairLanes(src.reports, src.sites, nowMs, 90) : null), [src, nowMs])
@@ -416,9 +417,9 @@ export function Tablero2App() {
                 title={t("today.pay.title")}
                 takeaway={day.total.n ? t("today.pay.takeaway", { n: day.total.n, amount: mxn(day.total.amount), online: day.by.linea.n, transfers: day.by.transferencia.n, other: day.by.otros.n }) : t("today.pay.none")}
                 tableLabel={tl}
-                table={{ head: [t("cols.day"), ...CHANNELS.map((c) => t(`today.pay.channels.${c}`)), t("cols.amount")], rows: [...payDays.days].reverse().map((x) => [x.day, ...CHANNELS.map((c) => x.by[c].n), mxn(x.total.amount)]) }}
+                table={{ head: [t("cols.day"), ...CHANNELS.map((c) => t(`today.pay.channels.${c}`)), t("cols.amount")], rows: [...payDays.days].reverse().map((x) => [dayShort(x.day), ...CHANNELS.map((c) => x.by[c].n), mxn(x.total.amount)]) }}
               >
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid min-w-0 grid-cols-3 gap-2">
                   {CHANNELS.map((c) => (
                     <Stat key={c} color={CHANNEL_COLOR[c]} label={t(`today.pay.channels.${c}`)} value={String(day.by[c].n)} sub={mxn(day.by[c].amount)} />
                   ))}
@@ -448,9 +449,9 @@ export function Tablero2App() {
                 title={t("today.tickets.title")}
                 takeaway={tickets.open.total ? t("today.tickets.takeaway", { open: tickets.open.total, pending: tickets.open.nuevo, oldest: dur(tickets.oldestHours ?? 0), month: tickets.month.total, monthName: monthNow }) : t("today.tickets.none", { month: tickets.month.total, monthName: monthNow })}
                 tableLabel={tl}
-                table={{ head: [t("cols.day"), ...MONTH_STATES.map((x) => t(`today.tickets.states.${x}`))], rows: tickets.days.filter((x) => !x.future).reverse().map((x) => [x.day, ...MONTH_STATES.map((st) => x.by[st])]) }}
+                table={{ head: [t("cols.day"), ...MONTH_STATES.map((x) => t(`today.tickets.states.${x}`))], rows: tickets.days.filter((x) => !x.future).reverse().map((x) => [dayShort(x.day), ...MONTH_STATES.map((st) => x.by[st])]) }}
               >
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid min-w-0 grid-cols-3 gap-2">
                   <Stat label={t("today.tickets.open")} value={String(tickets.open.total)} sub={tickets.stale ? t("today.tickets.stale", { n: tickets.stale }) : t("today.tickets.fresh")} />
                   <Stat label={t("today.tickets.pending")} value={String(tickets.open.nuevo)} sub={t("today.tickets.pendingHint")} strong={tickets.open.nuevo > 0} />
                   <Stat label={t("today.tickets.month", { month: monthNow })} value={String(tickets.month.total)} sub={t(vs > 0 ? "today.tickets.vsMore" : vs < 0 ? "today.tickets.vsLess" : "today.tickets.vsSame", { n: Math.abs(vs), last: tickets.lastMonthSoFar })} />
@@ -762,8 +763,9 @@ export function Tablero2App() {
         <Panel
           demo={tag}
           title={t("compare.title")}
-          takeaway={compare.length >= 2 && boardBest && boardWorst ? t("compare.takeaway", { best: boardBest.name, n: boardBest.wins, of: measuredOf(boardBest), worst: boardWorst.name, m: boardWorst.losses, mOf: measuredOf(boardWorst) }) : undefined}
-          empty={compare.length >= 2 ? null : t("compare.empty")}
+          takeaway={compare.length >= 2 && boardBest && boardWorst && !boardBest.wins && !boardWorst.losses ? t("compare.takeawayEven") : compare.length >= 2 && boardBest && boardWorst ? t("compare.takeaway", { best: boardBest.name, n: boardBest.wins, of: measuredOf(boardBest), worst: boardWorst.name, m: boardWorst.losses, mOf: measuredOf(boardWorst) }) : undefined}
+          // Peak use, latency and availability come from the network figures: wait for them, or the board would rank without them and re-sort when they land.
+          empty={!sim && (net === null || carrierNet === null) ? t("loading") : compare.length >= 2 ? null : t("compare.empty")}
           tableLabel={tl}
           table={{ head: [t("cols.site"), t("compare.score"), ...MEASURES.map((m) => t(`compare.axes.${m}`))], rows: [...board.rows.map((r) => [r.name, scoreText(r), ...MEASURES.map((m) => (r.cells[m].value === null ? "—" : fmtMeasure(m, r.cells[m].value as number)))]), [t("compare.median"), "—", ...MEASURES.map((m) => (board.medians[m] === null ? "—" : fmtMeasure(m, board.medians[m] as number)))]] }}
         >
@@ -771,8 +773,8 @@ export function Tablero2App() {
             board={board}
             label={t("compare.title")}
             axisLabel={(m) => t(`compare.axes.${m}`)}
-            hint={(m) => t(BETTER_HIGH[m] ? "compare.better.high" : "compare.better.low")}
-            medianText={(m, v) => t("compare.medianOf", { v: fmtMeasure(m, v) })}
+            hint={(m, shortText) => t(`compare.better.${BETTER_HIGH[m] ? "high" : "low"}${shortText ? "Short" : ""}`)}
+            medianLabel={t("compare.medianRow")}
             fmt={fmtMeasure}
             summary={(r) => t("compare.summary", { wins: r.wins, losses: r.losses })}
             tipFor={boardTip}

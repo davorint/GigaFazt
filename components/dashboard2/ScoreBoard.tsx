@@ -57,7 +57,7 @@ export function ScoreBoard({
   label,
   axisLabel,
   hint,
-  medianText,
+  medianLabel,
   fmt,
   summary,
   tipFor,
@@ -65,8 +65,10 @@ export function ScoreBoard({
   board: Board
   label: string
   axisLabel: (m: Measure) => string
-  hint: (m: Measure) => string
-  medianText: (m: Measure, v: number) => string
+  /** "more is better" in words; `short` for narrow columns (an arrow and one word). */
+  hint: (m: Measure, short: boolean) => string
+  /** The label of the header line that holds each column's median (said once, at the left). */
+  medianLabel: string
   fmt: (m: Measure, v: number) => string
   summary: (r: ScoreRow) => string
   tipFor: (r: ScoreRow, m: Measure) => { title: string; rows: { label: string; value: string; color?: string }[] }
@@ -186,7 +188,7 @@ export function ScoreBoard({
 
         // Desktop: the full board.
         const RING = 64
-        const NAME = Math.min(210, Math.max(150, w * 0.16))
+        const NAME = Math.min(230, Math.max(176, w * 0.17))
         const left = RING + NAME
         const cw = (w - left) / MEASURES.length
         const half = cw / 2 - 7
@@ -198,6 +200,10 @@ export function ScoreBoard({
             {board.rows.map((r, ri) => (
               <rect key={`band-${r.id}`} x={0} y={HEAD + ri * ROW + 3} width={w} height={ROW - 6} rx={10} fill={hover?.row === ri ? "rgba(255,255,255,0.05)" : ri % 2 ? "rgba(255,255,255,0.012)" : "rgba(255,255,255,0.025)"} style={{ transition: "fill 200ms" }} />
             ))}
+            {/* The header's third line holds each column's median: named once, at the left. */}
+            <text x={left - 10} y={49} textAnchor="end" fontSize={10} fill={INK.muted}>
+              {medianLabel}
+            </text>
             {MEASURES.map((m, i) => {
               const x0 = left + i * cw
               const cx = x0 + cw / 2
@@ -210,10 +216,10 @@ export function ScoreBoard({
                     {axisLabel(m)}
                   </text>
                   <text x={cx} y={33} textAnchor="middle" fontSize={9.5} fill={INK.muted}>
-                    {hint(m)}
+                    {hint(m, cw < 112)}
                   </text>
                   <text x={cx} y={49} textAnchor="middle" fontSize={10} fill={INK.secondary} className="font-mono tabular-nums">
-                    {md === null ? "—" : medianText(m, md)}
+                    {md === null ? "—" : fmt(m, md)}
                   </text>
                   <line x1={cx} x2={cx} y1={HEAD - 4} y2={bottom} stroke={INK.axis} strokeDasharray="2 3" />
                 </g>
@@ -229,7 +235,7 @@ export function ScoreBoard({
                       {String(ri + 1).padStart(2, "0")}
                     </tspan>
                     {"  "}
-                    {clipName(r.name, Math.floor((NAME - 28) / 6.6))}
+                    {clipName(r.name, Math.floor((NAME - 26) / 6.3))}
                   </text>
                   <text x={RING} y={y + 41} fontSize={10.5} fill={INK.muted}>
                     {summary(r)}

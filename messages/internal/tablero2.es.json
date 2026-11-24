@@ -440,6 +440,7 @@
     "compare": {
       "title": "Comparador de despliegues",
       "takeaway": "{best} supera la mediana de los despliegues en {n} de {of} medidas; {worst} queda por debajo en {m} de {mOf}.",
+      "takeawayEven": "Todos los despliegues van parejos: ninguno se aleja de la mediana en ninguna medida.",
       "note": "Cada fila es un despliegue y cada columna una medida. La línea punteada es la mediana de todos los despliegues: la barra sale hacia la derecha (azul) cuando va mejor que ella y hacia la izquierda (naranja) cuando va peor; en uso pico, latencia y fallas, mejor es menos. Cada columna se mide contra su mayor diferencia, así la barra más larga es la que más se aleja. El aro suma las medidas que van mejor y peor, y las filas van de la más sana a la más débil. Pasa el cursor por una celda para ver su lugar y cuánto se aleja de la mediana.",
       "axes": {
         "clients": "Clientes",
@@ -453,11 +454,13 @@
       },
       "better": {
         "high": "↑ más es mejor",
-        "low": "↓ menos es mejor"
+        "low": "↓ menos es mejor",
+        "highShort": "↑ más",
+        "lowShort": "↓ menos"
       },
       "score": "Puntaje",
       "median": "Mediana",
-      "medianOf": "mediana {v}",
+      "medianRow": "mediana",
       "summary": "{wins} mejor · {losses} peor que la mediana",
       "legend": {
         "better": "Mejor que la mediana",
