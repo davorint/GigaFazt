@@ -56,7 +56,10 @@ export function RadialClock({ heat, label, days, nowHour, peakLabel, unit, noDat
                     setHover([d, h])
                     tip.show(e, <TipBody title={`${days[d]} · ${h}:00–${h + 1}:00`} rows={[{ label: "", value: v === null ? noData : `${v.toLocaleString("es-MX")} ${unit}`, color: v === null ? undefined : color(v) }]} />)
                   }}
-                  onPointerLeave={() => setHover(null)}
+                  onPointerLeave={() => {
+                    setHover(null)
+                    tip.hide()
+                  }}
                 />
               ))
             )}

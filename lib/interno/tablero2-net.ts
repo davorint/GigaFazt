@@ -12,10 +12,11 @@
  * - Saturation forecast (the suggestion): the daily busy-hour use of each deployment's links, a straight-line trend over
  *   the last six weeks and the day it would cross FULL_SHARE. An estimate, labelled as such.
  */
-import { clientStatus, type Client } from "../clients/model"
+import { type Client } from "../clients/model"
 import { siteLabel, type Site } from "../sites/model"
 import { FULL_SHARE, linkSpeed } from "../wispdavor/capacity"
 import type { OutageKind } from "../wispdavor/monitor"
+import { liveOn } from "./tablero2"
 
 export type GatewayHour = { t: string; rtt: number | null; p95: number | null; loss: number }
 export type GatewaySeries = { routerId: string; router: string; siteId: string; ip: string; hours: GatewayHour[] }
@@ -123,15 +124,17 @@ export function planSpeed(plan: string): number | null {
 export type Glass = { id: string; name: string; sold: number; unknown: number; link: number | null; busy: number | null; active: number; ratio: number | null; each: number | null }
 
 /** Per deployment: speed sold to its active clients, its links' speed, the busy hour, and what each client gets if all connect at once. */
-export function hourglass(sites: Site[], clients: Client[], busy: Map<string, number | null>): Glass[] {
+export function hourglass(sites: Site[], clients: Client[], busy: Map<string, number | null>, today: string): Glass[] {
+  const on = (x: Client["services"][number]) => x.type === "internet" && x.status === "activo" && liveOn(x, today)
   return sites
     .map((s) => {
-      const mine = clients.filter((c) => c.siteId === s.id && clientStatus(c) === "activo")
+      // Active = an active internet service live today (a scheduled install sells nothing yet).
+      const mine = clients.filter((c) => c.siteId === s.id && c.services.some(on))
       let sold = 0
       let unknown = 0
       for (const c of mine)
         for (const x of c.services)
-          if (x.type === "internet" && x.status === "activo") {
+          if (on(x)) {
             const v = planSpeed(x.plan)
             if (v === null) unknown++
             else sold += v

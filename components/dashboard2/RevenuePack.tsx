@@ -20,14 +20,14 @@ const isLeaf = (n: N): n is Leaf => !("children" in n)
  * and whose color is how it stands with Cobranza. Click a deployment (or its button below) to fly into it; click its
  * background again or "Ver todo" to fly back out. The camera move is d3's smooth zoom (instant under reduced motion).
  */
-export function RevenuePack({ tree, label, siteName, towerName, leafTip, allLabel }: { tree: TreeNode; label: string; siteName: (name: string) => string; towerName: (name: string) => string; leafTip: (l: Leaf) => { title: string; rows: { label: string; value: string }[] }; allLabel: string }) {
+export function RevenuePack({ tree, label, siteName, towerName, leafTip, allLabel, clientsLabel, towersLabel }: { tree: TreeNode; label: string; siteName: (name: string) => string; towerName: (name: string) => string; leafTip: (l: Leaf) => { title: string; rows: { label: string; value: string }[] }; allLabel: string; clientsLabel: (n: number) => string; towersLabel: (n: number) => string }) {
   const reduced = useReducedMotion()
   const [focus, setFocus] = useState("root")
   const sites = tree.children.filter((n): n is TreeNode => !isLeaf(n))
   return (
     <div className="grid gap-3">
       <Frame square height={(w) => Math.min(w, 560)} label={label}>
-        {(size, tip) => <Packed size={size} tree={tree} focus={focus} setFocus={setFocus} reduced={reduced} tip={tip} siteName={siteName} towerName={towerName} leafTip={leafTip} />}
+        {(size, tip) => <Packed size={size} tree={tree} focus={focus} setFocus={setFocus} reduced={reduced} tip={tip} siteName={siteName} towerName={towerName} leafTip={leafTip} clientsLabel={clientsLabel} towersLabel={towersLabel} />}
       </Frame>
       <div role="group" aria-label={label} className="flex flex-wrap justify-center gap-1.5">
         <button type="button" aria-pressed={focus === "root"} onClick={() => setFocus("root")} className={`min-h-8 rounded-full border border-white/10 px-3 text-xs ${focus === "root" ? "bg-white text-zinc-950" : "text-zinc-300 hover:bg-white/5"}`}>
@@ -43,7 +43,7 @@ export function RevenuePack({ tree, label, siteName, towerName, leafTip, allLabe
   )
 }
 
-function Packed({ size, tree, focus, setFocus, reduced, tip, siteName, towerName, leafTip }: { size: number; tree: TreeNode; focus: string; setFocus: (id: string) => void; reduced: boolean; tip: Tip; siteName: (name: string) => string; towerName: (name: string) => string; leafTip: (l: Leaf) => { title: string; rows: { label: string; value: string }[] } }) {
+function Packed({ size, tree, focus, setFocus, reduced, tip, siteName, towerName, leafTip, clientsLabel, towersLabel }: { size: number; tree: TreeNode; focus: string; setFocus: (id: string) => void; reduced: boolean; tip: Tip; siteName: (name: string) => string; towerName: (name: string) => string; leafTip: (l: Leaf) => { title: string; rows: { label: string; value: string }[] }; clientsLabel: (n: number) => string; towersLabel: (n: number) => string }) {
   const root = useMemo(
     () =>
       pack<N>()
@@ -121,6 +121,9 @@ function Packed({ size, tree, focus, setFocus, reduced, tip, siteName, towerName
         }
         const site = n.depth === 1
         const towers = (n.children ?? []).filter((c) => !isLeaf(c.data))
+        // The deployment this circle belongs to: a click zooms into it, or back out when it is already in focus.
+        const siteId = site ? n.data.id : (n.parent?.data.id ?? "root")
+        const inFocus = focus === siteId
         return (
           <circle
             key={n.data.id}
@@ -130,12 +133,12 @@ function Packed({ size, tree, focus, setFocus, reduced, tip, siteName, towerName
             fill={site ? "rgba(255,255,255,0.035)" : "rgba(255,255,255,0.025)"}
             stroke={site ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.12)"}
             strokeDasharray={site ? undefined : "2 3"}
-            style={{ cursor: site && focusDepth === 0 ? "zoom-in" : "zoom-out" }}
+            style={{ cursor: inFocus ? "zoom-out" : "zoom-in" }}
             onClick={(e) => {
               e.stopPropagation()
-              setFocus(site ? (focus === n.data.id ? "root" : n.data.id) : n.parent?.data.id ?? "root")
+              setFocus(inFocus ? "root" : siteId)
             }}
-            onPointerMove={(e) => tip.show(e, <TipBody title={site ? siteName((n.data as TreeNode).name) : towerName((n.data as TreeNode).name)} rows={[{ label: "", value: `${mxn(n.value ?? 0)} · ${n.leaves().length}` }, ...(site && towers.length > 1 ? [{ label: "", value: `${towers.length} torres` }] : [])]} />)}
+            onPointerMove={(e) => tip.show(e, <TipBody title={site ? siteName((n.data as TreeNode).name) : towerName((n.data as TreeNode).name)} rows={[{ label: clientsLabel(n.leaves().length), value: mxn(n.value ?? 0) }, ...(site && towers.length > 1 ? [{ label: towersLabel(towers.length), value: "" }] : [])]} />)}
             onPointerLeave={tip.hide}
           />
         )

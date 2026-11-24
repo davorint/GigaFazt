@@ -8,6 +8,7 @@ import type { RepairGroup } from "@/lib/interno/tablero2-more"
 import { INK } from "@/components/dashboard/theme"
 import { Frame, TipBody } from "./Frame"
 import { REPAIR_COLOR } from "./RepairGantt"
+import { clipName } from "./format"
 
 const SITE_GRAY = ["#6f6e69", "#5d5c58", "#807f79", "#53524e"]
 
@@ -77,7 +78,7 @@ export function FaultChord({ m, label, siteName, kindLabel, reportsLabel }: { m:
                 >
                   <path d={ring(g) ?? ""} fill={colorOf(g.index)} />
                   <text transform={`rotate(${deg}) translate(${outer + 8},0)${flip ? " rotate(180)" : ""}`} textAnchor={flip ? "end" : "start"} dy="0.35em" fontSize={10.5} fill={g.index < S ? INK.secondary : INK.primary}>
-                    {txt.length * 5.8 > reach(mid) ? `${txt.slice(0, Math.max(3, Math.floor(reach(mid) / 5.8) - 1))}…` : txt}
+                    {txt.length * 5.8 <= reach(mid) ? txt : g.index < S ? clipName(txt, Math.max(4, Math.floor(reach(mid) / 5.8))) : `${txt.slice(0, Math.max(3, Math.floor(reach(mid) / 5.8) - 1))}…`}
                   </text>
                 </g>
               )

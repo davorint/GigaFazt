@@ -3,9 +3,12 @@
 import { Globe, House, Router, Waypoints } from "lucide-react"
 import { INK, STATUS } from "@/components/dashboard/theme"
 import { Frame } from "./Frame"
+import { clipName } from "./format"
 
 export type PathRow = { key: string; name: string; carrier: string; ont: number | null; ontP90: number | null; gateway: number | null; lossNote: string }
 const ROW = 84
+/** On a phone the hops are short: names go under the icons and the ONT figures on a line of their own. */
+const rowOf = (w: number) => (w < 520 ? 104 : ROW)
 
 /** Latency of a hop as a state: inside the building a couple of ms is normal, to the carrier about ten. */
 const tone = (ms: number | null, ok: number, tight: number) => (ms === null ? INK.muted : ms < ok ? STATUS.good : ms < tight ? STATUS.warning : STATUS.serious)
@@ -17,16 +20,18 @@ const tone = (ms: number | null, ok: number, tight: number) => (ms === null ? IN
  */
 export function PacketPath({ rows, label, names, ms }: { rows: PathRow[]; label: string; names: { home: string; router: string; internet: string; unmeasured: string }; ms: (v: number) => string }) {
   return (
-    <Frame height={rows.length * ROW + 4} label={label}>
+    <Frame height={(w) => rows.length * rowOf(w) + 4} label={label}>
       {(w) => {
+        const narrow = w < 520
+        const RH = rowOf(w)
         const xs = [0.05, 0.37, 0.69, 0.95].map((f) => f * w)
         const icons = [House, Router, Waypoints, Globe]
         return (
           <g>
             {rows.map((r, ri) => {
-              const y = ri * ROW + 40
+              const y = ri * RH + 40
               const segs = [
-                { from: 0, color: tone(r.ont, 2, 5), top: r.ont === null ? names.unmeasured : `${ms(r.ont)}${r.ontP90 !== null ? ` · p90 ${ms(r.ontP90)}` : ""}`, bottom: r.lossNote },
+                { from: 0, color: tone(r.ont, 2, 5), top: r.ont === null ? names.unmeasured : `${ms(r.ont)}${r.ontP90 !== null && !narrow ? ` · p90 ${ms(r.ontP90)}` : ""}`, bottom: narrow ? "" : r.lossNote },
                 { from: 1, color: tone(r.gateway, 10, 25), top: r.gateway === null ? names.unmeasured : ms(r.gateway), bottom: "" },
                 { from: 2, color: INK.muted, top: "", bottom: "" },
               ]
@@ -58,14 +63,18 @@ export function PacketPath({ rows, label, names, ms }: { rows: PathRow[]; label:
                       <g key={i}>
                         <circle cx={cx} cy={y} r={13} fill={INK.surface} stroke="rgba(255,255,255,0.22)" />
                         <Icon x={cx - 7} y={y - 7} width={14} height={14} color={INK.secondary} strokeWidth={1.75} aria-hidden />
-                        {w >= 520 && (
-                          <text x={cx} y={y + 30} textAnchor="middle" fontSize={10} fill={INK.muted}>
-                            {nodeNames[i]}
-                          </text>
-                        )}
+                        {/* On a phone the outer names hug the edges and every name fits its share of the width. */}
+                        <text x={narrow && i === 0 ? 2 : narrow && i === xs.length - 1 ? w - 2 : cx} y={y + 30} textAnchor={narrow && i === 0 ? "start" : narrow && i === xs.length - 1 ? "end" : "middle"} fontSize={narrow ? 9.5 : 10} fill={INK.muted}>
+                          {narrow ? clipName(nodeNames[i], Math.floor((i === 0 || i === xs.length - 1 ? 0.2 : 0.3) * w / 5.4)) : nodeNames[i]}
+                        </text>
                       </g>
                     )
                   })}
+                  {narrow && (r.lossNote || r.ontP90 !== null) && (
+                    <text x={2} y={y + 46} fontSize={10} fill={INK.muted}>
+                      {[r.ontP90 !== null ? `p90 ${ms(r.ontP90)}` : "", r.lossNote].filter(Boolean).join(" · ")}
+                    </text>
+                  )}
                 </g>
               )
             })}

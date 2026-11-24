@@ -7,6 +7,7 @@ import type { Forecast } from "@/lib/interno/tablero2-net"
 import { FULL_SHARE } from "@/lib/wispdavor/capacity"
 import { INK, STATUS } from "@/components/dashboard/theme"
 import { Frame, TipBody } from "./Frame"
+import { clipName } from "./format"
 
 const H = 320
 const SOON = 60
@@ -28,7 +29,7 @@ export function SaturationForecast({ rows, today, label, name, tipFor, fullLabel
       {(w, tip) => {
         // Room on the right for the names (clipped to fit on a phone).
         const R = w < 520 ? 74 : 168
-        const fit = (txt: string) => (txt.length * 6 <= R - 8 ? txt : `${txt.slice(0, Math.max(3, Math.floor((R - 8) / 6) - 1))}…`)
+        const fit = (txt: string) => clipName(txt, Math.max(4, Math.floor((R - 8) / 6)))
         const t0 = at(today) - 60 * 864e5
         const t1 = at(today) + ahead * 864e5
         const x = scaleTime().domain([new Date(t0), new Date(t1)]).range([30, w - R])
@@ -46,9 +47,10 @@ export function SaturationForecast({ rows, today, label, name, tipFor, fullLabel
             const end = f.eta !== null && !f.full ? Math.min(ahead, f.eta + 10) : ahead
             return { id: f.siteId, y: y(Math.max(0, Math.min(top * 1.05, f.level + f.slope * end))) }
           })
-          .concat([{ id: "__full", y: y(FULL_SHARE) }])
           .sort((a, b) => a.y - b.y)
         for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13
+        // Pushed past the bottom: walk back up so the last name stays above the dates.
+        for (let i = ends.length - 1; i >= 0; i--) ends[i].y = Math.min(ends[i].y, i === ends.length - 1 ? H - 32 : ends[i + 1].y - 13)
         const labelY = new Map(ends.map((e) => [e.id, e.y]))
         return (
           <g>
@@ -68,7 +70,7 @@ export function SaturationForecast({ rows, today, label, name, tipFor, fullLabel
             <rect x={X(at(today))} y={12} width={w - R - X(at(today))} height={H - 38} fill="rgba(255,255,255,0.025)" />
             <line x1={X(at(today))} x2={X(at(today))} y1={12} y2={H - 26} stroke={INK.axis} strokeDasharray="3 3" />
             <line x1={30} x2={w - R} y1={y(FULL_SHARE)} y2={y(FULL_SHARE)} stroke={STATUS.critical} strokeWidth={1.5} strokeDasharray="6 4" />
-            <text x={w - R + 4} y={labelY.get("__full")} dy="0.35em" fontSize={10} fill={STATUS.critical}>
+            <text x={34} y={y(FULL_SHARE) - 5} fontSize={10} fill={STATUS.critical} stroke={INK.surface} strokeWidth={3} paintOrder="stroke">
               {fullLabel}
             </text>
             {order.map((f) => {
@@ -81,8 +83,8 @@ export function SaturationForecast({ rows, today, label, name, tipFor, fullLabel
               })
               const band = area<(typeof proj)[number]>()
                 .x((p) => X(at(today) + p.k * 864e5))
-                .y0((p) => y(Math.max(0, p.v - p.s)))
-                .y1((p) => y(p.v + p.s))
+                .y0((p) => y(Math.max(0, Math.min(top * 1.05, p.v - p.s))))
+                .y1((p) => y(Math.max(0, Math.min(top * 1.05, p.v + p.s))))
               const trend = line<(typeof proj)[number]>()
                 .x((p) => X(at(today) + p.k * 864e5))
                 .y((p) => y(Math.max(0, Math.min(top * 1.05, p.v))))

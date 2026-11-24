@@ -71,11 +71,15 @@ export function PayDays({ counts, window: win, label, dayLabel }: { counts: numb
           .range([0, 62])
         return (
           <g>
-            {win && <rect x={(x(win.from) ?? 0) - 2} y={0} width={(x(win.to) ?? 0) + x.bandwidth() - (x(win.from) ?? 0) + 4} height={74} rx={6} fill={SERIES[0]} opacity={0.1} />}
+            {/* The busiest run; across the month's end it is two pieces (from its start to 31, and from 1). */}
+            {win &&
+              (win.from <= win.to ? [[win.from, win.to]] : [[win.from, counts.length], [1, win.to]]).map(([a, b]) => (
+                <rect key={a} x={(x(a) ?? 0) - 2} y={0} width={(x(b) ?? 0) + x.bandwidth() - (x(a) ?? 0) + 4} height={74} rx={6} fill={SERIES[0]} opacity={0.1} />
+              ))}
             {counts.map((n, i) => {
               const d = i + 1
               const hgt = n ? Math.max(3, y(n)) : 0
-              const inWin = win && d >= win.from && d <= win.to
+              const inWin = win && (win.from <= win.to ? d >= win.from && d <= win.to : d >= win.from || d <= win.to)
               return (
                 <g key={d} onPointerMove={(e) => tip.show(e, <TipBody title={dayLabel(d, n)} rows={[]} />)} onPointerLeave={tip.hide}>
                   <rect x={x(d)} y={0} width={x.bandwidth()} height={74} fill="transparent" />

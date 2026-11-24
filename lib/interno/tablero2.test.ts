@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { newClient, newService } from "../clients/model"
 import { newPayment } from "../payments/model"
 import { newRoom, newRoomCarrier, newSite } from "../sites/model"
-import { cohorts, moneyFlow, mrrBridge, networkGroups, payCalendar, payWindow, retentionAt, ringLayout } from "./tablero2"
+import { cohorts, liveOn, moneyFlow, mrrAt, mrrBridge, networkGroups, payCalendar, payWindow, retentionAt, ringLayout } from "./tablero2"
 
 const net = (plan: string, monthly: number, p: Partial<ReturnType<typeof newService>> = {}) => newService("internet", { plan, monthly, status: "activo", start: "2026-01-10", ...p })
 
@@ -17,8 +17,10 @@ describe("Tablero 2 figures", () => {
       newClient({ siteId: b.id, services: [net("200M", 396)] }),
       newClient({ siteId: "", services: [net("500M", 496)] }),
       newClient({ siteId: a.id, services: [net("1G", 596, { status: "cancelado" })] }),
+      // A scheduled install isn't income yet.
+      newClient({ siteId: a.id, services: [net("1G", 596, { start: "2026-11-28" })] }),
     ]
-    const f = moneyFlow([a, b], clients)
+    const f = moneyFlow([a, b], clients, "2026-11-20")
     const v = (s: string, t: string) => f.links.find((l) => l.source === s && l.target === t)?.value
     expect(v("p:200M", `s:${a.id}`)).toBe(396)
     expect(v("p:tv", `s:${a.id}`)).toBe(250)
@@ -37,6 +39,13 @@ describe("Tablero 2 figures", () => {
     }
   })
 
+  it("money flow = the MRR: suspended services count, dated prices", () => {
+    const clients = [newClient({ siteId: a.id, services: [net("200M", 396, { status: "suspendido" })] }), newClient({ siteId: a.id, services: [net("500M", 596, { priceHistory: [{ until: "2026-11", monthly: 496 }] })] })]
+    const f = moneyFlow([a], clients, "2026-11-20")
+    expect(f.income).toBe(396 + 496)
+    expect(f.income).toBe(clients.reduce((x, c) => x + mrrAt(c, "2026-11", "2026-11-20"), 0))
+  })
+
   it("MRR bridge: new, more, less and lost per client add up", () => {
     const clients = [
       newClient({ services: [net("200M", 396, { start: "2026-09-03" })] }),
@@ -48,6 +57,17 @@ describe("Tablero 2 figures", () => {
     expect(br).toMatchObject({ start: 396 + 596 + 496, added: 396, more: 100, less: 0, lost: 596, end: 396 + 496 + 496 })
     expect(br.start + br.added + br.more - br.less - br.lost).toBeCloseTo(br.end)
     expect(br.counts).toEqual({ added: 1, more: 1, less: 0, lost: 1 })
+    // Up to today, an install scheduled later this month isn't in "Hoy" yet.
+    const soon = [newClient({ services: [net("1G", 596, { start: "2026-11-28" })] })]
+    expect(mrrBridge(soon, "2026-10", "2026-11", "2026-11-20").end).toBe(0)
+    expect(mrrBridge(soon, "2026-10", "2026-11").end).toBe(596)
+  })
+
+  it("live on a day: started, not cancelled by then; suspended counts", () => {
+    expect(liveOn(net("1G", 596, { start: "2026-11-28" }), "2026-11-20")).toBe(false)
+    expect(liveOn(net("1G", 596, { status: "suspendido" }), "2026-11-20")).toBe(true)
+    expect(liveOn(net("1G", 596, { status: "cancelado", cancelledAt: "2026-11-25" }), "2026-11-20")).toBe(true)
+    expect(liveOn(net("1G", 596, { status: "cancelado", cancelledAt: "2026-11-05" }), "2026-11-20")).toBe(false)
   })
 
   it("cohorts: share still with service each month after joining, null for the future", () => {
@@ -73,6 +93,8 @@ describe("Tablero 2 figures", () => {
     const g = networkGroups([a, b], [sus, late, paid, gone], [newPayment({ clientId: paid.id, date: "2026-11-01", amount: 496 })], today)
     expect(g).toHaveLength(1)
     expect(g[0].clients.map((c) => c.tone)).toEqual(["al-corriente", "atrasado", "suspendido"])
+    const soon = newClient({ siteId: b.id, services: [net("1G", 596, { start: "2026-11-28" })] })
+    expect(networkGroups([a, b], [soon], [], today)).toHaveLength(0)
   })
 
   it("ring layout: discs on one circle, inside the square, never overlapping", () => {
@@ -102,5 +124,8 @@ describe("Tablero 2 figures", () => {
     expect(w.days.find((d) => d.day === "2026-11-02")).toEqual({ day: "2026-11-02", n: 2, amount: 892 })
     expect(w.byDayOfMonth[1]).toBe(2)
     expect(payWindow(w.byDayOfMonth, 0.5)).toEqual({ from: 2, to: 2, share: 0.5 })
+    // Across the month's end: early payers on the 30th and 31st, the rest on the 1st and 2nd.
+    const wrap = Array.from({ length: 31 }, (_, i) => ([0, 1, 29, 30].includes(i) ? 5 : i === 15 ? 1 : 0))
+    expect(payWindow(wrap, 0.9)).toEqual({ from: 30, to: 2, share: 20 / 21 })
   })
 })

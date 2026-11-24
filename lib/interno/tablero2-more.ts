@@ -9,12 +9,13 @@
  * - tenure: every client by the day they started, what they pay and whether they're still here (the spiral).
  * - repairLanes: the fault reports of the last days as bars from opened to fixed, packed into lanes (the Gantt).
  */
-import { clientStatus, priceAt, type Client } from "../clients/model"
+import { priceAt, type Client } from "../clients/model"
 import { lightStatus, type LightStatus } from "../clients/optics"
 import { ledger, monthOf, type Payment, type PayStatus } from "../payments/model"
 import type { Report, ReportCategory } from "../reports/model"
 import { siteLabel, type Site } from "../sites/model"
 import { activeAt } from "./numbers"
+import { liveOn } from "./tablero2"
 
 // ── Revenue streams ─────────────────────────────────────────────────────────
 
@@ -80,7 +81,9 @@ export function statusFlows(clients: Client[], payments: Payment[], months: stri
     months.forEach((m, i) => {
       const at = m === cur ? today : `${m}-28`
       // With service: how it stands; the month after its last one with service: "baja"; otherwise not counted.
-      const st: FlowState | null = activeAt(c, m) ? (ledger(asOf(c, m), mine.filter((p) => p.date <= at), at).status as PayStatus) : prev && prev !== "baja" ? "baja" : null
+      // The current month as of today: a scheduled install isn't a client yet.
+      const on = m === cur ? c.services.some((s) => liveOn(s, today)) : activeAt(c, m)
+      const st: FlowState | null = on ? (ledger(asOf(c, m), mine.filter((p) => p.date <= at), at).status as PayStatus) : prev && prev !== "baja" ? "baja" : null
       if (st) counts[i][st]++
       if (st && prev) pair.set(`${i - 1}|${prev}|${st}`, (pair.get(`${i - 1}|${prev}|${st}`) ?? 0) + 1)
       prev = st
@@ -133,12 +136,12 @@ function shuffled(n: number, seed: string): number[] {
 /**
  * Deployments with apartments, their towers drawn as buildings: a window per apartment (floors × columns), one window
  * lit per active client of that tower (not their actual apartment). With one tower, every active client of the site is
- * in it; with several, clients without a tower are counted apart (`unassigned`).
+ * in it; with several, clients without a tower are counted apart (`unassigned`). Active = an active service live today.
  */
-export function skyline(sites: Site[], clients: Client[]): SkySite[] {
+export function skyline(sites: Site[], clients: Client[], today: string): SkySite[] {
   return sites
     .map((s) => {
-      const mine = clients.filter((c) => c.siteId === s.id && clientStatus(c) === "activo")
+      const mine = clients.filter((c) => c.siteId === s.id && c.services.some((x) => x.status === "activo" && liveOn(x, today)))
       const towers = s.towers.filter((t) => (t.apartments ?? 0) > 0)
       const known = new Set(towers.map((t) => t.id))
       const loose = towers.length === 1 ? 0 : mine.filter((c) => !known.has(c.towerId)).length
@@ -216,8 +219,8 @@ export function tenure(clients: Client[], sites: Site[], today: string): Star[] 
   for (const c of clients) {
     const start = c.services.map((s) => s.start).filter(Boolean).sort()[0]
     if (!start || start > today) continue
-    const live = c.services.some((s) => s.status !== "cancelado")
-    const pick = c.services.filter((s) => (live ? s.status !== "cancelado" : true))
+    const live = c.services.some((s) => liveOn(s, today))
+    const pick = c.services.filter((s) => (live ? liveOn(s, today) : true))
     const monthly = pick.reduce((a, s) => a + (s.monthly ?? 0), 0)
     const end = live ? today : (c.services.map((s) => s.cancelledAt).filter(Boolean).sort().at(-1) ?? today)
     const months = Math.max(0, Math.round((Date.parse(end) - Date.parse(start)) / (30.44 * 864e5)))

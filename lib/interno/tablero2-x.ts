@@ -10,12 +10,12 @@
  * - compareRows: each deployment's eight measures side by side (the parallel coordinates).
  * The horizon chart draws the hourly traffic the server sends (tablero2-server.ts) against each deployment's links.
  */
-import { type Client } from "../clients/model"
-import { ledger, type Payment } from "../payments/model"
+import { priceAt, type Client } from "../clients/model"
+import { ledger, monthOf, type Payment } from "../payments/model"
 import type { Report } from "../reports/model"
 import { siteLabel, type Site } from "../sites/model"
 import { REPAIR_GROUPS, type RepairGroup } from "./tablero2-more"
-import type { Tone } from "./tablero2"
+import { liveOn, type Tone } from "./tablero2"
 
 // ── Revenue tree (circle packing) ───────────────────────────────────────────
 
@@ -24,14 +24,15 @@ export type TreeNode = { id: string; name: string; children: (TreeNode | Leaf)[]
 
 /**
  * The money map: deployments ("" = none) → towers ("" = none, or the only tower) → clients with a live service; a
- * client's value is what its live services charge per month (a suspended one still owes it).
+ * client's value is what its services live today charge this month (dated prices, as the MRR; a suspended one still
+ * owes it; a scheduled install isn't a client yet).
  */
 export function revenueTree(sites: Site[], clients: Client[], payments: Payment[], today: string): TreeNode {
   const known = new Map(sites.map((s) => [s.id, s]))
   const bySite = new Map<string, Map<string, Leaf[]>>()
   for (const c of clients) {
-    const live = c.services.filter((s) => s.status !== "cancelado")
-    const value = live.reduce((a, s) => a + (s.monthly ?? 0), 0)
+    const live = c.services.filter((s) => liveOn(s, today))
+    const value = live.reduce((a, s) => a + (priceAt(s, monthOf(today)) ?? 0), 0)
     if (!live.length || value <= 0) continue
     const site = known.get(c.siteId)
     const siteId = site ? site.id : ""

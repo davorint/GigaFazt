@@ -2,7 +2,7 @@
  * Tablero 2's figures (owner, 2026-11-22: a new iteration of the Tablero drawn with D3). Pure, from the same synced
  * records as the Tablero:
  *
- * - moneyFlow: this month's recurring income from each plan into each deployment, and out of it the building (rent,
+ * - moneyFlow: today's recurring income (the same as the MRR: live services at this month's dated price) from each plan into each deployment, and out of it the building (rent,
  *   power), the links (carriers) and what's left. A deployment that loses money gets the missing amount from a
  *   "Faltante" source, so every band is a real amount (a Sankey can't draw negatives).
  * - mrrBridge: monthly recurring revenue (priced live services, dated prices) at the end of the month before the period
@@ -12,12 +12,18 @@
  * - payCalendar: payments per day for the last weeks, and which days of the month people pay.
  */
 import { addDays } from "../agenda/model"
-import { priceAt, type Client } from "../clients/model"
-import { addMonths, ledger, type Payment } from "../payments/model"
+import { priceAt, type Client, type Service } from "../clients/model"
+import { addMonths, ledger, monthOf, type Payment } from "../payments/model"
 import { linksCost, siteCost, siteLabel, type Site } from "../sites/model"
 import { activeAt } from "./numbers"
 
 const round = (n: number) => Math.round(n * 100) / 100
+
+/**
+ * A service live on `date`: started by then (a scheduled install isn't yet) and not cancelled by then. Suspended
+ * services are live: Cobranza still charges them. Every Tablero 2 figure "now" goes through this.
+ */
+export const liveOn = (s: Pick<Service, "start" | "status" | "cancelledAt">, date: string) => (!s.start || s.start <= date) && (s.status !== "cancelado" || (!!s.cancelledAt && s.cancelledAt > date))
 
 // ── Money flow (Sankey) ─────────────────────────────────────────────────────
 
@@ -27,7 +33,8 @@ export type FlowLink = { source: string; target: string; value: number }
 export type MoneyFlow = { nodes: FlowNode[]; links: FlowLink[]; income: number; costs: number; profit: number }
 
 /** `label` is the plan or deployment name; the other kinds are named by the page (its copy). */
-export function moneyFlow(sites: Site[], clients: Client[]): MoneyFlow {
+export function moneyFlow(sites: Site[], clients: Client[], today: string): MoneyFlow {
+  const month = monthOf(today)
   const known = new Map(sites.map((s) => [s.id, s]))
   const links = new Map<string, number>()
   const nodes = new Map<string, FlowNode>()
@@ -46,12 +53,13 @@ export function moneyFlow(sites: Site[], clients: Client[]): MoneyFlow {
   const inSite = new Map<string, number>()
   for (const c of clients)
     for (const s of c.services) {
-      if (s.status !== "activo" || !s.monthly) continue
+      const price = liveOn(s, today) ? (priceAt(s, month) ?? 0) : 0
+      if (price <= 0) continue
       const src: FlowNode = s.type === "internet" ? { id: `p:${s.plan.trim() || "—"}`, kind: "plan", label: s.plan.trim() || "—" } : s.type === "iptv" ? { id: "p:tv", kind: "tv", label: "" } : { id: "p:otros", kind: "otros", label: "" }
       const dst = siteNode(c)
-      add(src, dst, s.monthly)
-      income += s.monthly
-      inSite.set(dst.id, (inSite.get(dst.id) ?? 0) + s.monthly)
+      add(src, dst, price)
+      income += price
+      inSite.set(dst.id, (inSite.get(dst.id) ?? 0) + price)
     }
   let costs = 0
   let profit = 0
@@ -91,20 +99,19 @@ export function moneyFlow(sites: Site[], clients: Client[]): MoneyFlow {
 
 // ── MRR bridge (waterfall) ──────────────────────────────────────────────────
 
-/** What a client's live services charge per month at the end of `month` (dated prices; unpriced count as 0). */
-export function mrrAt(c: Client, month: string): number {
-  const end = `${month}-31`
-  return c.services.reduce((a, s) => ((!s.start || s.start <= end) && (s.status !== "cancelado" || (!!s.cancelledAt && s.cancelledAt > end)) ? a + (priceAt(s, month) ?? 0) : a), 0)
+/** What a client's live services charge per month on `until` (the end of `month` unless given: today for the current one; dated prices; unpriced count as 0). */
+export function mrrAt(c: Client, month: string, until = `${month}-31`): number {
+  return c.services.reduce((a, s) => (liveOn(s, until) ? a + (priceAt(s, month) ?? 0) : a), 0)
 }
 
 export type Bridge = { from: string; to: string; start: number; added: number; more: number; less: number; lost: number; end: number; counts: Record<"added" | "more" | "less" | "lost", number> }
 
-/** From the end of `from` to the end of `to`, each client's change put in one bucket. start + added + more − less − lost = end. */
-export function mrrBridge(clients: Client[], from: string, to: string): Bridge {
+/** From the end of `from` to `toDate` (the end of `to` unless given: today), each client's change put in one bucket. start + added + more − less − lost = end. */
+export function mrrBridge(clients: Client[], from: string, to: string, toDate = `${to}-31`): Bridge {
   const b: Bridge = { from, to, start: 0, added: 0, more: 0, less: 0, lost: 0, end: 0, counts: { added: 0, more: 0, less: 0, lost: 0 } }
   for (const c of clients) {
     const a = mrrAt(c, from)
-    const z = mrrAt(c, to)
+    const z = mrrAt(c, to, toDate)
     b.start += a
     b.end += z
     const key = !a && z ? "added" : a && !z ? "lost" : z > a ? "more" : z < a ? "less" : null
@@ -122,14 +129,15 @@ export type Cohort = { month: string; size: number; cells: (number | null)[] }
 
 /**
  * Clients grouped by the month of their first service (within `months`), and for each month after (0 = that month) the
- * share with a live service at its end; null past `months`' last month (it hasn't happened).
+ * share with a live service at its end (the current month: on `today`); null past `months`' last month (it hasn't
+ * happened). A client whose first service starts after `today` (a scheduled install) isn't in any cohort yet.
  */
-export function cohorts(clients: Client[], months: string[]): Cohort[] {
+export function cohorts(clients: Client[], months: string[], today = `${months[months.length - 1]}-31`): Cohort[] {
   const last = months[months.length - 1]
   const by = new Map<string, Client[]>()
   for (const c of clients) {
     const first = c.services.map((s) => s.start).filter(Boolean).sort()[0]
-    if (!first || !months.includes(first.slice(0, 7))) continue
+    if (!first || first > today || !months.includes(first.slice(0, 7))) continue
     const m = first.slice(0, 7)
     by.set(m, [...(by.get(m) ?? []), c])
   }
@@ -138,7 +146,7 @@ export function cohorts(clients: Client[], months: string[]): Cohort[] {
     const cells = months.map((_, k) => {
       const at = addMonths(month, k)
       if (at > last) return null
-      return group.length ? group.filter((c) => activeAt(c, at)).length / group.length : null
+      return group.length ? group.filter((c) => (at === monthOf(today) ? c.services.some((s) => liveOn(s, today)) : activeAt(c, at))).length / group.length : null
     })
     return { month, size: group.length, cells }
   })
@@ -164,12 +172,12 @@ export type Tone = (typeof TONES)[number]
 export type RingClient = { id: string; tone: Tone; plan: string; place: string }
 export type RingGroup = { id: string; name: string; clients: RingClient[] }
 
-/** Clients with a live service per deployment ("" = no deployment), how each stands, the calm ones first. */
+/** Clients with a service live today per deployment ("" = no deployment), how each stands, the calm ones first. */
 export function networkGroups(sites: Site[], clients: Client[], payments: Payment[], today: string): RingGroup[] {
   const known = new Map(sites.map((s) => [s.id, s]))
   const by = new Map<string, RingClient[]>()
   for (const c of clients) {
-    const live = c.services.filter((s) => s.status !== "cancelado")
+    const live = c.services.filter((s) => liveOn(s, today))
     if (!live.length) continue
     const tone: Tone = live.some((s) => s.status === "suspendido") ? "suspendido" : ledger(c, payments, today).status
     const key = known.has(c.siteId) ? c.siteId : ""
@@ -257,20 +265,26 @@ export function payCalendar(payments: Payment[], today: string, weeks = 26): { d
   return { days, byDayOfMonth, total }
 }
 
-/** The shortest run of days of the month that holds at least `share` of the payments (null without payments). */
+/**
+ * The shortest run of days of the month that holds at least `share` of the payments (null without payments). The run
+ * may cross the month's end (from 28 to 5: `from` > `to`), since people who pay early pay at the end of the month
+ * before; on a tie the run inside one month wins.
+ */
 export function payWindow(byDayOfMonth: number[], share = 0.6): { from: number; to: number; share: number } | null {
   const total = byDayOfMonth.reduce((a, b) => a + b, 0)
   if (!total) return null
-  let best: { from: number; to: number; share: number } | null = null
+  let best: { from: number; to: number; share: number; len: number } | null = null
   for (let i = 0; i < 31; i++) {
     let sum = 0
-    for (let j = i; j < 31; j++) {
-      sum += byDayOfMonth[j]
+    for (let j = i; j < i + 31; j++) {
+      sum += byDayOfMonth[j % 31]
       if (sum / total >= share) {
-        if (!best || j - i < best.to - best.from) best = { from: i + 1, to: j + 1, share: sum / total }
+        const len = j - i
+        const wraps = j >= 31
+        if (!best || len < best.len || (len === best.len && !wraps && best.from > best.to)) best = { from: i + 1, to: (j % 31) + 1, share: sum / total, len }
         break
       }
     }
   }
-  return best
+  return best && { from: best.from, to: best.to, share: best.share }
 }

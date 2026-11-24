@@ -8,6 +8,7 @@ import type { NetworkFigures } from "@/lib/interno/dashboard-server"
 import { lastMonths, monthNumbers, siteNumbers } from "@/lib/interno/numbers"
 import { compareRows, faultMatrix, faultsPer10, MEASURES, payPrints, revenueTree, type Leaf, type Measure } from "@/lib/interno/tablero2-x"
 import { linkSpeed } from "@/lib/wispdavor/capacity"
+import { siteLabel } from "@/lib/sites/model"
 import { forecast } from "@/lib/interno/outlook"
 import { cohorts, moneyFlow, mrrAt, mrrBridge, networkGroups, payCalendar, payWindow, retentionAt, TONES, type FlowKind, type RingGroup, type Tone } from "@/lib/interno/tablero2"
 import { FLOW_STATES, lightRows, recovered, REPAIR_GROUPS, repairLanes, revenueStreams, skyline, statusFlows, tenure, type RepairBar, type Star } from "@/lib/interno/tablero2-more"
@@ -49,10 +50,17 @@ import { Streamgraph } from "./Streamgraph"
 import { TenureGalaxy } from "./TenureGalaxy"
 
 const PERIODS = [6, 12, 24] as const
+/** A contention ratio: "41:1", "1,5:1", "0,2:1" (never rounded down to 0). */
+const ratioNum = (r: number) => (r >= 10 ? String(Math.round(r)) : r.toLocaleString("es-MX", { maximumFractionDigits: 1 }))
+const ratioText = (r: number) => `${ratioNum(r)}:1`
 /** The hour now in Mexico City (the traffic heat is in that zone). */
 const hourInMexico = () => Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Mexico_City", hour: "numeric", hourCycle: "h23" }).format(new Date()))
 
-function Kpi({ label, value, hint, trend, color, demo }: { label: string; value: string; hint: string; trend: (number | null)[]; color: string; demo: string }) {
+/**
+ * A KPI tile. `meter` replaces the trend when there is no history to draw (the profit: costs aren't dated): a bar of
+ * the share kept, the same height as a sparkline so the tiles line up.
+ */
+function Kpi({ label, value, hint, trend, color, demo, meter }: { label: string; value: string; hint: string; trend: (number | null)[]; color: string; demo: string; meter?: { share: number; label: string } }) {
   return (
     <div className="grid content-between gap-1 rounded-2xl border border-white/10 bg-[#0e0e10] p-4">
       <p className="flex items-center justify-between gap-2 text-xs text-zinc-400">
@@ -61,7 +69,16 @@ function Kpi({ label, value, hint, trend, color, demo }: { label: string; value:
       </p>
       <p className="text-3xl font-light tracking-tight text-zinc-50 tabular-nums">{value}</p>
       <p className="text-xs text-zinc-400">{hint}</p>
-      <Spark values={trend} color={color} label={`${label}: ${value}. ${hint}`} />
+      {meter ? (
+        <div className="grid h-[46px] content-end gap-1.5">
+          <div role="img" aria-label={meter.label} className="relative h-2 overflow-hidden rounded-full bg-white/[0.08]">
+            <div className="t2-grow absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.max(0, Math.min(1, meter.share)) * 100}%`, background: color }} />
+          </div>
+          <p aria-hidden className="text-[0.7rem] text-zinc-500">{meter.label}</p>
+        </div>
+      ) : (
+        <Spark values={trend} color={color} label={`${label}: ${value}. ${hint}`} />
+      )}
     </div>
   )
 }
@@ -131,12 +148,13 @@ export function Tablero2App() {
   const rows = useMemo(() => (d.loaded ? monthNumbers(src.clients, src.payments, [], months) : []), [d.loaded, src, months])
   const yearRows = useMemo(() => (d.loaded ? monthNumbers(src.clients, src.payments, [], year) : []), [d.loaded, src, year])
   const fc = useMemo(() => (yearRows.length ? forecast(src.clients, yearRows, cur) : null), [yearRows, src, cur])
-  const flow = useMemo(() => moneyFlow(src.sites, src.clients), [src])
-  const bridge = useMemo(() => (months.length ? mrrBridge(src.clients, addMonths(months[0], -1), cur) : null), [src, months, cur])
-  const mrrYear = useMemo(() => year.map((m) => Math.round(src.clients.reduce((a, c) => a + mrrAt(c, m), 0))), [src, year])
-  const cohortRows = useMemo(() => cohorts(src.clients, months), [src, months])
+  // "Now" is today everywhere: a scheduled install (a service starting later) isn't a client, income or MRR yet.
+  const flow = useMemo(() => moneyFlow(src.sites, src.clients, today), [src, today])
+  const bridge = useMemo(() => (months.length ? mrrBridge(src.clients, addMonths(months[0], -1), cur, today) : null), [src, months, cur, today])
+  const mrrYear = useMemo(() => year.map((m) => Math.round(src.clients.reduce((a, c) => a + mrrAt(c, m, m === cur ? today : undefined), 0))), [src, year, cur, today])
+  const cohortRows = useMemo(() => cohorts(src.clients, months, today), [src, months, today])
   // Kept at 3 months over the trailing window that ends each month of the year (the KPI's trend).
-  const r3Trend = useMemo(() => year.map((m) => { const v = retentionAt(cohorts(src.clients, lastMonths(m, Math.min(period, 12))), 3); return v === null ? null : Math.round(v * 1000) / 10 }), [src, year, period])
+  const r3Trend = useMemo(() => year.map((m) => { const v = retentionAt(cohorts(src.clients, lastMonths(m, Math.min(period, 12)), m === cur ? today : undefined), 3); return v === null ? null : Math.round(v * 1000) / 10 }), [src, year, period, cur, today])
   const groups = useMemo(() => (today ? networkGroups(src.sites, src.clients, src.payments, today) : []), [src, today])
   const cal = useMemo(() => (today ? payCalendar(src.payments, today, 26) : null), [src, today])
   const nodeName = useCallback((kind: FlowKind, label: string) => (kind === "plan" || kind === "site" ? label : t(`flow.nodes.${kind}`)), [t])
@@ -146,7 +164,7 @@ export function Tablero2App() {
   const streams = useMemo(() => revenueStreams(src.clients, months), [src, months])
   const flowMonths = useMemo(() => (cur ? lastMonths(cur, Math.min(period, 6)) : []), [cur, period])
   const flows = useMemo(() => (today ? statusFlows(src.clients, src.payments, flowMonths, today) : null), [src, flowMonths, today])
-  const sky = useMemo(() => skyline(src.sites, src.clients), [src])
+  const sky = useMemo(() => skyline(src.sites, src.clients, today), [src, today])
   const light = useMemo(() => lightRows(src.sites, src.clients), [src])
   const stars = useMemo(() => (today ? tenure(src.clients, src.sites, today) : []), [src, today])
   const repairs = useMemo(() => (nowMs ? repairLanes(src.reports, src.sites, nowMs, 90) : null), [src, nowMs])
@@ -196,7 +214,10 @@ export function Tablero2App() {
   if (network) network.heat.forEach((row, di) => row.forEach((v, h) => v !== null && (!peak || v > peak.v) && (peak = { d: di, h, v })))
   const pk = peak as { d: number; h: number; v: number } | null
   // Carriers and continuity
-  const siteName = (id: string) => src.sites.find((x) => x.id === id)?.name.trim() || t("rings.noSite")
+  const siteName = (id: string) => {
+    const s = src.sites.find((x) => x.id === id)
+    return s ? siteLabel(s) : t("rings.noSite")
+  }
   const ms = (v: number) => `${v < 10 ? v.toLocaleString("es-MX", { maximumFractionDigits: 1 }) : Math.round(v)} ms`
   const speedText = (mbps: number) => (mbps >= 1000 ? `${(mbps / 1000).toLocaleString("es-MX", { maximumFractionDigits: 1 })} Gbps` : `${Math.round(mbps)} Mbps`)
   const pulseRows = (carriers?.gateways ?? []).map((g) => {
@@ -214,7 +235,7 @@ export function Tablero2App() {
   const watchedAll = strips.reduce((a, x) => a + x.strip.cells.filter((cc) => cc !== 0).length, 0)
   const availAll = watchedAll ? 1 - strips.reduce((a, x) => a + x.strip.downMinutes, 0) / 60 / watchedAll : null
   const busyByName = new Map((network?.sites ?? []).map((x) => [x.name, x.busyDown]))
-  const glasses = hourglass(src.sites, src.clients, busyByName)
+  const glasses = hourglass(src.sites, src.clients, busyByName, today)
 
   // Fourth round: money map, traffic horizon, fault chord, payment fingerprint, deployments compared.
   const packSites = (tree?.children ?? []).map((n) => ({ name: "name" in n ? n.name : "", value: 0, n }))
@@ -262,7 +283,7 @@ export function Tablero2App() {
     const use = g.busy !== null && g.link ? g.busy / g.link : null
     return [
       { label: t("hourglass.sold", { n: g.active }), value: speedText(g.sold) + (g.unknown ? ` · ${t("hourglass.unknown", { n: g.unknown })}` : "") },
-      { label: t("hourglass.link"), value: g.link ? `${speedText(g.link)} · ${g.ratio === null ? "—" : `${Math.round(g.ratio)}:1`}` : t("hourglass.noLink") },
+      { label: t("hourglass.link"), value: g.link ? `${speedText(g.link)} · ${g.ratio === null ? "—" : ratioText(g.ratio)}` : t("hourglass.noLink") },
       ...(use === null ? [] : [{ label: t("hourglass.busy"), value: `${speedText(g.busy as number)} · ${pct(use)}`, tone: use >= 0.8 ? ("bad" as const) : use >= 0.6 ? ("warn" as const) : undefined }]),
       ...(g.each === null ? [] : [{ label: t("hourglass.each"), value: `${speedText(g.each)} c/u` }]),
     ]
@@ -353,7 +374,7 @@ export function Tablero2App() {
         <section aria-label={t("kpi.title")} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
           <Kpi demo={tag} label={t("kpi.mrr")} value={pesos(mrrNow)} hint={t("kpi.mrrHint", { d: `${mrrNow - mrrPrev >= 0 ? "+" : "−"}${pesos(Math.abs(mrrNow - mrrPrev))}` })} trend={mrrYear} color={SERIES[0]} />
           <Kpi demo={tag} label={t("kpi.collected")} value={pesos(now.collected)} hint={t("kpi.collectedHint", { pct: pct(now.rate), billed: pesos(now.expected) })} trend={yearRows.map((r) => r.collected)} color={SERIES[1]} />
-          <Kpi demo={tag} label={t("kpi.profit")} value={pesos(flow.profit)} hint={t("kpi.profitHint", { income: k(flow.income), costs: k(flow.costs) })} trend={[]} color={SERIES[2]} />
+          <Kpi demo={tag} label={t("kpi.profit")} value={pesos(flow.profit)} hint={t("kpi.profitHint", { income: k(flow.income), costs: k(flow.costs) })} trend={[]} color={SERIES[2]} meter={{ share: flow.income ? flow.profit / flow.income : 0, label: t("kpi.profitMeter", { margin: pct(flow.income ? flow.profit / flow.income : null) }) }} />
           <Kpi demo={tag} label={t("kpi.retention")} value={pct(r3)} hint={r3 === null ? t("kpi.retentionNone") : t("kpi.retentionHint")} trend={r3Trend} color={SERIES[3]} />
         </section>
       </div>
@@ -390,7 +411,7 @@ export function Tablero2App() {
           tableLabel={tl}
           table={{ head: [t("cols.site"), t("cols.amount"), "%"], rows: [...packSites].sort((a, b) => b.value - a.value).map((x) => [x.name || t("pack.noSite"), mxn(x.value), pct(packTotal ? x.value / packTotal : null)]) }}
         >
-          {tree && <RevenuePack tree={tree} label={t("pack.title")} siteName={(n) => n || t("pack.noSite")} towerName={(n) => n || t("pack.noTower")} leafTip={packTip} allLabel={t("pack.all")} />}
+          {tree && <RevenuePack tree={tree} label={t("pack.title")} siteName={(n) => n || t("pack.noSite")} towerName={(n) => n || t("pack.noTower")} leafTip={packTip} allLabel={t("pack.all")} clientsLabel={(n) => t("pack.clients", { n })} towersLabel={(n) => t("pack.towers", { n })} />}
           <Legend items={TONES.map((x) => [t(`rings.tones.${x}`), TONE_COLOR[x], "dot"] as [string, string, "dot"])} />
           <p className="text-[0.7rem] text-zinc-500">{t("pack.note")}</p>
         </Panel>
@@ -483,13 +504,12 @@ export function Tablero2App() {
       </Section>
 
       <Section id="t2-network" title={t("sections.network")}>
-        {net === "error" && !sim && <p className="text-xs text-amber-200">{t("offline")}</p>}
         <div className="grid gap-3 lg:grid-cols-2">
           <Panel
             demo={tag}
             title={t("clock.title")}
             takeaway={network?.hasTraffic && pk ? t("clock.takeaway", { day: days[pk.d], h: pk.h, v: Math.round(pk.v).toLocaleString("es-MX") }) : undefined}
-            empty={network?.hasTraffic ? null : t("empty.traffic")}
+            empty={!network ? (net === "error" ? t("offline") : t("loading")) : network.hasTraffic ? null : t("empty.traffic")}
             tableLabel={tl}
             table={network ? { head: [t("cols.day"), ...Array.from({ length: 24 }, (_, h) => `${h}h`)], rows: network.heat.map((r, i) => [days[i], ...r.map((v) => (v === null ? "—" : v))]) } : undefined}
           >
@@ -500,7 +520,7 @@ export function Tablero2App() {
             demo={tag}
             title={t("capacity.title")}
             takeaway={capRows[0] ? t("capacity.takeaway", { site: capRows[0].name, use: pct(capRows[0].use) }) : undefined}
-            empty={capRows.length ? null : t("empty.capacity")}
+            empty={!network ? (net === "error" ? t("offline") : t("loading")) : capRows.length ? null : t("empty.capacity")}
             tableLabel={tl}
             table={{ head: [t("cols.site"), t("cols.use"), "Mbps"], rows: capRows.map((r) => [r.name, pct(r.use), r.busy === null || r.speed === null ? "—" : `${r.busy} / ${r.speed}`]) }}
           >
@@ -537,7 +557,7 @@ export function Tablero2App() {
         <Panel
           demo={tag}
           title={t("pulse.title")}
-          takeaway={pulseRows.length ? (byRtt.length ? t("pulse.takeaway", { best: ms(byRtt[0].rtt as number), bestName: `${byRtt[0].title} · ${byRtt[0].sub}`, worst: ms(byRtt[byRtt.length - 1].rtt as number), worstName: `${byRtt[byRtt.length - 1].title} · ${byRtt[byRtt.length - 1].sub}`, loss: pct(lossAll, 2) }) : t("pulse.takeawayNoRtt", { loss: pct(lossAll, 2) })) : undefined}
+          takeaway={pulseRows.length ? (byRtt.length === 1 ? t("pulse.takeawayOne", { rtt: ms(byRtt[0].rtt as number), name: `${byRtt[0].title} · ${byRtt[0].sub}`, loss: pct(lossAll, 2) }) : byRtt.length ? t("pulse.takeaway", { best: ms(byRtt[0].rtt as number), bestName: `${byRtt[0].title} · ${byRtt[0].sub}`, worst: ms(byRtt[byRtt.length - 1].rtt as number), worstName: `${byRtt[byRtt.length - 1].title} · ${byRtt[byRtt.length - 1].sub}`, loss: pct(lossAll, 2) }) : t("pulse.takeawayNoRtt", { loss: pct(lossAll, 2) })) : undefined}
           empty={!carriers ? (carrierNet === "error" ? t("offline") : t("loading")) : pulseRows.length ? null : t("pulse.empty")}
           tableLabel={tl}
           table={{ head: [t("cols.carrier"), t("cols.site"), t("pulse.median"), t("pulse.lost")], rows: pulseRows.map((r) => [r.title, r.sub, r.rtt === null ? "—" : ms(r.rtt), pct(r.loss, 2)]) }}
@@ -560,10 +580,10 @@ export function Tablero2App() {
         <Panel
           demo={tag}
           title={t("hourglass.title")}
-          takeaway={topGlass ? t("hourglass.takeaway", { name: topGlass.name, ratio: Math.round(topGlass.ratio as number), each: topGlass.each === null ? "—" : speedText(topGlass.each), use: topGlass.busy !== null && topGlass.link ? pct(topGlass.busy / topGlass.link) : "—" }) : undefined}
+          takeaway={topGlass ? t((topGlass.ratio as number) >= 1 ? "hourglass.takeaway" : "hourglass.takeawayUnder", { name: topGlass.name, ratio: ratioNum(topGlass.ratio as number), share: pct(topGlass.ratio), each: topGlass.each === null ? "—" : speedText(topGlass.each), use: topGlass.busy !== null && topGlass.link ? pct(topGlass.busy / topGlass.link) : "—" }) : undefined}
           empty={glasses.length ? null : t("hourglass.empty")}
           tableLabel={tl}
-          table={{ head: [t("cols.site"), t("cols.sold"), t("cols.link"), t("cols.ratio"), t("hourglass.busy"), t("hourglass.each")], rows: glasses.map((g) => [g.name, speedText(g.sold), g.link ? speedText(g.link) : "—", g.ratio === null ? "—" : `${Math.round(g.ratio)}:1`, g.busy === null ? "—" : speedText(g.busy), g.each === null ? "—" : speedText(g.each)]) }}
+          table={{ head: [t("cols.site"), t("cols.sold"), t("cols.link"), t("cols.ratio"), t("hourglass.busy"), t("hourglass.each")], rows: glasses.map((g) => [g.name, speedText(g.sold), g.link ? speedText(g.link) : "—", g.ratio === null ? "—" : ratioText(g.ratio), g.busy === null ? "—" : speedText(g.busy), g.each === null ? "—" : speedText(g.each)]) }}
         >
           <SpeedHourglass glasses={glasses} lines={glassLines} />
           <p className="text-[0.7rem] text-zinc-500">{t("hourglass.note")}</p>
@@ -629,7 +649,7 @@ export function Tablero2App() {
         <Panel
           demo={tag}
           title={t("calendar.title")}
-          takeaway={win ? t(win.from === win.to ? "calendar.takeawayDay" : "calendar.takeaway", { share: pct(win.share), from: win.from, to: win.to, n: cal.total }) : t("calendar.takeawayNone")}
+          takeaway={win ? t(win.from === win.to ? "calendar.takeawayDay" : win.from > win.to ? "calendar.takeawayWrap" : "calendar.takeaway", { share: pct(win.share), from: win.from, to: win.to, n: cal.total }) : t("calendar.takeawayNone")}
           empty={cal.total ? null : t("empty.payments")}
           tableLabel={tl}
           table={{ head: [t("cols.day"), t("cols.payments")], rows: cal.byDayOfMonth.map((n, i) => [i + 1, n]) }}

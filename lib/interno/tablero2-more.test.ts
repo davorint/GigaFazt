@@ -45,14 +45,14 @@ describe("Tablero 2, second round", () => {
     const t1 = newTower({ name: "A", apartments: 10 })
     const two = newSite({ name: "Dos", towers: [t1, newTower({ name: "B", apartments: 10 })] })
     const clients = [newClient({ siteId: one.id, services: [net("200M", 396)] }), newClient({ siteId: two.id, towerId: t1.id, services: [net("200M", 396)] }), newClient({ siteId: two.id, services: [net("200M", 396)] }), newClient({ siteId: one.id, services: [net("200M", 396, { status: "cancelado" })] })]
-    const s = skyline([one, two], clients)
+    const s = skyline([one, two], [...clients, newClient({ siteId: one.id, services: [net("200M", 396, { start: "2026-12-01" })] })], "2026-11-20")
     const u = s.find((x) => x.name === "Uno")!
     expect(u.towers[0]).toMatchObject({ floors: 5, cols: 4, lit: 1 })
     expect(u.towers[0].windows).toHaveLength(1)
     const d = s.find((x) => x.name === "Dos")!
     expect(d).toMatchObject({ apartments: 20, active: 2, unassigned: 1 })
     expect(d.towers.map((t) => t.lit)).toEqual([1, 0])
-    expect(skyline([one], clients)[0].towers[0].windows).toEqual(u.towers[0].windows)
+    expect(skyline([one], clients, "2026-11-20")[0].towers[0].windows).toEqual(u.towers[0].windows)
   })
 
   it("light rows with the drop since the first reading; dodge never overlaps", () => {
@@ -87,7 +87,7 @@ describe("Tablero 2, second round", () => {
 
   it("the simulated operator fills every new chart", () => {
     const a = demoSet("2026-11-22")
-    expect(skyline(a.sites, a.clients).some((s) => s.towers.length > 1)).toBe(true)
+    expect(skyline(a.sites, a.clients, "2026-11-22").some((s) => s.towers.length > 1)).toBe(true)
     expect(lightRows(a.sites, a.clients).some((r) => r.dots.some((d) => (d.drop ?? 0) >= 3))).toBe(true)
   })
 })

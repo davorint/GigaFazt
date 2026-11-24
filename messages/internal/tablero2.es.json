@@ -30,6 +30,7 @@
       "collectedHint": "{pct} de {billed} facturado",
       "profit": "Utilidad del mes",
       "profitHint": "{income} entran, {costs} en edificios y enlaces",
+      "profitMeter": "Se queda el {margin} de lo que entra",
       "retention": "Siguen a los 3 meses",
       "retentionHint": "De quienes llegaron en el periodo",
       "retentionNone": "Aún no hay clientes con 3 meses en el periodo."
@@ -50,9 +51,9 @@
     },
     "flow": {
       "title": "Cómo fluye el dinero cada mes",
-      "takeaway": "Entran {income} al mes por servicios activos; {costs} se van en edificios y enlaces y quedan {profit} ({margin}).",
+      "takeaway": "Entran {income} al mes por los servicios vigentes; {costs} se van en edificios y enlaces y quedan {profit} ({margin}).",
       "takeawayLoss": "Entran {income} al mes, pero edificios y enlaces cuestan {costs}: faltan {short}.",
-      "note": "De izquierda a derecha: lo que paga cada plan, a qué despliegue entra y en qué se va. «Faltante» es lo que un despliegue cuesta de más sobre lo que cobra.",
+      "note": "De izquierda a derecha: lo que paga cada plan, a qué despliegue entra y en qué se va. «Faltante» es lo que un despliegue cuesta de más sobre lo que cobra. Cuenta lo que cobra hoy cada servicio vigente (también los suspendidos, que siguen debiendo), igual que el ingreso recurrente; una instalación agendada entra cuando empieza.",
       "nodes": {
         "tv": "TV",
         "otros": "Otros servicios",
@@ -134,6 +135,7 @@
       "title": "Cuándo pagan",
       "takeaway": "El {share} de los pagos llega entre el día {from} y el {to} del mes ({n} pagos en 26 semanas).",
       "takeawayDay": "El {share} de los pagos llega el día {from} del mes ({n} pagos en 26 semanas).",
+      "takeawayWrap": "El {share} de los pagos llega entre el día {from} de un mes y el {to} del siguiente ({n} pagos en 26 semanas).",
       "takeawayNone": "Sin pagos en las últimas 26 semanas.",
       "byDay": "Pagos por día del mes",
       "payments": "{n, plural, =0 {Sin pagos} one {# pago} other {# pagos}}",
@@ -269,6 +271,7 @@
     "pulse": {
       "title": "El pulso de los carriers",
       "takeaway": "El enlace que mejor responde va en {best} ({bestName}); el más lento, {worst} ({worstName}). En la semana se perdió el {loss} de los pings.",
+      "takeawayOne": "El enlace responde en {rtt} de mediana ({name}). En la semana se perdió el {loss} de los pings.",
       "takeawayNoRtt": "Los routers cuentan las respuestas de los carriers pero no miden la latencia; en la semana se perdió el {loss} de los pings.",
       "note": "Un monitor por puerta de enlace de cada carrier, 7 días. La línea brillante es la latencia mediana de cada hora; la bruma llega al percentil 95 (cuánto varía); las espigas rojas son pings perdidos y los huecos, horas sin respuesta. Todas las filas usan la misma escala.",
       "stats": "{rtt} · p95 {p95} · pérdida {loss}",
@@ -295,6 +298,7 @@
     "hourglass": {
       "title": "Reloj de arena de la velocidad",
       "takeaway": "{name} vende {ratio} veces la velocidad de su enlace: si todos sus clientes se conectaran a la vez, a cada uno le tocarían {each}. En su hora pico usa el {use} del enlace.",
+      "takeawayUnder": "Ningún despliegue vende más que la velocidad de sus enlaces: {name} vende el {share} de la suya, así que aunque todos se conectaran a la vez a cada uno le tocarían {each}. En su hora pico usa el {use} del enlace.",
       "note": "Arriba, la velocidad vendida (la suma de los planes activos); el cuello, los enlaces de los carriers; abajo, la hora pico llenando esos enlaces. Vender más de lo que mide el enlace es normal (no todos navegan a la vez): lo que importa es cuánto se llena la parte de abajo.",
       "sold": "Vendido · {n, plural, one {# cliente} other {# clientes}}",
       "link": "Enlaces · relación",
@@ -342,6 +346,8 @@
       "pays": "Paga al mes",
       "status": "Estado",
       "noPlace": "Sin torre ni departamento",
+      "clients": "{n, plural, one {# cliente} other {# clientes}}",
+      "towers": "{n, plural, one {# torre} other {# torres}}",
       "empty": "Todavía no hay clientes con servicio y precio."
     },
     "horizon": {

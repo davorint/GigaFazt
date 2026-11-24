@@ -57,7 +57,7 @@ describe("Tablero 2, carriers and continuity", () => {
     expect([planSpeed("200M"), planSpeed("500 Mbps"), planSpeed("1G"), planSpeed("1.5 Gbps"), planSpeed("Básico")]).toEqual([200, 500, 1000, 1500, null])
     const s = newSite({ name: "Uno", rooms: [newRoom({ carriers: [newRoomCarrier({ downMbps: 1000 })] })] })
     const clients = [newClient({ siteId: s.id, services: [newService("internet", { plan: "500M", status: "activo" })] }), newClient({ siteId: s.id, services: [newService("internet", { plan: "1G", status: "activo" })] }), newClient({ siteId: s.id, services: [newService("internet", { plan: "Sin nombre", status: "activo" })] })]
-    const [g] = hourglass([s], clients, new Map([["Uno", 640]]))
+    const [g] = hourglass([s], [...clients, newClient({ siteId: s.id, services: [newService("internet", { plan: "1G", status: "activo", start: "2026-12-01" })] })], new Map([["Uno", 640]]), "2026-11-20")
     expect(g).toMatchObject({ sold: 1500, unknown: 1, link: 1000, busy: 640, active: 3, ratio: 1.5 })
     expect(g.each).toBeCloseTo(1000 / 3)
   })

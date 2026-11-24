@@ -5,14 +5,11 @@ import { ringLayout, TONES, type RingGroup, type Tone } from "@/lib/interno/tabl
 import { useReducedMotion } from "@/lib/motion"
 import { INK, SERIES, STATUS } from "@/components/dashboard/theme"
 import { Frame, TipBody, type Tip } from "./Frame"
+import { clipName } from "./format"
 
 /** How each client stands (Cobranza): status colors, never reused for anything else here. */
 export const TONE_COLOR: Record<Tone, string> = { "al-corriente": STATUS.good, "por-vencer": STATUS.warning, atrasado: STATUS.serious, suspendido: STATUS.critical, "sin-cobro": INK.muted }
 
-const clip = (s: string, px: number) => {
-  const n = Math.max(0, Math.floor(px / 5.6))
-  return s.length <= n ? s : n > 2 ? `${s.slice(0, n - 1)}…` : ""
-}
 
 /**
  * The living network: the core in the middle, a spoke to every deployment, and each deployment a sunflower of its
@@ -82,7 +79,8 @@ function Rings({ size, groups, reduced, hover, setHover, tip, center, centerHint
             ))}
             {/* The name under the disc, kept inside the square (about 6 px per character at 11 px). */}
             {(() => {
-              const text = clip(`${name(g)} · ${g.clients.length}`, Math.max(90, Math.min(170, d.r * 2 + 40)))
+              const count = ` · ${g.clients.length}`
+              const text = `${clipName(name(g), Math.floor(Math.max(90, Math.min(170, d.r * 2 + 40)) / 5.6) - count.length)}${count}`
               const half = (text.length * 6) / 2
               return (
                 <text x={Math.min(size - half, Math.max(half, d.x))} y={d.y + d.r + 13} textAnchor="middle" fontSize={11} fill={hover === i ? INK.primary : INK.secondary} stroke={INK.surface} strokeWidth={3} paintOrder="stroke" className="pointer-events-none">

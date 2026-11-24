@@ -10,3 +10,18 @@ export const pct = (x: number | null, digits = 0) => (x === null ? "—" : `${(x
 /** Whole pesos for headline figures ($87,040); tables keep cents. */
 export const pesos = (n: number) => `${n < 0 ? "−" : ""}$${Math.round(Math.abs(n)).toLocaleString("es-MX")}`
 export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : "0")
+/**
+ * A name cut to `n` characters that stays tellable apart from its neighbours: deployments share their first words
+ * ("Edificio Demo Norte" / "Edificio Demo Sur"), so the last word is kept and the middle gives way ("Edifi… Norte").
+ */
+export const clipName = (s: string, n: number) => {
+  const t = s.trim()
+  if (t.length <= n) return t
+  if (n < 4) return ""
+  const last = t.split(/\s+/).at(-1) ?? ""
+  if (last.length < t.length && last.length + 2 <= n) {
+    const head = t.slice(0, n - last.length - 2).trimEnd()
+    return head ? `${head}… ${last}` : `…${last}`
+  }
+  return `${t.slice(0, n - 1)}…`
+}

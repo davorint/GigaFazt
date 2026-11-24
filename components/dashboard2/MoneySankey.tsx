@@ -6,7 +6,7 @@ import type { FlowKind, MoneyFlow } from "@/lib/interno/tablero2"
 import { mxn } from "@/lib/materials/catalog"
 import { INK, SERIES, STATUS } from "@/components/dashboard/theme"
 import { Frame, TipBody, type Tip } from "./Frame"
-import { k } from "./format"
+import { clipName, k } from "./format"
 
 /** Income is blue; each cost and what's left keep their own categorical slot; a loss is the critical status. */
 export const FLOW_COLOR: Record<FlowKind, string> = { plan: SERIES[0], tv: "#5598e7", otros: "#5598e7", faltante: STATUS.critical, site: "#6f6e69", nosite: "#6f6e69", edificio: SERIES[3], enlaces: SERIES[1], utilidad: SERIES[2] }
@@ -119,7 +119,7 @@ function Drawing({ w, h, flow, name, hover, setHover, tip }: { w: number; h: num
             <rect x={x0} y={y0} width={x1 - x0} height={Math.max(2, y1 - y0)} rx={3} fill={FLOW_COLOR[n.kind]} />
             {y1 - y0 >= 9 && (
               <text x={tx} y={(y0 + y1) / 2} dy="0.35em" textAnchor={last ? "end" : "start"} fontSize={11} fill={INK.primary} stroke={INK.surface} strokeWidth={3} paintOrder="stroke" strokeLinejoin="round">
-                {clip(n.name, room)} {!(narrow && (middle || last)) && <tspan fill={INK.secondary}>{k(n.value ?? 0)}</tspan>}
+                {n.kind === "site" ? clipName(n.name, Math.max(3, Math.floor(room / 6))) : clip(n.name, room)} {!(narrow && (middle || last)) && <tspan fill={INK.secondary}>{k(n.value ?? 0)}</tspan>}
               </text>
             )}
           </g>
