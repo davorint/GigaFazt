@@ -32,7 +32,7 @@ export function BusinessCta() {
         </div>
         <p className="reveal mt-10 text-sm text-zinc-400">
           {t("business.smallOffice")}{" "}
-          <Link prefetch={false}
+          <Link
             href="/planes"
             className="inline-flex items-center gap-1 rounded text-zinc-200 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >

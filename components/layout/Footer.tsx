@@ -96,12 +96,12 @@ export function Footer({ base = "", variant }: { base?: string; variant?: "biz" 
         <nav aria-label={t("explore")}>
           <h2 className="eyebrow mb-3">{t("explore")}</h2>
           <ul className="space-y-2 text-sm">
-            <li><Link prefetch={false} href="/planes" className={A}>{tn("planes")}</Link></li>
-            <li><Link prefetch={false} href="/empresas" className={A}>{tn("empresas")}</Link></li>
+            <li><Link href="/planes" className={A}>{tn("planes")}</Link></li>
+            <li><Link href="/empresas" className={A}>{tn("empresas")}</Link></li>
             <li><a href={`${prefix}#fiber`} className={A}>{tn("fibra")}</a></li>
             <li><a href={`${prefix}#map`} className={A}>{tn("cobertura")}</a></li>
             <li><a href={`${prefix}#faq`} className={A}>{t("faq")}</a></li>
-            <li><Link prefetch={false} href="/clientes" className={A}>{t("report")}</Link></li>
+            <li><Link href="/clientes" className={A}>{t("report")}</Link></li>
           </ul>
         </nav>
 
@@ -110,7 +110,7 @@ export function Footer({ base = "", variant }: { base?: string; variant?: "biz" 
           <ul className="space-y-2 text-sm">
             {STATES.map((s) => (
               <li key={s.slug}>
-                <Link prefetch={false} href={`/cobertura/${s.slug}`} className={A}>
+                <Link href={`/cobertura/${s.slug}`} className={A}>
                   {stateName(ts, s.slug)}
                 </Link>
               </li>
