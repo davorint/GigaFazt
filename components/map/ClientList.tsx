@@ -45,7 +45,7 @@ export function ClientList() {
                   ? `${ts(`${s.slug}.scope`).replace(/\.$/, "")}: ${SERVICE_ZONE[s.code].places.join(", ")}.`
                   : ts(`${s.slug}.scope`)}
               </p>
-              <Link
+              <Link prefetch={false}
                 href={`/cobertura/${s.slug}`}
                 onClick={() => track("map_region_opened", { slug: s.slug })}
                 className="mt-2 inline-flex items-center gap-1 rounded font-mono text-[0.7rem] text-fiber hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"

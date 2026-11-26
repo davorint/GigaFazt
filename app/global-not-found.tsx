@@ -37,23 +37,23 @@ export default function GlobalNotFound() {
                   <span className="font-medium text-foreground">{en.notFound.title}.</span> {en.notFound.lead}
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <Link href="/en" className={ERROR_SECONDARY}>
+                  <Link prefetch={false} href="/en" className={ERROR_SECONDARY}>
                     {en.notFound.home}
                   </Link>
-                  <Link href="/en/planes" className={ERROR_SECONDARY}>
+                  <Link prefetch={false} href="/en/planes" className={ERROR_SECONDARY}>
                     {en.notFound.plans}
                   </Link>
                 </div>
               </div>
             }
           >
-            <Link href="/es" className={ERROR_PRIMARY}>
+            <Link prefetch={false} href="/es" className={ERROR_PRIMARY}>
               {t.home}
             </Link>
-            <Link href="/es/planes" className={ERROR_SECONDARY}>
+            <Link prefetch={false} href="/es/planes" className={ERROR_SECONDARY}>
               {t.plans}
             </Link>
-            <Link href="/es/clientes" className={ERROR_SECONDARY}>
+            <Link prefetch={false} href="/es/clientes" className={ERROR_SECONDARY}>
               {t.clients}
             </Link>
             {!isPlaceholder(company.whatsapp) && (

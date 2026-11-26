@@ -103,7 +103,7 @@ async function AreaContent({ params }: { params: PageProps<"/[locale]/cobertura/
             <div>
               <nav aria-label={t("area.breadcrumb")} className="mb-6 font-mono text-xs text-muted-foreground">
                 <ol className="flex flex-wrap items-center gap-2">
-                  <li><Link href="/" className="rounded hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">{t("area.home")}</Link></li>
+                  <li><Link prefetch={false} href="/" className="rounded hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">{t("area.home")}</Link></li>
                   <li aria-hidden>/</li>
                   <li><a href={`${home}#map`} className="rounded hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">{t("area.coverage")}</a></li>
                   <li aria-hidden>/</li>
@@ -202,7 +202,7 @@ async function AreaContent({ params }: { params: PageProps<"/[locale]/cobertura/
               <TrustStrip />
             </div>
             <div className="mt-10 flex justify-center">
-              <Link
+              <Link prefetch={false}
                 href="/planes"
                 className="inline-flex items-center gap-2 rounded-md px-3 py-2 font-mono text-xs uppercase tracking-wider text-fiber hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
@@ -220,7 +220,7 @@ async function AreaContent({ params }: { params: PageProps<"/[locale]/cobertura/
             <ul className="mt-3 flex flex-wrap justify-center gap-3">
               {others.map((s) => (
                 <li key={s.slug}>
-                  <Link
+                  <Link prefetch={false}
                     href={`/cobertura/${s.slug}`}
                     className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >

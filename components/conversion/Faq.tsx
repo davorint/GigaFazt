@@ -85,7 +85,7 @@ export function Faq() {
               <div className="px-5 pb-5 pl-[3.25rem] text-sm leading-relaxed text-muted-foreground">
                 <p>{answer}</p>
                 {item.id === "business" && (
-                  <Link href="/empresas" className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-fiber underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+                  <Link prefetch={false} href="/empresas" className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-fiber underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
                     {t("faq.businessLink")}
                     <ArrowRight className="size-4" aria-hidden />
                   </Link>

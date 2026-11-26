@@ -56,7 +56,7 @@ export function SessionGuard() {
           {copy.noAccess.title}
         </h2>
         <p className="text-sm text-zinc-300">{copy.noAccess.body}</p>
-        <Link href="/interno" className="mx-auto inline-flex min-h-10 items-center rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200">
+        <Link prefetch={false} href="/interno" className="mx-auto inline-flex min-h-10 items-center rounded-full bg-white px-4 text-sm font-medium text-zinc-950 hover:bg-zinc-200">
           {copy.noAccess.home}
         </Link>
       </div>

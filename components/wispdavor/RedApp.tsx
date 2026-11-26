@@ -63,7 +63,7 @@ export function RedApp() {
             ))}
           </select>
         </label>
-        <Link href="/interno/admin/clientes" className="text-sm text-zinc-300 underline underline-offset-4">
+        <Link prefetch={false} href="/interno/admin/clientes" className="text-sm text-zinc-300 underline underline-offset-4">
           {t("paste")}
         </Link>
       </div>
