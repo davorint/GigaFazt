@@ -150,9 +150,11 @@ export type SyncStatus = {
   error: string
   /** Records the server refused in the last sync, with why (they stay pending until fixed or discarded). */
   rejected: Rejected[]
+  /** The team turned automatic syncing off (saving mode): no timed checks; a page opening, an edit and the button still sync. */
+  saver: boolean
 }
 export type Rejected = { kind: SyncKind; id: string; reason: string; label: string }
-let status: SyncStatus = { phase: "idle", pending: 0, unsent: 0, name: "", adopted: false, lastOk: null, error: "", rejected: [] }
+let status: SyncStatus = { phase: "idle", pending: 0, unsent: 0, name: "", adopted: false, lastOk: null, error: "", rejected: [], saver: false }
 const statusListeners = new Set<() => void>()
 const setStatus = (p: Partial<SyncStatus>) => {
   status = { ...status, ...p }
@@ -315,7 +317,8 @@ async function changedKinds(s: ReturnType<typeof readState>): Promise<SyncKind[]
   if (res.status === 503) throw Object.assign(new Error("no-database"), { code: "no-database" })
   if (res.status === 401) throw Object.assign(new Error("unauthorized"), { code: "unauthorized" })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  const body = (await res.json()) as { revs?: Partial<Record<SyncKind, number>> }
+  const body = (await res.json()) as { revs?: Partial<Record<SyncKind, number>>; saver?: boolean }
+  if (typeof body.saver === "boolean" && body.saver !== status.saver) setStatus({ saver: body.saver })
   return kindsToSync(body.revs ?? {}, s.rev, dirtyKinds(s))
 }
 
@@ -396,15 +399,16 @@ export function startSync(): () => void {
   // tab asks nothing; it syncs in full when it comes back.
   let ticks = 0
   const every = setInterval(() => {
-    if (document.visibilityState !== "visible") return
+    // Saving mode (the team's switch): no timed requests at all.
+    if (status.saver || document.visibilityState !== "visible") return
     ticks++
     void syncNow(ticks % 10 === 0 ? "full" : "check")
   }, 60_000)
   // Opening a page, coming back to the tab or back online: the quick check (a new browser has revision 0 everywhere,
   // so it still pulls every kind).
-  const online = () => void syncNow("check")
+  const online = () => !status.saver && void syncNow("check")
   const offline = () => setStatus({ phase: "offline" })
-  const visible = () => document.visibilityState === "visible" && void syncNow("check")
+  const visible = () => !status.saver && document.visibilityState === "visible" && void syncNow("check")
   window.addEventListener("online", online)
   window.addEventListener("offline", offline)
   document.addEventListener("visibilitychange", visible)
@@ -418,6 +422,9 @@ export function startSync(): () => void {
     if (timer) clearTimeout(timer)
   }
 }
+
+/** The switch was just changed on this phone (SyncBar): apply it here without waiting for the next check. */
+export const setSaverMode = (on: boolean) => setStatus({ saver: on })
 
 /** The local ids of every kind (for "Subir lo de este navegador"). */
 export const localIds = (): Record<SyncKind, string[]> => ({ surveys: ADAPTERS.surveys.ids(), materials: ADAPTERS.materials.ids(), providers: ADAPTERS.providers.ids(), clients: ADAPTERS.clients.ids(), sites: ADAPTERS.sites.ids(), tools: ADAPTERS.tools.ids(), stock: ADAPTERS.stock.ids(), units: ADAPTERS.units.ids(), reports: ADAPTERS.reports.ids(), payments: ADAPTERS.payments.ids(), notes: ADAPTERS.notes.ids(), rolls: ADAPTERS.rolls.ids(), toolbuys: ADAPTERS.toolbuys.ids(), agenda: ADAPTERS.agenda.ids(), porpagar: ADAPTERS.porpagar.ids(), porcobrar: ADAPTERS.porcobrar.ids(), contratos: ADAPTERS.contratos.ids() })

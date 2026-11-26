@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { loss as lossOf, ONT_SLOW_MS } from "@/lib/wispdavor/monitor"
 import type { MonitorView } from "@/lib/wispdavor/monitor-server"
@@ -19,11 +19,15 @@ export function MonitorApp() {
   const [data, setData] = useState<MonitorView | null>(null)
   const [error, setError] = useState(false)
   const [now, setNow] = useState("")
+  // The team's switch (from each answer): when automatic syncing is off, no refresh by itself.
+  const saverRef = useRef(false)
   const load = useCallback(async () => {
     try {
       const r = await fetch("/api/interno/monitoreo", { cache: "no-store" })
       if (!r.ok) throw new Error(String(r.status))
-      setData((await r.json()) as MonitorView)
+      const v = (await r.json()) as MonitorView & { saver?: boolean }
+      saverRef.current = v.saver === true
+      setData(v)
       setNow(new Date().toISOString())
       setError(false)
     } catch {
@@ -33,7 +37,8 @@ export function MonitorApp() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- loads once, then every 2 minutes (the routers' pace)
     void load()
-    const id = window.setInterval(() => void load(), 120000)
+    // Saving mode (the team's switch on the sync bar): no refresh by itself; reload the page to see new figures.
+    const id = window.setInterval(() => !saverRef.current && void load(), 120000)
     return () => window.clearInterval(id)
   }, [load])
   const name = (id: string) => data?.routers.find((r) => r.id === id)?.name ?? id

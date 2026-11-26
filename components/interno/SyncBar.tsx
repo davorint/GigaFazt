@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
-import { discardLocal, localIds, startSync, subscribeSync, syncNow, syncServerSnapshot, syncSnapshot } from "@/lib/sync/engine"
+import { discardLocal, localIds, setSaverMode, startSync, subscribeSync, syncNow, syncServerSnapshot, syncSnapshot } from "@/lib/sync/engine"
 import { adoptLocal, readState, setName } from "@/lib/sync/state"
 
 const TONE: Record<string, string> = {
@@ -29,11 +29,16 @@ export function SyncBar() {
   useEffect(() => startSync(), [])
   // With a team account the name comes from it (lib/team): set once, not editable here.
   const [account, setAccount] = useState(false)
+  // Admins get the team's "sincronización automática" switch (saving mode).
+  const [admin, setAdmin] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [saverError, setSaverError] = useState(false)
   useEffect(() => {
     let alive = true
     fetch("/api/interno/yo")
-      .then((r) => (r.ok ? (r.json() as Promise<{ member: { name: string } | null }>) : null))
+      .then((r) => (r.ok ? (r.json() as Promise<{ member: { name: string } | null; access?: { admin: boolean } }>) : null))
       .then((v) => {
+        if (alive && v?.access?.admin) setAdmin(true)
         if (!alive || !v?.member) return
         setAccount(true)
         if (readState().name !== v.member.name) {
@@ -47,6 +52,21 @@ export function SyncBar() {
     }
   }, [])
   const askName = !account && (!s.name || editing)
+  const toggleSaver = async () => {
+    const on = !s.saver
+    if (!window.confirm(t(on ? "saver.confirmOff" : "saver.confirmOn"))) return
+    setBusy(true)
+    setSaverError(false)
+    try {
+      const r = await fetch("/api/interno/ahorro", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ on }) })
+      if (!r.ok) throw new Error(String(r.status))
+      setSaverMode(on)
+    } catch {
+      setSaverError(true)
+    } finally {
+      setBusy(false)
+    }
+  }
   const save = () => {
     if (!draft.trim()) return
     setName(draft)
@@ -107,6 +127,25 @@ export function SyncBar() {
               {t("now")}
             </button>
           </span>
+        </div>
+      )}
+      {/* The team's switch: automatic syncing off stops the timed requests (each one is a paid function call). */}
+      {!askName && (s.saver || admin) && (
+        <div className={`flex flex-wrap items-center gap-2 ${s.saver ? "rounded-lg border border-amber-400/30 bg-amber-400/[0.05] p-2.5" : ""}`}>
+          {s.saver && (
+            <p className="min-w-0 flex-1 text-xs leading-snug text-amber-100">
+              <span className="font-medium">{t("saver.title")}</span> {t("saver.hint")}
+            </p>
+          )}
+          {admin && (
+            <button type="button" role="switch" aria-checked={!s.saver} onClick={() => void toggleSaver()} disabled={busy} className={`${BTN} inline-flex items-center gap-2 ${s.saver ? "" : "ml-auto"}`}>
+              <span aria-hidden className={`relative block h-4 w-7 shrink-0 rounded-full transition-colors ${s.saver ? "bg-white/15" : "bg-emerald-400/70"}`}>
+                <span className={`absolute top-0.5 left-0 size-3 rounded-full bg-white transition-transform motion-reduce:transition-none ${s.saver ? "translate-x-0.5" : "translate-x-3.5"}`} />
+              </span>
+              {t("saver.switch")}
+            </button>
+          )}
+          {saverError && <p role="alert" className="w-full text-xs text-red-300">{t("saver.failed")}</p>}
         </div>
       )}
       {s.phase === "signin" && (

@@ -96,6 +96,14 @@
       }
     },
     "signinHint": "Tu sesión ya no es válida (te dieron de baja, o ya hay cuentas del equipo y entraste con la contraseña compartida). Lo que cambiaste queda guardado en este teléfono.",
-    "signinLink": "Entrar de nuevo"
+    "signinLink": "Entrar de nuevo",
+    "saver": {
+      "title": "Sincronización automática apagada (ahorro).",
+      "hint": "Este navegador ya no consulta al servidor cada minuto: se sincroniza al abrir una página, al guardar algo y con «Sincronizar ahora». Lo que cambien otros aparece cuando hagas cualquiera de esas tres cosas.",
+      "switch": "Sincronización automática",
+      "confirmOff": "¿Apagar la sincronización automática para todo el equipo? Los navegadores dejarán de consultar al servidor cada minuto (cada consulta es una llamada que cuenta en el plan de Vercel). Nada de lo que se guarde se pierde: se sincroniza al abrir una página, al guardar y con «Sincronizar ahora». Monitoreo deja de actualizarse solo.",
+      "confirmOn": "¿Volver a encender la sincronización automática para todo el equipo? Cada navegador abierto consultará al servidor una vez por minuto.",
+      "failed": "No se pudo cambiar (¿sin conexión o sin permiso de administrador?)."
+    }
   }
 }
