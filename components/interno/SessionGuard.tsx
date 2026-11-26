@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import interno from "@/messages/internal/interno.es.json"
 import { LOGIN_PATH } from "@/lib/internal-pages"
-import { areaAllowed, pageAllowed, type Access, type Area } from "@/lib/team/roles"
+import { fetchMe } from "@/lib/team/me-client"
+import { areaAllowed, pageAllowed, type Area } from "@/lib/team/roles"
 
 /**
  * When an internal page opens, asks the server whether this session still counts (owner review 2026-11-20): the proxy
@@ -23,15 +24,15 @@ export function SessionGuard() {
   useEffect(() => {
     if (window.location.pathname.startsWith(LOGIN_PATH) || !navigator.onLine) return
     let alive = true
-    fetch("/api/interno/yo", { cache: "no-store" })
-      .then(async (r) => {
+    fetchMe()
+      .then((r) => {
         if (!alive) return
         if (r.status === 401) {
           const next = window.location.pathname.replace(/^\/[a-z]{2}(?=\/interno)/, "")
           window.location.replace(`${LOGIN_PATH}?error=ended&next=${encodeURIComponent(next)}`)
           return
         }
-        const access = ((await r.json().catch(() => ({}))) as { access?: Access }).access
+        const access = r.access
         if (!access || !alive) return
         setBlocked(!pageAllowed(access, window.location.pathname))
         for (const a of document.querySelectorAll<HTMLAnchorElement>("a[data-nav]")) {

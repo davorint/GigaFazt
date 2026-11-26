@@ -4,6 +4,7 @@ import { useEffect, useId, useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import { discardLocal, localIds, setSaverMode, startSync, subscribeSync, syncNow, syncServerSnapshot, syncSnapshot } from "@/lib/sync/engine"
 import { adoptLocal, readState, setName } from "@/lib/sync/state"
+import { fetchMe } from "@/lib/team/me-client"
 
 const TONE: Record<string, string> = {
   idle: "border-emerald-400/40 text-emerald-300",
@@ -35,8 +36,7 @@ export function SyncBar() {
   const [saverError, setSaverError] = useState(false)
   useEffect(() => {
     let alive = true
-    fetch("/api/interno/yo")
-      .then((r) => (r.ok ? (r.json() as Promise<{ member: { name: string } | null; access?: { admin: boolean } }>) : null))
+    fetchMe()
       .then((v) => {
         if (alive && v?.access?.admin) setAdmin(true)
         if (!alive || !v?.member) return
