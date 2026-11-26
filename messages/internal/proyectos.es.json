@@ -1,0 +1,87 @@
+{
+  "proyectos": {
+    "meta": {
+      "title": "Nuevos proyectos · Interno"
+    },
+    "kicker": "Administración",
+    "title": "Nuevos proyectos",
+    "lead": "Todo el equipo que necesita un despliegue nuevo. El kit dice lo mínimo: las herramientas de cada técnico y el equipo del despliegue (router, OLT, fibra). Cada proyecto parte de un kit, con sus técnicos, lo que ya tienes y lo que falta comprar.",
+    "buysLink": "Compras de herramientas",
+    "materialsLink": "Compras de materiales",
+    "priceNote": "Los precios vienen de la opción de compra o del material (su oferta elegida o la más barata), en MXN con IVA. Cámbialos allá y aquí se actualizan.",
+    "noStorage": "Este navegador no deja guardar: lo que cambies aquí se pierde al cerrar.",
+    "tabs": {
+      "label": "Ver",
+      "kits": "Kits ({n})",
+      "projects": "Proyectos ({n})"
+    },
+    "newKit": "Kit nuevo",
+    "newKitName": "Kit nuevo",
+    "noKits": "Todavía no hay kits.",
+    "noProjects": "Todavía no hay proyectos. Abre un kit y toca «Nuevo proyecto con este kit».",
+    "kitBadge": "KIT",
+    "lines": "{n, plural, one {# línea} other {# líneas}}",
+    "name": "Nombre",
+    "notes": "Notas",
+    "technicians": "Técnicos",
+    "techniciansHint": "Las herramientas del técnico se cuentan una vez por técnico.",
+    "people": "técnicos",
+    "techCount": "{n, plural, one {# técnico} other {# técnicos}}",
+    "status": "Estado",
+    "statuses": {
+      "planeacion": "Planeación",
+      "compras": "Comprando",
+      "listo": "Listo para instalar",
+      "cerrado": "Cerrado"
+    },
+    "site": "Despliegue",
+    "noSite": "Sin despliegue todavía",
+    "start": "Inicio",
+    "fromKit": "Del kit «{name}»",
+    "scopes": {
+      "tecnico": "Kit del técnico (por técnico)",
+      "despliegue": "Equipo del despliegue (una vez)"
+    },
+    "sum": {
+      "perTechnician": "Kit por técnico",
+      "deployment": "Despliegue",
+      "total": "Total",
+      "toBuy": "Falta comprar",
+      "unpriced": "{n, plural, one {# sin precio} other {# sin precio}}",
+      "missing": "{n, plural, =0 {Nada pendiente} one {Falta # pieza} other {Faltan # piezas}}"
+    },
+    "line": {
+      "qty": "Cantidad",
+      "pieces": "pzas",
+      "qtyTech": "Por técnico",
+      "have": "Ya tengo",
+      "need": "Se necesitan {n}",
+      "missing": "faltan {n}",
+      "complete": "completo",
+      "each": "{price} c/u",
+      "noPrice": "Sin precio",
+      "gone": "Ya no está en la lista (se borró de Compras o de Materiales)",
+      "open": "Ver en compras",
+      "store": "Ver en la tienda",
+      "remove": "Quitar"
+    },
+    "add": {
+      "title": "Agregar una línea",
+      "what": "Qué",
+      "pick": "Elige una opción de compra o un material",
+      "tools": "Herramientas (Compras de herramientas)",
+      "materials": "Materiales y equipo",
+      "scope": "Para",
+      "submit": "Agregar"
+    },
+    "newProject": "Nuevo proyecto con este kit",
+    "newProjectName": "Proyecto nuevo",
+    "push": "Pasar a compras lo que falta de herramientas",
+    "pushHint": "Sube la cantidad de cada opción en Compras de herramientas hasta cubrir lo que falta (nunca la baja). Si ya se compró, crea una opción nueva para las piezas que faltan. Los materiales se piden desde Compras de materiales.",
+    "pushDone": "{n, plural, =0 {Nada que pasar: compras ya cubre lo que falta.} one {# opción de compra actualizada.} other {# opciones de compra actualizadas.}}",
+    "duplicate": "Duplicar",
+    "copyOf": "{name} (copia)",
+    "remove": "Borrar",
+    "confirmRemove": "¿Borrar «{name}»? Las opciones de compra y los materiales no se tocan."
+  }
+}

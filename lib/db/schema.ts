@@ -305,6 +305,23 @@ export const toolBuys = pgTable(
 )
 export const toolBuyVersions = versions("tool_buy_versions", "tool_buy_id")
 
+// ── Kits and new projects (/interno/nuevos_proyectos) ───────────────────────
+
+export const projects = pgTable(
+  "projects",
+  {
+    id: text("id").primaryKey(),
+    /** kit | proyecto */
+    kind: text("kind").notNull().default("proyecto"),
+    name: text("name").notNull().default(""),
+    status: text("status").notNull().default("planeacion"),
+    data: jsonb("data").notNull(),
+    ...shared(),
+  },
+  (t) => [index("projects_rev_idx").on(t.rev)]
+)
+export const projectVersions = versions("project_versions", "project_id")
+
 // ── Saved MikroTik deployments ──────────────────────────────────────────────
 
 export const deployments = pgTable(

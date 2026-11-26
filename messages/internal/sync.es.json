@@ -61,7 +61,8 @@
         "agenda": "Agenda",
         "porpagar": "Cuentas por pagar",
         "porcobrar": "Cuentas por cobrar",
-        "contratos": "Contratos"
+        "contratos": "Contratos",
+        "proyectos": "Nuevos proyectos"
       }
     },
     "rejected": {
@@ -92,7 +93,8 @@
         "agenda": "Cita de la agenda",
         "porpagar": "Cuenta por pagar",
         "porcobrar": "Cuenta por cobrar",
-        "contratos": "Contrato"
+        "contratos": "Contrato",
+        "proyectos": "Kit o proyecto"
       }
     },
     "signinHint": "Tu sesión ya no es válida (te dieron de baja, o ya hay cuentas del equipo y entraste con la contraseña compartida). Lo que cambiaste queda guardado en este teléfono.",

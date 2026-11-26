@@ -22,7 +22,7 @@ export const decodeRole = (v: unknown): Role => (ROLES as readonly unknown[]).in
 /** Who is asking: an admin reaches everything; otherwise its role decides. */
 export type Access = { admin: boolean; role: Role }
 
-const TECH_KINDS: SyncKind[] = ["surveys", "materials", "providers", "clients", "sites", "tools", "stock", "units", "reports", "notes", "rolls", "toolbuys", "agenda"]
+const TECH_KINDS: SyncKind[] = ["surveys", "materials", "providers", "clients", "sites", "tools", "stock", "units", "reports", "notes", "rolls", "toolbuys", "agenda", "proyectos"]
 const COBRANZA_KINDS: SyncKind[] = ["clients", "sites", "reports", "payments", "notes", "agenda", "porcobrar"]
 
 /** Kinds a role reads but doesn't change (técnico: payments, so Clientes shows real balances, not everyone owing). */
@@ -65,6 +65,7 @@ const PAGES: Record<Exclude<Role, "oficina">, string[]> = {
     "/interno/admin/reportes_clientes",
     "/interno/herramientas",
     "/interno/materiales",
+    "/interno/nuevos_proyectos",
     "/interno/equipos-telecom",
     "/interno/software/davorolt",
     "/interno/software/wispdavor/red",

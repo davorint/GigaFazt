@@ -13,7 +13,7 @@ import { DAVOROLT_SLUGS } from "./davorolt/catalog"
 import { WISPDAVOR_PAGES } from "./wispdavor/pages"
 
 export const INTERNAL_ROOT = "interno"
-export const INTERNAL_PAGES = ["levantamientos", "admin", "tecnico", "materiales", "herramientas", "equipos-telecom", "software", "guias"] as const
+export const INTERNAL_PAGES = ["levantamientos", "admin", "tecnico", "materiales", "herramientas", "equipos-telecom", "software", "guias", "nuevos_proyectos"] as const
 /** The guides (/interno/guias/<page>, owner 2026-11-21). */
 export const GUIDE_PAGES = ["utp"] as const
 /** The software pages (/interno/software/<page>, owner 2026-11-21). */
@@ -37,7 +37,7 @@ const ADMIN_ALIASES: Record<string, (typeof ADMIN_PAGES)[number]> = { notes: "no
 /** The sign-in page: the only internal page served without the password. */
 export const LOGIN_PAGE = "entrar"
 export const LOGIN_PATH = `/${INTERNAL_ROOT}/${LOGIN_PAGE}`
-const KNOWN = new Map<string, string>([...INTERNAL_PAGES.map((p): [string, string] => [p, p]), [LOGIN_PAGE, LOGIN_PAGE]])
+const KNOWN = new Map<string, string>([...INTERNAL_PAGES.map((p): [string, string] => [p, p]), [LOGIN_PAGE, LOGIN_PAGE], ["nuevos-proyectos", "nuevos_proyectos"], ["proyectos", "nuevos_proyectos"]])
 
 export type InternalMatch = {
   /** Where to rewrite, or null when the path is already the canonical route. */

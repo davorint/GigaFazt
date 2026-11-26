@@ -6,6 +6,7 @@ import { decodeNote } from "../notes/model"
 import { decodePayment } from "../payments/model"
 import { decodeRoll } from "../rolls/model"
 import { buyLabel, decodeToolBuy } from "../toolbuys/model"
+import { decodeProject, projectLabel } from "../projects/model"
 import { decodeAppointment } from "../agenda/model"
 import { decodePayable } from "../finance/payables"
 import { decodeReceivable } from "../finance/receivables"
@@ -70,6 +71,10 @@ export function recordLabel(kind: SyncKind, data: unknown): string {
     case "porcobrar": {
       const r = decodeReceivable(data)
       return r ? `${r.dueDate || "—"} · ${r.payer || "—"} · $${r.amount}` : "—"
+    }
+    case "proyectos": {
+      const p = decodeProject(data)
+      return p ? `${projectLabel(p)} · ${p.kind === "kit" ? "kit" : p.status} · ${p.lines.length} líneas` : "—"
     }
     case "contratos": {
       const c = decodeContract(data)

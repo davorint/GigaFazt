@@ -16,6 +16,10 @@
         "name": "Administración",
         "desc": "Despliegues con sus cuartos de telecom, clientes y solicitudes, proveedores y la lista maestra de materiales con precios."
       },
+      "nuevos_proyectos": {
+        "name": "Nuevos proyectos",
+        "desc": "Todo el equipo que necesita un despliegue nuevo: el kit mínimo de cada técnico, el router, la OLT y la fibra, con precios, tiendas y lo que falta comprar."
+      },
       "tecnico": {
         "name": "Técnico",
         "desc": "Tus instalaciones y visitas del día: llegada, fotos, material usado, firma del cliente y terminar."

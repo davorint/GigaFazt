@@ -29,6 +29,7 @@ import { decodePayment } from "../payments/model"
 import { decodeNote } from "../notes/model"
 import { decodeRoll } from "../rolls/model"
 import { buyLabel, decodeToolBuy } from "../toolbuys/model"
+import { decodeProject } from "../projects/model"
 import { decodeAppointment } from "../agenda/model"
 import { decodePayable } from "../finance/payables"
 import { decodeReceivable } from "../finance/receivables"
@@ -237,6 +238,17 @@ export const SPECS: Record<SyncKind, KindSpec> = {
       if (!c) return null
       const d = { ...c, id }
       return { data: d, cols: { kind: d.kind, title: d.title.slice(0, 200), end_date: d.endDate } }
+    },
+  },
+  proyectos: {
+    table: "projects",
+    versions: "project_versions",
+    fk: "project_id",
+    read: (id, data) => {
+      const p = decodeProject(data)
+      if (!p) return null
+      const d = { ...p, id }
+      return { data: d, cols: { kind: d.kind, name: d.name.slice(0, 200), status: d.status } }
     },
   },
 }

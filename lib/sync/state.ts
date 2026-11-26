@@ -31,8 +31,8 @@ export type SyncState = {
 const empty = (): SyncState => ({
   name: "",
   adopted: false,
-  rev: { surveys: 0, materials: 0, providers: 0, clients: 0, sites: 0, tools: 0, stock: 0, units: 0, reports: 0, payments: 0, notes: 0, rolls: 0, toolbuys: 0, agenda: 0, porpagar: 0, porcobrar: 0, contratos: 0 },
-  meta: { surveys: {}, materials: {}, providers: {}, clients: {}, sites: {}, tools: {}, stock: {}, units: {}, reports: {}, payments: {}, notes: {}, rolls: {}, toolbuys: {}, agenda: {}, porpagar: {}, porcobrar: {}, contratos: {} },
+  rev: { surveys: 0, materials: 0, providers: 0, clients: 0, sites: 0, tools: 0, stock: 0, units: 0, reports: 0, payments: 0, notes: 0, rolls: 0, toolbuys: 0, agenda: 0, porpagar: 0, porcobrar: 0, contratos: 0, proyectos: 0 },
+  meta: { surveys: {}, materials: {}, providers: {}, clients: {}, sites: {}, tools: {}, stock: {}, units: {}, reports: {}, payments: {}, notes: {}, rolls: {}, toolbuys: {}, agenda: {}, porpagar: {}, porcobrar: {}, contratos: {}, proyectos: {} },
 })
 
 export function readState(): SyncState {
