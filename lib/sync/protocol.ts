@@ -50,3 +50,12 @@ export const MAX_RECORDS = 500
 export const MAX_BODY_BYTES = 2_000_000
 /** Pull again from a little before the last rev, in case a slower save took a lower number after we read. */
 export const REV_OVERLAP = 20
+
+/**
+ * The kinds a phone syncs after its quick check: those with edits of its own waiting, and those whose latest
+ * revision on the server is past the one it has. A kind the server didn't answer for (this role can't reach it) is
+ * skipped, unless it has edits waiting (the sync then says what happened to them).
+ */
+export function kindsToSync(server: Partial<Record<SyncKind, number>>, local: Record<SyncKind, number>, dirty: ReadonlySet<SyncKind>): SyncKind[] {
+  return SYNC_KINDS.filter((k) => dirty.has(k) || (server[k] !== undefined && (server[k] as number) > local[k]))
+}

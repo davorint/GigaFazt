@@ -363,3 +363,15 @@ export async function sync(kind: SyncKind, since: number, changes: Change[], edi
   const rev = records.length ? records[records.length - 1].rev : since
   return { kind, rev, more, results, records }
 }
+
+/**
+ * The latest revision of each kind (0 when empty), in one query: the phones' 1-minute check (GET
+ * /api/interno/sync/revs) compares it with theirs and only syncs the kinds that moved, instead of one request per
+ * kind every time (owner, 2026-11-26: the free Vercel plan ran out of function invocations).
+ */
+export async function latestRevs(kinds: readonly SyncKind[]): Promise<Partial<Record<SyncKind, number>>> {
+  if (!kinds.length) return {}
+  const sql = kinds.map((k, i) => `select $${i + 1}::text as kind, coalesce(max(rev), 0)::bigint as rev from "${SPECS[k].table}"`).join(" union all ")
+  const rows = (await getPool().query(sql, [...kinds])).rows as { kind: SyncKind; rev: string | number }[]
+  return Object.fromEntries(rows.map((r) => [r.kind, Number(r.rev)]))
+}

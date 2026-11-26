@@ -38,7 +38,7 @@ import { payablesStore, receivablesStore } from "../finance/store"
 import { decodeContract, type Contract } from "../contracts/model"
 import { contractsStore } from "../contracts/store"
 import { applyRemoteSurveys, surveysSnapshot } from "../survey/store"
-import { MAX_CHANGES, REV_OVERLAP, SYNC_KINDS, type Change, type SyncKind, type SyncResponse } from "./protocol"
+import { MAX_CHANGES, REV_OVERLAP, SYNC_KINDS, kindsToSync, type Change, type SyncKind, type SyncResponse } from "./protocol"
 import { markChanged, onSyncChange, pendingCount, readState, updateState } from "./state"
 
 type Adapter = {
@@ -263,6 +263,8 @@ async function syncKind(kind: SyncKind, name: string): Promise<void> {
 
 let running = false
 let again = false
+/** A full sync was asked for while one was running: the rerun is full too. */
+let againFull = false
 
 /** A short name for a record in the list of refused ones. */
 function labelOf(x: unknown): string {
@@ -301,10 +303,34 @@ export function restoreRecord(kind: SyncKind, data: unknown) {
   return true
 }
 
-export async function syncNow(): Promise<void> {
+/** The kinds with edits of this browser still to send. */
+const dirtyKinds = (s: ReturnType<typeof readState>) => new Set(SYNC_KINDS.filter((k) => Object.values(s.meta[k]).some((m) => m.dirty > 0)))
+
+/**
+ * One request for every kind's latest revision on the server, then the kinds to sync (lib/sync/protocol.ts). Throws
+ * like a sync does (no database, signed out, offline).
+ */
+async function changedKinds(s: ReturnType<typeof readState>): Promise<SyncKind[]> {
+  const res = await fetch("/api/interno/sync/revs", { cache: "no-store" })
+  if (res.status === 503) throw Object.assign(new Error("no-database"), { code: "no-database" })
+  if (res.status === 401) throw Object.assign(new Error("unauthorized"), { code: "unauthorized" })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const body = (await res.json()) as { revs?: Partial<Record<SyncKind, number>> }
+  return kindsToSync(body.revs ?? {}, s.rev, dirtyKinds(s))
+}
+
+/**
+ * Syncs this browser with the server. "full" (the default: the button, every 10 minutes while the tab is in view)
+ * asks every kind; "check" (opening a page, the 1-minute timer, after an edit, back to the tab) first asks which kinds moved and syncs only
+ * those and the ones with edits waiting — one request instead of seventeen when nothing changed (owner, 2026-11-26:
+ * the plan's function invocations ran out). The full syncs also catch the rare record a check can miss: one saved
+ * with a lower revision that committed after a higher one was read.
+ */
+export async function syncNow(mode: "full" | "check" = "full"): Promise<void> {
   if (typeof window === "undefined") return
   if (running) {
     again = true
+    if (mode === "full") againFull = true
     return
   }
   const s = readState()
@@ -319,7 +345,8 @@ export async function syncNow(): Promise<void> {
   running = true
   setStatus({ phase: "syncing", error: "", rejected: [] })
   const work = async () => {
-    for (const k of SYNC_KINDS) await syncKind(k, s.name)
+    const kinds = mode === "full" ? SYNC_KINDS : await changedKinds(readState())
+    for (const k of kinds) await syncKind(k, s.name)
   }
   try {
     const locks = (navigator as Navigator & { locks?: { request: (n: string, f: () => Promise<void>) => Promise<void> } }).locks
@@ -333,8 +360,10 @@ export async function syncNow(): Promise<void> {
     running = false
     refreshCounts()
     if (again) {
+      const full = againFull
       again = false
-      void syncNow()
+      againFull = false
+      void syncNow(full ? "full" : "check")
     }
   }
 }
@@ -357,20 +386,29 @@ export function startSync(): () => void {
   refreshCounts()
   const soon = () => {
     if (timer) clearTimeout(timer)
-    timer = setTimeout(() => void syncNow(), 2000)
+    timer = setTimeout(() => void syncNow("check"), 2000)
   }
   const offChange = onSyncChange(() => {
     refreshCounts()
     if (readState().name && pendingCount(readState()) > 0) soon()
   })
-  const every = setInterval(() => void syncNow(), 30_000)
-  const online = () => void syncNow()
+  // Every minute while the tab is in view: a quick check (one request), and a full sync every tenth time. A hidden
+  // tab asks nothing; it syncs in full when it comes back.
+  let ticks = 0
+  const every = setInterval(() => {
+    if (document.visibilityState !== "visible") return
+    ticks++
+    void syncNow(ticks % 10 === 0 ? "full" : "check")
+  }, 60_000)
+  // Opening a page, coming back to the tab or back online: the quick check (a new browser has revision 0 everywhere,
+  // so it still pulls every kind).
+  const online = () => void syncNow("check")
   const offline = () => setStatus({ phase: "offline" })
-  const visible = () => document.visibilityState === "visible" && void syncNow()
+  const visible = () => document.visibilityState === "visible" && void syncNow("check")
   window.addEventListener("online", online)
   window.addEventListener("offline", offline)
   document.addEventListener("visibilitychange", visible)
-  void syncNow()
+  void syncNow("check")
   return () => {
     offChange()
     clearInterval(every)
