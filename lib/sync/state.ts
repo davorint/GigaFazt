@@ -108,5 +108,11 @@ export function adoptLocal(local: Record<SyncKind, string[]>) {
   })
 }
 
+/**
+ * Every local edit not sent yet, counted (each save adds one to its record's counter; a sync that sends it brings the
+ * record back to 0). It only grows with a new edit: the engine schedules a sync when it grows, never on its own writes.
+ */
+export const dirtyTotal = (s: SyncState) => SYNC_KINDS.reduce((n, k) => n + Object.values(s.meta[k]).reduce((a, m) => a + (m.dirty > 0 ? m.dirty : 0), 0), 0)
+
 /** How many records have edits not sent yet. */
 export const pendingCount = (s: SyncState) => SYNC_KINDS.reduce((n, k) => n + Object.values(s.meta[k]).filter((m) => m.dirty > 0).length, 0)

@@ -39,7 +39,7 @@ import { decodeContract, type Contract } from "../contracts/model"
 import { contractsStore } from "../contracts/store"
 import { applyRemoteSurveys, surveysSnapshot } from "../survey/store"
 import { MAX_CHANGES, REV_OVERLAP, SYNC_KINDS, kindsToSync, type Change, type SyncKind, type SyncResponse } from "./protocol"
-import { markChanged, onSyncChange, pendingCount, readState, updateState } from "./state"
+import { dirtyTotal, markChanged, onSyncChange, pendingCount, readState, updateState } from "./state"
 
 type Adapter = {
   /** The local record to send, or undefined when it's gone. */
@@ -391,9 +391,17 @@ export function startSync(): () => void {
     if (timer) clearTimeout(timer)
     timer = setTimeout(() => void syncNow("check"), 2000)
   }
+  // Only a new local edit schedules a sync. This used to fire on any change of the sync state while anything was
+  // pending, and a sync writes that state itself (each kind's revision): one record the server keeps refusing (or of a
+  // kind this role can't reach) made every sync schedule the next one 2 s later, forever — thousands of requests an
+  // hour from one open tab (owner, 2026-11-26: the plan's function invocations ran out with no routers set up).
+  let edits = dirtyTotal(readState())
   const offChange = onSyncChange(() => {
     refreshCounts()
-    if (readState().name && pendingCount(readState()) > 0) soon()
+    const s = readState()
+    const now = dirtyTotal(s)
+    if (s.name && now > edits) soon()
+    edits = now
   })
   // Every minute while the tab is in view: a quick check (one request), and a full sync every tenth time. A hidden
   // tab asks nothing; it syncs in full when it comes back.
