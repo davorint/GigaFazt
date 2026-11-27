@@ -13,7 +13,7 @@
  */
 import { addDays } from "../agenda/model"
 import { priceAt, type Client, type Service } from "../clients/model"
-import { addMonths, ledger, monthOf, type Payment } from "../payments/model"
+import { addMonths, monthOf, type Payment } from "../payments/model"
 import { linksCost, siteCost, siteLabel, type Site } from "../sites/model"
 import { activeAt } from "./numbers"
 
@@ -165,77 +165,10 @@ export function retentionAt(rows: Cohort[], k: number): number | null {
   return n ? kept / n : null
 }
 
-// ── Living network (rings) ──────────────────────────────────────────────────
+// ── How each client stands (Cobranza) ──────────────────────────────────────────────────
 
 export const TONES = ["al-corriente", "por-vencer", "atrasado", "suspendido", "sin-cobro"] as const
 export type Tone = (typeof TONES)[number]
-export type RingClient = { id: string; tone: Tone; plan: string; place: string }
-export type RingGroup = { id: string; name: string; clients: RingClient[] }
-
-/** Clients with a service live today per deployment ("" = no deployment), how each stands, the calm ones first. */
-export function networkGroups(sites: Site[], clients: Client[], payments: Payment[], today: string): RingGroup[] {
-  const known = new Map(sites.map((s) => [s.id, s]))
-  const by = new Map<string, RingClient[]>()
-  for (const c of clients) {
-    const live = c.services.filter((s) => liveOn(s, today))
-    if (!live.length) continue
-    const tone: Tone = live.some((s) => s.status === "suspendido") ? "suspendido" : ledger(c, payments, today).status
-    const key = known.has(c.siteId) ? c.siteId : ""
-    const plan = live.find((s) => s.type === "internet")?.plan.trim() ?? ""
-    by.set(key, [...(by.get(key) ?? []), { id: c.id, tone, plan, place: [c.tower, c.apartment].filter(Boolean).join(" · ") }])
-  }
-  return [...by]
-    .map(([id, list]) => ({ id, name: id ? siteLabel(known.get(id) as Site) : "", clients: list.sort((a, b) => TONES.indexOf(a.tone) - TONES.indexOf(b.tone)) }))
-    .sort((a, b) => b.clients.length - a.clients.length || a.name.localeCompare(b.name, "es"))
-}
-
-export type RingDisc = { id: string; x: number; y: number; r: number; angle: number; dots: { x: number; y: number }[] }
-export type Rings = { size: number; core: number; dot: number; discs: RingDisc[] }
-
-const GOLDEN = Math.PI * (3 - Math.sqrt(5))
-
-/**
- * Geometry for the rings, in a `size` square: discs on one circle around the core, each a sunflower of `n` dots, as big
- * as fits (the dot spacing is the largest that lets every disc sit on the circle without touching its neighbours).
- */
-export function ringLayout(counts: number[], size: number): Rings {
-  const c = size / 2
-  // Room below the lowest disc for its name.
-  const outer = size / 2 - 20
-  const core = Math.max(18, size * 0.075)
-  const gap = 0.04
-  const discR = (n: number, s: number) => s * (0.56 * Math.sqrt(Math.max(1, n)) + 0.5)
-  const fits = (s: number) => {
-    const maxR = Math.max(...counts.map((n) => discR(n, s)))
-    const R = outer - maxR
-    if (R < core + maxR + 16) return null
-    if (counts.length === 1) return R
-    const need = counts.reduce((a, n) => a + 2 * Math.asin(Math.min(1, discR(n, s) / R)) + gap, 0)
-    return need <= Math.PI * 2 ? R : null
-  }
-  let lo = 0.5
-  let hi = 22
-  for (let i = 0; i < 30; i++) {
-    const mid = (lo + hi) / 2
-    if (fits(mid) !== null) lo = mid
-    else hi = mid
-  }
-  const s = lo
-  const R = fits(s) ?? outer / 2
-  const needs = counts.map((n) => 2 * Math.asin(Math.min(1, discR(n, s) / R)))
-  const spare = counts.length > 1 ? (Math.PI * 2 - needs.reduce((a, b) => a + b, 0)) / counts.length : 0
-  let at = -Math.PI / 2 - (needs[0] ?? 0) / 2 - spare / 2
-  const discs = counts.map((n, i) => {
-    const angle = at + needs[i] / 2 + spare / 2
-    at += needs[i] + spare
-    const x = c + R * Math.cos(angle)
-    const y = c + R * Math.sin(angle)
-    const k = s * 0.56
-    const dots = Array.from({ length: n }, (_, j) => ({ x: x + k * Math.sqrt(j + 0.5) * Math.cos(j * GOLDEN), y: y + k * Math.sqrt(j + 0.5) * Math.sin(j * GOLDEN) }))
-    return { id: String(i), x, y, r: discR(n, s), angle, dots }
-  })
-  return { size, core, dot: Math.max(1.2, s * 0.36), discs }
-}
 
 // ── Payment calendar ────────────────────────────────────────────────────────
 

@@ -85,11 +85,111 @@
         "note": "Abiertos = todo lo que no está resuelto ni descartado; pendientes = los que nadie ha tomado todavía (estado «nuevo»). Las barras son los reportes que se abrieron cada día del mes, según cómo están ahora."
       }
     },
-    "rings": {
+    "live": {
       "title": "La red viva",
-      "takeaway": "{n, plural, one {# cliente} other {# clientes}} con servicio en {sites, plural, one {# despliegue} other {# despliegues}}: {late} {late, plural, one {atrasado} other {atrasados}} y {sus} {sus, plural, one {suspendido} other {suspendidos}}.",
-      "note": "Cada punto es un cliente: al centro de cada despliegue los que van al corriente, en la orilla los atrasados y suspendidos. Pasa el cursor sobre un despliegue para ver su detalle.",
-      "center": "CON SERVICIO",
+      "takeaway": "{online} de {live} clientes en línea ahora; los enlaces van al {use}. {alerts, plural, =0 {Todo en calma.} one {# despliegue necesita una mirada.} other {# despliegues necesitan una mirada.}}",
+      "takeawayNoLive": "Todavía no llegan reportes de los routers: ves cómo está armada la red con lo de Despliegues. Con el agente instalado, aquí se ve en vivo.",
+      "note": "Al centro, los carriers; cada hilo es un enlace a un despliegue. El grosor es la velocidad del enlace; la parte encendida, qué tan lleno va ahora (el tráfico se cuenta por despliegue, así que sus enlaces muestran el mismo porcentaje) y la luz que corre, el tráfico: más rápida entre más lleno. El aro de cada despliegue es una sección por torre, encendida con los clientes en línea; los puntos de afuera son ONTs con luz justa o mala. Ámbar desde 80 %, rojo desde 95 % o si un router falla o deja de reportar.",
+      "badge": "En vivo",
+      "updated": "Actualizado {time}",
+      "paused": "Pausado: sincronización automática apagada",
+      "refresh": "Actualizar",
+      "refreshing": "Actualizando…",
+      "error": "No se pudo leer la red en vivo; se reintenta en un minuto.",
+      "stats": {
+        "online": "En línea ahora",
+        "onlineOf": "de {n}",
+        "traffic": "Tráfico ahora",
+        "trafficOf": "de {cap} · {share}",
+        "latency": "Latencia a carriers",
+        "latencyWorst": "la más alta: {ms}, {name}",
+        "alerts": "Requieren atención",
+        "alertsNone": "ninguno",
+        "alertsSome": "{outages} sin servicio · {full} llenos"
+      },
+      "states": {
+        "ok": "Normal",
+        "full": "Lleno (≥ 80 %)",
+        "saturated": "Saturado (≥ 95 %)",
+        "outage": "Falla abierta",
+        "silent": "Router sin reportar",
+        "nodata": "Sin datos en vivo"
+      },
+      "legend": {
+        "flow": "Tráfico ahora",
+        "full": "≥ 80 %",
+        "saturated": "≥ 95 % o falla",
+        "online": "Clientes en línea",
+        "justo": "Luz justa",
+        "bad": "Luz mala"
+      },
+      "noLink": "Sin enlace registrado",
+      "noName": "Carrier sin nombre",
+      "noTower": "Sin torre",
+      "rows": {
+        "online": "En línea",
+        "traffic": "Tráfico",
+        "use": "Uso de enlaces",
+        "latency": "Latencia",
+        "loss": "Pings perdidos",
+        "light": "Luz",
+        "links": "Enlaces",
+        "towers": "Torres",
+        "state": "Estado",
+        "capacity": "Capacidad",
+        "sites": "Despliegues"
+      },
+      "lightProblems": "{justo} justa · {bad} mala",
+      "sites": "Despliegues",
+      "cols": {
+        "site": "Despliegue",
+        "carriers": "Carriers",
+        "online": "En línea",
+        "traffic": "Tráfico",
+        "use": "Uso",
+        "latency": "Latencia",
+        "state": "Estado"
+      }
+    },
+    "tree": {
+      "title": "Mapa de ingresos",
+      "takeaway": "{top} aporta el {share} del ingreso mensual ({amount}). Este mes va pagado el {paid}.",
+      "marginLine": "{best} es el que más deja ({margin} de margen).",
+      "lossLine": "{name} pierde dinero: {profit} al mes.",
+      "note": "El área de cada cuadro es lo que cobra al mes, y adentro cada cliente es un cuadrito del tamaño de lo que paga: lleno si ya pagó este mes, hueco si todavía no le vence, naranja si va atrasado y rojo si está suspendido. La línea azul bajo cada nombre es cuánto va pagado este mes; la barra de arriba de cada despliegue, su margen después del edificio y los enlaces (azul: deja 10 % o más; gris: parejo; rayado: pierde). Toca un cuadro para entrar; «Todo» o el camino para salir.",
+      "all": "Todo",
+      "enter": "Entrar:",
+      "up": "Subir",
+      "paid": "{share} pagado",
+      "margin": "margen {share}",
+      "rows": {
+        "monthly": "Cobra al mes",
+        "paid": "Pagado este mes",
+        "clients": "Clientes",
+        "late": "Atrasados",
+        "suspended": "Suspendidos",
+        "margin": "Margen",
+        "profit": "Utilidad al mes",
+        "incomplete": "faltan costos"
+      },
+      "legend": {
+        "paid": "Pagado este mes",
+        "due": "Por pagar (aún no vence)",
+        "good": "Deja 10 % o más",
+        "even": "Parejo (0 a 10 %)",
+        "loss": "Pierde (rayado)",
+        "late": "Atrasado",
+        "suspended": "Suspendido"
+      },
+      "cols": {
+        "site": "Despliegue",
+        "monthly": "Cobra al mes",
+        "share": "% del total",
+        "paid": "Pagado",
+        "margin": "Margen"
+      }
+    },
+    "rings": {
       "noSite": "Sin despliegue",
       "tones": {
         "al-corriente": "Al corriente",
@@ -386,10 +486,6 @@
       "empty": "Hacen falta unas semanas de tráfico y la velocidad de los enlaces en Despliegues."
     },
     "pack": {
-      "title": "Mapa de ingresos",
-      "takeaway": "{top} aporta el {share} del ingreso mensual ({amount}). Toca un despliegue para entrar en él.",
-      "note": "Cada círculo grande es un despliegue, los punteados sus torres y cada punto un cliente: su tamaño es lo que paga al mes y su color cómo va con sus pagos. Toca un despliegue (o su botón) para acercarte; toca el fondo o «Ver todo» para volver.",
-      "all": "Ver todo",
       "noSite": "Sin despliegue",
       "noTower": "Sin torre",
       "plan": "Plan",
@@ -397,7 +493,6 @@
       "status": "Estado",
       "noPlace": "Sin torre ni departamento",
       "clients": "{n, plural, one {# cliente} other {# clientes}}",
-      "towers": "{n, plural, one {# torre} other {# torres}}",
       "empty": "Todavía no hay clientes con servicio y precio."
     },
     "horizon": {

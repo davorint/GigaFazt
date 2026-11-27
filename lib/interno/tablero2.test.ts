@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { newClient, newService } from "../clients/model"
 import { newPayment } from "../payments/model"
 import { newRoom, newRoomCarrier, newSite } from "../sites/model"
-import { cohorts, liveOn, moneyFlow, mrrAt, mrrBridge, networkGroups, payCalendar, payWindow, retentionAt, ringLayout } from "./tablero2"
+import { cohorts, liveOn, moneyFlow, mrrAt, mrrBridge, payCalendar, payWindow, retentionAt } from "./tablero2"
 
 const net = (plan: string, monthly: number, p: Partial<ReturnType<typeof newService>> = {}) => newService("internet", { plan, monthly, status: "activo", start: "2026-01-10", ...p })
 
@@ -84,35 +84,7 @@ describe("Tablero 2 figures", () => {
     expect(retentionAt(c, 1)).toBe(0.5)
   })
 
-  it("network groups: live clients by deployment, suspended over late, calm first", () => {
-    const today = "2026-11-20"
-    const late = newClient({ siteId: a.id, billingFrom: "2026-10", services: [net("200M", 396, { start: "2026-10-01" })] })
-    const paid = newClient({ siteId: a.id, billingFrom: "2026-11", services: [net("500M", 496, { start: "2026-11-01" })] })
-    const sus = newClient({ siteId: a.id, services: [net("1G", 596, { status: "suspendido" })] })
-    const gone = newClient({ siteId: b.id, services: [net("1G", 596, { status: "cancelado" })] })
-    const g = networkGroups([a, b], [sus, late, paid, gone], [newPayment({ clientId: paid.id, date: "2026-11-01", amount: 496 })], today)
-    expect(g).toHaveLength(1)
-    expect(g[0].clients.map((c) => c.tone)).toEqual(["al-corriente", "atrasado", "suspendido"])
-    const soon = newClient({ siteId: b.id, services: [net("1G", 596, { start: "2026-11-28" })] })
-    expect(networkGroups([a, b], [soon], [], today)).toHaveLength(0)
-  })
 
-  it("ring layout: discs on one circle, inside the square, never overlapping", () => {
-    const r = ringLayout([70, 46, 38, 24, 10, 1], 600)
-    expect(r.discs[0].angle).toBeCloseTo(-Math.PI / 2)
-    for (const d of r.discs) {
-      expect(d.x - d.r).toBeGreaterThanOrEqual(0)
-      expect(d.x + d.r).toBeLessThanOrEqual(600)
-      expect(d.y - d.r).toBeGreaterThanOrEqual(0)
-    }
-    for (let i = 0; i < r.discs.length; i++)
-      for (let j = i + 1; j < r.discs.length; j++) {
-        const p = r.discs[i]
-        const q = r.discs[j]
-        expect(Math.hypot(p.x - q.x, p.y - q.y)).toBeGreaterThan(p.r + q.r)
-      }
-    expect(r.discs[0].dots).toHaveLength(70)
-  })
 
   it("payment calendar from a Monday, and the busiest run of days", () => {
     const pays = [newPayment({ date: "2026-11-02", amount: 396 }), newPayment({ date: "2026-11-02", amount: 496 }), newPayment({ date: "2026-11-03", amount: 396 }), newPayment({ date: "2026-10-28", amount: 1 })]

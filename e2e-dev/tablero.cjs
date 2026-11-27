@@ -83,7 +83,7 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
       await page.waitForTimeout(1500)
       const tags = await page.getByText("SIMULACIÓN", { exact: true }).count()
       const demoOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
-      console.log(`${w} demo: switch ${await page.getByRole("switch").getAttribute("aria-checked")} tags ${tags >= 18} overflow ${demoOverflow}`)
+      console.log(`${w} demo: switch ${await page.getByRole("switch", { name: "Datos simulados" }).getAttribute("aria-checked")} tags ${tags >= 18} overflow ${demoOverflow}`)
       await page.screenshot({ path: path.join(SHOTS, `tablero-demo-${w}.png`), fullPage: true })
       await page.getByRole("switch", { name: "Datos simulados" }).click()
       console.log(`${w} off: banner ${await page.getByText(/Estás viendo datos inventados/).count()}`)

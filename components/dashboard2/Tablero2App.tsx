@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
 import { useTranslations } from "next-intl"
 import { localToday } from "@/lib/clients/from-lead"
 import { demoSet } from "@/lib/interno/dashboard-demo"
@@ -10,9 +10,12 @@ import { BETTER_HIGH, compareRows, faultMatrix, faultsPer10, MEASURES, payPrints
 import { linkSpeed } from "@/lib/wispdavor/capacity"
 import { siteLabel } from "@/lib/sites/model"
 import { forecast } from "@/lib/interno/outlook"
-import { cohorts, moneyFlow, mrrAt, mrrBridge, networkGroups, payCalendar, payWindow, retentionAt, TONES, type FlowKind, type RingGroup, type Tone } from "@/lib/interno/tablero2"
+import { cohorts, moneyFlow, mrrAt, mrrBridge, payCalendar, payWindow, retentionAt, type FlowKind } from "@/lib/interno/tablero2"
 import { FLOW_STATES, lightRows, recovered, REPAIR_GROUPS, repairLanes, revenueStreams, skyline, statusFlows, tenure, type RepairBar, type Star } from "@/lib/interno/tablero2-more"
 import { demoCarriers } from "@/lib/interno/tablero2-demo"
+import { demoLive, liveNet, type LiveFigures, type SiteState } from "@/lib/interno/tablero2-live"
+import { margins as siteMargins, paidShare, stats } from "@/lib/interno/tablero2-tree"
+import { subscribeSync, syncSnapshot } from "@/lib/sync/engine"
 import { carrierOf, continuityStrip, gatewayStats, hourglass, saturation, type CarrierFigures, type Cell, type GatewayHour } from "@/lib/interno/tablero2-net"
 import { mxn } from "@/lib/materials/catalog"
 import { reportsStore } from "@/lib/reports/store"
@@ -28,18 +31,18 @@ import { SCORE_COLOR, ScoreBoard } from "./ScoreBoard"
 import { CHANNEL_COLOR, MONTH_COLOR, PaymentDays, StageBar, TicketDays } from "./TodayCharts"
 import { CHANNELS, MONTH_STATES, ONLINE_KINDS, paymentsByDay, ticketFigures } from "@/lib/interno/tablero2-today"
 import { PayContours } from "./PayContours"
-import { RevenuePack } from "./RevenuePack"
+import { HATCH, MARGIN_COLOR, RevenueTreemap, TILE_COLOR, type TreemapLabels } from "./RevenueTreemap"
+import { LIVE_COLOR, LiveNetwork, type LiveLabels } from "./LiveNetwork"
 import { CarrierPulse } from "./CarrierPulse"
 import { CELL_COLOR, ContinuityStrips } from "./ContinuityStrips"
 import { PacketPath } from "./PacketPath"
 import { SaturationForecast } from "./SaturationForecast"
 import { SpeedHourglass } from "./SpeedHourglass"
 import { CohortGrid } from "./CohortGrid"
-import { k, monthName, pct, pesos, short, signed } from "./format"
+import { clipName, k, monthName, pct, pesos, short, signed } from "./format"
 import { MoneySankey } from "./MoneySankey"
 import { MovesChart } from "./MovesChart"
 import { MrrWaterfall } from "./MrrWaterfall"
-import { NetworkRings, TONE_COLOR } from "./NetworkRings"
 import { PayCalendar, PayDays } from "./PayCalendar"
 import { RadialClock } from "./RadialClock"
 import { RevenueChart } from "./RevenueChart"
@@ -124,6 +127,15 @@ export function Tablero2App() {
   const [net, setNet] = useState<NetworkFigures | null | "error">(null)
   const [carrierNet, setCarrierNet] = useState<CarrierFigures | null | "error">(null)
   const [demo, setDemo] = useState(false)
+  // La red viva (owner, 2026-11-27): the network's minute, read every minute while the tab is visible.
+  const [liveFig, setLiveFig] = useState<LiveFigures | null | "error">(null)
+  const [liveBusy, setLiveBusy] = useState(false)
+  const [livePick, setLivePick] = useState<string | null>(null)
+  const saver = useSyncExternalStore(subscribeSync, () => syncSnapshot().saver, () => false)
+  const saverRef = useRef(saver)
+  useEffect(() => {
+    saverRef.current = saver
+  }, [saver])
   const [nowHour, setNowHour] = useState<number | null>(null)
   const [nowMs, setNowMs] = useState(0)
   const reports = useSyncExternalStore(reportsStore.subscribe, reportsStore.snapshot, reportsStore.serverSnapshot)
@@ -158,6 +170,35 @@ export function Tablero2App() {
     }
   }, [])
 
+  const loadLive = useCallback(
+    () =>
+      fetch("/api/interno/tablero2/vivo", { cache: "no-store" })
+        .then(async (r) => {
+          const b = (await r.json()) as { live?: LiveFigures }
+          setLiveFig(r.ok && b.live ? b.live : "error")
+        })
+        .catch(() => setLiveFig("error")),
+    []
+  )
+  const refreshLive = async () => {
+    setLiveBusy(true)
+    await loadLive()
+    setLiveBusy(false)
+  }
+  // Every minute, only while the tab is visible and the team's automatic syncing is on (saving mode stops it);
+  // coming back to the tab reads it again.
+  useEffect(() => {
+    if (demo) return
+    void loadLive()
+    const id = window.setInterval(() => document.visibilityState === "visible" && !saverRef.current && void loadLive(), 60_000)
+    const back = () => document.visibilityState === "visible" && !saverRef.current && void loadLive()
+    document.addEventListener("visibilitychange", back)
+    return () => {
+      window.clearInterval(id)
+      document.removeEventListener("visibilitychange", back)
+    }
+  }, [demo, loadLive])
+
   const cur = today.slice(0, 7)
   const months = useMemo(() => (cur ? lastMonths(cur, period) : []), [cur, period])
   const year = useMemo(() => (cur ? lastMonths(cur, 12) : []), [cur])
@@ -171,11 +212,8 @@ export function Tablero2App() {
   const cohortRows = useMemo(() => cohorts(src.clients, months, today), [src, months, today])
   // Kept at 3 months over the trailing window that ends each month of the year (the KPI's trend).
   const r3Trend = useMemo(() => year.map((m) => { const v = retentionAt(cohorts(src.clients, lastMonths(m, Math.min(period, 12)), m === cur ? today : undefined), 3); return v === null ? null : Math.round(v * 1000) / 10 }), [src, year, period, cur, today])
-  const groups = useMemo(() => (today ? networkGroups(src.sites, src.clients, src.payments, today) : []), [src, today])
   const cal = useMemo(() => (today ? payCalendar(src.payments, today, 26) : null), [src, today])
   const nodeName = useCallback((kind: FlowKind, label: string) => (kind === "plan" || kind === "site" ? label : t(`flow.nodes.${kind}`)), [t])
-  const groupName = useCallback((g: RingGroup) => g.name || t("rings.noSite"), [t])
-  const toneLabel = useCallback((x: Tone) => t(`rings.tones.${x}`), [t])
   // Second round (owner, 2026-11-22: "more, way more impressive").
   const streams = useMemo(() => revenueStreams(src.clients, months), [src, months])
   const flowMonths = useMemo(() => (cur ? lastMonths(cur, Math.min(period, 6)) : []), [cur, period])
@@ -194,6 +232,8 @@ export function Tablero2App() {
   const forecasts = useMemo(() => (carriers && today ? saturation(src.sites, carriers.daily, today) : []), [carriers, src, today])
   // Fourth round (owner, 2026-11-23: "5 more custom made, cutting edge").
   const tree = useMemo(() => (today ? revenueTree(src.sites, src.clients, src.payments, today) : null), [src, today])
+  const liveFigures = useMemo(() => (sim ? (nowMs ? demoLive(sim, nowMs) : null) : liveFig && liveFig !== "error" ? liveFig : null), [sim, nowMs, liveFig])
+  const lnet = useMemo(() => (today ? liveNet(src.sites, src.clients, today, liveFigures) : null), [src, today, liveFigures])
   const chordM = useMemo(() => (nowMs ? faultMatrix(src.reports, src.sites, nowMs, 90) : null), [src, nowMs])
   const prints = useMemo(() => (today ? payPrints(src.payments, src.clients, today, 12, 10) : null), [src, today])
   const siteRows = useMemo(() => siteNumbers(src.sites, src.clients), [src])
@@ -214,10 +254,6 @@ export function Tablero2App() {
   const r3 = retentionAt(cohortRows, 3)
   const r6 = retentionAt(cohortRows, 6)
 
-  // The living network
-  const live = groups.reduce((a, g) => a + g.clients.length, 0)
-  const toneCount = (x: Tone) => groups.reduce((a, g) => a + g.clients.filter((c) => c.tone === x).length, 0)
-  const sitesWithClients = groups.filter((g) => g.id).length
 
   // Money
   const revenue = rows.map((r) => ({ month: r.month, billed: r.expected, collected: r.collected }))
@@ -240,6 +276,21 @@ export function Tablero2App() {
   }
   const ms = (v: number) => `${v < 10 ? v.toLocaleString("es-MX", { maximumFractionDigits: 1 }) : Math.round(v)} ms`
   const speedText = (mbps: number) => (mbps >= 1000 ? `${(mbps / 1000).toLocaleString("es-MX", { maximumFractionDigits: 1 })} Gbps` : `${Math.round(mbps)} Mbps`)
+  // La red viva: live data on screen (some router reporting), the median carrier latency, the labels.
+  const liveOn = !!lnet && lnet.sites.some((x) => x.state !== "nodata")
+  const liveRtts = (lnet?.sites ?? []).map((x) => x.rtt).filter((v): v is number => v !== null).sort((a, b) => a - b)
+  const liveRtt = liveRtts.length ? liveRtts[Math.floor(liveRtts.length / 2)] : null
+  const stateColor = (x: SiteState) => (x === "outage" || x === "saturated" ? LIVE_COLOR.outage : x === "silent" ? LIVE_COLOR.silent : x === "full" ? LIVE_COLOR.full : x === "nodata" ? LIVE_COLOR.nodata : LIVE_COLOR.online)
+  const liveLabels: LiveLabels = {
+    mbps: speedText,
+    ms,
+    state: (x) => t(`live.states.${x}`),
+    noLink: t("live.noLink"),
+    noName: t("live.noName"),
+    noTower: t("live.noTower"),
+    rows: { online: t("live.rows.online"), traffic: t("live.rows.traffic"), use: t("live.rows.use"), latency: t("live.rows.latency"), loss: t("live.rows.loss"), light: t("live.rows.light"), links: t("live.rows.links"), towers: t("live.rows.towers"), state: t("live.rows.state"), capacity: t("live.rows.capacity"), sites: t("live.rows.sites") },
+    lightProblems: (justo, bad) => t("live.lightProblems", { justo, bad }),
+  }
   const pulseRows = (carriers?.gateways ?? []).map((g) => {
     const st = gatewayStats(g.hours)
     const name = carrierOf(src.sites, g.siteId, g.ip) || g.ip
@@ -264,6 +315,23 @@ export function Tablero2App() {
   const packTotal = packSites.reduce((a, x) => a + x.value, 0)
   const packTop = [...packSites].sort((a, b) => b.value - a.value)[0]
   const packTip = (l: Leaf) => ({ title: l.place || t("pack.noPlace"), rows: [{ label: t("pack.plan"), value: l.plan || "—" }, { label: t("pack.pays"), value: mxn(l.value) }, { label: t("pack.status"), value: t(`rings.tones.${l.tone}`) }] })
+  // Mapa de ingresos (owner, 2026-11-27): margins from Números, paid share, the best and the losing deployment.
+  const treeMargins = siteMargins(siteRows)
+  const treeStats = tree ? stats(tree) : null
+  const treeSites = siteRows.filter((x) => x.income > 0).map((x) => ({ name: x.name, margin: x.profit / x.income, profit: x.profit }))
+  const treeLoss = treeSites.filter((x) => x.profit < 0).sort((a, b) => a.profit - b.profit)[0]
+  const treeBest = [...treeSites].sort((a, b) => b.margin - a.margin)[0]
+  const treeLabels: TreemapLabels = {
+    site: (n) => n || t("pack.noSite"),
+    tower: (n) => n || t("pack.noTower"),
+    paid: (share) => t("tree.paid", { share }),
+    margin: (share) => t("tree.margin", { share }),
+    rows: { monthly: t("tree.rows.monthly"), paid: t("tree.rows.paid"), clients: t("tree.rows.clients"), late: t("tree.rows.late"), suspended: t("tree.rows.suspended"), margin: t("tree.rows.margin"), profit: t("tree.rows.profit"), incomplete: t("tree.rows.incomplete") },
+    leafTip: packTip,
+    all: t("tree.all"),
+    enter: t("tree.enter"),
+    up: t("tree.up"),
+  }
   const horizonRows = (carriers?.traffic ?? []).map((tr) => {
     const site = src.sites.find((x) => x.id === tr.siteId)
     const link = site ? linkSpeed(site).down : null
@@ -381,22 +449,58 @@ export function Tablero2App() {
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <Panel
           demo={tag}
-          title={t("rings.title")}
-          takeaway={live ? t("rings.takeaway", { n: live, sites: sitesWithClients, late: toneCount("atrasado"), sus: toneCount("suspendido") }) : undefined}
-          empty={live ? null : t("empty.clients")}
+          title={t("live.title")}
+          takeaway={lnet ? (liveOn ? t("live.takeaway", { online: lnet.totals.online ?? 0, live: lnet.totals.live, use: pct(lnet.totals.use !== null && lnet.totals.capacity ? lnet.totals.use / lnet.totals.capacity : null), alerts: lnet.totals.outages + lnet.totals.full }) : t("live.takeawayNoLive")) : undefined}
+          empty={lnet && lnet.sites.length ? null : t("empty.clients")}
           tableLabel={tl}
-          table={{ head: [t("cols.site"), t("cols.clients"), ...TONES.map((x) => t(`rings.tones.${x}`))], rows: groups.map((g) => [groupName(g), g.clients.length, ...TONES.map((x) => g.clients.filter((c) => c.tone === x).length)]) }}
+          table={{
+            head: [t("live.cols.site"), t("live.cols.carriers"), t("live.cols.online"), t("live.cols.traffic"), t("live.cols.use"), t("live.cols.latency"), t("live.cols.state")],
+            rows: (lnet?.sites ?? []).map((x) => [x.name, x.links.map((l) => l.carrier || t("live.noName")).join(", ") || t("live.noLink"), x.online === null ? `— / ${x.live}` : `${x.online} / ${x.live}`, x.use === null ? "—" : `${speedText(x.use)}${x.capacity ? ` / ${speedText(x.capacity)}` : ""}`, pct(x.share), x.rtt === null ? "—" : ms(x.rtt), t(`live.states.${x.state}`)]),
+          }}
         >
-          <NetworkRings groups={groups} label={t("rings.title")} center={String(live)} centerHint={t("rings.center")} name={groupName} toneLabel={toneLabel} />
-          <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs text-zinc-300">
-            {TONES.map((x) => (
-              <li key={x} className="inline-flex items-center gap-1.5">
-                <span aria-hidden className="size-2.5 rounded-full" style={{ background: TONE_COLOR[x] }} />
-                {t(`rings.tones.${x}`)} <span className="font-mono tabular-nums text-zinc-100">{toneCount(x)}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="text-[0.7rem] text-zinc-500">{t("rings.note")}</p>
+          {lnet && (
+            <>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <LiveStat label={t("live.stats.online")} value={lnet.totals.online === null ? "—" : String(lnet.totals.online)} hint={t("live.stats.onlineOf", { n: lnet.totals.live })} />
+                <LiveStat label={t("live.stats.traffic")} value={lnet.totals.use === null ? "—" : speedText(lnet.totals.use)} hint={lnet.totals.capacity ? t("live.stats.trafficOf", { cap: speedText(lnet.totals.capacity), share: pct(lnet.totals.use !== null ? lnet.totals.use / lnet.totals.capacity : null) }) : "—"} />
+                <LiveStat label={t("live.stats.latency")} value={liveRtt === null ? "—" : ms(liveRtt)} hint={lnet.totals.worst ? t("live.stats.latencyWorst", { name: clipName(lnet.totals.worst.name, 18), ms: ms(lnet.totals.worst.rtt) }) : "—"} />
+                <LiveStat label={t("live.stats.alerts")} value={String(lnet.totals.outages + lnet.totals.full)} hint={lnet.totals.outages + lnet.totals.full ? t("live.stats.alertsSome", { outages: lnet.totals.outages, full: lnet.totals.full }) : t("live.stats.alertsNone")} alert={lnet.totals.outages > 0 ? LIVE_COLOR.outage : lnet.totals.full > 0 ? LIVE_COLOR.full : undefined} />
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[0.7rem] text-zinc-400">
+                <span className="inline-flex items-center gap-1.5" aria-live="polite">
+                  {saver && !sim ? (
+                    t("live.paused")
+                  ) : liveFig === "error" && !sim ? (
+                    <span className="text-amber-200">{t("live.error")}</span>
+                  ) : (
+                    <>
+                      <span aria-hidden className="relative inline-flex size-2">
+                        <span className="t2-ping absolute inset-0 rounded-full" style={{ background: LIVE_COLOR.online }} />
+                        <span className="relative size-2 rounded-full" style={{ background: LIVE_COLOR.online }} />
+                      </span>
+                      {t("live.badge")}
+                      {liveFigures ? ` · ${t("live.updated", { time: new Date(liveFigures.now).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) })}` : ""}
+                    </>
+                  )}
+                </span>
+                <button type="button" onClick={() => (sim ? setNowMs(Date.now()) : void refreshLive())} disabled={liveBusy} className="inline-flex min-h-8 items-center rounded-full border border-white/15 px-3 text-xs text-zinc-100 hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none disabled:opacity-50">
+                  {liveBusy ? t("live.refreshing") : t("live.refresh")}
+                </button>
+              </div>
+              <LiveNetwork net={lnet} label={t("live.title")} labels={liveLabels} selected={livePick} onSelect={(id) => setLivePick((p) => (p === id ? null : id))} />
+              <div role="group" aria-label={t("live.sites")} className="flex flex-wrap justify-center gap-1.5">
+                {lnet.sites.map((x) => (
+                  <button key={x.id} type="button" aria-pressed={livePick === x.id} onClick={() => setLivePick((p) => (p === x.id ? null : x.id))} className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none ${livePick === x.id ? "border-white/40 bg-white/10 text-zinc-50" : "border-white/10 text-zinc-300 hover:bg-white/5"}`}>
+                    <span aria-hidden className="size-2 rounded-full" style={{ background: stateColor(x.state) }} />
+                    {x.name}
+                    <span className="sr-only">: {t(`live.states.${x.state}`)}</span>
+                  </button>
+                ))}
+              </div>
+              <Legend items={[[t("live.legend.flow"), LIVE_COLOR.flow, "line"], [t("live.legend.full"), LIVE_COLOR.full, "line"], [t("live.legend.saturated"), LIVE_COLOR.saturated, "line"], [t("live.legend.online"), LIVE_COLOR.online, "ring"], [t("live.legend.justo"), LIVE_COLOR.justo, "dot"], [t("live.legend.bad"), LIVE_COLOR.bad, "dot"]]} />
+              <p className="text-[0.7rem] text-zinc-500">{t("live.note")}</p>
+            </>
+          )}
         </Panel>
         <section aria-label={t("kpi.title")} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
           <Kpi demo={tag} label={t("kpi.mrr")} value={pesos(mrrNow)} hint={t("kpi.mrrHint", { d: `${mrrNow - mrrPrev >= 0 ? "+" : "−"}${pesos(Math.abs(mrrNow - mrrPrev))}` })} trend={mrrYear} color={SERIES[0]} />
@@ -493,15 +597,21 @@ export function Tablero2App() {
         </Panel>
         <Panel
           demo={tag}
-          title={t("pack.title")}
-          takeaway={packTop && packTotal ? t("pack.takeaway", { top: packTop.name || t("pack.noSite"), share: pct(packTop.value / packTotal), amount: mxn(packTop.value) }) : undefined}
+          title={t("tree.title")}
+          takeaway={packTop && packTotal && treeStats ? `${t("tree.takeaway", { top: packTop.name || t("pack.noSite"), share: pct(packTop.value / packTotal), amount: mxn(packTop.value), paid: pct(paidShare(treeStats)) })}${treeLoss ? ` ${t("tree.lossLine", { name: treeLoss.name, profit: pesos(treeLoss.profit) })}` : treeBest ? ` ${t("tree.marginLine", { best: treeBest.name, margin: pct(treeBest.margin) })}` : ""}` : undefined}
           empty={tree && tree.children.length ? null : t("pack.empty")}
           tableLabel={tl}
-          table={{ head: [t("cols.site"), t("cols.amount"), "%"], rows: [...packSites].sort((a, b) => b.value - a.value).map((x) => [x.name || t("pack.noSite"), mxn(x.value), pct(packTotal ? x.value / packTotal : null)]) }}
+          table={{
+            head: [t("tree.cols.site"), t("tree.cols.monthly"), t("tree.cols.share"), t("tree.cols.paid"), t("tree.cols.margin")],
+            rows: [...packSites].sort((a, b) => b.value - a.value).map((x) => {
+              const m = "id" in x.n ? treeMargins.get(x.n.id.slice(2)) : undefined
+              return [x.name || t("pack.noSite"), mxn(x.value), pct(packTotal ? x.value / packTotal : null), pct(paidShare(stats(x.n))), m && m.margin !== null ? `${pct(m.margin)}${m.incomplete ? ` (${t("tree.rows.incomplete")})` : ""}` : "—"]
+            }),
+          }}
         >
-          {tree && <RevenuePack tree={tree} label={t("pack.title")} siteName={(n) => n || t("pack.noSite")} towerName={(n) => n || t("pack.noTower")} leafTip={packTip} allLabel={t("pack.all")} clientsLabel={(n) => t("pack.clients", { n })} towersLabel={(n) => t("pack.towers", { n })} />}
-          <Legend items={TONES.map((x) => [t(`rings.tones.${x}`), TONE_COLOR[x], "dot"] as [string, string, "dot"])} />
-          <p className="text-[0.7rem] text-zinc-500">{t("pack.note")}</p>
+          {tree && <RevenueTreemap tree={tree} margins={treeMargins} label={t("tree.title")} labels={treeLabels} />}
+          <Legend items={[[t("tree.legend.paid"), TILE_COLOR.calm, "bar"], [t("tree.legend.due"), TILE_COLOR.due, "ring"], [t("tree.legend.good"), MARGIN_COLOR.good, "bar"], [t("tree.legend.even"), MARGIN_COLOR.even, "bar"], [t("tree.legend.loss"), HATCH, "hatch"], [t("tree.legend.late"), TILE_COLOR.late, "dot"], [t("tree.legend.suspended"), TILE_COLOR.suspended, "dot"]]} />
+          <p className="text-[0.7rem] text-zinc-500">{t("tree.note")}</p>
         </Panel>
         <div className="grid gap-3 lg:grid-cols-2">
           <Panel
@@ -788,12 +898,26 @@ export function Tablero2App() {
 }
 
 /** A chart's key: what each color is, drawn as the mark it is (line, area, band or bar). */
-function Legend({ items }: { items: [string, string, "line" | "area" | "band" | "bar" | "dot" | "ring"][] }) {
+/** One live reading above La red viva: label, value, a line under it; `alert` colors a small status mark. */
+function LiveStat({ label, value, hint, alert }: { label: string; value: string; hint: string; alert?: string }) {
+  return (
+    <div className="grid content-start gap-0.5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2">
+      <p className="flex items-center gap-1.5 text-[0.7rem] text-zinc-400">
+        {alert && <span aria-hidden className="size-1.5 rounded-full" style={{ background: alert }} />}
+        {label}
+      </p>
+      <p className="font-mono text-lg tabular-nums text-zinc-50">{value}</p>
+      <p className="truncate text-[0.7rem] text-zinc-500">{hint}</p>
+    </div>
+  )
+}
+
+function Legend({ items }: { items: [string, string, "line" | "area" | "band" | "bar" | "dot" | "ring" | "hatch"][] }) {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-300">
       {items.map(([label, color, mark]) => (
         <li key={label} className="inline-flex items-center gap-1.5">
-          <span aria-hidden className={mark === "line" ? "h-0.5 w-3.5 rounded-full" : mark === "bar" ? "size-2.5 rounded-sm" : mark === "dot" || mark === "ring" ? "size-2.5 rounded-full" : "h-2.5 w-3.5 rounded-sm"} style={mark === "ring" ? { border: `1px solid ${color}` } : { background: color, opacity: mark === "band" ? 0.4 : mark === "area" ? 0.7 : 1 }} />
+          <span aria-hidden className={mark === "line" ? "h-0.5 w-3.5 rounded-full" : mark === "bar" || mark === "hatch" ? "size-2.5 rounded-sm" : mark === "dot" || mark === "ring" ? "size-2.5 rounded-full" : "h-2.5 w-3.5 rounded-sm"} style={mark === "ring" ? { border: `1px solid ${color}` } : mark === "hatch" ? { background: `repeating-linear-gradient(45deg, ${color} 0 2px, #2a2a28 2px 4px)` } : { background: color, opacity: mark === "band" ? 0.4 : mark === "area" ? 0.7 : 1 }} />
           {label}
         </li>
       ))}

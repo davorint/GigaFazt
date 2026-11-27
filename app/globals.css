@@ -1496,6 +1496,14 @@ html[data-motion="off"] :is(.t2-draw, .t2-rise, .t2-drop, .t2-grow, .t2-fade) { 
 }
 .t2-ping { transform-box: fill-box; transform-origin: center; animation: t2-ping 1.6s ease-out infinite; }
 @media (prefers-reduced-motion: reduce) { .t2-ping { display: none; } }
+/* Tablero 2 La red viva: a carrier hub's dashed ring turning slowly (still under reduced motion). */
+@keyframes t2-spin { to { transform: rotate(360deg); } }
+.t2-spin { transform-box: fill-box; transform-origin: center; animation: t2-spin 28s linear infinite; }
+@keyframes t2-sweep { to { transform: rotate(360deg); } }
+.t2-sweep { animation: t2-sweep 9s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .t2-spin, .t2-sweep { animation: none; } .t2-sweep { display: none; } }
+html[data-motion="off"] :is(.t2-spin, .t2-ping, .t2-sweep) { animation: none !important; }
+html[data-motion="off"] .t2-sweep { display: none; }
 html[data-motion="off"] .t2-ping { display: none; }
 /* Tablero 2 packet path: packets flow along the hop (static under reduced motion via the global rules). */
 @keyframes t2-flow {

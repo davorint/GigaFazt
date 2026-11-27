@@ -49,26 +49,36 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
   const errors = []
   try {
     // A week of traffic: evenings busiest (Mexico City 20–23 h = 02–05 UTC), weekends a bit more.
+    // All rows in one statement (one by one took minutes against the remote database).
     const start = Date.now() - 7 * 864e5
+    const tAt = [], tDown = [], tUp = []
     for (let m = 0; m < 7 * 24 * 60; m += 5) {
       const at = new Date(start + m * 60000)
       const hMx = (at.getUTCHours() + 18) % 24
       const wk = [0, 6].includes(at.getUTCDay()) ? 1.15 : 1
       const mbps = (hMx >= 19 && hMx <= 23 ? 520 : hMx >= 8 && hMx <= 18 ? 240 : 60) * wk
-      await db.query(`insert into traffic_5m (router_id, "user", bucket, down, up) values ($1, 't2.user', $2, $3, $4) on conflict do nothing`, [router.id, at, Math.round((mbps * 1e6 * 300) / 8), Math.round((mbps * 0.12 * 1e6 * 300) / 8)])
+      tAt.push(at.toISOString())
+      tDown.push(Math.round((mbps * 1e6 * 300) / 8))
+      tUp.push(Math.round((mbps * 0.12 * 1e6 * 300) / 8))
     }
+    await db.query(`insert into traffic_5m (router_id, "user", bucket, down, up) select $1, 't2.user', b, d, u from unnest($2::timestamptz[], $3::bigint[], $4::bigint[]) as x(b, d, u) on conflict do nothing`, [router.id, tAt, tDown, tUp])
     const api = await j(await fetch(BASE + "/api/interno/tablero", { headers: H }))
     console.log("api:", JSON.stringify({ traffic: api.network.hasTraffic, site: api.network.sites.some((s) => s.name === "Torre Tablero2 Prueba" && s.use > 0.5) }))
     // Two days of carrier gateway pings every 10 minutes (a few lost), and a 30-minute carrier outage two hours ago.
+    const mAt = [], mGw = []
     for (let m = 0; m < 2 * 24 * 60; m += 10) {
-      const at = new Date(Date.now() - m * 60000)
       const lost = m % 170 === 0 ? 1 : 0
-      await db.query(`insert into router_metrics (router_id, bucket, online, gateways) values ($1, $2, 12, $3::jsonb) on conflict do nothing`, [router.id, at, JSON.stringify([{ ip: "10.77.1.1", sent: 5, received: 5 - lost, rtt: 4 + (m % 60) / 20 }])])
+      mAt.push(new Date(Date.now() - m * 60000).toISOString())
+      mGw.push(JSON.stringify([{ ip: "10.77.1.1", sent: 5, received: 5 - lost, rtt: 4 + (m % 60) / 20 }]))
     }
+    await db.query(`insert into router_metrics (router_id, bucket, online, gateways) select $1, b, 12, g::jsonb from unnest($2::timestamptz[], $3::text[]) as x(b, g) on conflict do nothing`, [router.id, mAt, mGw])
     await db.query(`insert into outages (router_id, site_id, kind, started_at, ended_at) values ($1, $2, 'carrier', now() - interval '2 hours', now() - interval '90 minutes')`, [router.id, SITE])
     const api2 = await j(await fetch(BASE + "/api/interno/tablero2", { headers: H }))
     const mine = (xs) => (xs ?? []).filter((x) => x.routerId === router.id)
     console.log("api2:", JSON.stringify({ gateway: mine(api2.carriers?.gateways).some((g) => g.ip === "10.77.1.1" && g.hours.length >= 40 && g.hours.some((h) => h.loss > 0) && g.hours.every((h) => h.rtt !== null)), outages: mine(api2.carriers?.continuity)[0]?.outages.length, path: mine(api2.carriers?.path)[0]?.gatewayRtt > 0, daily: (api2.carriers?.daily ?? []).some((d) => d.siteId === SITE && d.days.length >= 1), traffic: (api2.carriers?.traffic ?? []).some((x) => x.siteId === SITE && x.hours.length >= 100 && x.hours.some((h) => h.down > 100)) }))
+    const api3 = await j(await fetch(BASE + "/api/interno/tablero2/vivo", { headers: H }))
+    const lr = (api3.live?.routers ?? []).find((r) => r.id === router.id)
+    console.log("api3:", JSON.stringify({ router: !!lr && lr.siteId === SITE, gateway: !!lr && lr.gateways.some((g) => g.ip === "10.77.1.1" && g.rtt !== null), online: lr?.online === 12 }))
     const browser = await chromium.launch()
     for (const [w, h] of [[390, 844], [1440, 900]]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, isMobile: w < 500, hasTouch: w < 500 })
@@ -109,7 +119,9 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
       await page.waitForTimeout(1500)
       const tags = await page.getByText("SIMULACIÓN", { exact: true }).count()
       const demoOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
-      console.log(`${w} demo: switch ${await page.getByRole("switch").getAttribute("aria-checked")} tags ${tags >= 12} overflow ${demoOverflow}`)
+      // When something sticks out, say what (a failing check that names its element is quicker to fix).
+      if (demoOverflow > 0) console.log(`${w} wide:`, JSON.stringify(await page.evaluate(() => [...document.querySelectorAll("body *")].filter((el) => el.getBoundingClientRect().right > window.innerWidth + 2).slice(-6).map((el) => `${el.tagName.toLowerCase()}.${String(el.getAttribute("class") ?? "").slice(0, 50)} @${el.closest("svg[aria-label]")?.getAttribute("aria-label") ?? ""} r=${Math.round(el.getBoundingClientRect().right)}`))))
+      console.log(`${w} demo: switch ${await page.getByRole("switch", { name: "Datos simulados" }).getAttribute("aria-checked")} tags ${tags >= 12} overflow ${demoOverflow}`)
       // The second round draws with the simulated operator: streams, flows, galaxy, lit windows, light dots, repair bars.
       const more = await page.evaluate(() => {
         const n = (l, sel) => document.querySelector(`svg[aria-label="${l}"]`)?.querySelectorAll(sel).length ?? 0
@@ -125,14 +137,24 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
       // Fourth round: money map (and flying into a deployment), traffic horizon, fault chord, payment contours, comparator.
       const x4 = await page.evaluate(() => {
         const n = (l, sel) => document.querySelector(`svg[aria-label="${l}"]`)?.querySelectorAll(sel).length ?? 0
-        return { pack: n("Mapa de ingresos", "circle") >= 100, horizon: n("Latido del tráfico", "path") >= 25, chord: n("Qué falla y dónde", "path") >= 10, contours: n("Huella de pago", "path") >= 5, compare: n("Comparador de despliegues", "path") >= 10 }
+        return { pack: n("Mapa de ingresos", "rect") >= 100, horizon: n("Latido del tráfico", "path") >= 25, chord: n("Qué falla y dónde", "path") >= 10, contours: n("Huella de pago", "path") >= 5, compare: n("Comparador de despliegues", "path") >= 10 }
       })
       const zoom = page.getByRole("group", { name: "Mapa de ingresos" }).getByRole("button").nth(1)
       await zoom.scrollIntoViewIfNeeded()
       await zoom.click()
       await page.waitForTimeout(1800)
-      x4.zoomed = (await zoom.getAttribute("aria-pressed")) === "true"
+      x4.zoomed = (await page.getByRole("group", { name: "Mapa de ingresos" }).locator('[aria-current="location"]').innerText()) !== "Todo"
       console.log(`${w} round4: ${JSON.stringify(x4)}`)
+      // La red viva with the simulated operator: strands, carrier hubs, deployment buttons that pick one.
+      const lv = await page.evaluate(() => {
+        const svg = document.querySelector('svg[aria-label="La red viva"]')
+        return { strands: (svg?.querySelectorAll("path").length ?? 0) >= 10, hubs: (svg?.textContent ?? "").includes("Carrier A") }
+      })
+      const pick = page.getByRole("group", { name: "Despliegues" }).getByRole("button").first()
+      await pick.scrollIntoViewIfNeeded()
+      await pick.click()
+      lv.pick = (await pick.getAttribute("aria-pressed")) === "true"
+      console.log(`${w} live: ${JSON.stringify(lv)}`)
       // Each new panel on its own, for review (the money map is zoomed into a deployment here).
       for (const [file, name] of [["pack", "Mapa de ingresos"], ["horizon", "Latido del tráfico"], ["chord", "Qué falla y dónde"], ["prints", "Huella de pago"], ["compare", "Comparador de despliegues"]]) {
         const panel = page.locator(`svg[aria-label="${name}"]`).first().locator("xpath=ancestor::section[1]")
