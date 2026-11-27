@@ -15,7 +15,7 @@ import { WISPDAVOR_PAGES } from "./wispdavor/pages"
 export const INTERNAL_ROOT = "interno"
 export const INTERNAL_PAGES = ["levantamientos", "admin", "tecnico", "materiales", "herramientas", "equipos-telecom", "software", "guias", "nuevos_proyectos"] as const
 /** The guides (/interno/guias/<page>, owner 2026-11-21). */
-export const GUIDE_PAGES = ["utp"] as const
+export const GUIDE_PAGES = ["utp", "ipv4"] as const
 /** The software pages (/interno/software/<page>, owner 2026-11-21). */
 export const SOFTWARE_PAGES = ["davorolt", "wispdavor"] as const
 /** The tool pages (/interno/herramientas/<page>). */

@@ -39,6 +39,63 @@
         "giga": "1 Gbps o más: los 4 pares. Si un enlace sale en 100 Mbps en lugar de 1 Gbps, revisa el ponchado.",
         "poe": "PoE: el modo A lleva la energía por 1-2 y 3-6, el modo B por 4-5 y 7-8; el PoE de 4 pares (PoE++) por los cuatro."
       }
+    },
+    "ipv4": {
+      "meta": {
+        "title": "IPv4: tabla de subredes CIDR · GigaFazt interno"
+      },
+      "kicker": "Uso interno · Guías",
+      "title": "IPv4: subredes CIDR",
+      "lead": "Cada prefijo con su máscara, los hosts que puedes usar y cada cuánto empieza una subred. Los hosts útiles ya restan la red y el broadcast.",
+      "caption": "Prefijos de /8 a /32",
+      "cols": {
+        "prefix": "Prefijo",
+        "mask": "Máscara de subred",
+        "usable": "Hosts útiles",
+        "block": "Tamaño de bloque",
+        "note": "Nota clave"
+      },
+      "blockIn": "{n} en el {octet}.º octeto",
+      "total": "{n} direcciones",
+      "totalOne": "1 dirección",
+      "swipe": "Desliza la tabla a los lados →",
+      "how": {
+        "title": "Cómo usar el tamaño de bloque",
+        "steps": [
+          "Busca el octeto donde termina la máscara (el que no es 255 ni 0) y el bloque de esa fila.",
+          "Las subredes empiezan en múltiplos del bloque en ese octeto. Ejemplo /26: 192.168.1.0, .64, .128 y .192.",
+          "La red es la primera dirección del bloque, el broadcast la última; los hosts útiles son las de en medio.",
+          "Ejemplo: 192.168.1.77/26 cae en el bloque .64 → red 192.168.1.64, hosts .65 a .126, broadcast .127."
+        ]
+      },
+      "private": "Privadas (RFC 1918): 10.0.0.0/8, 172.16.0.0/12 y 192.168.0.0/16. CGNAT (RFC 6598): 100.64.0.0/10.",
+      "notes": {
+        "8": "Clase A. 10.0.0.0/8 es privada (RFC 1918): la red interna más grande.",
+        "9": "Medio /8. No se usa en una LAN; aparece en rutas de operadores.",
+        "10": "100.64.0.0/10 es el espacio de CGNAT (RFC 6598): si el carrier te da una 100.64.x.x, estás detrás de su NAT (sin IP pública).",
+        "11": "Dos /12 juntos. Bloques de operador, no de una LAN.",
+        "12": "172.16.0.0/12 es privada (RFC 1918): de 172.16.0.0 a 172.31.255.255.",
+        "13": "Ocho /16 juntos. Asignaciones de operadores grandes.",
+        "14": "Cuatro /16. Sirve para resumir las rutas de una región.",
+        "15": "Dos /16 seguidos (p. ej. 10.0.0.0 a 10.1.255.255).",
+        "16": "Clase B. 192.168.0.0/16 es privada (RFC 1918). 65,534 hosts: de sobra para numerar todos los despliegues.",
+        "17": "Medio /16: 128 redes /24.",
+        "18": "64 redes /24 (16,382 hosts). Tamaño de pool para un ISP mediano.",
+        "19": "32 redes /24 (8,190 hosts).",
+        "20": "16 redes /24 (4,094 hosts). Pool PPPoE grande.",
+        "21": "8 redes /24 (2,046 hosts).",
+        "22": "4 redes /24 seguidas (1,022 hosts). Pool PPPoE típico de un despliegue de varios cientos de clientes; empieza en un múltiplo de 4 en el 3.er octeto.",
+        "23": "2 redes /24 (510 hosts). Una LAN o un pool de hasta unos 500 clientes; empieza en número par en el 3.er octeto.",
+        "24": "Clase C, la LAN de siempre (254 hosts). La red de gestión de un despliegue, de ONTs o de equipos.",
+        "25": "Medio /24 (126 hosts): empiezan en .0 y .128.",
+        "26": "Un cuarto de /24 (62 hosts): empiezan en .0, .64, .128 y .192.",
+        "27": "30 hosts; empiezan en .0, .32, .64… VLAN chica de gestión o de cámaras.",
+        "28": "14 hosts; empiezan cada 16. La gestión de una torre o un rack.",
+        "29": "6 hosts. El bloque de IPs públicas que suele vender un carrier: una para su gateway y 5 para ti.",
+        "30": "2 hosts. Enlace punto a punto clásico entre dos routers o con el carrier.",
+        "31": "Punto a punto sin red ni broadcast (RFC 3021): las 2 IPs sirven. RouterOS lo acepta y ahorra direcciones.",
+        "32": "Un solo host: loopback, la IP de un cliente PPPoE (remote-address en RouterOS) o una ruta a un equipo."
+      }
     }
   }
 }

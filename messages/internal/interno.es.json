@@ -60,7 +60,7 @@
       },
       "guias": {
         "name": "Guías",
-        "desc": "Consultas rápidas para el trabajo en campo: el orden de colores del cable UTP.",
+        "desc": "Consultas rápidas para el trabajo en campo: el orden de colores del cable UTP y la tabla de subredes IPv4.",
         "kicker": "Uso interno · Guías",
         "lead": "Consultas rápidas para el trabajo en campo.",
         "metaTitle": "Guías · GigaFazt interno",
@@ -68,6 +68,10 @@
           "utp": {
             "name": "Cable UTP",
             "desc": "Orden de colores T568B y T568A pin por pin, cable directo o cruzado, cómo ponchar y qué pares usa cada velocidad."
+          },
+          "ipv4": {
+            "name": "IPv4: subredes CIDR",
+            "desc": "Tabla de /8 a /32: máscara de subred, hosts útiles, tamaño de bloque y la nota clave de cada prefijo."
           }
         }
       },
