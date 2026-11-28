@@ -160,6 +160,8 @@ export function TowerView({ sites, margins, labels }: { sites: BuiltSite[]; marg
     choose(tower, a)
     setZoom({ tower, floor: a.floor })
   }
+  // The open floor only while it still exists (the data can change under it, e.g. the simulated data switched).
+  const open = zoom && site.towers.some((t) => t.id === zoom.tower && t.floors[zoom.floor - 1]) ? zoom : null
   const wideFloors = site.towers.some((t) => t.floors.some((f) => f.units.length > COMPACT_OVER))
   const amount = (k: Pick) => st.byTone[k].value
 
@@ -216,8 +218,8 @@ export function TowerView({ sites, margins, labels }: { sites: BuiltSite[]; marg
         <div className="min-w-0">
           {view === "fachada" ? (
             <>
-              <Facade key={site.id} site={site} only={only} sel={sel} zoom={zoom} shown={shown} labels={labels} onPick={chooseOnFacade} onFloor={(tower, floor) => setZoom({ tower, floor })} label={labels.svg({ name: site.name, residents: st.residents, apartments: st.apartments, paid: pct(st.owed ? st.paid / st.owed : null) })} />
-              {zoom ? <FloorStrip site={site} at={zoom} only={only} sel={sel} shown={shown} labels={labels} onPick={choose} onFloor={(floor) => setZoom({ ...zoom, floor })} onClose={() => setZoom(null)} /> : <p className="mt-2 text-[0.7rem] text-zinc-500">{labels.zoom.hint}</p>}
+              <Facade key={site.id} site={site} only={only} sel={sel} zoom={open} shown={shown} labels={labels} onPick={chooseOnFacade} onFloor={(tower, floor) => setZoom({ tower, floor })} label={labels.svg({ name: site.name, residents: st.residents, apartments: st.apartments, paid: pct(st.owed ? st.paid / st.owed : null) })} />
+              {open ? <FloorStrip site={site} at={open} only={only} sel={sel} shown={shown} labels={labels} onPick={choose} onFloor={(floor) => setZoom({ ...open, floor })} onClose={() => setZoom(null)} /> : <p className="mt-2 text-[0.7rem] text-zinc-500">{labels.zoom.hint}</p>}
             </>
           ) : (
             <Stack key={site.id} site={site} only={only} sel={sel} shown={shown} detailed={detailed} labels={labels} onPick={choose} />
