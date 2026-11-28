@@ -27,7 +27,8 @@ const MARK: Record<Tone, string> = { "al-corriente": "✓", "por-vencer": "○",
 export const MARGIN_COLOR = { good: "#3987e5", even: "#6f6e69", loss: "#8a8984", none: "transparent" } as const
 
 export type TowerLabels = {
-  view: { fachada: string; plano: string; label: string }
+  view: { fachada: string; plano: string; label: string; detailed: string }
+  zoom: { title: (floor: string, tower: string) => string; up: string; down: string; hint: string }
   fields: Record<Field, string> & { label: string }
   sites: string
   tower: (name: string) => string
@@ -85,6 +86,14 @@ const readFields = (): Shown => {
 /** Occupied glass when the status is hidden: one warm light (the view becomes occupancy). */
 const OCCUPIED = "url(#tw-lit)"
 
+const detailKey = "t2-tower-detailed"
+const readDetailed = () => {
+  try {
+    return localStorage.getItem(detailKey) === "1"
+  } catch {
+    return false
+  }
+}
 const viewKey = "t2-tower-view"
 const readView = (): View => {
   try {
@@ -110,6 +119,17 @@ export function TowerView({ sites, margins, labels }: { sites: BuiltSite[]; marg
   const [only, setOnly] = useState<Pick | null>(null)
   const [sel, setSel] = useState<{ tower: string; label: string } | null>(null)
   const [shown, setShown] = useState<Shown>(readFields)
+  const [detailed, setDetailed] = useState(readDetailed)
+  const [zoom, setZoom] = useState<{ tower: string; floor: number } | null>(null)
+  const toggleDetailed = () =>
+    setDetailed((d) => {
+      try {
+        localStorage.setItem(detailKey, d ? "0" : "1")
+      } catch {
+        // Private window: the choice lasts this visit only.
+      }
+      return !d
+    })
   const toggle = (f: Field) =>
     setShown((p) => {
       const next = { ...p, [f]: !p[f] }
@@ -135,6 +155,12 @@ export function TowerView({ sites, margins, labels }: { sites: BuiltSite[]; marg
   const tone = m ? marginTone(m.margin) : "none"
   const selApt = sel ? site.towers.find((t) => t.id === sel.tower)?.floors.flatMap((f) => f.units).find((u) => u.label === sel.label) : undefined
   const choose = (tower: string, a: Apartment) => setSel((p) => (p && p.tower === tower && p.label === a.label ? null : { tower, label: a.label }))
+  // On the facade a tap also opens its floor at full size (the windows of a 16 × 16 tower are small on a phone).
+  const chooseOnFacade = (tower: string, a: Apartment) => {
+    choose(tower, a)
+    setZoom({ tower, floor: a.floor })
+  }
+  const wideFloors = site.towers.some((t) => t.floors.some((f) => f.units.length > COMPACT_OVER))
   const amount = (k: Pick) => st.byTone[k].value
 
   return (
@@ -151,6 +177,7 @@ export function TowerView({ sites, margins, labels }: { sites: BuiltSite[]; marg
                 onClick={() => {
                   setSiteId(s.id)
                   setSel(null)
+                  setZoom(null)
                 }}
                 className={`grid min-h-11 rounded-xl border px-3 py-1 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none ${on ? "border-white/35 bg-white/8" : "border-white/8 hover:border-white/20"}`}
               >
@@ -167,6 +194,12 @@ export function TowerView({ sites, margins, labels }: { sites: BuiltSite[]; marg
             </button>
           ))}
         </div>
+        {view === "plano" && wideFloors && (
+          <button type="button" aria-pressed={detailed} onClick={toggleDetailed} className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none ${detailed ? "border-white/30 bg-white/8 text-zinc-50" : "border-white/8 text-zinc-400 hover:text-zinc-100"}`}>
+            <span aria-hidden className={`size-1.5 rounded-full ${detailed ? "bg-[#5598e7]" : "bg-zinc-600"}`} />
+            {labels.view.detailed}
+          </button>
+        )}
       </div>
 
       <div role="group" aria-label={labels.fields.label} className="flex flex-wrap items-center gap-1.5 text-xs">
@@ -182,9 +215,12 @@ export function TowerView({ sites, margins, labels }: { sites: BuiltSite[]; marg
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,300px)]">
         <div className="min-w-0">
           {view === "fachada" ? (
-            <Facade key={site.id} site={site} only={only} sel={sel} shown={shown} labels={labels} onPick={choose} label={labels.svg({ name: site.name, residents: st.residents, apartments: st.apartments, paid: pct(st.owed ? st.paid / st.owed : null) })} />
+            <>
+              <Facade key={site.id} site={site} only={only} sel={sel} zoom={zoom} shown={shown} labels={labels} onPick={chooseOnFacade} onFloor={(tower, floor) => setZoom({ tower, floor })} label={labels.svg({ name: site.name, residents: st.residents, apartments: st.apartments, paid: pct(st.owed ? st.paid / st.owed : null) })} />
+              {zoom ? <FloorStrip site={site} at={zoom} only={only} sel={sel} shown={shown} labels={labels} onPick={choose} onFloor={(floor) => setZoom({ ...zoom, floor })} onClose={() => setZoom(null)} /> : <p className="mt-2 text-[0.7rem] text-zinc-500">{labels.zoom.hint}</p>}
+            </>
           ) : (
-            <Stack key={site.id} site={site} only={only} sel={sel} shown={shown} labels={labels} onPick={choose} />
+            <Stack key={site.id} site={site} only={only} sel={sel} shown={shown} detailed={detailed} labels={labels} onPick={choose} />
           )}
           {(site.misplaced > 0 || site.overflow > 0) && (
             <p className="mt-2 text-[0.7rem] text-zinc-500">
@@ -309,12 +345,8 @@ const LEFT = 26
 
 type Placed = { t: BuiltTower; x: number; w: number; units: number }
 
-function Facade({ site, only, sel, shown, labels, onPick, label }: { site: BuiltSite; only: Pick | null; sel: { tower: string; label: string } | null; shown: Shown; labels: TowerLabels; onPick: (tower: string, a: Apartment) => void; label: string }) {
-  // The same height for every tower of the deployment, so their streets line up side by side.
-  const maxFloors = Math.max(1, ...site.towers.map((t) => t.floors.length))
-  const maxBase = Math.max(0, ...site.towers.map((t) => t.basements))
-  const natH = ROOF + maxFloors * FH + GROUND + maxBase * BASE_H + 18
-  const groundY = ROOF + maxFloors * FH
+function Facade({ site, only, sel, zoom, shown, labels, onPick, onFloor, label }: { site: BuiltSite; only: Pick | null; sel: { tower: string; label: string } | null; zoom: { tower: string; floor: number } | null; shown: Shown; labels: TowerLabels; onPick: (tower: string, a: Apartment) => void; onFloor: (tower: string, floor: number) => void; label: string }) {
+  // Each tower as tall as itself (a short one under a high-rise on a phone gets no empty sky); bottoms line up.
   // One drawing per tower: side by side when they fit (each as wide as its building), one under another on a phone.
   return (
     <div className="flex flex-wrap items-end gap-y-4">
@@ -324,6 +356,10 @@ function Facade({ site, only, sel, shown, labels, onPick, label }: { site: Built
         const natW = LEFT + w + RIGHT
         const scaleFor = (bw: number) => Math.min(1.6, Math.max(0.5, bw / natW))
         const p: Placed = { t, x: LEFT, w, units }
+        // The deployment's deepest basements under every tower, so the streets line up side by side.
+        const maxBase = Math.max(0, ...site.towers.map((x) => x.basements))
+        const groundY = ROOF + Math.max(1, t.floors.length) * FH
+        const natH = groundY + GROUND + maxBase * BASE_H + 18
         return (
           <div key={t.id} className="min-w-0" style={{ flex: `${natW} 1 ${natW}px` }}>
             <Frame height={(bw) => natH * scaleFor(bw || natW)} label={`${label} · ${labels.tower(t.name)}`}>
@@ -345,7 +381,7 @@ function Facade({ site, only, sel, shown, labels, onPick, label }: { site: Built
                       </text>
                     )}
                     {maxBase > 0 && <rect x={-offset} y={groundY + GROUND} width={span} height={maxBase * BASE_H + 10} fill="#0b0b0d" />}
-                    <Tower p={p} groundY={groundY} only={only} sel={sel} shown={shown} labels={labels} tip={tip} onPick={onPick} lamp={i < site.towers.length - 1} />
+                    <Tower p={p} groundY={groundY} only={only} sel={sel} zoomed={zoom?.tower === t.id ? zoom.floor : null} shown={shown} labels={labels} tip={tip} onPick={onPick} onFloor={(floor) => onFloor(t.id, floor)} lamp={i < site.towers.length - 1} />
                   </g>
                 )
               }}
@@ -402,7 +438,7 @@ function FacadeDefs() {
 
 const glassOf = (r: Resident | null) => (!r ? "url(#tw-dark)" : r.tone === "al-corriente" ? `url(#tw-paid-${paidStep(r.value)})` : r.tone === "atrasado" ? "url(#tw-late)" : r.tone === "suspendido" ? "url(#tw-susp)" : r.tone === "por-vencer" ? "#141b27" : "#262b33")
 
-function Tower({ p, groundY, only, sel, shown, labels, tip, onPick, lamp }: { p: Placed; groundY: number; only: Pick | null; sel: { tower: string; label: string } | null; shown: Shown; labels: TowerLabels; tip: Tip; onPick: (tower: string, a: Apartment) => void; lamp: boolean }) {
+function Tower({ p, groundY, only, sel, zoomed, shown, labels, tip, onPick, onFloor, lamp }: { p: Placed; groundY: number; only: Pick | null; sel: { tower: string; label: string } | null; zoomed: number | null; shown: Shown; labels: TowerLabels; tip: Tip; onPick: (tower: string, a: Apartment) => void; onFloor: (floor: number) => void; lamp: boolean }) {
   const { t, x, w } = p
   const floors = t.floors.length
   const top = groundY - floors * FH
@@ -443,7 +479,9 @@ function Tower({ p, groundY, only, sel, shown, labels, tip, onPick, lamp }: { p:
         const half = Math.ceil(f.units.length / 2)
         return (
           <g key={f.floor}>
-            <line x1={x} x2={x + w} y1={fy + FH} y2={fy + FH} stroke="#2a2d33" />
+            {/* The whole floor is a tap target (opens it at full size); the zoomed one is outlined. */}
+            <rect x={x - LEFT + 2} y={fy} width={w + LEFT - 2} height={FH} fill={zoomed === f.floor ? "#5598e7" : "transparent"} fillOpacity={zoomed === f.floor ? 0.1 : 0} stroke={zoomed === f.floor ? "#5598e7" : "none"} strokeOpacity={0.6} style={{ cursor: "zoom-in" }} onClick={() => onFloor(f.floor)} />
+            <line x1={x} x2={x + w} y1={fy + FH} y2={fy + FH} stroke="#2a2d33" pointerEvents="none" />
             {(floors <= 14 || f.floor % 2 === 0 || f.floor === 1) && (
               <text x={x - 5} y={fy + FH / 2} dy="0.35em" textAnchor="end" fontSize={8.5} fill={INK.muted} className="font-mono tabular-nums">
                 {labels.floor(f.floor)}
@@ -540,14 +578,46 @@ function Tower({ p, groundY, only, sel, shown, labels, tip, onPick, lamp }: { p:
 
 const CELL_BG: Record<Tone, string> = { "al-corriente": "bg-[#22385c] text-[#d6e5fb]", "por-vencer": "border-[#7d8ca3] bg-transparent text-zinc-200", atrasado: "bg-[#ec835a] text-[#1a0d06]", suspendido: "bg-[#d03b3b] text-white", "sin-cobro": "bg-[#2b313b] text-zinc-200" }
 
-function Stack({ site, only, sel, shown, labels, onPick }: { site: BuiltSite; only: Pick | null; sel: { tower: string; label: string } | null; shown: Shown; labels: TowerLabels; onPick: (tower: string, a: Apartment) => void }) {
-  const detail = (r: Resident) => [shown.plan ? r.plans.join("+") : "", shown.monto ? pesos(r.value) : ""].filter(Boolean).join(" ")
+/** Floors wider than this get compact cells in the stacking plan (number and status mark; the rest on hover or tap). */
+export const COMPACT_OVER = 8
+
+/** One apartment as a button: the stacking plan's cell and the floor strip's. Compact = number and mark only. */
+function AptButton({ a, towerId, compact, only, sel, shown, labels, onPick }: { a: Apartment; towerId: string; compact: boolean; only: Pick | null; sel: { tower: string; label: string } | null; shown: Shown; labels: TowerLabels; onPick: (tower: string, a: Apartment) => void }) {
+  const r = a.resident
+  const pick = only === null || r?.tone === only
+  const on = sel?.tower === towerId && sel.label === a.label
+  const detail = r ? [shown.plan ? r.plans.join("+") : "", shown.monto ? pesos(r.value) : ""].filter(Boolean).join(" ") : ""
   const wide = shown.cliente || (shown.plan && shown.monto)
+  const size = compact ? "h-9 w-[2.55rem] px-0.5" : `${shown.cliente ? "h-14" : "h-11"} ${wide ? "w-[5.1rem]" : "w-[3.6rem]"} px-1`
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      aria-label={`${labels.apt.title(a.label)}: ${aptRows(a, shown, labels).map((x) => x.value).join(", ")}`}
+      title={compact && r ? aptRows(a, shown, labels).map((x) => x.value).join(" · ") : undefined}
+      onClick={() => onPick(towerId, a)}
+      className={`relative grid ${size} content-center rounded-md border text-left leading-tight transition-opacity focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none ${r ? (shown.estado ? CELL_BG[r.tone] : "bg-[#d9a83a] text-[#1a1306]") : "border-dashed border-white/10 text-zinc-600"} ${r && (r.tone !== "por-vencer" || !shown.estado) ? "border-transparent" : ""} ${on ? "ring-2 ring-white" : ""} ${r && !r.exact ? "outline-1 outline-offset-[-3px] outline-white/40 outline-dashed" : ""}`}
+      style={{ opacity: pick ? 1 : 0.18 }}
+    >
+      <span className={`flex items-center justify-between font-mono tabular-nums ${compact ? "text-[0.6rem]" : "text-[0.68rem]"}`}>
+        {a.label}
+        {r && shown.estado && <span aria-hidden>{MARK[r.tone]}</span>}
+      </span>
+      {!compact && shown.cliente && <span className="truncate text-[0.6rem] font-medium">{r ? r.name : "—"}</span>}
+      {!compact && <span className="truncate text-[0.6rem] opacity-80">{r ? detail || " " : "—"}</span>}
+      {r && shown.luz && (r.light === "baja" || r.light === "satura") && <span aria-hidden className="absolute inset-x-2 bottom-0.5 h-0.5 rounded-full" style={{ background: STATUS.critical }} />}
+      {shown.reportes && r && r.reports > 0 && <span aria-hidden className="absolute -top-1 -right-1 size-2.5 rounded-full border border-[#0e0e10]" style={{ background: STATUS.warning }} />}
+    </button>
+  )
+}
+
+function Stack({ site, only, sel, shown, detailed, labels, onPick }: { site: BuiltSite; only: Pick | null; sel: { tower: string; label: string } | null; shown: Shown; detailed: boolean; labels: TowerLabels; onPick: (tower: string, a: Apartment) => void }) {
   return (
     <div className="grid gap-5">
       {site.towers.map((t) => {
         const tt = tally(unitsOf(t))
         const cols = Math.max(1, ...t.floors.map((f) => f.units.length))
+        const compact = !detailed && cols > COMPACT_OVER
         return (
           <div key={t.id} className="grid gap-2">
             <p className="flex flex-wrap items-baseline gap-x-3 text-sm text-zinc-100">
@@ -572,38 +642,15 @@ function Stack({ site, only, sel, shown, labels, onPick }: { site: BuiltSite; on
                     const ft = tally(f.units)
                     return (
                       <tr key={f.floor}>
-                        <th scope="row" className="pr-1 text-right font-mono text-[0.7rem] font-normal text-zinc-500 tabular-nums">
+                        {/* The floor and its money stay in view while the row scrolls sideways. */}
+                        <th scope="row" className="sticky left-0 z-10 bg-[#0e0e10] pr-1 text-right font-mono text-[0.7rem] font-normal text-zinc-500 tabular-nums">
                           {labels.floor(f.floor)}
                         </th>
                         {Array.from({ length: cols }, (_, i) => {
                           const a = f.units[i]
-                          if (!a) return <td key={i} />
-                          const r = a.resident
-                          const pick = only === null || r?.tone === only
-                          const on = sel?.tower === t.id && sel.label === a.label
-                          return (
-                            <td key={i}>
-                              <button
-                                type="button"
-                                aria-pressed={on}
-                                aria-label={`${labels.apt.title(a.label)}: ${aptRows(a, shown, labels).map((x) => x.value).join(", ")}`}
-                                onClick={() => onPick(t.id, a)}
-                                className={`relative grid ${shown.cliente ? "h-14" : "h-11"} ${wide ? "w-[5.1rem]" : "w-[3.6rem]"} content-center rounded-md border px-1 text-left leading-tight transition-opacity focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none ${r ? (shown.estado ? CELL_BG[r.tone] : "bg-[#d9a83a] text-[#1a1306]") : "border-dashed border-white/10 text-zinc-600"} ${r && (r.tone !== "por-vencer" || !shown.estado) ? "border-transparent" : ""} ${on ? "ring-2 ring-white" : ""} ${r && !r.exact ? "outline-1 outline-offset-[-3px] outline-white/40 outline-dashed" : ""}`}
-                                style={{ opacity: pick ? 1 : 0.18 }}
-                              >
-                                <span className="flex items-center justify-between font-mono text-[0.68rem] tabular-nums">
-                                  {a.label}
-                                  {r && shown.estado && <span aria-hidden>{MARK[r.tone]}</span>}
-                                </span>
-                                {shown.cliente && <span className="truncate text-[0.6rem] font-medium">{r ? r.name : "—"}</span>}
-                                <span className="truncate text-[0.6rem] opacity-80">{r ? detail(r) || "\u00a0" : "—"}</span>
-                                {r && shown.luz && (r.light === "baja" || r.light === "satura") && <span aria-hidden className="absolute inset-x-2 bottom-0.5 h-0.5 rounded-full" style={{ background: STATUS.critical }} />}
-                                {shown.reportes && r && r.reports > 0 && <span aria-hidden className="absolute -top-1 -right-1 size-2.5 rounded-full border border-[#0e0e10]" style={{ background: STATUS.warning }} />}
-                              </button>
-                            </td>
-                          )
+                          return <td key={i}>{a && <AptButton a={a} towerId={t.id} compact={compact} only={only} sel={sel} shown={shown} labels={labels} onPick={onPick} />}</td>
                         })}
-                        <td className="pl-2 font-mono text-[0.7rem] whitespace-nowrap text-zinc-400 tabular-nums">
+                        <td className="sticky right-0 z-10 bg-[#0e0e10] pl-2 font-mono text-[0.7rem] whitespace-nowrap text-zinc-400 tabular-nums">
                           {pesos(ft.value)} <span className="text-zinc-600">· {ft.residents}/{ft.apartments}</span>
                         </td>
                       </tr>
@@ -616,5 +663,45 @@ function Stack({ site, only, sel, shown, labels, onPick }: { site: BuiltSite; on
         )
       })}
     </div>
+  )
+}
+
+/**
+ * The facade's floor zoom (owner 2026-11-28: towers of 16 floors × 16 apartments, too small to tap on a phone): the
+ * floor picked on the facade as full-size buttons, with the floor above and below a tap away.
+ */
+function FloorStrip({ site, at, only, sel, shown, labels, onPick, onFloor, onClose }: { site: BuiltSite; at: { tower: string; floor: number }; only: Pick | null; sel: { tower: string; label: string } | null; shown: Shown; labels: TowerLabels; onPick: (tower: string, a: Apartment) => void; onFloor: (floor: number) => void; onClose: () => void }) {
+  const t = site.towers.find((x) => x.id === at.tower)
+  const f = t?.floors[at.floor - 1]
+  if (!t || !f) return null
+  const ft = tally(f.units)
+  const step = "min-h-9 rounded-full border border-white/10 px-3 text-xs text-zinc-300 hover:text-zinc-50 disabled:opacity-30 focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
+  return (
+    <section aria-label={labels.zoom.title(labels.floor(f.floor), labels.tower(t.name))} className="mt-3 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-sm text-zinc-100">
+          {labels.zoom.title(labels.floor(f.floor), labels.tower(t.name))}
+          <span className="ml-2 font-mono text-xs text-zinc-400 tabular-nums">
+            {pesos(ft.value)} · {ft.residents}/{ft.apartments}
+          </span>
+        </p>
+        <span className="ml-auto flex gap-1.5">
+          <button type="button" className={step} disabled={f.floor >= t.floors.length} onClick={() => onFloor(f.floor + 1)}>
+            {labels.zoom.up}
+          </button>
+          <button type="button" className={step} disabled={f.floor <= 1} onClick={() => onFloor(f.floor - 1)}>
+            {labels.zoom.down}
+          </button>
+          <button type="button" className={step} onClick={onClose}>
+            {labels.apt.close}
+          </button>
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {f.units.map((a) => (
+          <AptButton key={a.label} a={a} towerId={t.id} compact={false} only={only} sel={sel} shown={shown} labels={labels} onPick={onPick} />
+        ))}
+      </div>
+    </section>
   )
 }

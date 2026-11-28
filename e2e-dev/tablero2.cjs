@@ -145,6 +145,10 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
       const zoom = page.getByRole("group", { name: "Mapa de ingresos: Despliegues" }).getByRole("button").nth(1)
       await zoom.scrollIntoViewIfNeeded()
       await page.waitForTimeout(600)
+      // A floor of the 16 × 16 tower at full size: tap its row on the facade.
+      await page.locator('svg[aria-label*="departamentos con cliente"] rect[style*="zoom-in"]').first().click({ force: true })
+      const strip = towerPanel().getByRole("region", { name: /^Piso \d+/ })
+      x4.floorZoom = (await strip.getByRole("button", { name: /^Depto\. \d+/ }).count()) === 16
       await towerPanel().screenshot({ path: path.join(SHOTS, `t2-pack-facade-${w}.png`) }).catch(() => undefined)
       await zoom.click()
       x4.zoomed = (await zoom.getAttribute("aria-pressed")) === "true"
@@ -169,7 +173,10 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
       await page.getByRole("group", { name: "Mapa de ingresos: Despliegues" }).getByRole("button").first().click()
       await page.getByRole("group", { name: "Vista" }).getByRole("button", { name: "Plano por pisos" }).click()
       const cells = towerPanel().locator("table button")
-      const plan = { cells: (await cells.count()) >= 100 }
+      const plan = { cells: (await cells.count()) >= 300 }
+      // 16 apartments a floor: compact cells, no sideways scroll of the page.
+      plan.compact = (await cells.first().evaluate((el) => el.getBoundingClientRect().width)) < 48
+      plan.overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
       await cells.first().click()
       plan.card = (await towerPanel().getByText(/^Depto\. \d+/).count()) >= 1
       const named = await towerPanel().getByText(/Cliente demo/).count()

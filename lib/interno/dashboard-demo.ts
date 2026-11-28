@@ -32,7 +32,7 @@ export type DemoSet = { clients: Client[]; payments: Payment[]; reports: Report[
 
 /** Municipality-level points only (rule 6), with each deployment's size and links. */
 const SITES = [
-  { name: "Edificio Demo Norte", municipality: "Benito Juárez", lat: 19.37, lng: -99.16, apartments: 120, links: [1000, 500], rent: 3500, clients: 70 },
+  { name: "Edificio Demo Norte", municipality: "Benito Juárez", lat: 19.37, lng: -99.16, apartments: 316, links: [1000, 500], rent: 3500, clients: 150 },
   { name: "Edificio Demo Sur", municipality: "Coyoacán", lat: 19.33, lng: -99.16, apartments: 80, links: [500], rent: 2500, clients: 46 },
   { name: "Torre Demo Poniente", municipality: "Álvaro Obregón", lat: 19.36, lng: -99.2, apartments: 64, links: [300], rent: 2000, clients: 38 },
   { name: "Residencial Demo Morelos", municipality: "Cuernavaca", lat: 18.92, lng: -99.23, apartments: 48, links: [500], rent: 1500, clients: 24 },
@@ -71,7 +71,8 @@ export function demoSet(today: string): DemoSet {
       municipality: d.municipality,
       rentMonthly: d.rent,
       // Big buildings have two towers; every tower its floors (about 6 apartments per floor).
-      towers: d.apartments >= 60 ? [newTower({ name: "A", apartments: Math.ceil(d.apartments / 2), floors: Math.ceil(d.apartments / 12) }), newTower({ name: "B", apartments: Math.floor(d.apartments / 2), floors: Math.ceil(d.apartments / 12) })] : [newTower({ name: "A", apartments: d.apartments, floors: Math.ceil(d.apartments / 6) })],
+      // The biggest is a high-rise (owner 2026-11-28: 16 floors × 16 apartments, numbered 101–1616) beside a smaller tower.
+      towers: si === 0 ? [newTower({ name: "A", apartments: 256, floors: 16 }), newTower({ name: "B", apartments: 60, floors: 10 })] : d.apartments >= 60 ? [newTower({ name: "A", apartments: Math.ceil(d.apartments / 2), floors: Math.ceil(d.apartments / 12) }), newTower({ name: "B", apartments: Math.floor(d.apartments / 2), floors: Math.ceil(d.apartments / 12) })] : [newTower({ name: "A", apartments: d.apartments, floors: Math.ceil(d.apartments / 6) })],
       rooms: [newRoom({ name: "Cuarto de telecom", carriers: d.links.map((mbps, li) => newRoomCarrier({ name: ["Carrier A", "Carrier B"][li] ?? `Enlace ${li + 1}`, downMbps: mbps, upMbps: mbps, monthly: Math.round(mbps * 3.2), ip: `189.${200 + si}.${li}.34` })) })],
     })
     sites.push(site)
@@ -81,8 +82,9 @@ export function demoSet(today: string): DemoSet {
       si === 0
         ? site.towers.map((t) => {
             const top = t.floors ?? 1
-            const per = Array.from({ length: top }, (_, l) => (l === 0 ? 4 : l === top - 1 ? 8 : 6))
-            return { ...emptyTower(t.name), floorsAbove: top, floorsBelow: 2, floors: [-2, -1, ...per.keys()].map((level) => ({ level, units: level < 0 ? 0 : per[level], farthestM: null, conduit: "" as const, boxSpot: "", notes: "" })) }
+            const big = (t.apartments ?? 0) >= 200
+            const per = Array.from({ length: top }, (_, l) => (big ? 16 : l === 0 ? 4 : l === top - 1 ? 8 : 6))
+            return { ...emptyTower(t.name), floorsAbove: top, floorsBelow: big ? 3 : 2, floors: [...(big ? [-3] : []), -2, -1, ...per.keys()].map((level) => ({ level, units: level < 0 ? 0 : per[level], farthestM: null, conduit: "" as const, boxSpot: "", notes: "" })) }
           })
         : sv.towers
     surveys.push({ ...sv, id: `demo-survey-${si}`, siteId: site.id, towers: svTowers, ident: { ...sv.ident, name: d.name, municipality: d.municipality, lat: d.lat, lng: d.lng } })
@@ -113,7 +115,9 @@ export function demoSet(today: string): DemoSet {
       // About one in eight ONTs had more light two months ago (a fiber getting worse).
       const svc = services[0]
       if (svc.rxDbm !== null && r2() < 0.12) svc.rxHistory = [{ date: day(addMonths(month, -2), 3), rx: Math.round((svc.rxDbm + 1 + r2() * 4.5) * 10) / 10, oltRx: null }]
-      const towerId = site.towers[Math.floor(r2() * site.towers.length)].id
+      // A tower by its size (one draw, as before).
+      const pickAt = r2() * site.towers.reduce((x, t) => x + (t.apartments ?? 0), 0)
+      const towerId = (site.towers.find((_, ti) => site.towers.slice(0, ti + 1).reduce((x, t) => x + (t.apartments ?? 0), 0) > pickAt) ?? site.towers[0]).id
       const tower = site.towers.find((t) => t.id === towerId)
       const apartment = r3() < 0.06 ? "" : (free.get(towerId)?.pop() ?? "")
       const c = newClient({ id, name: `Cliente demo ${si + 1}-${i + 1}`, siteId: site.id, towerId, tower: site.towers.length > 1 ? (tower?.name ?? "") : "", apartment, services, createdAt: now, updatedAt: now })

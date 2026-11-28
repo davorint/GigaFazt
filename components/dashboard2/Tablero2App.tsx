@@ -326,7 +326,8 @@ export function Tablero2App() {
   const treeBest = [...treeSites].sort((a, b) => b.margin - a.margin)[0]
   const builtShown = built.reduce((a, x) => a + x.residents, 0)
   const towerLabels: TowerLabels = {
-    view: { fachada: t("tower.view.fachada"), plano: t("tower.view.plano"), label: t("tower.view.label") },
+    view: { fachada: t("tower.view.fachada"), plano: t("tower.view.plano"), label: t("tower.view.label"), detailed: t("tower.view.detailed") },
+    zoom: { title: (floor, tower) => t("tower.zoom.title", { floor, tower }), up: t("tower.zoom.up"), down: t("tower.zoom.down"), hint: t("tower.zoom.hint") },
     fields: { label: t("tower.fields.label"), cliente: t("tower.fields.cliente"), estado: t("tower.fields.estado"), plan: t("tower.fields.plan"), monto: t("tower.fields.monto"), luz: t("tower.fields.luz"), reportes: t("tower.fields.reportes") },
     sites: `${t("tree.title")}: ${t("tree.lists.sites")}`,
     tower: (n) => n || t("tower.oneTower"),

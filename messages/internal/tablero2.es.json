@@ -156,7 +156,7 @@
       "takeaway": "{top} aporta el {share} del ingreso mensual ({amount}). Este mes va pagado el {paid}.",
       "marginLine": "{best} es el que más deja ({margin} de margen).",
       "lossLine": "{name} pierde dinero: {profit} al mes.",
-      "note": "Cada despliegue dibujado con sus torres, piso por piso, a partir de lo anotado en Despliegues (o del levantamiento cuando contó los departamentos de cada piso): una ventana por departamento, numerados 101, 102… desde la planta baja. Cada cliente va en el departamento que tiene anotado en Clientes; si no lo tiene o no coincide, queda en uno libre con contorno punteado. La ventana se enciende según cómo va su mes: azul pagado (más claro cuanto más paga), hueca si aún no le vence, naranja atrasado, rojo suspendido; oscura si no hay cliente. Un punto ámbar = reporte abierto; una raya roja bajo la ventana = luz baja o saturada. «Plano por pisos» muestra lo mismo como tabla de pisos. Con «Mostrar» eliges qué datos ves de cada departamento; sin «Estado de pago», las ventanas con cliente se encienden en un solo color (ocupación).",
+      "note": "Cada despliegue dibujado con sus torres, piso por piso, a partir de lo anotado en Despliegues (o del levantamiento cuando contó los departamentos de cada piso): una ventana por departamento, numerados 101, 102… desde la planta baja. Cada cliente va en el departamento que tiene anotado en Clientes; si no lo tiene o no coincide, queda en uno libre con contorno punteado. La ventana se enciende según cómo va su mes: azul pagado (más claro cuanto más paga), hueca si aún no le vence, naranja atrasado, rojo suspendido; oscura si no hay cliente. Un punto ámbar = reporte abierto; una raya roja bajo la ventana = luz baja o saturada. Toca un piso para verlo en grande debajo del edificio. «Plano por pisos» muestra lo mismo como tabla de pisos; con más de 8 departamentos por piso las celdas quedan compactas (número y estado; lo demás al tocarlas) y «Detallado» las abre completas. Con «Mostrar» eliges qué datos ves de cada departamento; sin «Estado de pago», las ventanas con cliente se encienden en un solo color (ocupación).",
       "all": "Todo",
       "hint": "Elige un despliegue",
       "share": "parte · margen",
@@ -612,7 +612,8 @@
       "view": {
         "label": "Vista",
         "fachada": "Fachada",
-        "plano": "Plano por pisos"
+        "plano": "Plano por pisos",
+        "detailed": "Detallado"
       },
       "fields": {
         "label": "Mostrar",
@@ -672,6 +673,12 @@
         "guessed": "Ubicación por confirmar",
         "report": "Reporte abierto",
         "loss": "Pierde dinero (margen)"
+      },
+      "zoom": {
+        "title": "Piso {floor} · {tower}",
+        "up": "Piso de arriba",
+        "down": "Piso de abajo",
+        "hint": "Toca un piso del edificio para verlo en grande."
       }
     }
   }
