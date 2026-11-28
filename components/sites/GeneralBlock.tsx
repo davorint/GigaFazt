@@ -61,7 +61,7 @@ export function GeneralBlock({ t, s, up, stats }: { t: T; s: Site; up: Up; stats
           />
           <div className="flex flex-wrap items-center gap-2 px-2">
             <button type="button" onClick={locate} disabled={locating === "busy"} className={SMALL}>
-              {locating === "busy" ? t("sheet.locating") : t("sheet.locate")}
+              {locating === "busy" ? t("sheet.locating") : t(point ? "sheet.relocate" : "sheet.locate")}
             </button>
             {point && (
               <a href={`https://www.google.com/maps?q=${s.lat},${s.lng}`} target="_blank" rel="noreferrer noopener" className="text-xs text-zinc-300 underline decoration-white/30 underline-offset-4 hover:text-foreground">

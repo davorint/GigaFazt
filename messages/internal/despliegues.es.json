@@ -249,6 +249,7 @@
       "locationHint": "Latitud, longitud, p. ej. 19.3612, -99.1641 (se copian de Google Maps). Solo para uso interno.",
       "locationInvalid": "Escribe latitud y longitud separadas por coma, p. ej. 19.3612, -99.1641.",
       "locate": "Usar mi ubicación",
+      "relocate": "Cambiar a mi ubicación actual",
       "locating": "Buscando…",
       "locateFailed": "No se pudo obtener la ubicación (permiso o señal).",
       "openMap": "Ver en el mapa",

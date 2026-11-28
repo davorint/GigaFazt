@@ -308,6 +308,12 @@ export function parsePoint(v: string): { lat: number; lng: number } | null {
   return Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? { lat, lng } : null
 }
 
+/** Changes the tower's floors; counted floors that no longer exist leave the total too. */
+export function setFloors(t: Tower, floors: number | null): Tower {
+  const next = syncPerFloor({ ...t, floors })
+  return { ...next, apartments: next.perFloor.some((x) => x !== null) ? towerApartments(next) : t.perFloor.some((x) => x !== null) ? null : t.apartments }
+}
+
 /** The sheet's blocks, in page order (each one an anchor). */
 export const SHEET_SECTIONS = ["general", "torres", "cuartos", "acuerdo", "acceso", "clientes", "levantamiento", "sitio"] as const
 export type SheetSection = (typeof SHEET_SECTIONS)[number]

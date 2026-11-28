@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 
 const BTN = "inline-flex min-h-9 items-center rounded-full border px-3 text-xs focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -12,9 +12,22 @@ const BTN = "inline-flex min-h-9 items-center rounded-full border px-3 text-xs f
 export function ConfirmRemove({ label, question, detail, onRemove }: { label: string; question: string; detail?: string; onRemove: () => void }) {
   const t = useTranslations("despliegues.sheet")
   const [asking, setAsking] = useState(false)
+  const back = useRef(false)
+  const button = useRef<HTMLButtonElement>(null)
+  // After "No", focus returns to the button that asked.
+  useEffect(() => {
+    if (!asking && back.current) {
+      back.current = false
+      button.current?.focus()
+    }
+  }, [asking])
+  const cancel = () => {
+    back.current = true
+    setAsking(false)
+  }
   if (!asking)
     return (
-      <button type="button" onClick={() => setAsking(true)} className={`${BTN} w-fit border-red-400/30 text-red-200 hover:bg-red-400/10`}>
+      <button ref={button} type="button" onClick={() => setAsking(true)} className={`${BTN} w-fit border-red-400/30 text-red-200 hover:bg-red-400/10`}>
         {label}
       </button>
     )
@@ -25,7 +38,6 @@ export function ConfirmRemove({ label, question, detail, onRemove }: { label: st
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          autoFocus
           onClick={() => {
             setAsking(false)
             onRemove()
@@ -34,7 +46,8 @@ export function ConfirmRemove({ label, question, detail, onRemove }: { label: st
         >
           {t("yes")}
         </button>
-        <button type="button" onClick={() => setAsking(false)} className={`${BTN} border-white/15 text-zinc-100 hover:bg-white/5`}>
+        {/* Focus starts on "No": Enter alone never removes. */}
+        <button type="button" autoFocus onClick={cancel} onKeyDown={(e) => e.key === "Escape" && cancel()} className={`${BTN} border-white/15 text-zinc-100 hover:bg-white/5`}>
           {t("no")}
         </button>
       </div>

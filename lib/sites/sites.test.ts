@@ -181,6 +181,11 @@ describe("deployment sheet fields (owner, 2026-11-28)", () => {
     const t = setFloorUnits(newTower({ floors: 3, apartments: 30 }), 1, 8)
     expect([t.perFloor, t.apartments]).toEqual([[null, 8, null], 8])
     expect(setFloorUnits(t, 1, null).apartments).toBe(8)
+    // Fewer floors after counting: the dropped floor leaves the total too.
+    const { setFloors } = await import("./model")
+    const c = setFloorUnits(setFloorUnits(newTower({ floors: 3 }), 0, 4), 2, 6)
+    expect(setFloors(c, 2)).toMatchObject({ floors: 2, perFloor: [4, null], apartments: 4 })
+    expect(setFloors(newTower({ floors: 3, apartments: 30 }), 5)).toMatchObject({ floors: 5, apartments: 30 })
   })
   it("reads a map point as Google Maps copies it", async () => {
     const { parsePoint } = await import("./model")

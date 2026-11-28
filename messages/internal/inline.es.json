@@ -4,7 +4,7 @@
     "edit": "Editar {label}",
     "save": "Guardar",
     "cancel": "Cancelar",
-    "areaHint": "Ctrl + Enter guarda · Esc cancela",
+    "areaHint": "✓ o al salir del campo se guarda (en teclado: Ctrl + Enter) · ✕ o Esc cancela",
     "invalidNumber": "Escribe un número de {min} a {max}.",
     "invalidInteger": "Escribe un número entero de {min} a {max}.",
     "invalidDate": "Fecha no válida."

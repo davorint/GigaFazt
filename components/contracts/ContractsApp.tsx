@@ -175,7 +175,7 @@ function ContractRow({ t, c, status, end, party, lists, today, open, onToggle }:
           {fromSite && site && (
             <p className="text-sm text-zinc-300">
               {t("fromSite", { status: end ? `${t(`status.${contractStatus(c, lists.sites, today).status}`).toLowerCase()}, ${t("ends", { date: end })}` : t("fromSiteNoEnd") })}{" "}
-              <a href={`/interno/admin/despliegues?d=${site.id}`} className="text-cyan-200 underline underline-offset-4">
+              <a href={`/interno/admin/despliegues?d=${site.id}#acuerdo`} className="text-cyan-200 underline underline-offset-4">
                 {t("fromSiteEdit")}
               </a>
             </p>

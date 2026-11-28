@@ -85,11 +85,24 @@ const change = (data) => ({ id: data.id, baseVersion: null, data, deleted: false
         console.log(`${w} point: ${d3?.lat},${d3?.lng}`)
         // Remove asks on the page.
         await page.getByRole("button", { name: "Quitar contacto" }).click()
-        await page.getByRole("alertdialog").getByRole("button", { name: "No", exact: true }).click()
+        await page.getByRole("alertdialog").getByRole("button", { name: "No", exact: true }).press("Enter")
+        console.log(`${w} focus back on remove: ${await page.evaluate(() => document.activeElement?.textContent)}`)
         console.log(`${w} contact kept: ${await page.getByRole("button", { name: "Quitar contacto" }).count()}`)
         // The chip goes to a missing field.
         await page.getByRole("button", { name: /Faltan \d+ datos/ }).click()
-        console.log(`${w} chip focus in a missing field: ${await page.evaluate(() => !!document.activeElement?.closest("[data-missing]"))}`)
+        console.log(`${w} chip opens a missing field: ${await page.evaluate(() => !!document.activeElement?.closest("[data-missing]") && ["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName))}`)
+        await page.keyboard.press("Escape")
+        // Fewer floors after counting them: the total follows.
+        await page.locator("#f-tower\\.wdtest-sheet-t1\\.floors button").click()
+        await page.getByLabel("Niveles").fill("1")
+        await page.keyboard.press("Enter")
+        const d4 = await waitStored((d) => d.towers?.[0]?.floors === 1)
+        console.log(`${w} fewer floors: ${JSON.stringify(d4?.towers?.[0]?.perFloor)} apartments: ${d4?.towers?.[0]?.apartments}`)
+        // A link naming a block opens there.
+        await page.goto(`${BASE}/interno/admin/despliegues?d=${SITE}#acuerdo`)
+        await page.locator("#acuerdo").waitFor()
+        await page.waitForTimeout(500)
+        console.log(`${w} hash block in view: ${await page.evaluate(() => { const r = document.getElementById("acuerdo").getBoundingClientRect(); return r.top >= 0 && r.top < window.innerHeight })}`)
         await page.screenshot({ path: path.join(OUT, `despliegues-sheet-${w}-edited.png`), fullPage: true })
       }
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - Math.min(window.innerWidth, screen.width))

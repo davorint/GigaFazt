@@ -53,7 +53,7 @@ export function AgreementsApp() {
       <ul className="grid gap-2">
         {rows.map(({ s, a }) => (
           <li key={s.id}>
-            <a href={`/interno/admin/despliegues?d=${s.id}`} className="grid gap-1 rounded-xl border border-white/10 p-3 hover:bg-white/[0.03]">
+            <a href={`/interno/admin/despliegues?d=${s.id}#acuerdo`} className="grid gap-1 rounded-xl border border-white/10 p-3 hover:bg-white/[0.03]">
               <span className="flex flex-wrap items-baseline justify-between gap-2">
                 <span className="text-sm text-zinc-100">{siteLabel(s)}</span>
                 <span className={`rounded-full border px-2 py-0.5 font-mono text-[0.7rem] ${TONE[a.status]}`}>{t(`status.${a.status}`)}</span>

@@ -44,24 +44,33 @@ export function InlineField(props: InlineFieldProps) {
   const [draft, setDraft] = useState("")
   const [error, setError] = useState("")
   const button = useRef<HTMLButtonElement>(null)
+  const picker = useRef<HTMLInputElement & HTMLSelectElement>(null)
   const refocus = useRef(false)
   useEffect(() => {
     if (!editing && refocus.current) {
       refocus.current = false
       button.current?.focus()
     }
-  }, [editing])
+    // Menus and dates open their picker on the first tap (phones would need a second one); not every browser can.
+    if (editing && (props.kind === "pick" || props.kind === "date"))
+      try {
+        picker.current?.showPicker()
+      } catch {
+        // Not allowed or not supported: the focused field is still there to tap.
+      }
+  }, [editing, props.kind])
 
   const open = () => {
     setDraft(textOf(props))
     setError("")
     setEditing(true)
   }
-  const close = () => {
-    refocus.current = true
+  // Back to the value's button after Enter, Esc, ✓ or ✕; not after leaving the field (focus went where it was tapped).
+  const close = (back = true) => {
+    refocus.current = back
     setEditing(false)
   }
-  const commit = (raw = draft) => {
+  const commit = (raw = draft, back = true) => {
     const text = props.kind === "text" || props.kind === "area" ? raw.slice(0, props.max ?? (props.kind === "area" ? 4000 : 300)) : raw
     if (props.kind === "number") {
       const min = props.min ?? 0
@@ -69,19 +78,19 @@ export function InlineField(props: InlineFieldProps) {
       const s = text.replace(/[,\s$]/g, "")
       if (s === "") {
         if (props.value !== null) props.onSave(null)
-        return close()
+        return close(back)
       }
       const n = Number(s)
       if (!Number.isFinite(n) || n < min || n > max || (props.integer && !Number.isInteger(n))) return setError(t(props.integer ? "invalidInteger" : "invalidNumber", { min, max }))
       if (n !== props.value) props.onSave(n)
-      return close()
+      return close(back)
     }
     if (props.kind === "date" && text && !/^\d{4}-\d{2}-\d{2}$/.test(text)) return setError(t("invalidDate"))
     const bad = props.kind === "text" && text.trim() && props.check ? props.check(text) : ""
     if (bad) return setError(bad)
     const v = props.kind === "date" || props.kind === "pick" ? text : text.trim() === "" ? "" : text
     if (v !== props.value) props.onSave(v)
-    close()
+    close(back)
   }
   const onKey = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
@@ -125,8 +134,9 @@ export function InlineField(props: InlineFieldProps) {
                 id={id}
                 autoFocus
                 value={draft}
+                ref={picker}
                 onChange={(e) => commit(e.target.value)}
-                onBlur={close}
+                onBlur={() => close(false)}
                 onKeyDown={onKey}
                 className={cn(INPUT, "h-10")}
               >
@@ -143,7 +153,7 @@ export function InlineField(props: InlineFieldProps) {
                 rows={4}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                onBlur={() => commit()}
+                onBlur={() => commit(draft, false)}
                 onKeyDown={onKey}
                 aria-describedby={`${id}-hint`}
                 className={cn(INPUT, "py-2")}
@@ -161,7 +171,8 @@ export function InlineField(props: InlineFieldProps) {
                   setDraft(e.target.value)
                   setError("")
                 }}
-                onBlur={() => commit()}
+                ref={props.kind === "date" ? picker : undefined}
+                onBlur={() => commit(draft, false)}
                 onKeyDown={onKey}
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error || props.hint ? `${id}-hint` : undefined}
@@ -173,7 +184,7 @@ export function InlineField(props: InlineFieldProps) {
                 <button type="button" onMouseDown={keep} onClick={() => commit()} aria-label={t("save")} className={MINI}>
                   ✓
                 </button>
-                <button type="button" onMouseDown={keep} onClick={close} aria-label={t("cancel")} className={MINI}>
+                <button type="button" onMouseDown={keep} onClick={() => close()} aria-label={t("cancel")} className={MINI}>
                   ✕
                 </button>
               </>

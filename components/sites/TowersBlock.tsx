@@ -1,7 +1,7 @@
 "use client"
 
 import { InlineField } from "@/components/interno/InlineField"
-import { newTower, removeTower, roomLabel, setFloorUnits, syncPerFloor, towerApartments, towerLabel, type Site, type Tower } from "@/lib/sites/model"
+import { newTower, removeTower, roomLabel, setFloorUnits, setFloors, towerApartments, towerLabel, type Site, type Tower } from "@/lib/sites/model"
 import type { SiteStats } from "@/lib/sites/stats"
 import { ConfirmRemove } from "./ConfirmRemove"
 import { SheetBlock } from "./SheetBlock"
@@ -23,7 +23,7 @@ export function TowersBlock({ t, s, up, stats }: { t: T; s: Site; up: Up; stats:
             <div className={FIELDS_WIDE}>
               <InlineField kind="text" label={t("towers.name")} value={x.name} display={x.name || towerLabel(x, i)} onSave={(name) => set({ ...x, name })} hint={t("towers.nameHint")} max={80} />
               <InlineField kind="pick" anchor={`tower.${x.id}.room`} label={t("towers.room")} value={x.roomId} options={rooms} onSave={(roomId) => set({ ...x, roomId })} />
-              <InlineField kind="number" anchor={`tower.${x.id}.floors`} label={t("towers.floors")} integer max={200} value={x.floors} onSave={(floors) => set(syncPerFloor({ ...x, floors }))} hint={t("towers.floorsHint")} />
+              <InlineField kind="number" anchor={`tower.${x.id}.floors`} label={t("towers.floors")} integer max={200} value={x.floors} onSave={(floors) => set(setFloors(x, floors))} hint={t("towers.floorsHint")} />
               <InlineField kind="number" label={t("towers.basements")} integer max={20} value={x.basements} onSave={(basements) => set({ ...x, basements })} />
               {counted ? (
                 <div id={`f-tower.${x.id}.apartments`} className="grid gap-0.5 px-2 py-1.5">

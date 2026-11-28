@@ -228,7 +228,7 @@ export function TodayBoard() {
             </Card>
             <Card title={t("agreements.title")} href={`${A}/legal/contratos?vista=edificios`} open={t("open")} count={s.agreements.length} tone={s.agreements.some((a) => a.ended) ? "red" : s.agreements.length ? "amber" : "ok"}>
               {list(
-                s.agreements.slice(0, 4).map((a) => ({ key: a.id, text: t(a.ended ? "agreements.ended" : "agreements.soon", { label: a.label, date: a.end }), href: `${A}/despliegues?d=${a.id}` })),
+                s.agreements.slice(0, 4).map((a) => ({ key: a.id, text: t(a.ended ? "agreements.ended" : "agreements.soon", { label: a.label, date: a.end }), href: `${A}/despliegues?d=${a.id}#acuerdo` })),
                 s.agreements.length - 4
               )}
             </Card>

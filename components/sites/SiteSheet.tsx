@@ -1,6 +1,6 @@
 "use client"
 
-import type { MouseEvent } from "react"
+import { useEffect, type MouseEvent } from "react"
 import type { Client } from "@/lib/clients/model"
 import { SHEET_SECTIONS, type Site } from "@/lib/sites/model"
 import { siteStats } from "@/lib/sites/stats"
@@ -26,6 +26,11 @@ export function SiteSheet({ t, s, sites, clients, surveys, onBack }: { t: T; s: 
   // Each field saves the deployment as it is now in the store, so two quick edits never undo each other.
   const up = (p: Partial<Site>) => saveSite({ ...(sitesSnapshot().list.find((x) => x.id === s.id) ?? s), ...p })
   const stats = siteStats(s, clients)
+  // Links from other pages name a block (?d=<id>#acuerdo); the sheet renders after the stores load, so scroll here.
+  useEffect(() => {
+    const id = window.location.hash.slice(1)
+    if (id) document.getElementById(id)?.scrollIntoView()
+  }, [s.id])
   return (
     <div className="mt-6 grid gap-4">
       <SheetHeader t={t} s={s} sections={[...SHEET_SECTIONS]} onBack={onBack} />

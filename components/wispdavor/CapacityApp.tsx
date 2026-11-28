@@ -49,7 +49,7 @@ export function CapacityApp() {
           return (
             <li key={s.siteId} className={`grid gap-3 rounded-2xl border p-4 ${s.full ? "border-red-400/50" : "border-white/10"}`}>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <a href={`/interno/admin/despliegues?d=${s.siteId}`} className="text-base text-zinc-100 underline decoration-white/20 underline-offset-4 hover:decoration-white">
+                <a href={`/interno/admin/despliegues?d=${s.siteId}#cuartos`} className="text-base text-zinc-100 underline decoration-white/20 underline-offset-4 hover:decoration-white">
                   {s.name}
                 </a>
                 <span className={`font-mono text-lg ${tone}`}>{pct(s.use)}</span>

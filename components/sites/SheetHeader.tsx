@@ -1,24 +1,25 @@
 "use client"
 
-import { useRef, type MouseEvent } from "react"
+import type { MouseEvent } from "react"
 import { missingFields, siteLabel, type SheetSection, type Site } from "@/lib/sites/model"
 import type { T } from "./sheet-ui"
 
 /**
- * The sheet's sticky top: back to the list, the deployment's name, "faltan N datos" (each tap goes to the next missing
- * field and opens it) and the jump row to each block.
+ * The sheet's sticky top: back to the list, the deployment's name, "faltan N datos" (each tap opens the next missing
+ * field) and the jump row to each block.
  */
 export function SheetHeader({ t, s, sections, onBack }: { t: T; s: Site; sections: SheetSection[]; onBack: (e: MouseEvent<HTMLAnchorElement>) => void }) {
   const missing = missingFields(s)
-  const next = useRef(0)
+  // The next missing field after the one in use (else the first), opened ready to type; the add-tower button only gets focus.
   const goNext = () => {
-    if (!missing.length) return
-    const m = missing[next.current % missing.length]
-    next.current++
-    const el = document.getElementById(`f-${m.key}`)
-    if (!el) return
+    const els = missing.map((m) => document.getElementById(`f-${m.key}`)).filter((e): e is HTMLElement => !!e)
+    if (!els.length) return
+    const here = document.activeElement
+    const el = (here && els.find((e) => !e.contains(here) && here.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING)) || els[0]
     el.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })
-    el.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true })
+    const b = el.querySelector<HTMLButtonElement>("button")
+    if (el.hasAttribute("data-missing")) b?.click()
+    else b?.focus({ preventScroll: true })
   }
   return (
     <div className="sticky top-14 z-10 -mx-4 grid gap-2 border-y border-white/10 bg-background/95 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-xl sm:border">
