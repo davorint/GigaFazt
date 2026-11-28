@@ -34,7 +34,10 @@ describe("tower view: apartments", () => {
   it("floors from the survey when it counted them, else from the deployment, else estimated", () => {
     const floor = (level: number, units: number) => ({ level, units, farthestM: null, conduit: "" as const, boxSpot: "", notes: "" })
     const sv = { ...emptyTower("A"), floorsAbove: 3, floorsBelow: 1, floors: [floor(-1, 0), floor(0, 2), floor(1, 4), floor(2, 4)] }
-    expect(towerShape(newTower({ apartments: 99, floors: 9 }), sv)).toEqual({ perFloor: [2, 4, 4], basements: 1, source: "levantamiento" })
+    expect(towerShape(newTower({ apartments: 10, floors: 9 }), sv)).toEqual({ perFloor: [2, 4, 4], basements: 1, source: "levantamiento" })
+    expect(towerShape(newTower({}), sv).source).toBe("levantamiento")
+    // Edited in Despliegues after the survey: the deployment's numbers win.
+    expect(towerShape(newTower({ apartments: 12, floors: 3 }), sv)).toEqual({ perFloor: [4, 4, 4], basements: 0, source: "despliegue" })
     expect(towerShape(newTower({ apartments: 10, floors: 3 }), undefined)).toEqual({ perFloor: [3, 3, 4], basements: 0, source: "despliegue" })
     expect(towerShape(newTower({ apartments: 10 }), undefined).source).toBe("estimado")
     expect(towerShape(newTower({}), undefined).perFloor).toEqual([])
@@ -61,12 +64,23 @@ describe("tower view: apartments", () => {
   })
 
   it("several towers: by the client's tower, the survey matched by name", () => {
-    const site = newSite({ id: "s2", towers: [newTower({ id: "ta", name: "Torre A", apartments: 2, floors: 1 }), newTower({ id: "tb", name: "Torre B", apartments: 2, floors: 1 })] })
+    const site = newSite({ id: "s2", towers: [newTower({ id: "ta", name: "Torre A", apartments: 2, floors: 1 }), newTower({ id: "tb", name: "Torre B", apartments: 6, floors: 2 })] })
     const sv = { ...newSurvey("Torre B"), siteId: "s2" }
     sv.towers[0] = { ...sv.towers[0], floorsAbove: 2, floors: [0, 1].map((level) => ({ level, units: 3, farthestM: null, conduit: "", boxSpot: "", notes: "" })) as never }
     const c = newClient({ id: "x", siteId: "s2", towerId: "tb", apartment: "203", services: [newService("internet", { status: "activo", plan: "1G", monthly: 596, start: "2026-01-05" })] })
     const [s] = buildSites([site], [sv], [c], new Map([["x", { id: "x", value: 596, tone: "al-corriente", place: "", plan: "1G" } as Leaf]]), [], TODAY)
     expect(s.towers.map((t) => [t.name, t.source, t.apartments])).toEqual([["Torre A", "despliegue", 2], ["Torre B", "levantamiento", 6]])
     expect(s.towers[1].floors[1].units[2].resident?.id).toBe("x")
+  })
+
+  it("who wrote a floor gets a free apartment there before those who wrote nothing", () => {
+    const site = newSite({ id: "s3", towers: [newTower({ id: "t", name: "A", apartments: 4, floors: 2 })] })
+    const live = (id: string, apartment: string) => newClient({ id, siteId: "s3", apartment, services: [newService("internet", { status: "activo", plan: "200M", monthly: 396, start: "2026-01-05" })] })
+    // "a" wrote nothing and sorts first; "b" wants 205 (no such unit) on floor 2.
+    const clients = [live("a", ""), live("b", "205"), live("c", "201"), live("d", "101"), live("e", "102")]
+    const leaves = new Map<string, Leaf>(clients.map((c) => [c.id, { id: c.id, value: 396, tone: "al-corriente", place: "", plan: "200M" }]))
+    const [s] = buildSites([site], [], clients, leaves, [], TODAY)
+    expect(siteUnits(s).find((u) => u.label === "202")?.resident?.id).toBe("b")
+    expect(s.overflow).toBe(1)
   })
 })

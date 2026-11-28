@@ -4,8 +4,9 @@
  * apartment:
  *
  * - Floors: the survey the deployment came from (its `siteId`), when it counted the units floor by floor (tower matched
- *   by name, else by order when both have the same number of towers): its levels 0 and up are floors 1 and up, and its
- *   levels below 0 are basements. Otherwise the deployment's tower: `floors` and `apartments` spread evenly (the extra
+ *   by name, else by order when both have the same number of towers) and its total still matches the deployment's
+ *   apartments (Despliegues wins once edited): its levels 0 and up are floors 1 and up, and its levels below 0 are
+ *   basements. Otherwise the deployment's tower: `floors` and `apartments` spread evenly (the extra
  *   ones on the top floors). Without floors, an estimate (√(apartments × 1.6), as the skyline did), flagged.
  * - Numbers: floor f (1 = ground floor, as "floorsAbove" counts it), unit u → f·100 + u (101, 102 … 1203).
  * - Clients: those with a service live today (the revenue tree's leaves: value and Cobranza status). Their apartment
@@ -92,7 +93,9 @@ export function spread(n: number, f: number): number[] {
 /** A tower's floors (units per floor, ground first), basements and where they came from. */
 export function towerShape(t: Site["towers"][number], sv: Survey["towers"][number] | undefined): { perFloor: number[]; basements: number; source: BuiltTower["source"] } {
   const counted = sv?.floors.filter((f) => f.level >= 0 && (f.units ?? 0) > 0) ?? []
-  if (sv && counted.length) {
+  const surveyed = counted.reduce((a, f) => a + (f.units ?? 0), 0)
+  // Despliegues is the record once the survey became a deployment: its floor counts only while the totals agree.
+  if (sv && counted.length && (!t.apartments || t.apartments === surveyed)) {
     const top = Math.max(sv.floorsAbove ?? 0, ...counted.map((f) => f.level + 1))
     const by = new Map(sv.floors.map((f) => [f.level, f.units ?? 0]))
     return { perFloor: Array.from({ length: top }, (_, i) => by.get(i) ?? 0), basements: Math.max(sv.floorsBelow ?? 0, ...sv.floors.filter((f) => f.level < 0).map((f) => -f.level)), source: "levantamiento" }
@@ -154,6 +157,8 @@ export function buildSites(sites: Site[], surveys: Survey[], clients: Client[], 
         } else later.push({ c, tower: t, floor: at?.floor ?? null })
       }
       let overflow = 0
+      // Those who wrote a floor first, so the rest don't take the free apartments on it.
+      later.sort((a, b) => Number(b.floor !== null) - Number(a.floor !== null))
       for (const { c, tower, floor } of later) {
         const pool = tower ? [tower, ...towers.filter((x) => x !== tower)] : towers
         const onFloor = tower && floor ? tower.floors[floor - 1]?.units.find((u) => !u.resident) : undefined
