@@ -14,7 +14,8 @@ import { cohorts, moneyFlow, mrrAt, mrrBridge, payCalendar, payWindow, retention
 import { FLOW_STATES, lightRows, recovered, REPAIR_GROUPS, repairLanes, revenueStreams, skyline, statusFlows, tenure, type RepairBar, type Star } from "@/lib/interno/tablero2-more"
 import { demoCarriers } from "@/lib/interno/tablero2-demo"
 import { demoLive, liveNet, type LiveFigures, type SiteState } from "@/lib/interno/tablero2-live"
-import { margins as siteMargins, paidShare, stats } from "@/lib/interno/tablero2-tree"
+import { leavesOf, margins as siteMargins, paidShare, stats } from "@/lib/interno/tablero2-tree"
+import { buildSites } from "@/lib/interno/buildings"
 import { subscribeSync, syncSnapshot } from "@/lib/sync/engine"
 import { carrierOf, continuityStrip, gatewayStats, hourglass, saturation, type CarrierFigures, type Cell, type GatewayHour } from "@/lib/interno/tablero2-net"
 import { mxn } from "@/lib/materials/catalog"
@@ -31,7 +32,7 @@ import { SCORE_COLOR, ScoreBoard } from "./ScoreBoard"
 import { CHANNEL_COLOR, MONTH_COLOR, PaymentDays, StageBar, TicketDays } from "./TodayCharts"
 import { CHANNELS, MONTH_STATES, ONLINE_KINDS, paymentsByDay, ticketFigures } from "@/lib/interno/tablero2-today"
 import { PayContours } from "./PayContours"
-import { HATCH, RevenueMap, TILE_COLOR, type RevenueLabels } from "./RevenueMap"
+import { MARGIN_COLOR, TONE_COLOR, TowerView, type TowerLabels } from "./TowerView"
 import { LIVE_COLOR, LiveNetwork, type LiveLabels } from "./LiveNetwork"
 import { CarrierPulse } from "./CarrierPulse"
 import { CELL_COLOR, ContinuityStrips } from "./ContinuityStrips"
@@ -141,7 +142,7 @@ export function Tablero2App() {
   const reports = useSyncExternalStore(reportsStore.subscribe, reportsStore.snapshot, reportsStore.serverSnapshot)
   const today = d.loaded ? localToday() : ""
   const sim = useMemo(() => (demo && today ? demoSet(today) : null), [demo, today])
-  const src = useMemo(() => sim ?? { clients: d.clients, payments: d.payments, sites: d.sites, reports: reports.list }, [sim, d.clients, d.payments, d.sites, reports.list])
+  const src = useMemo(() => sim ?? { clients: d.clients, payments: d.payments, sites: d.sites, surveys: d.surveys, reports: reports.list }, [sim, d.clients, d.payments, d.sites, d.surveys, reports.list])
 
   useEffect(() => {
     let live = true
@@ -232,6 +233,8 @@ export function Tablero2App() {
   const forecasts = useMemo(() => (carriers && today ? saturation(src.sites, carriers.daily, today) : []), [carriers, src, today])
   // Fourth round (owner, 2026-11-23: "5 more custom made, cutting edge").
   const tree = useMemo(() => (today ? revenueTree(src.sites, src.clients, src.payments, today) : null), [src, today])
+  // Mapa de ingresos as towers (owner 2026-11-28): every deployment built floor by floor, clients in their apartments.
+  const built = useMemo(() => (tree && today ? buildSites(src.sites, src.surveys, src.clients, new Map(leavesOf(tree).map((l) => [l.id, l])), src.reports, today) : []), [tree, src, today])
   const liveFigures = useMemo(() => (sim ? (nowMs ? demoLive(sim, nowMs) : null) : liveFig && liveFig !== "error" ? liveFig : null), [sim, nowMs, liveFig])
   const lnet = useMemo(() => (today ? liveNet(src.sites, src.clients, today, liveFigures) : null), [src, today, liveFigures])
   const chordM = useMemo(() => (nowMs ? faultMatrix(src.reports, src.sites, nowMs, 90) : null), [src, nowMs])
@@ -315,30 +318,55 @@ export function Tablero2App() {
   for (const x of packSites) x.value = leafSum(x.n)
   const packTotal = packSites.reduce((a, x) => a + x.value, 0)
   const packTop = [...packSites].sort((a, b) => b.value - a.value)[0]
-  const packTip = (l: Leaf) => ({ title: l.place || t("pack.noPlace"), rows: [{ label: t("pack.plan"), value: l.plan || "—" }, { label: t("pack.pays"), value: mxn(l.value) }, { label: t("pack.status"), value: t(`rings.tones.${l.tone}`) }] })
   // Mapa de ingresos (owner, 2026-11-27): margins from Números, paid share, the best and the losing deployment.
   const treeMargins = siteMargins(siteRows)
   const treeStats = tree ? stats(tree) : null
   const treeSites = siteRows.filter((x) => x.income > 0).map((x) => ({ name: x.name, margin: x.profit / x.income, profit: x.profit }))
   const treeLoss = treeSites.filter((x) => x.profit < 0).sort((a, b) => a.profit - b.profit)[0]
   const treeBest = [...treeSites].sort((a, b) => b.margin - a.margin)[0]
-  const treeLabels: RevenueLabels = {
-    share: t("tree.share"),
-    site: (n) => n || t("pack.noSite"),
-    tower: (n) => n || t("pack.noTower"),
-    rows: { monthly: t("tree.rows.monthly"), paid: t("tree.rows.paid"), clients: t("tree.rows.clients"), late: t("tree.rows.late"), suspended: t("tree.rows.suspended"), margin: t("tree.rows.margin"), profit: t("tree.rows.profit"), incomplete: t("tree.rows.incomplete") },
-    leafTip: packTip,
-    all: t("tree.all"),
+  const builtShown = built.reduce((a, x) => a + x.residents, 0)
+  const towerLabels: TowerLabels = {
+    view: { fachada: t("tower.view.fachada"), plano: t("tower.view.plano"), label: t("tower.view.label") },
+    fields: { label: t("tower.fields.label"), cliente: t("tower.fields.cliente"), estado: t("tower.fields.estado"), plan: t("tower.fields.plan"), monto: t("tower.fields.monto"), luz: t("tower.fields.luz"), reportes: t("tower.fields.reportes") },
+    sites: `${t("tree.title")}: ${t("tree.lists.sites")}`,
+    tower: (n) => n || t("tower.oneTower"),
+    floor: (n) => t("tower.floor", { n }),
+    floorCol: t("tower.floorCol"),
+    basement: (n) => t("tower.basement", { n }),
+    street: t("tower.street"),
     monthly: t("tree.monthly"),
-    clientsLine: (n, avg) => t("tree.clientsLine", { n, avg }),
+    occupancy: (n, of) => t("tower.occupancy", { n, of }),
     month: t("tree.month"),
-    tones: { "al-corriente": t("tree.tones.paid"), "por-vencer": t("tree.tones.due"), atrasado: t("tree.tones.late"), suspendido: t("tree.tones.suspended") },
     paidShare: (share) => t("tree.paidShare", { share }),
-    lists: { sites: t("tree.lists.sites"), towers: t("tree.lists.towers"), clients: t("tree.lists.clients") },
-    margin: (share) => t("tree.margin", { share }),
-    more: (n) => t("tree.more", { n }),
-    hint: t("tree.hint"),
+    tones: { "al-corriente": t("tree.tones.paid"), "por-vencer": t("tree.tones.due"), atrasado: t("tree.tones.late"), suspendido: t("tree.tones.suspended"), "sin-cobro": t("rings.tones.sin-cobro") },
+    margin: (share) => t("tower.margin", { share }),
+    towers: t("tree.lists.towers"),
+    empty: (l) => l,
+    apt: {
+      title: (label) => t("tower.apt.title", { label }),
+      client: t("tower.apt.client"),
+      status: t("tower.apt.status"),
+      plans: t("tower.apt.plans"),
+      pays: t("tower.apt.pays"),
+      light: t("tower.apt.light"),
+      lightValue: (rx, status) => t("tower.apt.lightValue", { rx: rx.toLocaleString("es-MX", { maximumFractionDigits: 1 }), status }),
+      noLight: t("tower.apt.noLight"),
+      reports: t("tower.apt.reports"),
+      reportsValue: (n, kind) => t("tower.apt.reportsValue", { n, kind }),
+      none: t("tower.apt.none"),
+      occupied: t("tower.apt.occupied"),
+      guessed: (written) => (written ? t("tower.apt.guessed", { written }) : t("tower.apt.unwritten")),
+      pick: t("tower.apt.pick"),
+      close: t("tower.apt.close"),
+    },
+    lightStatus: { baja: t("light.zones.baja"), justo: t("light.zones.justo"), bien: t("light.zones.bien"), satura: t("light.zones.satura") },
+    reportKind: (k) => t(`tower.reportKinds.${k}`),
+    source: { levantamiento: t("tower.source.levantamiento"), despliegue: t("tower.source.despliegue"), estimado: t("tower.source.estimado") },
+    overflow: (n) => t("tower.overflow", { n }),
+    misplaced: (n) => t("tower.misplaced", { n }),
+    svg: (x) => t("tower.svg", x),
   }
+
   const horizonRows = (carriers?.traffic ?? []).map((tr) => {
     const site = src.sites.find((x) => x.id === tr.siteId)
     const link = site ? linkSpeed(site).down : null
@@ -616,8 +644,10 @@ export function Tablero2App() {
             }),
           }}
         >
-          {tree && <RevenueMap tree={tree} margins={treeMargins} label={t("tree.title")} labels={treeLabels} />}
-          <Legend items={[[t("tree.legend.paid"), "#3c5e98", "dot"], [t("tree.legend.due"), TILE_COLOR.due, "ring"], [t("tree.legend.late"), TILE_COLOR.late, "dot"], [t("tree.legend.suspended"), TILE_COLOR.suspended, "dot"], [t("tree.legend.site"), "#e3edff", "line"], [t("tree.legend.loss"), HATCH, "hatch"]]} />
+          {built.length > 0 && <TowerView sites={built} margins={treeMargins} labels={towerLabels} />}
+          {built.length === 0 && tree && tree.children.length > 0 && <p className="text-sm text-zinc-400">{t("tower.noApartments")}</p>}
+          <Legend items={[[t("tree.legend.paid"), TONE_COLOR["al-corriente"], "dot"], [t("tree.legend.due"), TONE_COLOR["por-vencer"], "ring"], [t("tree.legend.late"), TONE_COLOR.atrasado, "dot"], [t("tree.legend.suspended"), TONE_COLOR.suspendido, "dot"], [t("tower.legend.empty"), "#14171c", "dot"], [t("tower.legend.guessed"), "#8fa3c2", "ring"], [t("tower.legend.report"), "#fab219", "dot"], [t("tower.legend.loss"), MARGIN_COLOR.loss, "hatch"]]} />
+          {treeStats && treeStats.clients > builtShown && <p className="text-[0.7rem] text-zinc-500">{t("tower.hidden", { n: treeStats.clients - builtShown })}</p>}
           <p className="text-[0.7rem] text-zinc-500">{t("tree.note")}</p>
         </Panel>
         <div className="grid gap-3 lg:grid-cols-2">

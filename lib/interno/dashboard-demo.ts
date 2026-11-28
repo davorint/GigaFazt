@@ -11,8 +11,9 @@ import { CANCEL_REASONS, newClient, newService, type CancelReason, type Client }
 import { addMonths, type Payment } from "../payments/model"
 import { newReport, type Report, type ReportCategory } from "../reports/model"
 import { newRoom, newRoomCarrier, newSite, newTower, type Site } from "../sites/model"
-import { newSurvey, type Survey } from "../survey/model"
+import { emptyTower, newSurvey, type Survey } from "../survey/model"
 import type { FunnelEvent } from "../wispdavor/funnel"
+import { aptLabel, towerShape } from "./buildings"
 import type { NetworkFigures } from "./dashboard-server"
 
 /** A small fixed-seed generator (mulberry32): the same demo every time. */
@@ -50,6 +51,8 @@ export function demoSet(today: string): DemoSet {
   const r = rng(20261122)
   // Towers, floors and light history (Tablero 2) draw from their own sequence, so the rest stays as it was.
   const r2 = rng(20261123)
+  // Apartments of their own (Tablero 2 tower view): a separate generator so the other figures stay as they were.
+  const r3 = rng(20261128)
   const now = new Date().toISOString()
   const month = today.slice(0, 7)
   const sites: Site[] = []
@@ -73,7 +76,25 @@ export function demoSet(today: string): DemoSet {
     })
     sites.push(site)
     const sv = newSurvey()
-    surveys.push({ ...sv, id: `demo-survey-${si}`, siteId: site.id, ident: { ...sv.ident, name: d.name, municipality: d.municipality, lat: d.lat, lng: d.lng } })
+    // The biggest building was surveyed floor by floor: two basements, a smaller ground floor, a wider penthouse.
+    const svTowers =
+      si === 0
+        ? site.towers.map((t) => {
+            const top = t.floors ?? 1
+            const per = Array.from({ length: top }, (_, l) => (l === 0 ? 4 : l === top - 1 ? 8 : 6))
+            return { ...emptyTower(t.name), floorsAbove: top, floorsBelow: 2, floors: [-2, -1, ...per.keys()].map((level) => ({ level, units: level < 0 ? 0 : per[level], farthestM: null, conduit: "" as const, boxSpot: "", notes: "" })) }
+          })
+        : sv.towers
+    surveys.push({ ...sv, id: `demo-survey-${si}`, siteId: site.id, towers: svTowers, ident: { ...sv.ident, name: d.name, municipality: d.municipality, lat: d.lat, lng: d.lng } })
+    // Each tower's apartments (101, 102 …), shuffled: clients take them in turn; a few never wrote theirs down.
+    const free = new Map(site.towers.map((t, ti) => {
+      const labels = towerShape(t, si === 0 ? svTowers[ti] : undefined).perFloor.flatMap((n, f) => Array.from({ length: n }, (_, u) => aptLabel(f + 1, u + 1)))
+      for (let k = labels.length - 1; k > 0; k--) {
+        const j = Math.floor(r3() * (k + 1))
+        ;[labels[k], labels[j]] = [labels[j], labels[k]]
+      }
+      return [t.id, labels]
+    }))
     // Clients joined over the last 18 months, more in the bigger, older deployments.
     for (let i = 0; i < d.clients; i++) {
       const id = `demo-c${si}-${i}`
@@ -92,7 +113,10 @@ export function demoSet(today: string): DemoSet {
       // About one in eight ONTs had more light two months ago (a fiber getting worse).
       const svc = services[0]
       if (svc.rxDbm !== null && r2() < 0.12) svc.rxHistory = [{ date: day(addMonths(month, -2), 3), rx: Math.round((svc.rxDbm + 1 + r2() * 4.5) * 10) / 10, oltRx: null }]
-      const c = newClient({ id, name: `Cliente demo ${si + 1}-${i + 1}`, siteId: site.id, towerId: site.towers[Math.floor(r2() * site.towers.length)].id, services, createdAt: now, updatedAt: now })
+      const towerId = site.towers[Math.floor(r2() * site.towers.length)].id
+      const tower = site.towers.find((t) => t.id === towerId)
+      const apartment = r3() < 0.06 ? "" : (free.get(towerId)?.pop() ?? "")
+      const c = newClient({ id, name: `Cliente demo ${si + 1}-${i + 1}`, siteId: site.id, towerId, tower: site.towers.length > 1 ? (tower?.name ?? "") : "", apartment, services, createdAt: now, updatedAt: now })
       clients.push(c)
       // Pays every month from the one after joining: most by the 5th, some by the 10th, a few late or not yet.
       const monthly = services.reduce((a, s) => a + (s.monthly ?? 0), 0)

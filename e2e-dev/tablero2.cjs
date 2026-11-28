@@ -137,15 +137,17 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
       // Fourth round: money map (and flying into a deployment), traffic horizon, fault chord, payment contours, comparator.
       const x4 = await page.evaluate(() => {
         const n = (l, sel) => document.querySelector(`svg[aria-label="${l}"]`)?.querySelectorAll(sel).length ?? 0
-        return { pack: n("Mapa de ingresos", "path") >= 20, horizon: n("Latido del tráfico", "path") >= 25, chord: n("Qué falla y dónde", "path") >= 12, contours: n("Huella de pago", "path") >= 5, compare: n("Comparador de despliegues", "path") >= 10 }
+        const facade = document.querySelector('svg[aria-label*="departamentos con cliente"]')
+        return { pack: (facade?.querySelectorAll("rect").length ?? 0) >= 100, horizon: n("Latido del tráfico", "path") >= 25, chord: n("Qué falla y dónde", "path") >= 12, contours: n("Huella de pago", "path") >= 5, compare: n("Comparador de despliegues", "path") >= 10 }
       })
-      const zoom = page.getByRole("group", { name: "Mapa de ingresos: Despliegues" }).getByRole("button").first()
+      // Mapa de ingresos as towers: the biggest deployment first; pick another, then the stacking plan and a toggle.
+      const towerPanel = () => page.getByRole("group", { name: "Mapa de ingresos: Despliegues" }).locator("xpath=ancestor::section[1]")
+      const zoom = page.getByRole("group", { name: "Mapa de ingresos: Despliegues" }).getByRole("button").nth(1)
       await zoom.scrollIntoViewIfNeeded()
-      await page.waitForTimeout(1200)
-      await page.locator('svg[aria-label="Mapa de ingresos"]').first().locator("xpath=ancestor::section[1]").screenshot({ path: path.join(SHOTS, `t2-pack-root-${w}.png`) }).catch(() => undefined)
+      await page.waitForTimeout(600)
+      await towerPanel().screenshot({ path: path.join(SHOTS, `t2-pack-facade-${w}.png`) }).catch(() => undefined)
       await zoom.click()
-      await page.waitForTimeout(1800)
-      x4.zoomed = (await page.getByRole("group", { name: "Mapa de ingresos" }).locator('[aria-current="location"]').innerText()) !== "Todo"
+      x4.zoomed = (await zoom.getAttribute("aria-pressed")) === "true"
       console.log(`${w} round4: ${JSON.stringify(x4)}`)
       // La red viva with the simulated operator: strands, carrier hubs, deployment buttons that pick one.
       const lv = await page.evaluate(() => {
@@ -158,20 +160,25 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
       lv.pick = (await pick.getAttribute("aria-pressed")) === "true"
       console.log(`${w} live: ${JSON.stringify(lv)}`)
       // Each new panel on its own, for review (the money map is zoomed into a deployment here).
-      for (const [file, name] of [["pack", "Mapa de ingresos"], ["horizon", "Latido del tráfico"], ["chord", "Qué falla y dónde"], ["prints", "Huella de pago"], ["compare", "Comparador de despliegues"]]) {
+      for (const [file, name] of [["horizon", "Latido del tráfico"], ["chord", "Qué falla y dónde"], ["prints", "Huella de pago"], ["compare", "Comparador de despliegues"]]) {
         const panel = page.locator(`svg[aria-label="${name}"]`).first().locator("xpath=ancestor::section[1]")
         await panel.scrollIntoViewIfNeeded()
         await panel.screenshot({ path: path.join(SHOTS, `t2-${file}-${w}.png`) }).catch(() => undefined)
       }
-      // Into a tower of the money map: its clients as apartment tiles (owner 2026-11-28: hundreds of clients must read).
-      const tower = page.getByRole("group", { name: "Mapa de ingresos: Torres" }).getByRole("button").first()
-      if (await tower.count()) {
-        await tower.click()
-        await page.waitForTimeout(1800)
-        const panel = page.locator('svg[aria-label="Mapa de ingresos"]').first().locator("xpath=ancestor::section[1]")
-        console.log(`${w} tiles: ${await page.locator('svg[aria-label="Mapa de ingresos"] rect[rx]').count() >= 20}`)
-        await panel.screenshot({ path: path.join(SHOTS, `t2-pack-tower-${w}.png`) }).catch(() => undefined)
-      }
+      // The stacking plan of the biggest deployment, an apartment pinned, then the client names hidden.
+      await page.getByRole("group", { name: "Mapa de ingresos: Despliegues" }).getByRole("button").first().click()
+      await page.getByRole("group", { name: "Vista" }).getByRole("button", { name: "Plano por pisos" }).click()
+      const cells = towerPanel().locator("table button")
+      const plan = { cells: (await cells.count()) >= 100 }
+      await cells.first().click()
+      plan.card = (await towerPanel().getByText(/^Depto\. \d+/).count()) >= 1
+      const named = await towerPanel().getByText(/Cliente demo/).count()
+      await page.getByRole("group", { name: "Mostrar" }).getByRole("button", { name: "Cliente" }).click()
+      plan.toggle = named > 0 && (await towerPanel().getByText(/Cliente demo/).count()) < named
+      console.log(`${w} plan: ${JSON.stringify(plan)}`)
+      await towerPanel().screenshot({ path: path.join(SHOTS, `t2-pack-plan-${w}.png`) }).catch(() => undefined)
+      await page.getByRole("group", { name: "Mostrar" }).getByRole("button", { name: "Cliente" }).click()
+      await page.getByRole("group", { name: "Vista" }).getByRole("button", { name: "Fachada" }).click()
       await page.screenshot({ path: path.join(SHOTS, `tablero2-demo-${w}.png`), fullPage: true })
       await page.getByRole("switch", { name: "Datos simulados" }).click()
       console.log(`${w} off: banner ${await page.getByText(/Estás viendo datos inventados/).count()}`)

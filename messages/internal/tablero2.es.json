@@ -156,9 +156,9 @@
       "takeaway": "{top} aporta el {share} del ingreso mensual ({amount}). Este mes va pagado el {paid}.",
       "marginLine": "{best} es el que más deja ({margin} de margen).",
       "lossLine": "{name} pierde dinero: {profit} al mes.",
-      "note": "Un vitral del ingreso mensual: cada celda es un despliegue (adentro, sus torres) tan grande como lo que cobra al mes, y se llena como un tanque con el dinero del mes: abajo lo pagado (azul, con una línea de luz en su nivel), luego lo que no debe nada, lo que aún no vence (hueco), lo atrasado (naranja) y lo suspendido (rojo). Al entrar a una torre, cada cliente es un mosaico con su departamento, primero los que deben: azul si ya pagó (más claro cuanto más paga), hueco si aún no le vence, naranja atrasado, rojo suspendido. El aro de afuera reparte el dinero del mes en esos mismos estados, empezando arriba. A un lado, el total, los botones para dejar solo un estado en el mapa y la lista del nivel de abajo con su parte del total, lo pagado (azul) y el margen después del edificio y los enlaces (azul: deja 10 % o más; gris: parejo; rayado: pierde). Toca una celda o una fila para entrar; «Todo», el camino o afuera del círculo para salir.",
+      "note": "Cada despliegue dibujado con sus torres, piso por piso, a partir de lo anotado en Despliegues (o del levantamiento cuando contó los departamentos de cada piso): una ventana por departamento, numerados 101, 102… desde la planta baja. Cada cliente va en el departamento que tiene anotado en Clientes; si no lo tiene o no coincide, queda en uno libre con contorno punteado. La ventana se enciende según cómo va su mes: azul pagado (más claro cuanto más paga), hueca si aún no le vence, naranja atrasado, rojo suspendido; oscura si no hay cliente. Un punto ámbar = reporte abierto; una raya roja bajo la ventana = luz baja o saturada. «Plano por pisos» muestra lo mismo como tabla de pisos. Con «Mostrar» eliges qué datos ves de cada departamento; sin «Estado de pago», las ventanas con cliente se encienden en un solo color (ocupación).",
       "all": "Todo",
-      "hint": "Toca un despliegue o una torre para entrar",
+      "hint": "Elige un despliegue",
       "share": "parte · margen",
       "monthly": "Ingreso mensual",
       "clientsLine": "{n, plural, one {# cliente} other {# clientes}} · promedio {avg}",
@@ -607,6 +607,72 @@
         "same": "En la mediana"
       },
       "empty": "Hacen falta al menos dos despliegues con datos para comparar."
+    },
+    "tower": {
+      "view": {
+        "label": "Vista",
+        "fachada": "Fachada",
+        "plano": "Plano por pisos"
+      },
+      "fields": {
+        "label": "Mostrar",
+        "cliente": "Cliente",
+        "estado": "Estado de pago",
+        "plan": "Plan",
+        "monto": "Monto",
+        "luz": "Luz",
+        "reportes": "Reportes"
+      },
+      "oneTower": "Torre única",
+      "floor": "{n}",
+      "floorCol": "Piso",
+      "basement": "S{n}",
+      "street": "Calle",
+      "occupancy": "{n} de {of} departamentos con cliente",
+      "margin": "margen {share}",
+      "apt": {
+        "title": "Depto. {label}",
+        "client": "Cliente",
+        "status": "Este mes",
+        "plans": "Plan",
+        "pays": "Paga al mes",
+        "light": "Luz de la ONT",
+        "lightValue": "{rx} dBm · {status}",
+        "noLight": "Sin lectura",
+        "reports": "Reportes abiertos",
+        "reportsValue": "{n, plural, =0 {Ninguno} one {# · {kind}} other {# · el último: {kind}}}",
+        "none": "Sin cliente",
+        "occupied": "Con cliente",
+        "guessed": "Puesto aquí por ahora: en Clientes dice «{written}», que no existe o ya está ocupado en esta torre.",
+        "unwritten": "Puesto aquí por ahora: en Clientes no tiene departamento anotado.",
+        "pick": "Pasa el cursor o toca un departamento para ver su cliente; tocarlo lo deja fijo aquí.",
+        "close": "Cerrar"
+      },
+      "reportKinds": {
+        "sin-servicio": "sin servicio",
+        "lento": "lento",
+        "intermitente": "se corta",
+        "wifi": "wifi",
+        "tv": "TV",
+        "equipo": "equipo",
+        "otro": "otro"
+      },
+      "source": {
+        "levantamiento": "Pisos del levantamiento",
+        "despliegue": "Pisos repartidos parejo",
+        "estimado": "Pisos estimados (faltan en Despliegues)"
+      },
+      "overflow": "{n, plural, one {# cliente no cabe} other {# clientes no caben}}: hay más clientes que departamentos anotados.",
+      "misplaced": "{n, plural, one {# cliente está puesto} other {# clientes están puestos}} en un departamento libre (contorno punteado): su departamento no está anotado o no coincide.",
+      "svg": "{name}: {residents} de {apartments} departamentos con cliente, {paid} cobrado este mes",
+      "noApartments": "Ningún despliegue tiene torres con departamentos todavía (agrégalos en Despliegues).",
+      "hidden": "{n, plural, one {# cliente no aparece} other {# clientes no aparecen}}: su despliegue no tiene torres con departamentos anotados.",
+      "legend": {
+        "empty": "Sin cliente",
+        "guessed": "Ubicación por confirmar",
+        "report": "Reporte abierto",
+        "loss": "Pierde dinero (margen)"
+      }
     }
   }
 }
