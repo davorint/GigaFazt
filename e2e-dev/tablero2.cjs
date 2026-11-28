@@ -137,10 +137,12 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
       // Fourth round: money map (and flying into a deployment), traffic horizon, fault chord, payment contours, comparator.
       const x4 = await page.evaluate(() => {
         const n = (l, sel) => document.querySelector(`svg[aria-label="${l}"]`)?.querySelectorAll(sel).length ?? 0
-        return { pack: n("Mapa de ingresos", "path") >= 100, horizon: n("Latido del tráfico", "path") >= 25, chord: n("Qué falla y dónde", "path") >= 12, contours: n("Huella de pago", "path") >= 5, compare: n("Comparador de despliegues", "path") >= 10 }
+        return { pack: n("Mapa de ingresos", "path") >= 20, horizon: n("Latido del tráfico", "path") >= 25, chord: n("Qué falla y dónde", "path") >= 12, contours: n("Huella de pago", "path") >= 5, compare: n("Comparador de despliegues", "path") >= 10 }
       })
       const zoom = page.getByRole("group", { name: "Mapa de ingresos: Despliegues" }).getByRole("button").first()
       await zoom.scrollIntoViewIfNeeded()
+      await page.waitForTimeout(1200)
+      await page.locator('svg[aria-label="Mapa de ingresos"]').first().locator("xpath=ancestor::section[1]").screenshot({ path: path.join(SHOTS, `t2-pack-root-${w}.png`) }).catch(() => undefined)
       await zoom.click()
       await page.waitForTimeout(1800)
       x4.zoomed = (await page.getByRole("group", { name: "Mapa de ingresos" }).locator('[aria-current="location"]').innerText()) !== "Todo"
@@ -160,6 +162,15 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
         const panel = page.locator(`svg[aria-label="${name}"]`).first().locator("xpath=ancestor::section[1]")
         await panel.scrollIntoViewIfNeeded()
         await panel.screenshot({ path: path.join(SHOTS, `t2-${file}-${w}.png`) }).catch(() => undefined)
+      }
+      // Into a tower of the money map: its clients as apartment tiles (owner 2026-11-28: hundreds of clients must read).
+      const tower = page.getByRole("group", { name: "Mapa de ingresos: Torres" }).getByRole("button").first()
+      if (await tower.count()) {
+        await tower.click()
+        await page.waitForTimeout(1800)
+        const panel = page.locator('svg[aria-label="Mapa de ingresos"]').first().locator("xpath=ancestor::section[1]")
+        console.log(`${w} tiles: ${await page.locator('svg[aria-label="Mapa de ingresos"] rect[rx]').count() >= 20}`)
+        await panel.screenshot({ path: path.join(SHOTS, `t2-pack-tower-${w}.png`) }).catch(() => undefined)
       }
       await page.screenshot({ path: path.join(SHOTS, `tablero2-demo-${w}.png`), fullPage: true })
       await page.getByRole("switch", { name: "Datos simulados" }).click()

@@ -156,9 +156,9 @@
       "takeaway": "{top} aporta el {share} del ingreso mensual ({amount}). Este mes va pagado el {paid}.",
       "marginLine": "{best} es el que más deja ({margin} de margen).",
       "lossLine": "{name} pierde dinero: {profit} al mes.",
-      "note": "Un vitral del ingreso mensual: cada celda es tan grande como lo que cobra al mes. Las líneas de luz separan los despliegues y las finas, sus torres; adentro, cada cliente es un cristal: azul si ya pagó este mes (más claro cuanto más paga), hueco si todavía no le vence, naranja si va atrasado y rojo si está suspendido. El aro de afuera reparte el dinero del mes en esos mismos estados, empezando arriba. A un lado, el total, los botones para dejar solo un estado en el mapa y la lista del nivel de abajo con su parte del total, lo pagado (azul) y el margen después del edificio y los enlaces (azul: deja 10 % o más; gris: parejo; rayado: pierde). Toca una celda o una fila para entrar; «Todo», el camino o afuera del círculo para salir.",
+      "note": "Un vitral del ingreso mensual: cada celda es un despliegue (adentro, sus torres) tan grande como lo que cobra al mes, y se llena como un tanque con el dinero del mes: abajo lo pagado (azul, con una línea de luz en su nivel), luego lo que no debe nada, lo que aún no vence (hueco), lo atrasado (naranja) y lo suspendido (rojo). Al entrar a una torre, cada cliente es un mosaico con su departamento, primero los que deben: azul si ya pagó (más claro cuanto más paga), hueco si aún no le vence, naranja atrasado, rojo suspendido. El aro de afuera reparte el dinero del mes en esos mismos estados, empezando arriba. A un lado, el total, los botones para dejar solo un estado en el mapa y la lista del nivel de abajo con su parte del total, lo pagado (azul) y el margen después del edificio y los enlaces (azul: deja 10 % o más; gris: parejo; rayado: pierde). Toca una celda o una fila para entrar; «Todo», el camino o afuera del círculo para salir.",
       "all": "Todo",
-      "hint": "Toca una celda para entrar",
+      "hint": "Toca un despliegue o una torre para entrar",
       "share": "parte · margen",
       "monthly": "Ingreso mensual",
       "clientsLine": "{n, plural, one {# cliente} other {# clientes}} · promedio {avg}",
@@ -173,7 +173,7 @@
       "lists": {
         "sites": "Despliegues",
         "towers": "Torres",
-        "clients": "Clientes que más pagan"
+        "clients": "Clientes, primero los que deben"
       },
       "more": "{n, plural, one {y # más} other {y # más}}",
       "margin": "{share}",

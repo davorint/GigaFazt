@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { arc } from "d3-shape"
-import { cellLayout, findPath, fitInto, isLeaf, marginTone, paidShare, polyPath, stats, type Cell, type Margin } from "@/lib/interno/tablero2-tree"
+import { bands, cellLayout, collapseTowers, findPath, fitInto, holdsClients, isLeaf, marginTone, moneyParts, paidShare, polyPath, stats, tileGrid, tileOrder, type Cell, type Margin } from "@/lib/interno/tablero2-tree"
 import type { Leaf, TreeNode } from "@/lib/interno/tablero2-x"
 import type { Tone } from "@/lib/interno/tablero2"
 import { useReducedMotion } from "@/lib/motion"
@@ -48,12 +48,13 @@ export type RevenueLabels = {
 type Fit = { k: number; x: number; y: number }
 
 /**
- * Mapa de ingresos: the monthly revenue as nested Voronoi cells in a circle, deployment → tower → client (area = what
- * it charges a month). Clients are glass: deep blue when this month is paid, hollow while it isn't due yet, orange late,
- * red suspended. Light lines draw the deployments, finer ones the towers; a dial around the circle says how this
- * month's money stands. Beside it, the ledger: the total, the month's standing (buttons that isolate a status on the
- * map) and the cells one level down (hover = light it, press = fly in). The camera flies into a cell and back out
- * (instant under reduced motion).
+ * Mapa de ingresos: the monthly revenue as Voronoi cells in a circle, deployments (then a deployment's towers), area =
+ * what each charges a month. Every cell is a tank filled from the bottom by how its money stands: blue paid, dark
+ * nothing owed, hollow not due yet, orange late, red suspended; a light line marks the paid level. Inside a tower (or a
+ * one-tower deployment) its clients are a grid of apartment tiles, who owes first, so hundreds still read (owner
+ * 2026-11-28). A dial around the circle says how this month's money stands. Beside it, the ledger: the total, the
+ * month's standing (buttons that isolate a status on the map) and the level below (hover = light it, press = fly in).
+ * The camera flies into a cell and back out (instant under reduced motion).
  */
 export function RevenueMap({ tree, margins, label, labels }: { tree: TreeNode; margins: Map<string, Margin>; label: string; labels: RevenueLabels }) {
   const reduced = useReducedMotion()
@@ -88,18 +89,26 @@ export function RevenueMap({ tree, margins, label, labels }: { tree: TreeNode; m
     const pad = S < 440 ? 20 : 44
     return { S, cx: S / 2, cy: S / 2, r: Math.max(0, S / 2 - pad) }
   }, [S])
+  const root = useMemo(() => collapseTowers(tree), [tree])
   const path = useMemo(() => {
-    const p = findPath(tree, focusId)
-    return p.length ? p : [tree]
-  }, [tree, focusId])
+    const p = findPath(root, focusId)
+    return p.length ? p : [root]
+  }, [root, focusId])
   const focus = path[path.length - 1]
+  const grid = holdsClients(focus)
   const cells = useMemo(() => cellLayout(focus, geo.cx, geo.cy, geo.r), [focus, geo])
+  const tiles = useMemo(() => {
+    if (!grid) return []
+    const order = tileOrder(focus.children as Leaf[])
+    const g = tileGrid(order.length, geo.cx, geo.cy, geo.r * 0.94, geo.S < 440 ? 2 : 3)
+    return order.map((leaf, i) => ({ leaf, x: g.at[i]?.[0] ?? 0, y: g.at[i]?.[1] ?? 0, size: g.size }))
+  }, [grid, focus, geo])
   const st = stats(focus)
 
   const go = (id: string) => {
     if (id === focusId || fly) return
     setHot(null)
-    const inside = cells.find((c) => c.depth === 1 && c.id === id && !isLeaf(c.node))
+    const inside = cells.find((c) => c.id === id)
     if (reduced || !geo.r) return setFocusId(id)
     if (inside) {
       setFly({ ...fitInto(inside.poly, geo.cx, geo.cy, geo.r), id })
@@ -114,14 +123,15 @@ export function RevenueMap({ tree, margins, label, labels }: { tree: TreeNode; m
     const next = path[at + 1]
     const target = path[at]
     if (!target || !next) return setFocusId(id)
-    const cell = cellLayout(target, geo.cx, geo.cy, geo.r).find((c) => c.depth === 1 && c.id === next.id)
+    const cell = cellLayout(target, geo.cx, geo.cy, geo.r).find((c) => c.id === next.id)
     setFocusId(id)
     setFrom(cell ? fitInto(cell.poly, geo.cx, geo.cy, geo.r) : null)
   }
 
   const nameOf = (n: TreeNode) => (n.id.startsWith("s:") ? labels.site(n.name) : n.id.startsWith("t:") ? labels.tower(n.name) : labels.all)
-  const kids = focus.children.filter((c) => stats(c).value > 0).sort((a, b) => stats(b).value - stats(a).value)
-  const level = focus.id === "root" ? "sites" : focus.id.startsWith("s:") ? "towers" : "clients"
+  // Clients: who owes first (the list to chase); groups: biggest first.
+  const kids = grid ? tileOrder(focus.children as Leaf[]) : focus.children.filter((c) => stats(c).value > 0).sort((a, b) => stats(b).value - stats(a).value)
+  const level = focus.id === "root" ? "sites" : grid ? "clients" : "towers"
   const amount = (t: Pick) => (t === "al-corriente" ? st.paid : t === "por-vencer" ? st.dueValue : t === "atrasado" ? st.lateValue : st.suspendedValue)
   const count = (t: Pick) => (t === "al-corriente" ? st.clients - st.due - st.late - st.suspended - leavesFree(focus) : t === "por-vencer" ? st.due : t === "atrasado" ? st.late : st.suspended)
 
@@ -148,6 +158,7 @@ export function RevenueMap({ tree, margins, label, labels }: { tree: TreeNode; m
               <Scene
                 key={focusId}
                 cells={cells}
+                tiles={tiles}
                 geo={geo}
                 st={st}
                 margins={margins}
@@ -278,17 +289,24 @@ function leavesFree(n: TreeNode | Leaf): number {
   return isLeaf(n) ? (n.tone === "sin-cobro" ? 1 : 0) : n.children.reduce((a, c) => a + leavesFree(c), 0)
 }
 
-const FILL: Record<Tone, string> = { "al-corriente": "url(#rm-paid-1)", "por-vencer": "#111723", atrasado: "url(#rm-late)", suspendido: "url(#rm-susp)", "sin-cobro": "#191c22" }
-/** Paid glass in three steps of one blue: the more a client pays a month, the lighter its cell. */
+const FILL: Record<Tone, string> = { "al-corriente": "url(#rm-paid-1)", "por-vencer": "#141b27", atrasado: "url(#rm-late)", suspendido: "url(#rm-susp)", "sin-cobro": "#1b1f26" }
+/** Paid glass in three steps of one blue: the more a client pays a month, the lighter its tile. */
 const PAID_STEPS = [
   { upTo: 450, stops: ["#3d5a83", "#26395a", "#1a2840"] },
   { upTo: 700, stops: ["#5079ad", "#30497a", "#203458"] },
   { upTo: Infinity, stops: ["#6c98d3", "#3c5e98", "#27426f"] },
 ] as const
 const paidFill = (v: number) => `url(#rm-paid-${PAID_STEPS.findIndex((s) => v <= s.upTo) + 1})`
+/** A group's tank bands: paid in the middle blue (a group pays all plans). */
+const BAND_FILL: Record<Tone, string> = { ...FILL, "al-corriente": "url(#rm-paid-2)" }
+
+type TileAt = { leaf: Leaf; x: number; y: number; size: number }
+/** The apartment part of a client's place ("A · 302" → "302"). */
+const apartmentOf = (place: string) => place.split(" · ").pop() ?? ""
 
 function Scene({
   cells,
+  tiles,
   geo,
   st,
   margins,
@@ -306,6 +324,7 @@ function Scene({
   nameOf,
 }: {
   cells: Cell[]
+  tiles: TileAt[]
   geo: { S: number; cx: number; cy: number; r: number }
   st: ReturnType<typeof stats>
   margins: Map<string, Margin>
@@ -324,10 +343,7 @@ function Scene({
 }) {
   const { S, cx, cy, r } = geo
   const wide = S >= 440
-  const leaves = cells.filter((c) => isLeaf(c.node))
-  const groups = cells.filter((c) => !isLeaf(c.node))
-  const maxDepth = Math.max(1, ...cells.map((c) => c.depth))
-  const lit = (c: Cell) => hot === null || c.top === hot || c.id === hot
+  const lit = (id: string) => hot === null || id === hot
   // The dial: this month's money around the circle, from 12 o'clock.
   const dialTotal = st.value || 1
   const parts = DIAL.map((t) => ({ t, v: t === "sin-cobro" ? st.value - st.owed : t === "al-corriente" ? st.paid : t === "por-vencer" ? st.dueValue : t === "atrasado" ? st.lateValue : st.suspendedValue })).filter((p) => p.v > 0)
@@ -346,8 +362,8 @@ function Scene({
           { label: labels.rows.monthly, value: pesos(s.value) },
           { label: labels.rows.paid, value: pct(paidShare(s)) },
           { label: labels.rows.clients, value: String(s.clients) },
-          ...(s.late ? [{ label: labels.rows.late, value: String(s.late), color: TILE_COLOR.late }] : []),
-          ...(s.suspended ? [{ label: labels.rows.suspended, value: String(s.suspended), color: TILE_COLOR.suspended }] : []),
+          ...(s.late ? [{ label: labels.rows.late, value: `${s.late} · ${pesos(s.lateValue)}`, color: TILE_COLOR.late }] : []),
+          ...(s.suspended ? [{ label: labels.rows.suspended, value: `${s.suspended} · ${pesos(s.suspendedValue)}`, color: TILE_COLOR.suspended }] : []),
           ...(m && m.margin !== null ? [{ label: labels.rows.margin, value: `${pct(m.margin)}${m.incomplete ? ` · ${labels.rows.incomplete}` : ""}`, color: marginTone(m.margin) === "loss" ? HATCH : MARGIN_COLOR[marginTone(m.margin)] }, { label: labels.rows.profit, value: pesos(m.profit) }] : []),
         ]}
       />
@@ -358,6 +374,7 @@ function Scene({
     return Math.max(...xs) - Math.min(...xs)
   }
   const far = Math.hypot(r, r) || 1
+  const delay = (x: number, y: number) => `${Math.round(60 + (Math.hypot(x - cx, y - cy) / far) * 650)}ms`
   // Label boxes placed so far this render (collision check for the pills).
   const placed: { x0: number; x1: number; y0: number; y1: number }[] = []
   return (
@@ -426,23 +443,35 @@ function Scene({
       <g clipPath="url(#rm-clip)">
         <g style={{ transform: camera ? `translate(${camera.x}px, ${camera.y}px) scale(${camera.k})` : "none", transformOrigin: "0 0", transition: camera && !flying ? "none" : `transform ${FLY}ms cubic-bezier(.6,0,.2,1)` }}>
           <circle cx={cx} cy={cy} r={r} fill="#0b0f16" />
-          {leaves.map((c) => {
-            const leaf = c.node as Leaf
-            const pick = only === null || leaf.tone === only
-            const away = fadeOthers !== null && c.top !== fadeOthers
-            const d = Math.hypot(c.c[0] - cx, c.c[1] - cy) / far
+          {/* Groups: tanks filled by how their money stands, paid at the bottom. */}
+          {cells.map((c) => {
+            const n = c.node as TreeNode
+            const fill = bands(c.poly, moneyParts(stats(n)))
+            const away = fadeOthers !== null && c.id !== fadeOthers
+            const paid = fill.find((b) => b.key === "al-corriente")
+            const level = paid && fill.length > 1 ? waterline(paid.poly) : null
             return (
-              <path
-                key={c.id}
-                d={polyPath(c.poly)}
-                fill={leaf.tone === "al-corriente" ? paidFill(leaf.value) : FILL[leaf.tone]}
-                stroke={leaf.tone === "por-vencer" ? "#5b6b82" : INK.surface}
-                strokeWidth={leaf.tone === "por-vencer" ? 1 : 1.4}
-                opacity={away ? 0 : !pick ? 0.12 : lit(c) ? 1 : 0.5}
-                                className={bloom ? "rm-bloom" : undefined}
-                style={{ animationDelay: `${Math.round(60 + d * 650)}ms`, transition: `opacity ${flying ? FLY * 0.6 : 200}ms`, filter: leaf.tone === "suspendido" && pick ? "drop-shadow(0 0 5px rgba(208,59,59,.7))" : undefined }}
+              <g key={c.id} opacity={away ? 0 : lit(c.id) ? 1 : 0.5} className={bloom ? "rm-bloom" : undefined} style={{ animationDelay: delay(c.c[0], c.c[1]), transition: `opacity ${flying ? FLY * 0.6 : 200}ms` }}>
+                {fill.map((b) => (
+                  <path key={b.key} d={polyPath(b.poly)} fill={BAND_FILL[b.key]} opacity={only === null || only === b.key ? 1 : 0.14} style={{ transition: "opacity 200ms", filter: b.key === "suspendido" && (only === null || only === b.key) ? "drop-shadow(0 0 5px rgba(208,59,59,.6))" : undefined }} />
+                ))}
+                {level && <line x1={level[0][0]} y1={level[0][1]} x2={level[1][0]} y2={level[1][1]} stroke="#b7d3fb" strokeOpacity={only === null || only === "al-corriente" ? 0.85 : 0.2} strokeWidth={1.2} vectorEffect="non-scaling-stroke" pointerEvents="none" />}
+              </g>
+            )
+          })}
+          {/* Clients of a tower: apartment tiles, who owes first. */}
+          {tiles.map(({ leaf, x, y, size }) => {
+            const pick = only === null || leaf.tone === only
+            const apt = apartmentOf(leaf.place)
+            const loud = leaf.tone === "atrasado" || leaf.tone === "suspendido"
+            return (
+              <g
+                key={leaf.id}
+                opacity={!pick ? 0.12 : hot === null || hot === leaf.id ? 1 : 0.45}
+                className={bloom ? "rm-bloom" : undefined}
+                style={{ animationDelay: delay(x, y), transition: "opacity 200ms" }}
                 onPointerMove={(e) => {
-                  onHot(c.top)
+                  onHot(leaf.id)
                   const info = labels.leafTip(leaf)
                   tip.show(e, <TipBody title={info.title} rows={info.rows} />)
                 }}
@@ -450,59 +479,88 @@ function Scene({
                   onHot(null)
                   tip.hide()
                 }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (c.top !== c.id) onGo(c.top)
-                }}
-                cursor={c.top !== c.id ? "zoom-in" : undefined}
-              />
+                onClick={(e) => e.stopPropagation()}
+              >
+                <rect
+                  x={x}
+                  y={y}
+                  width={size}
+                  height={size}
+                  rx={Math.min(6, size * 0.18)}
+                  fill={leaf.tone === "al-corriente" ? paidFill(leaf.value) : FILL[leaf.tone]}
+                  stroke={leaf.tone === "por-vencer" ? "#5b6b82" : hot === leaf.id ? "#e3edff" : "#ffffff"}
+                  strokeOpacity={leaf.tone === "por-vencer" || hot === leaf.id ? 1 : 0.06}
+                  strokeWidth={1}
+                  style={{ filter: leaf.tone === "suspendido" && pick ? "drop-shadow(0 0 4px rgba(208,59,59,.7))" : undefined }}
+                />
+                {apt && size >= 30 && (
+                  <text x={x + size / 2} y={y + size / 2} dy="0.35em" textAnchor="middle" fontSize={Math.min(11, size * 0.3)} fill={loud ? "#140c0a" : INK.secondary} className="font-mono tabular-nums" pointerEvents="none">
+                    {clipName(apt, Math.max(2, Math.floor(size / 7)))}
+                  </text>
+                )}
+              </g>
             )
           })}
           {/* A slow light across the glass (still under reduced motion). */}
           <rect x={cx - r * 2} y={cy - r * 2} width={r * 4} height={r * 4} fill="url(#rm-sheen)" className="t2-spin" pointerEvents="none" />
-          {/* Lead lines: towers fine, deployments lit (dashed hatch gray when they lose money). */}
+          {/* Lead lines (dashed hatch gray when the deployment loses money). */}
           <g pointerEvents="none" className={bloom ? "t2-fade" : undefined} style={{ animationDelay: "550ms" }}>
-            {groups
-              .filter((c) => c.depth > 1 || maxDepth === 1)
-              .map((c) => (
-                <path key={c.id} d={polyPath(c.poly)} fill="none" stroke="#dbe7ff" strokeOpacity={fadeOthers && c.top !== fadeOthers ? 0 : lit(c) ? 0.32 : 0.12} strokeWidth={1.1} vectorEffect="non-scaling-stroke" />
-              ))}
-            {groups
-              .filter((c) => c.depth === 1)
-              .map((c) => {
-                const m = c.id.startsWith("s:") ? margins.get(c.id.slice(2)) : undefined
-                const loss = m ? marginTone(m.margin) === "loss" : false
-                const on = hot === c.id
-                const gone = fadeOthers !== null && c.id !== fadeOthers
-                return (
-                  <g key={c.id} opacity={gone ? 0 : 1} style={{ transition: "opacity 300ms" }}>
-                    <path d={polyPath(c.poly)} fill="none" stroke={loss ? HATCH : "#8fbaff"} strokeOpacity={on ? 0.55 : 0.22} strokeWidth={on ? 7 : 5} filter="url(#rm-glow)" vectorEffect="non-scaling-stroke" />
-                    <path d={polyPath(c.poly)} fill="none" stroke={loss ? HATCH : "#e3edff"} strokeOpacity={on ? 1 : lit(c) ? 0.78 : 0.35} strokeWidth={on ? 2.4 : 1.7} strokeDasharray={loss ? "6 4" : undefined} vectorEffect="non-scaling-stroke" />
-                  </g>
-                )
-              })}
+            {cells.map((c) => {
+              const m = c.id.startsWith("s:") ? margins.get(c.id.slice(2)) : undefined
+              const loss = m ? marginTone(m.margin) === "loss" : false
+              const on = hot === c.id
+              const gone = fadeOthers !== null && c.id !== fadeOthers
+              return (
+                <g key={c.id} opacity={gone ? 0 : 1} style={{ transition: "opacity 300ms" }}>
+                  <path d={polyPath(c.poly)} fill="none" stroke={loss ? HATCH : "#8fbaff"} strokeOpacity={on ? 0.55 : 0.22} strokeWidth={on ? 7 : 5} filter="url(#rm-glow)" vectorEffect="non-scaling-stroke" />
+                  <path d={polyPath(c.poly)} fill="none" stroke={loss ? HATCH : "#e3edff"} strokeOpacity={on ? 1 : lit(c.id) ? 0.78 : 0.35} strokeWidth={on ? 2.4 : 1.7} strokeDasharray={loss ? "6 4" : undefined} vectorEffect="non-scaling-stroke" />
+                </g>
+              )
+            })}
           </g>
+          {/* Hover and click areas for the groups, above the glass. */}
+          {!camera &&
+            cells.map((c) => (
+              <path
+                key={c.id}
+                d={polyPath(c.poly)}
+                fill="transparent"
+                cursor="zoom-in"
+                onPointerMove={(e) => {
+                  onHot(c.id)
+                  tip.show(e, groupTip(c))
+                }}
+                onPointerLeave={() => {
+                  onHot(null)
+                  tip.hide()
+                }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onGo(c.id)
+                }}
+              />
+            ))}
           <circle cx={cx} cy={cy} r={r - 0.5} fill="none" stroke="#e3edff" strokeOpacity={0.35} strokeWidth={1.2} pointerEvents="none" />
         </g>
       </g>
       <circle cx={cx} cy={cy} r={r} fill="none" stroke="#8fbaff" strokeOpacity={0.3} strokeWidth={4} filter="url(#rm-glow)" pointerEvents="none" />
 
-      {/* Labels: a pill on each group big enough; clients named when their cell can hold it. */}
+      {/* Labels: a pill on each group big enough (name, money, paid share, margin dot). */}
       {!camera && (
-        <g className="t2-fade" style={{ animationDelay: bloom ? "700ms" : "450ms" }}>
-          {groups
-            .filter((c) => c.depth === 1)
+        <g className="t2-fade" pointerEvents="none" style={{ animationDelay: bloom ? "700ms" : "450ms" }}>
+          {[...cells]
             .sort((a, b) => b.area - a.area)
             .map((c) => {
               const n = c.node as TreeNode
+              const s = stats(n)
               const name = nameOf(n)
-              const money = pesos(stats(n).value)
+              const money = `${pesos(s.value)} · ${labels.paidShare(pct(paidShare(s)))}`
               const m = n.id.startsWith("s:") ? margins.get(n.id.slice(2)) : undefined
               const tone = m ? marginTone(m.margin) : "none"
               const cw = width(c)
               const fs = wide ? 1 : 0.9
               const chars = Math.max(4, Math.min(name.length, Math.floor((cw * 0.82 - 22) / (6.6 * fs))))
-              const pw = (Math.max(chars * 6.6, money.length * 6.8 + (tone !== "none" ? 16 : 0)) + 22) * fs
+              const pw = (Math.max(chars * 6.6, money.length * 6.4 + (tone !== "none" ? 16 : 0)) + 22) * fs
               const ph = 36 * fs
               if (pw > cw * 0.92 || c.area < pw * ph * 1.6) return null
               const [x, y] = c.c
@@ -511,23 +569,7 @@ function Scene({
               if (placed.some((b) => b.x0 < box.x1 && box.x0 < b.x1 && b.y0 < box.y1 && box.y0 < b.y1)) return null
               placed.push(box)
               return (
-                <g
-                  key={c.id}
-                  transform={`translate(${x - pw / 2},${y - ph / 2})`}
-                  style={{ cursor: "zoom-in" }}
-                  onPointerMove={(e) => {
-                    onHot(c.id)
-                    tip.show(e, groupTip(c))
-                  }}
-                  onPointerLeave={() => {
-                    onHot(null)
-                    tip.hide()
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onGo(c.id)
-                  }}
-                >
+                <g key={c.id} transform={`translate(${x - pw / 2},${y - ph / 2})`}>
                   <rect width={pw} height={ph} rx={10} fill="#0c1018" fillOpacity={0.82} stroke="#ffffff" strokeOpacity={hot === c.id ? 0.4 : 0.14} />
                   <g transform={`scale(${fs})`}>
                     <text x={11} y={15} fontSize={11.5} fontWeight={500} fill={INK.primary}>
@@ -541,28 +583,19 @@ function Scene({
                 </g>
               )
             })}
-          {leaves
-            .filter((c) => c.depth === 1)
-            .map((c) => {
-              const leaf = c.node as Leaf
-              const cw = width(c)
-              const title = leaf.place || leaf.plan
-              if (!title || cw < 64 || c.area < 2600) return null
-              const loud = leaf.tone === "atrasado" || leaf.tone === "suspendido"
-              const chars = Math.floor((cw * 0.8) / 6.4)
-              return (
-                <g key={c.id} pointerEvents="none" textAnchor="middle">
-                  <text x={c.c[0]} y={c.c[1] - 2} fontSize={11} fontWeight={500} fill={loud ? "#140c0a" : INK.primary}>
-                    {clipName(title, chars)}
-                  </text>
-                  <text x={c.c[0]} y={c.c[1] + 12} fontSize={10} fill={loud ? "#2a1610" : INK.secondary} className="font-mono tabular-nums">
-                    {pesos(leaf.value)}
-                  </text>
-                </g>
-              )
-            })}
         </g>
       )}
     </g>
   )
+}
+
+/** The top edge of the paid band (its highest horizontal side): where the month's paid level stands. */
+function waterline(p: [number, number][]): [[number, number], [number, number]] | null {
+  const top = Math.min(...p.map((q) => q[1]))
+  const xs = p.filter((q) => Math.abs(q[1] - top) < 0.01).map((q) => q[0])
+  if (xs.length < 2) return null
+  return [
+    [Math.min(...xs), top],
+    [Math.max(...xs), top],
+  ]
 }

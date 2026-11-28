@@ -9,8 +9,9 @@
  *   ("sin cobro" left out).
  * - Margin: profit ÷ income of the deployment; null without income. Costs not priced (links without a monthly fee)
  *   make it "incomplete".
- * - Layout: d3-voronoi-treemap (power diagrams; every cell convex) of the focused node's descendants in a circle,
- *   seeded by the node's id so the same data always draws the same map. Pure geometry, tested.
+ * - Layout (reworked 2026-11-28 for hundreds of clients): d3-voronoi-treemap (power diagrams; every cell convex) of
+ *   the focused node's groups only, seeded by the node's id; each cell filled in horizontal bands by status; a
+ *   tower's clients as an apartment grid. Pure geometry, tested.
  */
 import { hierarchy } from "d3-hierarchy"
 import { voronoiTreemap } from "d3-voronoi-treemap"
@@ -113,25 +114,152 @@ export function seeded(key: string): () => number {
 }
 
 /**
- * The focused node's descendants as nested Voronoi cells in the circle (cx, cy, r): parents before their children,
- * zero-value clients and empty groups left out. Depth 1 = the focus's children.
+ * A deployment with one tower: its clients hang from the deployment itself (no one-cell level to click through).
+ * Several towers stay as they are.
+ */
+export function collapseTowers(root: TreeNode): TreeNode {
+  return {
+    ...root,
+    children: root.children.map((s) => {
+      if (isLeaf(s)) return s
+      const only = s.children.length === 1 ? s.children[0] : null
+      return only && !isLeaf(only) ? { ...s, children: only.children } : s
+    }),
+  }
+}
+
+/** True when the focus holds clients (the apartment grid), not groups (the Voronoi map). */
+export const holdsClients = (n: TreeNode) => n.children.length > 0 && n.children.every(isLeaf)
+
+/**
+ * The focused node's groups (deployments, or a deployment's towers) as Voronoi cells in the circle (cx, cy, r), area =
+ * what each charges a month; empty groups left out. Clients are never cells (owner 2026-11-28: with hundreds of
+ * clients on three plans, client cells were a mosaic of equal crumbs); each group is filled by how its money stands
+ * (bands) and its clients show as a grid only once inside it.
  */
 export function cellLayout(focus: TreeNode, cx: number, cy: number, r: number): Cell[] {
   if (r <= 0) return []
-  const root = hierarchy<N>(focus, (d) => (isLeaf(d) ? undefined : d.children.filter((c) => stats(c).value > 0)))
-    .sum((d) => (isLeaf(d) ? d.value : 0))
+  const groups = focus.children.filter((c): c is TreeNode => !isLeaf(c) && stats(c).value > 0)
+  if (!groups.length) return []
+  const root = hierarchy<N>({ ...focus, children: groups }, (d) => (d.id === focus.id ? (d as TreeNode).children : undefined))
+    .sum((d) => (d.id === focus.id ? 0 : stats(d).value))
     .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
   if (!root.value) return []
   voronoiTreemap().clip(circlePoly(cx, cy, r)).prng(seeded(focus.id)).convergenceRatio(0.005).maxIterationCount(80).minWeightRatio(0.01)(root)
   const out: Cell[] = []
-  for (const d of root.descendants()) {
-    if (!d.depth) continue
+  for (const d of root.children ?? []) {
     const poly = ((d as unknown as { polygon?: Pt[] }).polygon ?? []).map(([x, y]) => [x, y] as Pt)
     if (poly.length < 3) continue
-    const top = d.ancestors().find((a) => a.depth === 1) ?? d
-    out.push({ id: d.data.id, depth: d.depth, node: d.data, poly, ...polyShape(poly), top: top.data.id, parent: d.parent?.data.id ?? focus.id })
+    out.push({ id: d.data.id, depth: 1, node: d.data, poly, ...polyShape(poly), top: d.data.id, parent: focus.id })
   }
   return out
+}
+
+/** The part of a convex polygon on one side of the horizontal line y = t (below = larger y on screen). */
+export function clipY(p: Pt[], t: number, keep: "below" | "above"): Pt[] {
+  const inside = (q: Pt) => (keep === "below" ? q[1] >= t : q[1] <= t)
+  const out: Pt[] = []
+  for (let i = 0; i < p.length; i++) {
+    const a = p[i]
+    const b = p[(i + 1) % p.length]
+    const ia = inside(a)
+    const ib = inside(b)
+    if (ia) out.push(a)
+    if (ia !== ib && b[1] !== a[1]) {
+      const k = (t - a[1]) / (b[1] - a[1])
+      out.push([a[0] + k * (b[0] - a[0]), t])
+    }
+  }
+  return out
+}
+
+/**
+ * A cell filled like a tank: horizontal bands from the bottom up, each band's area its part of the total (the first
+ * part at the bottom). Parts at zero are left out.
+ */
+export function bands<K extends string>(poly: Pt[], parts: { key: K; value: number }[]): { key: K; poly: Pt[] }[] {
+  const total = parts.reduce((a, p) => a + Math.max(0, p.value), 0)
+  const whole = polyShape(poly).area
+  if (total <= 0 || whole <= 0 || poly.length < 3) return []
+  const ys = poly.map((q) => q[1])
+  const [top, bottom] = [Math.min(...ys), Math.max(...ys)]
+  // The line with this much of the area below it (bisection: the area below grows as the line rises).
+  const lineAt = (share: number) => {
+    if (share <= 0) return bottom
+    if (share >= 1) return top
+    let lo = top
+    let hi = bottom
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2
+      if (polyShape(clipY(poly, mid, "below")).area / whole > share) lo = mid
+      else hi = mid
+    }
+    return (lo + hi) / 2
+  }
+  const out: { key: K; poly: Pt[] }[] = []
+  let acc = 0
+  let lower = bottom
+  for (const p of parts) {
+    if (p.value <= 0) continue
+    acc += p.value
+    const upper = lineAt(acc / total)
+    const band = clipY(clipY(poly, upper, "below"), lower, "above")
+    if (band.length >= 3) out.push({ key: p.key, poly: band })
+    lower = upper
+  }
+  return out
+}
+
+/** How a status stands in a group's tank, from the bottom up: paid first, then what's still to come in. */
+export const BAND_ORDER = ["al-corriente", "sin-cobro", "por-vencer", "atrasado", "suspendido"] as const
+
+/** A group's money by status, in tank order. */
+export function moneyParts(s: Stats): { key: (typeof BAND_ORDER)[number]; value: number }[] {
+  const v = { "al-corriente": s.paid, "sin-cobro": s.value - s.owed, "por-vencer": s.dueValue, atrasado: s.lateValue, suspendido: s.suspendedValue }
+  return BAND_ORDER.map((key) => ({ key, value: v[key] }))
+}
+
+/**
+ * The clients of a tower as a grid of apartment tiles inside the circle: the biggest square tiles (with `gap`) of which
+ * n fit wholly in it, the n nearest the middle, read row by row from the top. Returns the tile side and each tile's top-left corner.
+ */
+export function tileGrid(n: number, cx: number, cy: number, r: number, gap = 3): { size: number; at: Pt[] } {
+  if (n <= 0 || r <= 0) return { size: 0, at: [] }
+  const fit = (s: number) => {
+    const p = s + gap
+    const k = Math.ceil(r / p) + 1
+    const at: Pt[] = []
+    for (let j = -k; j < k; j++) {
+      for (let i = -k; i < k; i++) {
+        const x = cx + i * p + gap / 2
+        const y = cy + j * p + gap / 2
+        const far = Math.max(Math.hypot(x - cx, y - cy), Math.hypot(x + s - cx, y - cy), Math.hypot(x - cx, y + s - cy), Math.hypot(x + s - cx, y + s - cy))
+        if (far <= r) at.push([x, y])
+      }
+    }
+    return at
+  }
+  let lo = 1
+  let hi = r
+  for (let i = 0; i < 30; i++) {
+    const mid = (lo + hi) / 2
+    if (fit(mid).length >= n) lo = mid
+    else hi = mid
+  }
+  const size = Math.min(lo, 64)
+  const at = fit(size)
+  // The n tiles nearest the middle (a round block when there's room to spare), read row by row.
+  const mid = (q: Pt) => Math.hypot(q[0] + size / 2 - cx, q[1] + size / 2 - cy)
+  const used = [...at].sort((a, b) => mid(a) - mid(b)).slice(0, n).sort((a, b) => a[1] - b[1] || a[0] - b[0])
+  return { size, at: used }
+}
+
+const TONE_RANK: Record<string, number> = { suspendido: 0, atrasado: 1, "por-vencer": 2, "al-corriente": 3, "sin-cobro": 4 }
+const byPlace = new Intl.Collator("es", { numeric: true })
+
+/** Clients in the grid: who owes first (suspended, late, not due yet), then paid; each status by apartment. */
+export function tileOrder(leaves: Leaf[]): Leaf[] {
+  return [...leaves].sort((a, b) => TONE_RANK[a.tone] - TONE_RANK[b.tone] || byPlace.compare(a.place, b.place) || a.id.localeCompare(b.id))
 }
 
 /** The scale and shift that make a polygon's box fill the circle (the camera flying into a cell). */
