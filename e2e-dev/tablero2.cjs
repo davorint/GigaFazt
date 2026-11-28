@@ -137,9 +137,9 @@ const sync = (kind, items) => fetch(BASE + "/api/interno/sync", { method: "POST"
       // Fourth round: money map (and flying into a deployment), traffic horizon, fault chord, payment contours, comparator.
       const x4 = await page.evaluate(() => {
         const n = (l, sel) => document.querySelector(`svg[aria-label="${l}"]`)?.querySelectorAll(sel).length ?? 0
-        return { pack: n("Mapa de ingresos", "rect") >= 100, horizon: n("Latido del tráfico", "path") >= 25, chord: n("Qué falla y dónde", "path") >= 12, contours: n("Huella de pago", "path") >= 5, compare: n("Comparador de despliegues", "path") >= 10 }
+        return { pack: n("Mapa de ingresos", "path") >= 100, horizon: n("Latido del tráfico", "path") >= 25, chord: n("Qué falla y dónde", "path") >= 12, contours: n("Huella de pago", "path") >= 5, compare: n("Comparador de despliegues", "path") >= 10 }
       })
-      const zoom = page.getByRole("group", { name: "Mapa de ingresos" }).getByRole("button").nth(1)
+      const zoom = page.getByRole("group", { name: "Mapa de ingresos: Despliegues" }).getByRole("button").first()
       await zoom.scrollIntoViewIfNeeded()
       await zoom.click()
       await page.waitForTimeout(1800)

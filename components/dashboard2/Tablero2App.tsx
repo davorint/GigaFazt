@@ -31,7 +31,7 @@ import { SCORE_COLOR, ScoreBoard } from "./ScoreBoard"
 import { CHANNEL_COLOR, MONTH_COLOR, PaymentDays, StageBar, TicketDays } from "./TodayCharts"
 import { CHANNELS, MONTH_STATES, ONLINE_KINDS, paymentsByDay, ticketFigures } from "@/lib/interno/tablero2-today"
 import { PayContours } from "./PayContours"
-import { HATCH, MARGIN_COLOR, RevenueTreemap, TILE_COLOR, type TreemapLabels } from "./RevenueTreemap"
+import { HATCH, RevenueMap, TILE_COLOR, type RevenueLabels } from "./RevenueMap"
 import { LIVE_COLOR, LiveNetwork, type LiveLabels } from "./LiveNetwork"
 import { CarrierPulse } from "./CarrierPulse"
 import { CELL_COLOR, ContinuityStrips } from "./ContinuityStrips"
@@ -322,16 +322,22 @@ export function Tablero2App() {
   const treeSites = siteRows.filter((x) => x.income > 0).map((x) => ({ name: x.name, margin: x.profit / x.income, profit: x.profit }))
   const treeLoss = treeSites.filter((x) => x.profit < 0).sort((a, b) => a.profit - b.profit)[0]
   const treeBest = [...treeSites].sort((a, b) => b.margin - a.margin)[0]
-  const treeLabels: TreemapLabels = {
+  const treeLabels: RevenueLabels = {
+    share: t("tree.share"),
     site: (n) => n || t("pack.noSite"),
     tower: (n) => n || t("pack.noTower"),
-    paid: (share) => t("tree.paid", { share }),
-    margin: (share) => t("tree.margin", { share }),
     rows: { monthly: t("tree.rows.monthly"), paid: t("tree.rows.paid"), clients: t("tree.rows.clients"), late: t("tree.rows.late"), suspended: t("tree.rows.suspended"), margin: t("tree.rows.margin"), profit: t("tree.rows.profit"), incomplete: t("tree.rows.incomplete") },
     leafTip: packTip,
     all: t("tree.all"),
-    enter: t("tree.enter"),
-    up: t("tree.up"),
+    monthly: t("tree.monthly"),
+    clientsLine: (n, avg) => t("tree.clientsLine", { n, avg }),
+    month: t("tree.month"),
+    tones: { "al-corriente": t("tree.tones.paid"), "por-vencer": t("tree.tones.due"), atrasado: t("tree.tones.late"), suspendido: t("tree.tones.suspended") },
+    paidShare: (share) => t("tree.paidShare", { share }),
+    lists: { sites: t("tree.lists.sites"), towers: t("tree.lists.towers"), clients: t("tree.lists.clients") },
+    margin: (share) => t("tree.margin", { share }),
+    more: (n) => t("tree.more", { n }),
+    hint: t("tree.hint"),
   }
   const horizonRows = (carriers?.traffic ?? []).map((tr) => {
     const site = src.sites.find((x) => x.id === tr.siteId)
@@ -610,8 +616,8 @@ export function Tablero2App() {
             }),
           }}
         >
-          {tree && <RevenueTreemap tree={tree} margins={treeMargins} label={t("tree.title")} labels={treeLabels} />}
-          <Legend items={[[t("tree.legend.paid"), TILE_COLOR.calm, "bar"], [t("tree.legend.due"), TILE_COLOR.due, "ring"], [t("tree.legend.good"), MARGIN_COLOR.good, "bar"], [t("tree.legend.even"), MARGIN_COLOR.even, "bar"], [t("tree.legend.loss"), HATCH, "hatch"], [t("tree.legend.late"), TILE_COLOR.late, "dot"], [t("tree.legend.suspended"), TILE_COLOR.suspended, "dot"]]} />
+          {tree && <RevenueMap tree={tree} margins={treeMargins} label={t("tree.title")} labels={treeLabels} />}
+          <Legend items={[[t("tree.legend.paid"), "#3c5e98", "dot"], [t("tree.legend.due"), TILE_COLOR.due, "ring"], [t("tree.legend.late"), TILE_COLOR.late, "dot"], [t("tree.legend.suspended"), TILE_COLOR.suspended, "dot"], [t("tree.legend.site"), "#e3edff", "line"], [t("tree.legend.loss"), HATCH, "hatch"]]} />
           <p className="text-[0.7rem] text-zinc-500">{t("tree.note")}</p>
         </Panel>
         <div className="grid gap-3 lg:grid-cols-2">

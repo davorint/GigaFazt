@@ -1496,6 +1496,13 @@ html[data-motion="off"] :is(.t2-draw, .t2-rise, .t2-drop, .t2-grow, .t2-fade) { 
 }
 .t2-ping { transform-box: fill-box; transform-origin: center; animation: t2-ping 1.6s ease-out infinite; }
 @media (prefers-reduced-motion: reduce) { .t2-ping { display: none; } }
+/* Tablero 2 Mapa de ingresos: the glass cells bloom out from the middle (no animation under reduced motion). */
+@keyframes rm-bloom {
+  from { opacity: 0; transform: scale(0.35); }
+}
+.rm-bloom { transform-box: fill-box; transform-origin: center; animation: rm-bloom 0.75s cubic-bezier(.22,.8,.3,1) both; }
+@media (prefers-reduced-motion: reduce) { .rm-bloom { animation: none !important; } }
+html[data-motion="off"] .rm-bloom { animation: none !important; }
 /* Tablero 2 La red viva: a carrier hub's dashed ring turning slowly (still under reduced motion). */
 @keyframes t2-spin { to { transform: rotate(360deg); } }
 .t2-spin { transform-box: fill-box; transform-origin: center; animation: t2-spin 28s linear infinite; }

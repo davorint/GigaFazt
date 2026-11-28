@@ -156,12 +156,27 @@
       "takeaway": "{top} aporta el {share} del ingreso mensual ({amount}). Este mes va pagado el {paid}.",
       "marginLine": "{best} es el que más deja ({margin} de margen).",
       "lossLine": "{name} pierde dinero: {profit} al mes.",
-      "note": "El área de cada cuadro es lo que cobra al mes, y adentro cada cliente es un cuadrito del tamaño de lo que paga: lleno si ya pagó este mes, hueco si todavía no le vence, naranja si va atrasado y rojo si está suspendido. La línea azul bajo cada nombre es cuánto va pagado este mes; la barra de arriba de cada despliegue, su margen después del edificio y los enlaces (azul: deja 10 % o más; gris: parejo; rayado: pierde). Toca un cuadro para entrar; «Todo» o el camino para salir.",
+      "note": "Un vitral del ingreso mensual: cada celda es tan grande como lo que cobra al mes. Las líneas de luz separan los despliegues y las finas, sus torres; adentro, cada cliente es un cristal: azul si ya pagó este mes (más claro cuanto más paga), hueco si todavía no le vence, naranja si va atrasado y rojo si está suspendido. El aro de afuera reparte el dinero del mes en esos mismos estados, empezando arriba. A un lado, el total, los botones para dejar solo un estado en el mapa y la lista del nivel de abajo con su parte del total, lo pagado (azul) y el margen después del edificio y los enlaces (azul: deja 10 % o más; gris: parejo; rayado: pierde). Toca una celda o una fila para entrar; «Todo», el camino o afuera del círculo para salir.",
       "all": "Todo",
-      "enter": "Entrar:",
-      "up": "Subir",
-      "paid": "{share} pagado",
-      "margin": "margen {share}",
+      "hint": "Toca una celda para entrar",
+      "share": "parte · margen",
+      "monthly": "Ingreso mensual",
+      "clientsLine": "{n, plural, one {# cliente} other {# clientes}} · promedio {avg}",
+      "month": "Cómo va el mes",
+      "paidShare": "{share} cobrado",
+      "tones": {
+        "paid": "Pagado",
+        "due": "Aún no vence",
+        "late": "Atrasado",
+        "suspended": "Suspendido"
+      },
+      "lists": {
+        "sites": "Despliegues",
+        "towers": "Torres",
+        "clients": "Clientes que más pagan"
+      },
+      "more": "{n, plural, one {y # más} other {y # más}}",
+      "margin": "{share}",
       "rows": {
         "monthly": "Cobra al mes",
         "paid": "Pagado este mes",
@@ -175,11 +190,10 @@
       "legend": {
         "paid": "Pagado este mes",
         "due": "Por pagar (aún no vence)",
-        "good": "Deja 10 % o más",
-        "even": "Parejo (0 a 10 %)",
-        "loss": "Pierde (rayado)",
         "late": "Atrasado",
-        "suspended": "Suspendido"
+        "suspended": "Suspendido",
+        "site": "Límite de despliegue",
+        "loss": "Pierde dinero (punteado)"
       },
       "cols": {
         "site": "Despliegue",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { SiteNumbers } from "./numbers"
-import { findPath, HEADER, layoutLevel, leavesOf, margins, marginTone, paidShare, stats } from "./tablero2-tree"
+import { cellLayout, circlePoly, findPath, fitInto, leavesOf, margins, marginTone, paidShare, polyShape, seeded, stats } from "./tablero2-tree"
 import type { Leaf, TreeNode } from "./tablero2-x"
 
 const leaf = (id: string, value: number, tone: Leaf["tone"]): Leaf => ({ id, value, tone, place: "", plan: "" })
@@ -23,7 +23,7 @@ const tree: TreeNode = {
 describe("Mapa de ingresos", () => {
   it("stats: value, paid over owed (sin cobro left out), late / suspended / due", () => {
     const s = stats(tree)
-    expect(s).toEqual({ value: 2980, paid: 992, owed: 2730, clients: 7, late: 1, suspended: 1, due: 1 })
+    expect(s).toEqual({ value: 2980, paid: 992, owed: 2730, clients: 7, late: 1, suspended: 1, due: 1, dueValue: 496, lateValue: 396, suspendedValue: 846 })
     expect(paidShare(s)).toBeCloseTo(992 / 2730)
     expect(paidShare(stats({ id: "x", name: "", children: [leaf("f", 250, "sin-cobro")] }))).toBeNull()
   })
@@ -42,22 +42,33 @@ describe("Mapa de ingresos", () => {
     expect(leavesOf(tree.children[0]).map((l) => l.id)).toEqual(["c1", "c2", "c3", "c4", "c5"])
   })
 
-  it("layout: each child with all its clients inside (zero-value clients left out), inside the box, a header when tall", () => {
-    const tiles = layoutLevel(tree, 600, 400)
-    const one = tiles.filter((t) => t.depth === 1)
-    const two = tiles.filter((t) => t.depth === 2)
-    expect(one.map((t) => t.node.id)).toEqual(["s:norte", "s:sur"])
-    expect(two.filter((t) => t.parent === "s:norte").map((t) => t.node.id).sort()).toEqual(["c1", "c2", "c3", "c4"])
-    expect(two.filter((t) => t.parent === "s:sur").map((t) => t.node.id).sort()).toEqual(["c6", "c7"])
-    expect(tiles.every((t) => t.x0 >= 0 && t.y0 >= 0 && t.x1 <= 600 && t.y1 <= 400 && t.x1 > t.x0 && t.y1 > t.y0)).toBe(true)
-    // Clients sit below their deployment's header.
-    const norte = one[0]
-    expect(two.filter((t) => t.parent === "s:norte").every((t) => t.y0 >= norte.y0 + HEADER)).toBe(true)
-    // Areas follow the money: Norte (2334) is bigger than Sur (646).
-    const area = (t: { x0: number; x1: number; y0: number; y1: number }) => (t.x1 - t.x0) * (t.y1 - t.y0)
-    expect(area(one[0])).toBeGreaterThan(area(one[1]) * 2.5)
-    // A tower's clients fill the box on their own.
-    expect(layoutLevel((tree.children[0] as TreeNode).children[0] as TreeNode, 300, 200).every((t) => t.depth === 1)).toBe(true)
-    expect(layoutLevel(tree, 0, 400)).toEqual([])
+  it("voronoi map: nested convex cells in the circle, areas follow the money, the same every time", () => {
+    const cells = cellLayout(tree, 200, 200, 180)
+    const ids = (d: number) => cells.filter((c) => c.depth === d).map((c) => c.id).sort()
+    expect(ids(1)).toEqual(["s:norte", "s:sur"])
+    expect(ids(2)).toEqual(["t:norte:a", "t:norte:b", "t:sur:"])
+    // Zero-value clients left out; a sin-cobro client with a value stays.
+    expect(ids(3)).toEqual(["c1", "c2", "c3", "c4", "c6", "c7"])
+    expect(cells.find((c) => c.id === "c4")).toMatchObject({ top: "s:norte", parent: "t:norte:b" })
+    // Inside the circle (a hair of rounding), and the deployments share it by money: Norte 2334, Sur 646.
+    expect(cells.every((c) => c.poly.every(([x, y]) => Math.hypot(x - 200, y - 200) <= 180.5))).toBe(true)
+    const circle = polyShape(circlePoly(200, 200, 180)).area
+    const norte = cells.find((c) => c.id === "s:norte")!
+    expect(norte.area / circle).toBeCloseTo(2334 / 2980, 1)
+    // A centroid sits inside its own (convex) cell's box.
+    const xs = norte.poly.map((p) => p[0])
+    expect(norte.c[0]).toBeGreaterThan(Math.min(...xs))
+    expect(norte.c[0]).toBeLessThan(Math.max(...xs))
+    expect(cellLayout(tree, 200, 200, 180).map((c) => c.poly[0])).toEqual(cells.map((c) => c.poly[0]))
+    expect(seeded("a")()).toBe(seeded("a")())
+    // A tower: its clients alone, depth 1.
+    expect(cellLayout((tree.children[0] as TreeNode).children[0] as TreeNode, 100, 100, 90).map((c) => c.depth)).toEqual([1, 1, 1])
+  })
+
+  it("fitInto: a cell's box fills the circle, centered", () => {
+    const f = fitInto([[0, 0], [20, 0], [20, 10], [0, 10]], 100, 100, 50)
+    expect(f.k).toBeCloseTo(4.6)
+    expect(f.x + f.k * 10).toBeCloseTo(100)
+    expect(f.y + f.k * 5).toBeCloseTo(100)
   })
 })
