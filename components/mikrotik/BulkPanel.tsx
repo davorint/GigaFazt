@@ -13,7 +13,7 @@ import { fmtNum } from "@/lib/mikrotik/format"
 import { PRESETS, type LabState } from "@/lib/mikrotik/state"
 import { AuditPanel } from "./AuditPanel"
 import { Choice } from "./Choice"
-import { CodeBlock } from "./CodeBlock"
+import { RouterScript } from "./RouterScript"
 import { MethodGuide } from "./MethodGuide"
 import { SetupChecks } from "./SetupChecks"
 import { TextField } from "./TextField"
@@ -150,7 +150,7 @@ function NewClients({ state }: { state: LabState }) {
         </div>
       )}
 
-      {script && <CodeBlock label={t(`bulk.methods.${method}`)} code={script} />}
+      {script && <RouterScript label={t(`bulk.methods.${method}`)} code={script} />}
       {script && <p className="max-w-3xl text-sm text-zinc-400">{t(`bulk.notes.${method}`)}</p>}
 
       <SetupChecks compact />

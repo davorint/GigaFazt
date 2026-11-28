@@ -19,7 +19,8 @@ import {
 } from "@/lib/mikrotik/routeros"
 import type { LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
-import { CodeBlock as Code } from "./CodeBlock"
+import { CodeBlock } from "./CodeBlock"
+import { RouterScript as Code } from "./RouterScript"
 import { SetupChecks } from "./SetupChecks"
 import { TextField } from "./TextField"
 
@@ -82,10 +83,10 @@ export function ExportPanel({ state, onQueueKind }: { state: LabState; onQueueKi
         </TabsContent>
 
         <TabsContent value="ppp" className="grid min-w-0 gap-5">
-          <Code label={t("rateLimit")} code={rateLimit(p)} />
+          <CodeBlock label={t("rateLimit")} code={rateLimit(p)} />
           <Code label="/ppp profile" code={pppProfile(p, { name: n, queue })} />
           <Code label="/ip hotspot user profile" code={hotspotProfile(p, { name: n })} />
-          <Code label="RADIUS" code={radiusAttribute(p)} />
+          <CodeBlock label="RADIUS" code={radiusAttribute(p)} />
           <p className="text-sm text-zinc-400">{t("notes.ppp")}</p>
         </TabsContent>
 

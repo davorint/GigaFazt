@@ -1,6 +1,10 @@
 "use client"
 
+import { useMemo } from "react"
+import { useCli } from "./CliContext"
+import { CliSteps } from "./CliSteps"
 import { CodeBlock } from "./CodeBlock"
+import { ViewChoice } from "./ViewChoice"
 
 export type ShownStep = { title: string; script: string; before?: string; verify?: string }
 
@@ -9,6 +13,22 @@ export type ShownStep = { title: string; script: string; before?: string; verify
  * shows it worked. Paste them in order, one at a time.
  */
 export function StepList({ steps, labels }: { steps: ShownStep[]; labels: { step: string; before: string; verify: string } }) {
+  const cli = useCli()
+  const input = useMemo(() => steps.map((s) => ({ title: s.title, script: s.script, verify: s.verify })), [steps])
+  // The scripts page: the same steps as CLI pieces when the page shows commands.
+  if (cli)
+    return (
+      <div className="grid min-w-0 gap-4">
+        <div className="flex justify-end">
+          <ViewChoice compact />
+        </div>
+        {cli.view === "cli" ? <CliSteps steps={input} /> : <Steps steps={steps} labels={labels} />}
+      </div>
+    )
+  return <Steps steps={steps} labels={labels} />
+}
+
+function Steps({ steps, labels }: { steps: ShownStep[]; labels: { step: string; before: string; verify: string } }) {
   return (
     <ol className="grid gap-5">
       {steps.map((s, k) => (

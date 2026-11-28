@@ -28,6 +28,7 @@ import { MAX_WANS, nextMonitor, type BalanceState, type LabState } from "@/lib/m
 import { Choice } from "./Choice"
 import { guardedBalance } from "@/lib/mikrotik/guide-scripts"
 import { CodeBlock } from "./CodeBlock"
+import { RouterScript } from "./RouterScript"
 import { IssueList } from "./IssueList"
 import { NumberField } from "./NumberField"
 import { SelectField } from "./SelectField"
@@ -261,7 +262,7 @@ export function BalancePanel({ state, onWans, onBalance }: Props) {
 
       {script ? (
         <>
-          <CodeBlock label={t("script")} code={script} />
+          <RouterScript label={t("script")} code={script} />
           <ul className="grid max-w-3xl gap-2 text-sm leading-relaxed text-zinc-400">
             {(t.raw("notes") as string[]).map((n, k) => (
               <li key={k} className="flex gap-2">

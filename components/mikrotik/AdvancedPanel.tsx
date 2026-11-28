@@ -68,6 +68,7 @@ import { setupPlans } from "@/lib/mikrotik/setup"
 import type { AdvancedState, LabState } from "@/lib/mikrotik/state"
 import { Choice } from "./Choice"
 import { CodeBlock } from "./CodeBlock"
+import { RouterScript } from "./RouterScript"
 import { IssueList } from "./IssueList"
 import { NumberField } from "./NumberField"
 import { SelectField } from "./SelectField"
@@ -257,7 +258,7 @@ function Morosos({ t, ctx, plans }: { t: T; ctx: AdvContext; plans: string[] }) 
         <Choice label={t("morosos.action")} value={action} onChange={setAction} options={(["reduce", "suspend", "restore"] as const).map((k) => ({ value: k, label: t(`morosos.actions.${k}`) }))} />
         <Area label={t("morosos.list")} hint={t("morosos.listHint", { plans: plans.join(", ") })} value={clients} set={setClients} placeholder={"juan.perez\nmaria.lopez,plan-500M"} />
         <IssueList items={cmd.errors.map((e, k) => ({ key: `e${k}`, level: "error", text: t(`issues.${e.code}`, { value: e.value ?? "", line: e.line }) }))} />
-        {cmd.script && <CodeBlock code={cmd.script} label={t(`morosos.actions.${action}`)} />}
+        {cmd.script && <RouterScript code={cmd.script} label={t(`morosos.actions.${action}`)} />}
       </div>
     </>
   )
@@ -380,7 +381,7 @@ function Speeds({ t, ctx, plans }: { t: T; ctx: AdvContext; plans: string[] }) {
           <TextField label={t("velocidad.time")} value={u.time} onChange={(v) => setU({ ...u, time: v.trim() })} />
         </div>
         {u.user && <IssueList items={up.issues.map((i, k) => ({ key: `u${k}`, level: i.level, text: t(`issues.${i.code}`, { value: i.value ?? "" }) }))} />}
-        {up.script && <CodeBlock code={up.script} label={t("velocidad.upgrade")} />}
+        {up.script && <RouterScript code={up.script} label={t("velocidad.upgrade")} />}
       </div>
     </>
   )
@@ -569,7 +570,7 @@ function Spare({ t, ctx }: { t: T; ctx: AdvContext }) {
           </div>
         </fieldset>
       )}
-      {out && <CodeBlock code={out} label={t("repuesto.result")} />}
+      {out && <RouterScript code={out} label={t("repuesto.result")} />}
       <div className="grid gap-3 rounded-xl border border-white/10 p-4">
         <h4 className="text-sm font-medium text-foreground">{t("repuesto.full")}</h4>
         <Output t={t} mod="repuesto" issues={full.issues} steps={full.steps} undo={full.undo} label={t("repuesto.full")} />

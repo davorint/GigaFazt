@@ -2367,6 +2367,58 @@
         "label": "Puertos y ópticas"
       }
     },
+    "cli": {
+      "bar": {
+        "title": "Cómo ver los comandos",
+        "lead": "Script: como siempre, para pegar o subir con /import. Comandos CLI: lo mismo en comandos sencillos para la terminal de WinBox, en partes pequeñas con su comprobación y su deshacer.",
+        "view": "Formato",
+        "views": { "script": "Script", "cli": "Comandos CLI" },
+        "router": "Router",
+        "modes": { "new": "Router nuevo", "existing": "Ya configurado" },
+        "modeHint": {
+          "new": "Router nuevo: cada parte agrega lo suyo con add. Si un comando responde «already have such…», eso ya estaba en el router: sigue con la siguiente línea.",
+          "existing": "Ya configurado: pega abajo el /export del router y solo verás lo que cambia: lo igual se salta, lo distinto se ajusta con set, lo que falta se agrega y lo que este despliegue ya no usa se quita."
+        },
+        "export": "Export del router",
+        "exportHint": "En la terminal de WinBox corre /export, copia todo lo que sale y pégalo aquí. No se guarda: se borra al cerrar la página.",
+        "exportRead": "Leí {count, plural, one {# elemento} other {# elementos}} del export.",
+        "tips": [
+          "Antes de cada parte activa el Safe Mode (Ctrl+X en la terminal): si WinBox pierde la conexión, el router deshace solo esa parte.",
+          "Pega con clic derecho → Paste. Cuando «Comprobar» dé lo esperado, vuelve a presionar Ctrl+X para dejar los cambios.",
+          "Las partes van en orden. Para deshacer, ve de la última a la primera.",
+          "Las reglas de firewall que se agregan quedan al final de su cadena; en un router ya configurado revisa el orden con print."
+        ],
+        "clearDone": "Desmarcar {count, plural, one {# parte hecha} other {# partes hechas}}"
+      },
+      "progress": "{done} de {total} partes hechas",
+      "sameTotal": "{count, plural, =0 {nada igual todavía} one {# elemento ya está igual} other {# elementos ya están iguales}}",
+      "same": "{count, plural, one {# ya está igual} other {# ya están iguales}}",
+      "noExport": "Sin export: se muestran los comandos de router nuevo.",
+      "nothing": "Todo esto ya está igual en el router.",
+      "nonAscii": "Hay letras con acento o símbolos fuera de ASCII: la terminal puede cambiarlos. Revísalos antes de pegar.",
+      "stepWord": "Paso {n}",
+      "staleWord": "Sobra",
+      "staleTitle": "Lo que este despliegue ya no usa",
+      "staleHint": "Elementos con el comentario de esta herramienta que ya no se crean. Quítalos al final, cuando lo demás ya funcione.",
+      "part": "{label} · parte {part} de {parts}",
+      "partAlone": "Parte {part} de {parts}",
+      "doneLabel": "Marcar como hecha: {label}",
+      "before": "Comprobar antes",
+      "verify": "Comprobar",
+      "undo": "Deshacer esta parte",
+      "undoPartial": "Algunas líneas cambian ajustes (set) o son de script: no se deshacen desde aquí. Para volver, usa el export que guardaste antes.",
+      "scriptLine": "Las líneas marcadas en ámbar son de script (esperas o ciclos): se pegan igual, tal cual.",
+      "manualLine": "Las líneas en azul empiezan con # y no hacen nada: ese elemento no se puede elegir solo con su comentario. Cámbialo a mano.",
+      "changed": "← cambia {props}",
+      "ifNot": "si no: {msg}",
+      "expect": {
+        "zero": "debe dar 0",
+        "atLeast": "debe dar {n} o más",
+        "value": "debe decir {value}",
+        "not": "no debe decir {value}",
+        "list": "muestra la lista: revisa que estén los valores de arriba"
+      }
+    },
     "installed": {
       "title": "¿Qué tiene este router?",
       "lead": "Pega el export del router y ve, parte por parte, qué está instalado, qué falta, qué quedó repetido y qué viene de una configuración anterior.",

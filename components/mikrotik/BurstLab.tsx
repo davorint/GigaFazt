@@ -42,6 +42,8 @@ import {
   type LabState,
 } from "@/lib/mikrotik/state"
 import { sameQueue } from "@/lib/mikrotik/import"
+import { CliBar } from "./CliBar"
+import { CliProvider } from "./CliContext"
 import { CopyButton } from "./CopyButton"
 import { SectionNav } from "./SectionNav"
 import { FiguresPanel } from "./FiguresPanel"
@@ -295,7 +297,7 @@ export function BurstLab({ page }: { page: LabPage }) {
 
   const navItems = useMemo(() => PAGE_SECTIONS[page].map((k) => ({ id: ANCHORS[k], label: t(`intro.jump.${k}`) })), [t, page])
 
-  return (
+  const body = (
     <main className="mx-auto w-full max-w-6xl px-4 pb-24 sm:px-6">
       <section id="inicio" data-section="mk-intro" className="pt-10 pb-4 sm:pt-16">
         <div className="flex flex-wrap items-center gap-3">
@@ -317,6 +319,8 @@ export function BurstLab({ page }: { page: LabPage }) {
       </section>
 
       <SectionNav label={t("intro.navLabel")} items={navItems} />
+
+      {page === "scripts" && <CliBar />}
 
       {on("params") && (
       <Section id="parametros" name="mk-params" title={t("params.title")} lead={t("params.lead")}>
@@ -485,4 +489,6 @@ export function BurstLab({ page }: { page: LabPage }) {
       )}
     </main>
   )
+  // The scripts page can show every script as CLI commands (owner, 2026-11-28).
+  return page === "scripts" ? <CliProvider scope={state.deployment}>{body}</CliProvider> : body
 }
