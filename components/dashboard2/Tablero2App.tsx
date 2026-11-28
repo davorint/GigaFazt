@@ -6,7 +6,7 @@ import { localToday } from "@/lib/clients/from-lead"
 import { demoSet } from "@/lib/interno/dashboard-demo"
 import type { NetworkFigures } from "@/lib/interno/dashboard-server"
 import { lastMonths, monthNumbers, siteNumbers } from "@/lib/interno/numbers"
-import { BETTER_HIGH, compareRows, faultMatrix, faultsPer10, MEASURES, payPrints, revenueTree, scoreBoard, type Leaf, type Measure, type ScoreRow } from "@/lib/interno/tablero2-x"
+import { BETTER_HIGH, compareRows, faultMatrix, faultQuake, faultsPer10, MEASURES, payPrints, revenueTree, scoreBoard, type Leaf, type Measure, type ScoreRow } from "@/lib/interno/tablero2-x"
 import { linkSpeed } from "@/lib/wispdavor/capacity"
 import { siteLabel } from "@/lib/sites/model"
 import { forecast } from "@/lib/interno/outlook"
@@ -25,7 +25,7 @@ import { useWispData } from "@/components/wispdavor/useWispData"
 import { Panel } from "@/components/dashboard/Panel"
 import { INK, SERIES } from "@/components/dashboard/theme"
 import { CapacityBars } from "./CapacityBars"
-import { FaultChord } from "./FaultChord"
+import { FaultQuake } from "./FaultQuake"
 import { BAND_COLOR, HorizonChart } from "./HorizonChart"
 import { SCORE_COLOR, ScoreBoard } from "./ScoreBoard"
 import { CHANNEL_COLOR, MONTH_COLOR, PaymentDays, StageBar, TicketDays } from "./TodayCharts"
@@ -237,6 +237,7 @@ export function Tablero2App() {
   const chordM = useMemo(() => (nowMs ? faultMatrix(src.reports, src.sites, nowMs, 90) : null), [src, nowMs])
   const prints = useMemo(() => (today ? payPrints(src.payments, src.clients, today, 12, 10) : null), [src, today])
   const siteRows = useMemo(() => siteNumbers(src.sites, src.clients), [src])
+  const quake = useMemo(() => (nowMs ? faultQuake(src.reports, src.sites, new Map(src.clients.map((c) => [c.id, c.name.trim()])), new Map(siteRows.map((x) => [x.id, x.active])), nowMs, 90) : null), [src, siteRows, nowMs])
   const streamName = useCallback((key: string) => (key === "__tv" ? t("streams.tv") : key === "__otros" ? t("streams.otros") : key), [t])
   const streamColor = useCallback((key: string) => SERIES[streams.keys.indexOf(key)] ?? INK.muted, [streams.keys])
 
@@ -833,12 +834,32 @@ export function Tablero2App() {
         <Panel
           demo={tag}
           title={t("chord.title")}
-          takeaway={chordM && chordSites.length ? t("chord.takeaway", { site: chordSites[0].name || t("pack.noSite"), share: pct(chordSites[0].n / chordM.total), kind: t(`repairs.groups.${chordSites[0].top}`) }) : undefined}
+          takeaway={chordM && chordSites.length ? `${t("chord.takeaway", { site: chordSites[0].name || t("pack.noSite"), share: pct(chordSites[0].n / chordM.total), kind: t(`repairs.groups.${chordSites[0].top}`) })}${quake?.quickRepeat ? ` ${t("chord.quick", { n: quake.quickRepeat })}` : ""}` : undefined}
           empty={chordM && chordM.total ? null : t("chord.empty")}
           tableLabel={tl}
-          table={chordM ? { head: [t("cols.site"), ...chordM.kinds.map((x) => t(`repairs.groups.${x}`))], rows: chordM.sites.map((x, i) => [x.name || t("pack.noSite"), ...chordM.counts[i]]) } : undefined}
+          table={quake ? { head: [t("cols.site"), ...REPAIR_GROUPS.map((x) => t(`repairs.groups.${x}`)), t("chord.total"), t("chord.per10"), t("chord.repeats")], rows: quake.lanes.map((x) => [x.name || t("pack.noSite"), ...x.byKind, x.total, x.per10 === null ? "—" : x.per10.toLocaleString("es-MX", { maximumFractionDigits: 1 }), x.repeats.length]) } : undefined}
         >
-          {chordM && <FaultChord m={chordM} label={t("chord.title")} siteName={(n) => n || t("pack.noSite")} kindLabel={(x) => t(`repairs.groups.${x}`)} reportsLabel={(n) => t("chord.reports", { n })} />}
+          {quake && quake.total > 0 && (
+            <FaultQuake
+              q={quake}
+              label={t("chord.title")}
+              labels={{
+                all: t("chord.all"),
+                kinds: t("chord.kinds"),
+                kind: (x) => t(`repairs.groups.${x}`),
+                site: (n) => n || t("pack.noSite"),
+                pulse: t("chord.pulse"),
+                now: t("chord.now"),
+                rate: (n) => t("chord.rate", { n }),
+                reports: (n) => t("chord.reports", { n }),
+                trend: (v) => (v >= 1.25 ? t("chord.trendUp", { pct: pct(v - 1) }) : v <= 0.8 ? t("chord.trendDown", { pct: pct(1 - v) }) : t("chord.trendFlat")),
+                event: (e) => (e.open ? t("chord.open", { d: dur(e.hours ?? 0) }) : e.hours === null ? t("chord.done") : t("chord.took", { d: dur(e.hours) })),
+                day: (ms) => new Date(ms).toLocaleDateString("es-MX", { day: "numeric", month: "short" }),
+                repeat: (d) => t("chord.repeat", { n: Math.round(d) }),
+              }}
+            />
+          )}
+          {quake && quake.total > 0 && <Legend items={[[t("chord.legend.open"), "#f0efec", "ring"] as [string, string, "ring"], ...(quake.repeatClients ? ([[t("chord.legend.quick"), "#c3c2b7", "line"], [t("chord.legend.slow"), "#898781", "line"]] as [string, string, "line"][]) : [])]} />}
           <p className="text-[0.7rem] text-zinc-500">{t("chord.note")}</p>
         </Panel>
       </Section>

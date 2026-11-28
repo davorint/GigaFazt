@@ -516,9 +516,30 @@
     "chord": {
       "title": "Qué falla y dónde",
       "takeaway": "{site} concentra el {share} de los reportes de 90 días; ahí lo que más falla es «{kind}».",
-      "note": "De un lado del aro, los despliegues (gris); del otro, el tipo de falla (color). Cada cinta une un despliegue con un tipo de falla y es tan ancha como sus reportes de los últimos 90 días. Pasa el cursor por un arco para ver solo sus cintas.",
+      "quick": "{n, plural, one {# cliente volvió a reportar en menos de 30 días.} other {# clientes volvieron a reportar en menos de 30 días.}}",
+      "note": "Un sismógrafo de 90 días. Arriba, el pulso de toda la red: reportes por día y tipo (promedio de 7 días). Abajo, un carril por despliegue: cada cápsula es un reporte el día que se abrió, apiladas por día y con el color de su tipo; las que brillan siguen abiertas. Bajo la línea, un arco une un reporte con el siguiente del mismo cliente: continuo si volvió a fallar en menos de 30 días, punteado si tardó más. A la derecha, la mezcla de tipos, los reportes por cada 10 clientes activos y los últimos 30 días contra el promedio de antes. Los botones de arriba aíslan un tipo.",
       "reports": "{n, plural, one {# reporte} other {# reportes}}",
-      "empty": "Sin reportes en los últimos 90 días."
+      "empty": "Sin reportes en los últimos 90 días.",
+      "all": "Todas",
+      "kinds": "Tipos de falla",
+      "pulse": "Toda la red",
+      "now": "hoy",
+      "rate": "{n} por 10 clientes",
+      "trendUp": "↑ {pct} últimos 30 días",
+      "trendDown": "↓ {pct} últimos 30 días",
+      "trendFlat": "= últimos 30 días",
+      "open": "abierto hace {d}",
+      "took": "resuelto en {d}",
+      "done": "resuelto",
+      "repeat": "volvió a reportar a los {n} días",
+      "total": "Total",
+      "per10": "Por 10 clientes",
+      "repeats": "Repetidos",
+      "legend": {
+        "open": "Sigue abierto",
+        "quick": "Repitió en menos de 30 días",
+        "slow": "Repitió después"
+      }
     },
     "prints": {
       "title": "Huella de pago",

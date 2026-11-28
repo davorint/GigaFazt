@@ -5,7 +5,7 @@ import { newReport } from "../reports/model"
 import { newSite, newTower } from "../sites/model"
 import { demoSet } from "./dashboard-demo"
 import { demoCarriers } from "./tablero2-demo"
-import { compareRows, faultMatrix, faultsPer10, payPrints, revenueTree, scoreBoard, type Leaf, type TreeNode } from "./tablero2-x"
+import { compareRows, faultMatrix, faultQuake, faultsPer10, payPrints, revenueTree, scoreBoard, type Leaf, type TreeNode } from "./tablero2-x"
 
 const net = (plan: string, monthly: number, p: Partial<ReturnType<typeof newService>> = {}) => newService("internet", { plan, monthly, status: "activo", start: "2026-01-10", ...p })
 const leaves = (n: TreeNode | Leaf): Leaf[] => ("children" in n ? n.children.flatMap(leaves) : [n])
@@ -47,6 +47,35 @@ describe("Tablero 2, fourth round", () => {
     expect(m.counts[0]).toEqual([0, 2, 1, 0])
     expect(m.counts[1]).toEqual([0, 0, 0, 1])
     expect(m.total).toBe(4)
+  })
+
+  it("fault seismograph: lanes by reports, needles stacked by day, a client's repeats, rate and trend", () => {
+    const s = newSite({ name: "Uno" })
+    const now = Date.parse("2026-11-20T12:00:00Z")
+    const r = (category: "sin-servicio" | "lento" | "wifi", daysAgo: number, p = {}) => newReport({ siteId: s.id, category, createdAt: new Date(now - daysAgo * 864e5).toISOString(), status: "resuelto", ...p })
+    const q = faultQuake(
+      [r("wifi", 1, { clientId: "c1", status: "nuevo" }), r("sin-servicio", 0.95), r("lento", 20, { clientId: "c1" }), r("lento", 70, { clientId: "c1" }), r("wifi", 95), r("lento", 2, { status: "descartado" }), r("lento", 5, { siteId: "" })],
+      [s],
+      new Map([["c1", "Ana"]]),
+      new Map([[s.id, 8]]),
+      now
+    )
+    expect(q.lanes.map((l) => l.name)).toEqual(["Uno", ""])
+    const uno = q.lanes[0]
+    expect(uno.total).toBe(4)
+    expect(uno.byKind).toEqual([1, 2, 1, 0])
+    // Same day: the needle stacks sin-servicio under wifi.
+    const today = uno.events.filter((e) => e.day === uno.events.at(-1)?.day)
+    expect(today.map((e) => [e.kind, e.stack])).toEqual([["sin-servicio", 0], ["wifi", 1]])
+    expect(today[1]).toMatchObject({ who: "Ana", open: true })
+    expect(uno.repeats.map((x) => Math.round(x.days))).toEqual([50, 19])
+    expect(q.repeatClients).toBe(1)
+    expect(q.quickRepeat).toBe(1)
+    expect(uno.per10).toBe(5)
+    // 3 in the last 30 days vs 1 in the 60 before (0.5 per 30 days).
+    expect(uno.trend).toBe(6)
+    expect(q.total).toBe(5)
+    expect(q.pulse.reduce((a, d) => a + d.reduce((x, y) => x + y, 0), 0)).toBe(5)
   })
 
   it("payment fingerprint: day of the month vs months with us; punctual new vs old", () => {

@@ -3,7 +3,9 @@
  *
  * - revenueTree: deployment → tower → client, each client's value what its live services charge, and how it stands
  *   with Cobranza (the zoomable circle packing).
- * - faultMatrix: fault reports of the last days per deployment and kind (the chord diagram).
+ * - faultMatrix: fault reports of the last days per deployment and kind (counts, for the table and the comparator).
+ * - faultQuake: the same reports as events in time per deployment, repeats of a client, the network's daily pulse
+ *   (the fault seismograph).
  * - payPrints: every payment of the last months as (day of the month it came, months the client had been with us),
  *   and the share paid by the due day among new and old clients (the density contours). A payment after the due day
  *   may be late or early for next month: the chart doesn't tell them apart, and the copy doesn't call them late.
@@ -12,7 +14,7 @@
  */
 import { priceAt, type Client } from "../clients/model"
 import { ledger, monthOf, type Payment } from "../payments/model"
-import type { Report } from "../reports/model"
+import { isOpen, type Report } from "../reports/model"
 import { siteLabel, type Site } from "../sites/model"
 import { REPAIR_GROUPS, type RepairGroup } from "./tablero2-more"
 import { liveOn, type Tone } from "./tablero2"
@@ -81,6 +83,80 @@ export function faultMatrix(reports: Report[], sites: Site[], now: number, days 
   }
   const list = [...rows].sort((a, b) => b[1].reduce((x, y) => x + y, 0) - a[1].reduce((x, y) => x + y, 0))
   return { sites: list.map(([id]) => ({ id, name: id ? siteLabel(known.get(id) as Site) : "" })), kinds: REPAIR_GROUPS, counts: list.map(([, c]) => c), total }
+}
+
+export type QuakeEvent = { id: string; t: number; day: number; kind: RepairGroup; open: boolean; who: string; hours: number | null; stack: number }
+export type QuakeLane = {
+  id: string
+  name: string
+  /** By day, then kind (so a day's needle is grouped by kind), then time; `stack` = place in its day's needle. */
+  events: QuakeEvent[]
+  byKind: number[]
+  total: number
+  active: number
+  per10: number | null
+  /** A client reporting again: indexes into `events`, consecutive reports of the same client. */
+  repeats: { a: number; b: number; days: number }[]
+  /** Reports of the last 30 days vs the 30-day average of the 60 before (null = none before). */
+  trend: number | null
+}
+export type FaultQuake = { from: number; now: number; days: number; lanes: QuakeLane[]; pulse: number[][]; byKind: number[]; total: number; repeatClients: number; quickRepeat: number; maxStack: number }
+
+/**
+ * The fault seismograph: every report of the last `days` days (discarded left out) on its deployment's lane ("" =
+ * none) on the day it was opened, colored by kind; consecutive reports of the same client joined (a repeat; within 30
+ * days = it came back quickly); per lane the kind mix, reports per 10 active clients and the last 30 days vs before;
+ * and the whole network's reports per day and kind (the pulse on top). Lanes: most reports first.
+ */
+export function faultQuake(reports: Report[], sites: Site[], names: Map<string, string>, active: Map<string, number>, now: number, days = 90): FaultQuake {
+  const from = now - days * 864e5
+  const known = new Map(sites.map((s) => [s.id, s]))
+  const pulse = Array.from({ length: days }, () => REPAIR_GROUPS.map(() => 0))
+  const byLane = new Map<string, { e: QuakeEvent; client: string }[]>()
+  for (const r of reports) {
+    const t = Date.parse(r.createdAt)
+    if (r.status === "descartado" || !Number.isFinite(t) || t < from || t > now) continue
+    const kind = GROUP_OF[r.category] ?? "otro"
+    const day = Math.min(days - 1, Math.floor((t - from) / 864e5))
+    const done = Date.parse(r.resolvedAt)
+    const open = isOpen(r)
+    const e: QuakeEvent = { id: r.id, t, day, kind, open, who: (r.clientId && names.get(r.clientId)) || r.name.trim(), hours: open ? (now - t) / 36e5 : Number.isFinite(done) ? Math.max(0, (done - t) / 36e5) : null, stack: 0 }
+    const key = known.has(r.siteId) ? r.siteId : ""
+    byLane.set(key, [...(byLane.get(key) ?? []), { e, client: r.clientId }])
+    pulse[day][REPAIR_GROUPS.indexOf(kind)]++
+  }
+  let maxStack = 1
+  const repeaters = new Set<string>()
+  const quick = new Set<string>()
+  const lanes: QuakeLane[] = [...byLane].map(([id, list]) => {
+    list.sort((a, b) => a.e.day - b.e.day || REPAIR_GROUPS.indexOf(a.e.kind) - REPAIR_GROUPS.indexOf(b.e.kind) || a.e.t - b.e.t)
+    const events = list.map((x) => x.e)
+    for (let i = 0; i < events.length; i++) {
+      events[i].stack = i && events[i - 1].day === events[i].day ? events[i - 1].stack + 1 : 0
+      maxStack = Math.max(maxStack, events[i].stack + 1)
+    }
+    const last = new Map<string, number>()
+    const repeats: QuakeLane["repeats"] = []
+    list.forEach((x, i) => {
+      if (!x.client) return
+      const prev = last.get(x.client)
+      if (prev !== undefined) {
+        const gap = (events[i].t - events[prev].t) / 864e5
+        repeats.push({ a: prev, b: i, days: gap })
+        repeaters.add(x.client)
+        if (gap <= 30) quick.add(x.client)
+      }
+      last.set(x.client, i)
+    })
+    const byKind = REPAIR_GROUPS.map((g) => events.filter((e) => e.kind === g).length)
+    const recent = events.filter((e) => e.t > now - 30 * 864e5).length
+    const earlier = events.length - recent
+    const n = id ? (active.get(id) ?? 0) : 0
+    return { id, name: id ? siteLabel(known.get(id) as Site) : "", events, byKind, total: events.length, active: n, per10: faultsPer10(events.length, n), repeats, trend: earlier ? recent / (earlier / 2) : null }
+  })
+  lanes.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+  const byKind = REPAIR_GROUPS.map((_, k) => pulse.reduce((a, d) => a + d[k], 0))
+  return { from, now, days, lanes, pulse, byKind, total: byKind.reduce((a, b) => a + b, 0), repeatClients: repeaters.size, quickRepeat: quick.size, maxStack }
 }
 
 // ── Payment fingerprint (density contours) ──────────────────────────────────

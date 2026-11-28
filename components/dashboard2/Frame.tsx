@@ -60,7 +60,8 @@ export function Frame({ height, label, children, square = false }: { height: num
         <div
           role="presentation"
           className="pointer-events-none absolute z-10 w-max max-w-60 rounded-[10px] border border-white/12 bg-[#18181b]/95 px-2.5 py-2 text-xs text-zinc-100 shadow-[0_8px_24px_rgba(0,0,0,.45)] backdrop-blur"
-          style={tip.x > w / 2 ? { left: tip.x - 14, top: Math.max(0, tip.y - 12), transform: "translateX(-100%)" } : { left: tip.x + 14, top: Math.max(0, tip.y - 12) }}
+          // Narrow boxes: centered on the pointer and kept inside (max-w-60 = 240 px); wide ones beside the pointer.
+          style={w < 480 ? { left: Math.max(0, Math.min(w - 240, tip.x - 120)), top: Math.max(0, tip.y + 18) } : tip.x > w / 2 ? { left: tip.x - 14, top: Math.max(0, tip.y - 12), transform: "translateX(-100%)" } : { left: tip.x + 14, top: Math.max(0, tip.y - 12) }}
         >
           {tip.content}
         </div>
