@@ -10,10 +10,12 @@ import { AdminLinks } from "@/components/interno/AdminLinks"
 import { SitesApp } from "@/components/sites/SitesApp"
 import copy from "@/messages/internal/despliegues.es.json"
 import mikrotik from "@/messages/internal/mikrotik.es.json"
+import inline from "@/messages/internal/inline.es.json"
 
 /**
  * /interno/admin/despliegues (owner, 2026-11-17): the deployment locations with their towers, telecom rooms (one or
- * more: equipment, carriers, PON ports), contacts and access, the agreement with the building and their clients.
+ * more: equipment, carriers, PON ports), contacts and access, the agreement with the building and their clients. Since
+ * 2026-11-28 each deployment is one sheet edited field by field (components/sites/SiteSheet.tsx).
  * Behind the /interno password (proxy.ts); Spanish only, not linked from the public site, not in the sitemap, noindex.
  */
 export const metadata: Metadata = {
@@ -27,7 +29,7 @@ export const metadata: Metadata = {
 }
 
 /** The number field shared with the MikroTik tools reads its "invalid" message from there. */
-const messages = { ...copy, ...syncCopy, ...places, mikrotik: { params: { invalid: mikrotik.mikrotik.params.invalid } } }
+const messages = { ...copy, ...syncCopy, ...places, ...inline, mikrotik: { params: { invalid: mikrotik.mikrotik.params.invalid } } }
 
 export default async function DesplieguesPage({ params }: PageProps<"/[locale]/interno/admin/despliegues">) {
   const { locale } = await params
@@ -35,7 +37,7 @@ export default async function DesplieguesPage({ params }: PageProps<"/[locale]/i
   setRequestLocale(locale)
   const t = copy.despliegues
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 pb-24 sm:px-6">
+    <main className="mx-auto w-full max-w-5xl px-4 pb-24 sm:px-6">
       <section data-section="despliegues" className="pt-8 pb-2 sm:pt-14">
         <p className="eyebrow">{t.kicker}</p>
         <h1 className="mt-3 text-4xl font-light tracking-tight text-foreground sm:text-5xl">{t.title}</h1>

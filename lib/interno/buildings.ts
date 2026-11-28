@@ -3,7 +3,7 @@
  * are built floor by floor from what Despliegues knows, one apartment per unit, and every live client sits in their
  * apartment:
  *
- * - Floors: the survey the deployment came from (its `siteId`), when it counted the units floor by floor (tower matched
+ * - Floors: the units per floor typed in Despliegues; else the survey the deployment came from (its `siteId`), when it counted the units floor by floor (tower matched
  *   by name, else by order when both have the same number of towers) and its total still matches the deployment's
  *   apartments (Despliegues wins once edited): its levels 0 and up are floors 1 and up, and its levels below 0 are
  *   basements. Otherwise the deployment's tower: `floors` and `apartments` spread evenly (the extra
@@ -92,6 +92,8 @@ export function spread(n: number, f: number): number[] {
 
 /** A tower's floors (units per floor, ground first), basements and where they came from. */
 export function towerShape(t: Site["towers"][number], sv: Survey["towers"][number] | undefined): { perFloor: number[]; basements: number; source: BuiltTower["source"] } {
+  // Counted floor by floor in Despliegues (owner, 2026-11-28): the record, ahead of any survey.
+  if (t.perFloor?.some((x) => x !== null)) return { perFloor: t.perFloor.map((x) => x ?? 0), basements: t.basements ?? 0, source: "despliegue" }
   const counted = sv?.floors.filter((f) => f.level >= 0 && (f.units ?? 0) > 0) ?? []
   const surveyed = counted.reduce((a, f) => a + (f.units ?? 0), 0)
   // Despliegues is the record once the survey became a deployment: its floor counts only while the totals agree.
@@ -102,8 +104,9 @@ export function towerShape(t: Site["towers"][number], sv: Survey["towers"][numbe
   }
   const n = t.apartments ?? 0
   if (n <= 0) return { perFloor: [], basements: 0, source: "despliegue" }
-  if (t.floors && t.floors > 0) return { perFloor: spread(n, Math.min(t.floors, n)), basements: 0, source: "despliegue" }
-  return { perFloor: spread(n, Math.max(1, Math.round(Math.sqrt(n * 1.6)))), basements: 0, source: "estimado" }
+  const basements = t.basements ?? 0
+  if (t.floors && t.floors > 0) return { perFloor: spread(n, Math.min(t.floors, n)), basements, source: "despliegue" }
+  return { perFloor: spread(n, Math.max(1, Math.round(Math.sqrt(n * 1.6)))), basements, source: "estimado" }
 }
 
 /** The survey's tower for a deployment's tower: same name, else the same place when both count the same towers. */

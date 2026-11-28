@@ -36,6 +36,10 @@ export type Tower = {
   /** Levels above the street, ground floor included. */
   floors: number | null
   apartments: number | null
+  /** Levels below the street (owner, 2026-11-28; null = not said). */
+  basements: number | null
+  /** Apartments on each floor above the street, index 0 = planta baja (null = not counted); as long as `floors`. */
+  perFloor: (number | null)[]
   /** The telecom room that serves it ("" = not set). */
   roomId: string
   notes: string
@@ -92,6 +96,9 @@ export type Site = {
   municipality: string
   /** Its state (lib/survey/places menus, or typed in). */
   state: string
+  /** Its point on the map (owner, 2026-11-28; internal only, never on the public site). */
+  lat: number | null
+  lng: number | null
   towers: Tower[]
   /** The building's administration: a client of type Administración ("" = none). */
   adminClientId: string
@@ -115,7 +122,7 @@ export type Site = {
   updatedAt: string
 }
 
-export const newTower = (p: Partial<Tower> = {}): Tower => ({ id: newId(), name: "", floors: null, apartments: null, roomId: "", notes: "", ...p })
+export const newTower = (p: Partial<Tower> = {}): Tower => ({ id: newId(), name: "", floors: null, apartments: null, basements: null, perFloor: [], roomId: "", notes: "", ...p })
 export const newEquipment = (kind: EquipmentKind, p: Partial<Equipment> = {}): Equipment => ({ id: newId(), kind, model: "", serial: "", ip: "", firmware: "", notes: "", ...p })
 export const newRoomCarrier = (p: Partial<RoomCarrier> = {}): RoomCarrier => ({ id: newId(), providerId: "", name: "", downMbps: null, upMbps: null, ip: "", account: "", monthly: null, notes: "", ...p })
 export const newPort = (p: Partial<PonPort> = {}): PonPort => ({ id: newId(), port: "", oltId: "", towerId: "", splitters: "", notes: "", ...p })
@@ -142,6 +149,8 @@ export function newSite(p: Partial<Site> = {}): Site {
     address: "",
     municipality: "",
     state: "",
+    lat: null,
+    lng: null,
     towers: [],
     adminClientId: "",
     contacts: [],
@@ -178,7 +187,17 @@ const ref = (v: unknown) => (typeof v === "string" && ID.test(v) ? v : "")
 const list = <T>(x: unknown, f: (y: Obj) => T, max: number): T[] => (Array.isArray(x) ? x.slice(0, max).filter(isObj).map(f) : [])
 
 const decodeContact = (v: Obj): SiteContact => ({ id: idOf(v.id), name: str(v.name, 200), role: str(v.role, 80), phone: str(v.phone, 40), email: str(v.email, 200) })
-const decodeTower = (v: Obj): Tower => ({ id: idOf(v.id), name: str(v.name, 80), floors: num(v.floors, 0, 200), apartments: num(v.apartments, 0, 5000), roomId: ref(v.roomId), notes: str(v.notes, 2000) })
+const decodeTower = (v: Obj): Tower =>
+  syncPerFloor({
+    id: idOf(v.id),
+    name: str(v.name, 80),
+    floors: num(v.floors, 0, 200),
+    apartments: num(v.apartments, 0, 5000),
+    basements: num(v.basements, 0, 20),
+    perFloor: Array.isArray(v.perFloor) ? v.perFloor.slice(0, 200).map((x) => num(x, 0, 500)) : [],
+    roomId: ref(v.roomId),
+    notes: str(v.notes, 2000),
+  })
 const decodeEquipment = (v: Obj): Equipment => ({
   id: idOf(v.id),
   kind: oneOf(EQUIPMENT_KINDS, v.kind, "otro"),
@@ -226,6 +245,8 @@ export function decodeSite(v: unknown): Site | null {
     municipality: str(v.municipality, 120),
     // Deployments from before the menus (2026-11-20): a listed municipality fills its state.
     state: str(v.state, 80) || stateOf(str(v.municipality, 120)),
+    // Both or neither: half a point can't be placed.
+    ...(num(v.lat, -90, 90) !== null && num(v.lng, -180, 180) !== null ? { lat: v.lat as number, lng: v.lng as number } : { lat: null, lng: null }),
     towers,
     adminClientId: ref(v.adminClientId),
     contacts: list(v.contacts, decodeContact, 30),
@@ -255,6 +276,77 @@ export function decodeSite(v: unknown): Site | null {
 export const siteLabel = (s: Site) => s.name.trim() || s.address.trim() || "Sin nombre"
 export const towerLabel = (t: Tower, i: number) => t.name.trim() || `Torre ${i + 1}`
 export const roomLabel = (r: Room, i: number) => r.name.trim() || `Cuarto ${i + 1}`
+
+/** The units-per-floor list as long as the tower's floors: extra floors dropped, new ones not counted yet. */
+export function syncPerFloor(t: Tower): Tower {
+  const n = t.floors ?? 0
+  return { ...t, perFloor: Array.from({ length: n }, (_, i) => t.perFloor[i] ?? null) }
+}
+
+/** A tower's apartments: the floors' sum once any floor is counted, else the typed total. */
+export function towerApartments(t: Tower): number | null {
+  const counted = t.perFloor.filter((x): x is number => x !== null)
+  return counted.length ? counted.reduce((a, b) => a + b, 0) : t.apartments
+}
+
+/**
+ * Sets one floor's units; the tower's stored total follows the floors' sum once any is counted, so every reader of
+ * `apartments` (Números, Tablero) agrees with the floors.
+ */
+export function setFloorUnits(t: Tower, floor: number, units: number | null): Tower {
+  const perFloor = syncPerFloor(t).perFloor.map((x, i) => (i === floor ? units : x))
+  const next = { ...t, perFloor }
+  return { ...next, apartments: perFloor.some((x) => x !== null) ? towerApartments(next) : t.apartments }
+}
+
+/** "19.3612, -99.1641" (as Google Maps copies it; comma, semicolon or space) → the point, or null. */
+export function parsePoint(v: string): { lat: number; lng: number } | null {
+  const m = v.trim().match(/^(-?\d{1,2}(?:\.\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)$/)
+  if (!m) return null
+  const lat = Number(m[1])
+  const lng = Number(m[2])
+  return Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? { lat, lng } : null
+}
+
+/** The sheet's blocks, in page order (each one an anchor). */
+export const SHEET_SECTIONS = ["general", "torres", "cuartos", "acuerdo", "acceso", "clientes", "levantamiento", "sitio"] as const
+export type SheetSection = (typeof SHEET_SECTIONS)[number]
+export type MissingField = { key: string; section: SheetSection }
+
+/**
+ * What a deployment still lacks (owner, 2026-11-28: the data comes in out of order), in page order. `key` is the
+ * field's anchor on the sheet (`InlineField` id), so the "faltan" chip can jump to it.
+ */
+export function missingFields(s: Site): MissingField[] {
+  const out: MissingField[] = []
+  const need = (ok: boolean, key: string, section: SheetSection) => ok || out.push({ key, section })
+  need(!!s.name.trim(), "name", "general")
+  need(!!s.address.trim(), "address", "general")
+  need(!!s.state.trim(), "state", "general")
+  need(!!s.municipality.trim(), "municipality", "general")
+  need(s.lat !== null && s.lng !== null, "location", "general")
+  need(s.towers.length > 0, "towers", "torres")
+  for (const t of s.towers) {
+    need(t.floors !== null, `tower.${t.id}.floors`, "torres")
+    need(towerApartments(t) !== null, `tower.${t.id}.apartments`, "torres")
+    need(!!t.roomId || s.rooms.length === 0, `tower.${t.id}.room`, "torres")
+  }
+  for (const r of s.rooms) {
+    need(!!r.location.trim(), `room.${r.id}.location`, "cuartos")
+    need(!!r.breaker.trim(), `room.${r.id}.breaker`, "cuartos")
+    for (const c of r.carriers) {
+      need(c.downMbps !== null, `carrier.${c.id}.down`, "cuartos")
+      need(c.monthly !== null, `carrier.${c.id}.monthly`, "cuartos")
+    }
+  }
+  need(!!s.contractStart, "agreement.start", "acuerdo")
+  need(!!s.contractEnd, "agreement.end", "acuerdo")
+  need(s.rentMonthly !== null, "agreement.rent", "acuerdo")
+  need(!!s.powerPayer, "agreement.powerPayer", "acuerdo")
+  need(!!s.adminClientId || s.contacts.some((c) => c.name.trim() || c.phone.trim()), "access.contact", "acceso")
+  need(!!s.accessHours.trim(), "access.hours", "acceso")
+  return out
+}
 
 /** Normalizes "0/1/0", "0-1-0", "0 / 1 / 0" so ports typed on a client and on a room compare equal. */
 export const normPort = (p: string) => p.replace(/\s+/g, "").replace(/[-.]/g, "/")

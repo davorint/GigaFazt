@@ -1,0 +1,12 @@
+{
+  "inline": {
+    "add": "— agregar",
+    "edit": "Editar {label}",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "areaHint": "Ctrl + Enter guarda · Esc cancela",
+    "invalidNumber": "Escribe un número de {min} a {max}.",
+    "invalidInteger": "Escribe un número entero de {min} a {max}.",
+    "invalidDate": "Fecha no válida."
+  }
+}

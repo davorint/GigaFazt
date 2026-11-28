@@ -41,6 +41,9 @@ describe("tower view: apartments", () => {
     expect(towerShape(newTower({ apartments: 10, floors: 3 }), undefined)).toEqual({ perFloor: [3, 3, 4], basements: 0, source: "despliegue" })
     expect(towerShape(newTower({ apartments: 10 }), undefined).source).toBe("estimado")
     expect(towerShape(newTower({}), undefined).perFloor).toEqual([])
+    // Counted floor by floor in Despliegues (2026-11-28): wins over the survey; floors not counted read as 0.
+    expect(towerShape(newTower({ floors: 3, apartments: 99, perFloor: [1, null, 5], basements: 2 }), sv)).toEqual({ perFloor: [1, 0, 5], basements: 2, source: "despliegue" })
+    expect(towerShape(newTower({ apartments: 12, floors: 3, basements: 1 }), undefined).basements).toBe(1)
   })
 
   it("puts clients in their apartment, else their floor, else anywhere free; extra clients counted", () => {

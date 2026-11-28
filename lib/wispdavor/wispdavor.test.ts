@@ -67,6 +67,9 @@ describe("WispDavor map and pages", () => {
     const [s] = mapSites([site], [survey], [client("a01"), client("d04", {}, { status: "suspendido" })], [], TODAY)
     expect(s).toMatchObject({ lat: 19.4, lng: -99.1, clients: 2, suspended: 1 })
     expect(toneOf(s)).toBe("suspended")
+    // The deployment's own point (2026-11-28) wins over the survey's.
+    const [own] = mapSites([{ id: "site-001", name: "Los Pinos", lat: 19.5, lng: -99.2 } as never], [survey], [], [], TODAY)
+    expect(own).toMatchObject({ lat: 19.5, lng: -99.2 })
   })
   it("subfolders: any capitalization of a WispDavor page", () => {
     expect(WISPDAVOR_PAGES).toEqual(["alta", "cortes", "portal", "avisos", "mapa", "pagos", "facturas", "routers", "trafico", "hotspot", "monitoreo", "cobranza", "envivo", "red", "capacidad", "tunel", "contrato"])

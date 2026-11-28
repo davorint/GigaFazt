@@ -1,5 +1,5 @@
 /**
- * The clients map (WispDavor → Mapa, owner 2026-11-21): each deployment at its survey's point (a survey turned into a
+ * The clients map (WispDavor → Mapa, owner 2026-11-21): each deployment at its own point (Despliegues) or its survey's (a survey turned into a
  * deployment keeps its siteId; lib/sites/from-survey.ts) with its clients: how many have service, how many are late
  * (Cobranza) and how many suspended. Deployments without a point are listed apart. Internal only: exact locations
  * never go on the public site (hard rule 6).
@@ -20,8 +20,9 @@ export function mapSites(sites: Site[], surveys: Survey[], clients: Client[], pa
       return {
         id: s.id,
         name: siteLabel(s),
-        lat: sv?.ident.lat ?? null,
-        lng: sv?.ident.lng ?? null,
+        // The deployment's own point first (owner, 2026-11-28), else its survey's.
+        lat: (s.lat ?? null) !== null && (s.lng ?? null) !== null ? s.lat : (sv?.ident.lat ?? null),
+        lng: (s.lat ?? null) !== null && (s.lng ?? null) !== null ? s.lng : (sv?.ident.lng ?? null),
         clients: mine.length,
         late: mine.filter((c) => ledger(c, payments, today).status === "atrasado").length,
         suspended: mine.filter((c) => c.services.some((x) => x.status === "suspendido")).length,

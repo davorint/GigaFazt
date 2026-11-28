@@ -155,3 +155,67 @@ describe("a survey becomes a deployment (owner, 2026-11-20)", () => {
     expect(decodeSurvey(JSON.parse(JSON.stringify(s)))!.siteId).toBe("")
   })
 })
+
+describe("deployment sheet fields (owner, 2026-11-28)", () => {
+  it("older stored deployments read the new fields as not set", async () => {
+    const { decodeSite, newSite, newTower } = await import("./model")
+    const old = JSON.parse(JSON.stringify(newSite({ towers: [newTower({ name: "A" })] })))
+    delete old.lat
+    delete old.lng
+    delete old.towers[0].basements
+    delete old.towers[0].perFloor
+    const s = decodeSite(old)!
+    expect([s.lat, s.lng, s.towers[0].basements, s.towers[0].perFloor]).toEqual([null, null, null, []])
+    expect(decodeSite({ ...old, lat: 120, lng: -99.1 })!.lat).toBeNull()
+    expect(decodeSite({ ...old, lat: 19.4, lng: -99.1 })).toMatchObject({ lat: 19.4, lng: -99.1 })
+  })
+  it("units per floor follow the floors; the per-floor sum wins over the typed total", async () => {
+    const { newTower, syncPerFloor, towerApartments } = await import("./model")
+    expect(syncPerFloor(newTower({ floors: 3, perFloor: [4] })).perFloor).toEqual([4, null, null])
+    expect(syncPerFloor(newTower({ floors: 2, perFloor: [4, 5, 6] })).perFloor).toEqual([4, 5])
+    expect(syncPerFloor(newTower({ floors: null, perFloor: [4] })).perFloor).toEqual([])
+    expect(towerApartments(newTower({ apartments: 30, perFloor: [4, null, 6] }))).toBe(10)
+    expect(towerApartments(newTower({ apartments: 30, perFloor: [null, null] }))).toBe(30)
+    expect(towerApartments(newTower())).toBeNull()
+    const { setFloorUnits } = await import("./model")
+    const t = setFloorUnits(newTower({ floors: 3, apartments: 30 }), 1, 8)
+    expect([t.perFloor, t.apartments]).toEqual([[null, 8, null], 8])
+    expect(setFloorUnits(t, 1, null).apartments).toBe(8)
+  })
+  it("reads a map point as Google Maps copies it", async () => {
+    const { parsePoint } = await import("./model")
+    expect(parsePoint("19.3612, -99.1641")).toEqual({ lat: 19.3612, lng: -99.1641 })
+    expect(parsePoint(" 19.36 -99.16 ")).toEqual({ lat: 19.36, lng: -99.16 })
+    expect(parsePoint("19.36;-99.16")).toEqual({ lat: 19.36, lng: -99.16 })
+    expect(parsePoint("95, 10")).toBeNull()
+    expect(parsePoint("Coyoacán")).toBeNull()
+  })
+  it("lists what is still missing, by section", async () => {
+    const { missingFields, newSite, newTower, newRoomCarrier, newSiteContact } = await import("./model")
+    const empty = newSite()
+    const keys = missingFields(empty).map((m) => m.key)
+    expect(keys).toEqual(expect.arrayContaining(["name", "address", "municipality", "state", "location", "towers", "agreement.start", "agreement.end", "agreement.rent", "agreement.powerPayer", "access.contact", "access.hours", `room.${empty.rooms[0].id}.location`, `room.${empty.rooms[0].id}.breaker`]))
+    const t = newTower({ name: "A" })
+    const full = newSite({
+      name: "X", address: "Calle", municipality: "Coyoacán", state: "Ciudad de México", lat: 19, lng: -99,
+      towers: [{ ...t, floors: 5, apartments: 20, roomId: empty.rooms[0].id }],
+      rooms: [{ ...empty.rooms[0], location: "Sótano", breaker: "20 A", carriers: [newRoomCarrier({ name: "T", downMbps: 500, monthly: 900 })] }],
+      contractStart: "2026-01-01", contractEnd: "2028-01-01", rentMonthly: 0, powerPayer: "edificio",
+      contacts: [newSiteContact({ name: "Rosa" })], accessHours: "9 a 18",
+    })
+    expect(missingFields(full)).toEqual([])
+    const noSpeed = { ...full, rooms: [{ ...full.rooms[0], carriers: [newRoomCarrier({ name: "T" })] }] }
+    expect(missingFields(noSpeed).map((m) => m.section)).toEqual(["cuartos", "cuartos"])
+  })
+  it("a survey brings its point, basements and units per floor", async () => {
+    const { newSurvey, emptyTower } = await import("../survey/model")
+    const { siteFromSurvey } = await import("./from-survey")
+    const s = newSurvey("Torre A")
+    s.ident = { ...s.ident, lat: 19.36, lng: -99.16 }
+    const f = emptyTower("x").floors[0]
+    s.towers = [{ ...emptyTower("B"), floorsAbove: 3, floorsBelow: 2, floors: [-2, -1, 0, 1, 2].map((level) => ({ ...f, level, units: level < 0 ? null : level + 2 })) }]
+    const site = siteFromSurvey(s, { room: "Cuarto", roles: { administrador: "A", comite: "C", mantenimiento: "M", otro: "O" }, ip: { publica: "P", nat: "N" } })
+    expect([site.lat, site.lng]).toEqual([19.36, -99.16])
+    expect(site.towers[0]).toMatchObject({ basements: 2, perFloor: [2, 3, 4], apartments: 9 })
+  })
+})

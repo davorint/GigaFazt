@@ -5,7 +5,7 @@
     },
     "kicker": "Administración",
     "title": "Despliegues",
-    "lead": "Cada edificio, del levantamiento a la operación: un edificio nuevo empieza como levantamiento y, ya capturado, se convierte en despliegue con sus torres, sus cuartos de telecom (uno o dos) con equipos, carriers y puertos PON, los contactos y el acceso, el acuerdo con el edificio y sus clientes. Se comparte entre los teléfonos por la base de datos.",
+    "lead": "Cada edificio en una sola hoja: toca cualquier dato para anotarlo o corregirlo, en el orden en que lo vayas sabiendo. «Faltan N datos» te lleva a lo que aún no está. Un edificio nuevo empieza como levantamiento y, ya capturado, se convierte en despliegue. Se comparte entre los teléfonos por la base de datos.",
     "list": {
       "add": "Nuevo despliegue (edificio ya en operación)",
       "search": "Buscar",
@@ -22,14 +22,15 @@
     },
     "nav": {
       "label": "Secciones del despliegue",
-      "back": "← Todos los despliegues",
+      "back": "Todos los despliegues",
       "general": "General",
       "torres": "Torres",
       "cuartos": "Cuartos de telecom",
       "acceso": "Contactos y acceso",
       "acuerdo": "Acuerdo",
       "clientes": "Clientes",
-      "levantamiento": "Levantamiento"
+      "levantamiento": "Levantamiento",
+      "sitio": "En el sitio"
     },
     "general": {
       "name": "Nombre",
@@ -80,9 +81,10 @@
       "room": "Cuarto que la atiende",
       "noRoom": "Sin definir",
       "notes": "Notas",
-      "clients": "{clients, plural, one {# cliente} other {# clientes}} · {active} activos{apartments, select, none {} other { · {pct}% de los departamentos}}",
+      "clients": "{clients, plural, one {# cliente} other {# clientes}} · {active, plural, one {# activo} other {# activos}}{apartments, select, none {} other { · {pct}% de los departamentos}}",
       "remove": "Quitar torre",
-      "confirmRemove": "¿Quitar «{name}»? Sus clientes se quedan, sin torre."
+      "confirmRemove": "¿Quitar «{name}»? Sus clientes se quedan, sin torre.",
+      "basements": "Sótanos"
     },
     "rooms": {
       "intro": "Uno o dos (o más) por ubicación. Cada uno con dónde está, su energía, sus equipos, los carriers que llegan ahí y sus puertos PON.",
@@ -233,11 +235,45 @@
       "visit": "visita {date}",
       "filled": "{pct} % capturado",
       "files": "Importar o exportar archivos de levantamientos",
-        "linked": "Este despliegue salió del levantamiento del {date} ({who}). Ahí siguen el diseño de fibra, las rutas, las áreas comunes, los pendientes, los materiales y la propuesta.",
+      "linked": "Este despliegue salió del levantamiento del {date} ({who}). Ahí siguen el diseño de fibra, las rutas, las áreas comunes, los pendientes, los materiales y la propuesta.",
       "linkedHint": "Lo que pasó al despliegue (torres, contactos, acceso, renta y luz, cuarto y carriers) se edita aquí; cambiarlo en el levantamiento ya no lo cambia en el despliegue.",
       "open": "Abrir el levantamiento",
       "proposal": "Propuesta para el edificio",
       "noneLinked": "Este despliegue no salió de un levantamiento."
+    },
+    "sheet": {
+      "missing": "{n, plural, =0 {Todo capturado} one {Falta # dato} other {Faltan # datos}}",
+      "missingHint": "Toca para ir al siguiente dato que falta.",
+      "hasMissing": "faltan datos",
+      "location": "Ubicación en el mapa",
+      "locationHint": "Latitud, longitud, p. ej. 19.3612, -99.1641 (se copian de Google Maps). Solo para uso interno.",
+      "locationInvalid": "Escribe latitud y longitud separadas por coma, p. ej. 19.3612, -99.1641.",
+      "locate": "Usar mi ubicación",
+      "locating": "Buscando…",
+      "locateFailed": "No se pudo obtener la ubicación (permiso o señal).",
+      "openMap": "Ver en el mapa",
+      "yes": "Sí, quitar",
+      "no": "No",
+      "confirm": "¿Quitar «{name}»?",
+      "kind": "Tipo",
+      "call": "Llamar",
+      "clientsValue": "{clients} · {active, plural, one {# activo} other {# activos}}",
+      "penetration": "{pct} % de {apartments} departamentos",
+      "costs": "Costos al mes",
+      "costsHint": "Edificio {building} + enlaces {links}.",
+      "capacity": "Carriers: {mbps} Mbps de bajada.",
+      "towersAside": "{n, plural, =0 {Sin torres} one {# torre} other {# torres}}{apartments, plural, =0 {} other { · # departamentos}}",
+      "roomsAside": "{n, plural, =0 {Sin cuartos} one {# cuarto} other {# cuartos}}",
+      "clientsAside": "{n, plural, one {# cliente} other {# clientes}}",
+      "apartmentsSum": "{n} (suma de los pisos)",
+      "floorsTitle": "Departamentos por piso ({n} de {of} contados)",
+      "floorsNone": "Anota primero los niveles de la torre.",
+      "floor": "{n, plural, =1 {Piso 1 (PB)} other {Piso #}}",
+      "linkSurvey": "Vincular un levantamiento",
+      "linkSurveyHint": "Levantamientos que todavía no son de ningún despliegue. No copia datos: solo los une.",
+      "linkNone": "No hay levantamientos libres para vincular.",
+      "unlink": "Desvincular el levantamiento",
+      "unlinkConfirm": "¿Desvincular «{name}»? El levantamiento se queda; vuelve a la lista de levantamientos en curso."
     }
   }
 }
